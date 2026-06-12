@@ -82,7 +82,7 @@ export function seed() {
         },
       },
       {
-        id: "t-6", category: "ring", basePriceUsd: 0, visible: true, media: [{ kind: "image", src: "/assets/concept-lumina-lab.png" }],
+        id: "t-6", category: "ring", basePriceUsd: 0, visible: true, media: [{ kind: "video", src: "/assets/freestyle-trump.mp4" }, { kind: "image", src: "/assets/concept-lumina-lab.png" }],
         name: { ko: "프리스타일 (자유 디자인)", en: "Freestyle (Custom Design)", zh: "自由设计", es: "Diseño Libre" },
         desc: {
           ko: "참고 이미지를 첨부해 원하는 디자인을 자유롭게 의뢰하세요.",

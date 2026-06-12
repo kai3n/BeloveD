@@ -3,7 +3,7 @@ import { assertTransition } from "./statusMachine.js";
 import { maskContacts } from "./masking.js";
 import { assertClaimTransition, computeTier, salvageCredit, unitWholesale, metalQuote } from "./dealer.js";
 
-const KEY = "lumina-db-v4"; // 스키마/시드 변경 시 버전업 (v4: 딜러 네트워크 도메인 추가)
+const KEY = "lumina-db-v5"; // 스키마/시드 변경 시 버전업 (v5: 프리스타일 템플릿 영상)
 
 // 테스트(node) 환경 폴백
 const memoryStorage = (() => {
@@ -29,6 +29,7 @@ function db() {
     storage.removeItem("lumina-db-v1");
     storage.removeItem("lumina-db-v2");
     storage.removeItem("lumina-db-v3");
+    storage.removeItem("lumina-db-v4");
     let parsed = null;
     try {
       const raw = storage.getItem(KEY);
