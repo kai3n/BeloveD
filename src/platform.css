@@ -220,3 +220,19 @@
 }
 .shape-pill:hover { border-color: rgba(214, 197, 160, 0.6); color: var(--accent-bright); transform: translateY(-2px); }
 .shape-glyph { color: var(--accent); font-size: 11px; }
+
+/* ---------- 비주얼 커뮤니케이션 레이어 (핀 주석 / 체크포인트 / 비교) ---------- */
+.pin-canvas { position: relative; border-radius: 10px; overflow: hidden; background: var(--bg-2); }
+.pin-canvas img, .pin-canvas video { width: 100%; display: block; }
+.pin-canvas.is-editable { cursor: crosshair; }
+.pin-dot {
+  position: absolute; transform: translate(-50%, -50%); width: 22px; height: 22px; border-radius: 50%;
+  background: #b3402f; color: #fff; border: 2px solid #fff; font-size: 11px; font-weight: 700;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;
+}
+.pin-dot.is-active { background: var(--accent, #d6c5a0); color: #111; }
+.pin-editor { border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+.checkpoint.upcoming { opacity: 0.55; }
+.checkpoint.done > .proposal-head h3 { color: var(--accent, #d6c5a0); }
+.split-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 720px) { .split-compare { grid-template-columns: 1fr; } }
