@@ -220,3 +220,19 @@
 }
 .shape-pill:hover { border-color: rgba(214, 197, 160, 0.6); color: var(--accent-bright); transform: translateY(-2px); }
 .shape-glyph { color: var(--accent); font-size: 11px; }
+
+/* 버튼형 텍스트 링크 (로그인 토글, 필터 초기화 등) */
+button.text-link {
+  justify-self: center;
+  width: auto;
+  padding: 6px 4px;
+  font-size: 13px;
+  letter-spacing: 0.4px;
+  color: var(--accent);
+  border-bottom: 1px solid transparent;
+  transition: color 160ms ease, border-color 160ms ease;
+}
+button.text-link:hover {
+  color: var(--accent-bright);
+  border-bottom-color: rgba(214, 197, 160, 0.5);
+}
