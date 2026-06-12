@@ -54,7 +54,7 @@ export function Header() {
           <UserRound size={20} strokeWidth={1.7} />
         </button>
         {user ? (
-          <button className="icon-button" aria-label={p.nav.logout} onClick={() => { logout(); navigate("/"); }}>
+          <button className="icon-button" aria-label={p.nav.logout} onClick={() => { navigate("/"); logout(); }}>
             <LogOut size={20} strokeWidth={1.7} />
           </button>
         ) : (
