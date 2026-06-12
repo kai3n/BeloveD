@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { opsStrings } from "../../opsStrings.js";
 import {
   EDU_FIELDS, COLOR_SCALE, COLOR_TINTS, CLARITY_SCALE, CLARITY_DOTS,
   FLUOR_LEVELS, CARAT_REFS, RATIO_EXAMPLES, caratDiameterMm, nearestIndex,
@@ -30,6 +31,19 @@ describe("stoneEdu — 센터스톤 교육 데이터/계산", () => {
     expect(caratDiameterMm("")).toBeNull();
     expect(caratDiameterMm(0)).toBeNull();
     expect(caratDiameterMm(-1)).toBeNull();
+  });
+
+  it("4개 언어 stoneEdu 파리티 — kicker + 8필드 × title/body/guide", () => {
+    for (const loc of ["en", "ko", "zh", "es"]) {
+      const edu = opsStrings[loc].stoneEdu;
+      expect(edu, `${loc}.stoneEdu`).toBeTruthy();
+      expect(edu.kicker, `${loc}.kicker`).toBeTruthy();
+      for (const f of EDU_FIELDS) {
+        for (const k of ["title", "body", "guide"]) {
+          expect(edu[f]?.[k], `${loc}.${f}.${k}`).toBeTruthy();
+        }
+      }
+    }
   });
 
   it("nearestIndex — 최근접 기준값 인덱스, 파싱 불가면 -1", () => {

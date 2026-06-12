@@ -16,6 +16,49 @@ const en = {
     balanceReceived: "Balance received", sentDomesticWarehouse: "Sent to domestic warehouse", oceanShipment: "Ocean shipment", deliveredArchived: "Delivered & archived",
   },
   msStatus: { pending: "Pending", inProgress: "In progress", waitingClient: "Waiting on you", blocked: "Blocked", done: "Done" },
+  stoneEdu: {
+    kicker: "Diamond guide",
+    shape: {
+      title: "Shape",
+      body: "The outline of the stone seen from above. Round brilliants deliver maximum sparkle; fancy shapes like oval and pear spread their weight wider, so they face up larger per carat.",
+      guide: "Round is the timeless default — oval is the modern pick that wears bigger.",
+    },
+    carat: {
+      title: "Carat weight",
+      body: "1 carat = 0.2 g. Face-up size grows slower than weight — a 2 ct round is only about 26% wider than a 1 ct.",
+      guide: "Lab-grown pricing makes 1.5–2 ct the sweet spot — sizes that stay rare in mined stones.",
+    },
+    color: {
+      title: "Color grade",
+      body: "Graded from D (perfectly colorless) toward Z (warm tint). D–F read colorless; G–J are near-colorless with a hint of warmth from the side.",
+      guide: "E reads icy white with no warm tint — our showcase standard.",
+    },
+    clarity: {
+      title: "Clarity grade",
+      body: "Counts the inclusions visible under 10× magnification — from IF (internally flawless) down through VVS and VS. VS-grade inclusions are invisible to the naked eye.",
+      guide: "VS1 is eye-clean — the value sweet spot before prices jump.",
+    },
+    growth: {
+      title: "Growth method",
+      body: "CVD grows the diamond layer by layer in a plasma chamber; HPHT recreates the earth's pressure in a press. Both are real diamonds — identical in hardness, fire, and chemistry.",
+      guide: "Above 2 ct we recommend CVD with disclosed post-growth treatment — far better availability.",
+    },
+    lab: {
+      title: "Grading laboratory",
+      body: "An independent lab — IGI grades most lab-grown stones — verifies the 4Cs and laser-inscribes the report number on the girdle.",
+      guide: "We verify the girdle inscription against your report on video before shipping.",
+    },
+    fluorescence: {
+      title: "Fluorescence",
+      body: "How the stone reacts to UV light. None to Faint has no visible effect in daylight; stronger fluorescence can add a hazy cast in sunlight.",
+      guide: "Choose None–Faint to keep the icy white look under any light.",
+    },
+    lwRatio: {
+      title: "Length-to-width ratio",
+      body: "Length divided by width — it sets the silhouette of fancy shapes. 1.00 is perfectly round; higher numbers stretch the outline.",
+      guide: "Classic ovals run 1.30–1.50 — below that reads plump, above reads elongated.",
+    },
+  },
   intake: {
     title: "Custom Order Request", sub: "Tell us what you want to create. An Order ID and a private tracking code are issued on submission — no payment until you accept the quote.",
     name: "Name", contact: "Email or phone", productLine: "Product line", category: "Category",
@@ -138,6 +181,49 @@ const ko = {
     sentDomesticWarehouse: "국내 창고 입고", oceanShipment: "해상 운송", deliveredArchived: "배송·아카이브",
   },
   msStatus: { pending: "대기", inProgress: "진행중", waitingClient: "고객 응답 대기", blocked: "차단됨", done: "완료" },
+  stoneEdu: {
+    kicker: "다이아몬드 가이드",
+    shape: {
+      title: "셰이프 (모양)",
+      body: "위에서 본 스톤의 윤곽입니다. 라운드 브릴리언트는 반짝임이 가장 크고, 오벌·페어 같은 팬시 셰이프는 무게가 넓게 퍼져 같은 캐럿이라도 더 커 보입니다.",
+      guide: "고민된다면 라운드가 클래식 — 더 커 보이는 모던한 선택은 오벌입니다.",
+    },
+    carat: {
+      title: "캐럿 (중량)",
+      body: "1캐럿 = 0.2g. 정면 크기는 무게보다 천천히 커집니다 — 2캐럿 라운드는 1캐럿보다 지름이 약 26% 클 뿐입니다.",
+      guide: "랩그로운 가격대에선 1.5–2캐럿이 스윗 스팟 — 채굴 다이아에선 희귀한 사이즈입니다.",
+    },
+    color: {
+      title: "컬러 (색 등급)",
+      body: "D(완전 무색)에서 Z(웜톤)로 갈수록 따뜻한 기운이 더해집니다. D–F는 무색, G–J는 옆에서 볼 때 미세한 온기가 느껴지는 준무색입니다.",
+      guide: "E는 따뜻한 기운이 전혀 없는 아이시 화이트 — 저희 쇼케이스 기준입니다.",
+    },
+    clarity: {
+      title: "클래리티 (투명도)",
+      body: "10배 확대경으로 보이는 내포물 기준 등급입니다 — IF(내부 무결점)부터 VVS, VS 순서. VS 등급의 내포물은 육안으로 보이지 않습니다.",
+      guide: "VS1은 육안 무결점(eye-clean) — 가격이 뛰기 직전의 가성비 스윗 스팟입니다.",
+    },
+    growth: {
+      title: "성장 방식",
+      body: "CVD는 플라즈마 챔버에서 층층이 쌓아 올리고, HPHT는 프레스로 지구 내부의 압력을 재현합니다. 둘 다 경도·광채·화학 성분이 동일한 진짜 다이아몬드입니다.",
+      guide: "2캐럿 이상은 공시된 성장 후 컬러 처리를 포함한 CVD를 권장합니다 — 수급이 훨씬 좋습니다.",
+    },
+    lab: {
+      title: "감정 기관",
+      body: "독립 감정 기관(랩다이아는 대부분 IGI)이 4C를 검증하고 거들에 리포트 번호를 레이저로 각인합니다.",
+      guide: "출고 전 거들 각인과 리포트 번호가 일치하는지 영상으로 확인해 드립니다.",
+    },
+    fluorescence: {
+      title: "형광성",
+      body: "자외선에 대한 반응입니다. None–Faint는 일상광에서 아무 영향이 없고, 강한 형광은 햇빛 아래에서 뿌연 느낌을 줄 수 있습니다.",
+      guide: "어떤 조명에서도 아이시 화이트를 유지하려면 None–Faint를 고르세요.",
+    },
+    lwRatio: {
+      title: "가로세로 비율 (L/W)",
+      body: "길이를 너비로 나눈 값으로, 팬시 셰이프의 실루엣을 결정합니다. 1.00은 완전한 원형이고 숫자가 클수록 길쭉해집니다.",
+      guide: "클래식 오벌은 1.30–1.50 — 그보다 작으면 통통하게, 크면 길쭉하게 보입니다.",
+    },
+  },
   intake: {
     title: "주문제작 요청", sub: "원하시는 피스를 알려주세요. 제출 즉시 Order ID와 전용 조회 코드가 발급됩니다 — 견적 수락 전에는 결제가 없습니다.",
     name: "이름", contact: "이메일 또는 연락처", productLine: "제품 라인", category: "카테고리",
@@ -260,6 +346,49 @@ const zh = {
     sentDomesticWarehouse: "入国内仓", oceanShipment: "海运", deliveredArchived: "送达·归档",
   },
   msStatus: { pending: "待处理", inProgress: "进行中", waitingClient: "等待您确认", blocked: "受阻", done: "完成" },
+  stoneEdu: {
+    kicker: "钻石指南",
+    shape: {
+      title: "形状",
+      body: "从正上方看到的钻石轮廓。圆形明亮式切工火彩最强；椭圆形、梨形等异形钻重量分布更宽，同克拉看起来更大。",
+      guide: "经典之选是圆形；想显大又时尚，选椭圆形。",
+    },
+    carat: {
+      title: "克拉（重量）",
+      body: "1克拉 = 0.2克。正面尺寸的增长慢于重量——2克拉圆钻的直径只比1克拉大约26%。",
+      guide: "以培育钻的价格，1.5–2克拉是甜蜜点——这在天然钻中是稀有尺寸。",
+    },
+    color: {
+      title: "颜色等级",
+      body: "从D（完全无色）到Z（暖色调）分级。D–F为无色；G–J为接近无色，侧看略带暖意。",
+      guide: "E级呈现冰白色、毫无暖调——这是我们展示库的标准。",
+    },
+    clarity: {
+      title: "净度等级",
+      body: "按10倍放大镜下可见的内含物分级——从IF（内部无瑕）到VVS、VS。VS级的内含物肉眼不可见。",
+      guide: "VS1肉眼无瑕——是价格跃升前的性价比甜蜜点。",
+    },
+    growth: {
+      title: "生长方式",
+      body: "CVD在等离子腔体中逐层生长；HPHT用压机重现地球内部的高压。两者都是真钻石——硬度、火彩、化学成分完全相同。",
+      guide: "2克拉以上我们推荐CVD（含披露的生长后处理）——供应充足得多。",
+    },
+    lab: {
+      title: "鉴定机构",
+      body: "独立鉴定机构（培育钻大多由IGI鉴定）核实4C，并在腰棱上激光镌刻证书编号。",
+      guide: "发货前我们会通过视频核对腰棱镌刻与证书编号一致。",
+    },
+    fluorescence: {
+      title: "荧光",
+      body: "钻石对紫外线的反应。None–Faint在日常光线下毫无影响；强荧光在阳光下可能产生雾感。",
+      guide: "想在任何光线下保持冰白外观，请选择None–Faint。",
+    },
+    lwRatio: {
+      title: "长宽比",
+      body: "长度除以宽度，决定异形钻的轮廓。1.00为正圆，数值越大越修长。",
+      guide: "经典椭圆为1.30–1.50——小于则显圆润，大于则显细长。",
+    },
+  },
   intake: {
     title: "定制订单申请", sub: "告诉我们您想打造的作品。提交后立即生成 Order ID 与专属查询码 — 接受报价前无需付款。",
     name: "姓名", contact: "邮箱或电话", productLine: "产品线", category: "类别",
@@ -382,6 +511,49 @@ const es = {
     balanceReceived: "Saldo recibido", sentDomesticWarehouse: "En almacén doméstico", oceanShipment: "Envío marítimo", deliveredArchived: "Entregado y archivado",
   },
   msStatus: { pending: "Pendiente", inProgress: "En curso", waitingClient: "Esperándote", blocked: "Bloqueado", done: "Hecho" },
+  stoneEdu: {
+    kicker: "Guía del diamante",
+    shape: {
+      title: "Forma",
+      body: "El contorno de la piedra vista desde arriba. El corte brillante redondo ofrece el máximo destello; las formas fantasía como ovalada o pera reparten el peso y se ven más grandes por quilate.",
+      guide: "La redonda es el clásico atemporal; la ovalada es la opción moderna que luce más grande.",
+    },
+    carat: {
+      title: "Peso en quilates",
+      body: "1 quilate = 0,2 g. El tamaño visible crece más despacio que el peso: un redondo de 2 ct es solo un 26% más ancho que uno de 1 ct.",
+      guide: "Con precios de laboratorio, 1,5–2 ct es el punto óptimo: tamaños raros en diamantes de mina.",
+    },
+    color: {
+      title: "Grado de color",
+      body: "Se clasifica de D (incoloro perfecto) hacia Z (tono cálido). D–F se ven incoloros; G–J son casi incoloros con un toque cálido visto de lado.",
+      guide: "El grado E se ve blanco glacial sin tono cálido: nuestro estándar de vitrina.",
+    },
+    clarity: {
+      title: "Grado de pureza",
+      body: "Clasifica las inclusiones visibles con aumento 10×: de IF (internamente impecable) pasando por VVS y VS. Las inclusiones VS son invisibles a simple vista.",
+      guide: "VS1 es limpio a la vista: el punto óptimo antes de que el precio se dispare.",
+    },
+    growth: {
+      title: "Método de crecimiento",
+      body: "CVD hace crecer el diamante capa a capa en una cámara de plasma; HPHT recrea la presión terrestre en una prensa. Ambos son diamantes reales: idénticos en dureza, fuego y química.",
+      guide: "Por encima de 2 ct recomendamos CVD con tratamiento posterior declarado: mucha mejor disponibilidad.",
+    },
+    lab: {
+      title: "Laboratorio certificador",
+      body: "Un laboratorio independiente (IGI certifica la mayoría de los diamantes de laboratorio) verifica las 4C y graba con láser el número del informe en el filetín.",
+      guide: "Antes del envío verificamos en video que la inscripción coincida con su informe.",
+    },
+    fluorescence: {
+      title: "Fluorescencia",
+      body: "La reacción de la piedra a la luz UV. De None a Faint no tiene efecto visible a la luz del día; una fluorescencia fuerte puede dar un aspecto lechoso al sol.",
+      guide: "Elija None–Faint para mantener el blanco glacial bajo cualquier luz.",
+    },
+    lwRatio: {
+      title: "Proporción largo-ancho",
+      body: "El largo dividido por el ancho define la silueta de las formas fantasía. 1,00 es perfectamente redondo; cifras mayores estilizan el contorno.",
+      guide: "Los ovalados clásicos van de 1,30 a 1,50; por debajo se ven rellenos, por encima alargados.",
+    },
+  },
   intake: {
     title: "Solicitud de Pedido a Medida", sub: "Cuéntanos qué quieres crear. Al enviar se emiten un Order ID y un código privado de seguimiento — sin pago hasta aceptar la cotización.",
     name: "Nombre", contact: "Correo o teléfono", productLine: "Línea de producto", category: "Categoría",
