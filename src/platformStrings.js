@@ -31,7 +31,7 @@ const en = {
     caratMin: "Carat min", caratMax: "Carat max", maxPrice: "Max price ($)",
     cut: "Cut", color: "Color", clarity: "Clarity", cert: "Certificate", sort: "Sort",
     sortPriceAsc: "Price: low to high", sortPriceDesc: "Price: high to low", sortCaratDesc: "Carat: high to low",
-    reset: "Reset filters", count: (n) => `${n} stones`, empty: "No diamonds match these filters.",
+    byShape: "Shop by Shape", reset: "Reset filters", count: (n) => `${n} stones`, empty: "No diamonds match these filters.",
   },
   detail: {
     notFound: "Diamond not found.", shape: "Shape", carat: "Carat", cut: "Cut", color: "Color",
@@ -195,7 +195,7 @@ const ko = {
     caratMin: "캐럿 min", caratMax: "캐럿 max", maxPrice: "최대 가격($)",
     cut: "컷", color: "컬러", clarity: "클래리티", cert: "인증", sort: "정렬",
     sortPriceAsc: "가격 낮은순", sortPriceDesc: "가격 높은순", sortCaratDesc: "캐럿 높은순",
-    reset: "필터 초기화", count: (n) => `${n}개 스톤`, empty: "조건에 맞는 다이아몬드가 없습니다.",
+    byShape: "쉐입으로 찾기", reset: "필터 초기화", count: (n) => `${n}개 스톤`, empty: "조건에 맞는 다이아몬드가 없습니다.",
   },
   detail: {
     notFound: "해당 다이아몬드를 찾을 수 없습니다.", shape: "쉐입", carat: "캐럿", cut: "컷", color: "컬러",
@@ -359,7 +359,7 @@ const zh = {
     caratMin: "克拉 min", caratMax: "克拉 max", maxPrice: "最高价格($)",
     cut: "切工", color: "颜色", clarity: "净度", cert: "证书", sort: "排序",
     sortPriceAsc: "价格从低到高", sortPriceDesc: "价格从高到低", sortCaratDesc: "克拉从高到低",
-    reset: "重置筛选", count: (n) => `${n} 颗钻石`, empty: "没有符合条件的钻石。",
+    byShape: "按形状选购", reset: "重置筛选", count: (n) => `${n} 颗钻石`, empty: "没有符合条件的钻石。",
   },
   detail: {
     notFound: "找不到该钻石。", shape: "形状", carat: "克拉", cut: "切工", color: "颜色",
@@ -523,7 +523,7 @@ const es = {
     caratMin: "Quilates mín", caratMax: "Quilates máx", maxPrice: "Precio máx ($)",
     cut: "Talla", color: "Color", clarity: "Pureza", cert: "Certificado", sort: "Ordenar",
     sortPriceAsc: "Precio: menor a mayor", sortPriceDesc: "Precio: mayor a menor", sortCaratDesc: "Quilates: mayor a menor",
-    reset: "Restablecer filtros", count: (n) => `${n} piedras`, empty: "Ningún diamante coincide con los filtros.",
+    byShape: "Comprar por forma", reset: "Restablecer filtros", count: (n) => `${n} piedras`, empty: "Ningún diamante coincide con los filtros.",
   },
   detail: {
     notFound: "Diamante no encontrado.", shape: "Forma", carat: "Quilates", cut: "Talla", color: "Color",

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { listDiamonds } from "../lib/store.js";
 import { useDBVersion } from "../lib/useDB.js";
 import { MediaThumb, usd } from "../components/ui.jsx";
@@ -21,7 +21,8 @@ const initialFilters = { shape: null, caratMin: "", caratMax: "", priceMax: "", 
 export default function Diamonds() {
   const dbVersion = useDBVersion();
   const { p } = useLocale();
-  const [filters, setFilters] = useState(initialFilters);
+  const [params] = useSearchParams();
+  const [filters, setFilters] = useState({ ...initialFilters, shape: params.get("shape") || null });
   const [sort, setSort] = useState("price-asc");
   const set = (patch) => setFilters((f) => ({ ...f, ...patch }));
 

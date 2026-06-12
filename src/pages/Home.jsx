@@ -11,7 +11,7 @@ import {
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
-import { useLocale } from "../i18n.jsx";
+import { useLocale, pickI18n } from "../i18n.jsx";
 import { withBase } from "../components/ui.jsx";
 
 const collectionImages = ["shot-ring", "shot-necklace", "shot-earrings"];
@@ -164,6 +164,25 @@ function ProductCard({ product, t }) {
   );
 }
 
+const SHAPE_KEYS = ["round", "oval", "princess", "emerald", "pear", "marquise", "cushion", "radiant", "asscher", "heart"];
+
+function ShopByShape() {
+  const { p } = useLocale();
+  return (
+    <section className="section shape-strip" aria-label={p.diamonds.byShape}>
+      <p className="section-label">{p.diamonds.byShape}</p>
+      <div className="shape-row">
+        {SHAPE_KEYS.map((s) => (
+          <Link className="shape-pill" to={`/diamonds?shape=${s}`} key={s}>
+            <span className="shape-glyph" aria-hidden="true">◆</span>
+            {p.shapes[s]}
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function Products({ t }) {
   const products = getLocalizedProducts(t);
 
@@ -248,6 +267,7 @@ export default function Home() {
     <>
       <Hero t={t} />
       <Collections t={t} />
+      <ShopByShape />
       <Products t={t} />
       <Quality t={t} />
       <Concierge t={t} />

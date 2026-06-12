@@ -208,3 +208,15 @@
 .ost-DELIVERED, .ost-ARCHIVED, .mst-done, .prt-closed { border-color: rgba(140, 210, 160, 0.4); color: #aee0bd; }
 .ost-PAUSED, .ost-CANCELLED, .mst-blocked { border-color: rgba(224, 133, 133, 0.4); color: #e0a5a5; }
 .mst-pending { color: var(--quiet); }
+
+/* Shop by Shape */
+.shape-strip { padding-top: 0; padding-bottom: 26px; }
+.shape-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 18px; }
+.shape-pill {
+  display: inline-flex; align-items: center; gap: 10px;
+  border: 1px solid var(--line); padding: 13px 22px;
+  font-family: var(--serif); font-size: 16px; letter-spacing: 1px; color: var(--muted);
+  transition: all 180ms ease;
+}
+.shape-pill:hover { border-color: rgba(214, 197, 160, 0.6); color: var(--accent-bright); transform: translateY(-2px); }
+.shape-glyph { color: var(--accent); font-size: 11px; }
