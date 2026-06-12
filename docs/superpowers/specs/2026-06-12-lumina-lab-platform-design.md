@@ -3,7 +3,7 @@
 날짜: 2026-06-12
 상태: **확정** (2026-06-12 사용자 컨펌 — 디자인 1 / 커스텀 주문 마켓플레이스 구조)
 
-> 구현 노트: MVP는 **프론트엔드 프로토타입**으로 먼저 구축한다 — 전 화면(스토어프론트·벤더 포털·어드민)을 mock 데이터 스토어(localStorage) 위에 구현하여 전체 플로우를 클릭 가능한 상태로 만든 뒤, Supabase(백엔드)·Stripe(결제) 연동은 후속 플랜으로 진행. 샘플 사진은 기존 `public/assets/` 자산(jewelry-lineup.png 크롭, lab-diamond-tweezers.png, 히어로 영상)을 재사용한다. 신규 페이지 카피는 KO 우선, 다국어 확장은 후속 콘텐츠 태스크.
+> 구현 노트: MVP는 **프론트엔드 프로토타입**으로 먼저 구축한다 — 전 화면(스토어프론트·벤더 포털·어드민)을 mock 데이터 스토어(localStorage) 위에 구현하여 전체 플로우를 클릭 가능한 상태로 만든 뒤, Supabase(백엔드)·Stripe(결제) 연동은 후속 플랜으로 진행. 샘플 사진은 기존 `public/assets/` 자산(jewelry-lineup.png 크롭, lab-diamond-tweezers.png, 히어로 영상)을 재사용한다. **모든 텍스트는 4개 언어(EN/中文/KO/ES)를 처음부터 완전 지원한다** (2026-06-12 사용자 재확인) — UI 라벨은 언어 사전, 데이터(쉐입·메탈·상태·배송단계·템플릿 이름/설명)는 키 기반 저장 + 언어별 라벨 매핑.
 
 ## 1. 개요
 
@@ -105,7 +105,7 @@ DRAFT → SUBMITTED → VENDOR_ASSIGNED → PROPOSAL_UPLOADED ⇄ REVISION_REQUE
 - 라이브러리: react-i18next + 언어별 JSON 리소스. URL 프리픽스 없이 헤더 셀렉터 + localStorage 저장 (SEO 프리렌더는 Phase 2)
 - **네이티브 카피 원칙**: 직역 금지. 마케팅 카피는 언어별로 별도 작성. 예) KO "진짜 다이아몬드. 더 현명한 선택." / EN "Real diamond. Smarter choice." / ZH "真正的钻石，更明智之选。" / ES "Diamante real. La elección inteligente."
 - **언어별 폰트 스택**: html lang 속성 기준으로 헤드라인 폰트 자동 전환 (KO: Song Myung / EN·ES: Cormorant Garamond / ZH: Noto Serif SC)
-- 통화 표기: 언어별 기본 통화 표시(₩/$/¥/€), 결제는 Stripe 다통화
+- 통화 표기: **미국 달러($) 단일 표기** (2026-06-12 사용자 확정 — 언어와 무관하게 USD만 사용), 결제는 Stripe USD
 
 ## 7. 데이터 모델 (Postgres)
 

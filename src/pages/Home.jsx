@@ -12,6 +12,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useLocale } from "../i18n.jsx";
+import { withBase } from "../components/ui.jsx";
 
 const collectionImages = ["shot-ring", "shot-necklace", "shot-earrings"];
 const productImages = ["product-ring", "product-band", "product-pendant", "product-studs", "product-bracelet"];
@@ -67,9 +68,9 @@ function Hero({ t }) {
           loop
           playsInline
           preload="auto"
-          poster="/assets/diamond-noir-white-poster.png"
+          poster={withBase("/assets/diamond-noir-white-poster.png")}
         >
-          <source src="/assets/diamond-noir-white.mp4" type="video/mp4" />
+          <source src={withBase("/assets/diamond-noir-white.mp4")} type="video/mp4" />
         </video>
       </div>
       <span className="spark sparkle-one" aria-hidden="true" />
@@ -198,7 +199,7 @@ function Quality({ t }) {
   return (
     <section className="quality" id="lab-diamond">
       <div className="quality-image">
-        <img src="/assets/lab-diamond-tweezers.png" alt={t.aria.looseDiamondAlt} />
+        <img src={withBase("/assets/lab-diamond-tweezers.png")} alt={t.aria.looseDiamondAlt} />
       </div>
       <div className="quality-copy">
         <p className="section-label">{t.quality.label}</p>
@@ -234,7 +235,7 @@ function Concierge({ t }) {
         </Link>
       </div>
       <div className="concierge-visual" aria-hidden="true">
-        <img src="/assets/lab-diamond-tweezers.png" alt="" />
+        <img src={withBase("/assets/lab-diamond-tweezers.png")} alt="" />
       </div>
     </section>
   );

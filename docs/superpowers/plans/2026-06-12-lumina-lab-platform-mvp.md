@@ -6,7 +6,9 @@
 
 **Architecture:** 기존 Vite + React 19 SPA에 react-router를 추가하고, `src/lib/`에 순수 로직(상태머신·마스킹·스토어·인증)을 분리해 Vitest로 단위 테스트한다. UI는 기존 NOIR 디자인 토큰을 재사용하고 신규 화면 스타일은 `src/platform.css`에 둔다. 데이터는 `lumina-db-v1` localStorage 키에 단일 JSON으로 저장하고 구독(listener) 패턴으로 React를 갱신한다. Supabase/Stripe 연동은 후속 플랜 (이 플랜의 store API가 그 교체 지점).
 
-**Tech Stack:** React 19, react-router-dom 7, Vitest, lucide-react, CSS 변수 토큰. 신규 페이지 카피는 KO 우선(스펙 노트 참조), 홈/헤더는 기존 4개 언어 유지.
+**Tech Stack:** React 19, react-router-dom 7, Vitest, lucide-react, CSS 변수 토큰.
+
+**i18n (2026-06-12 변경):** 모든 신규 화면 텍스트는 4개 언어(EN/中文/KO/ES) 완전 지원. `translations.js`에 `platform` 섹션을 언어별로 추가하고, 데이터는 키 기반(쉐입 `round`, 메탈 `wg18`, 배송단계 `production|qc|ready|shipping|delivered`, 템플릿 `name: {ko,en,zh,es}`)으로 저장해 사전에서 라벨을 매핑한다. 플랜 본문 코드의 한국어 하드코딩 문구는 구현 시 `t.platform.*` 사전 키로 대체한다 (구조·로직은 동일).
 
 **샘플 사진 (기존 자산 재사용):** `/assets/jewelry-lineup.png`(5분할 크롭: background-position 0%/24%/50%/72%/100%), `/assets/lab-diamond-tweezers.png`, `/assets/diamond-noir-white.mp4`, `/assets/concept-lumina-lab.png`.
 

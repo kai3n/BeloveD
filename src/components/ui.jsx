@@ -9,20 +9,28 @@ export function usd(n) {
   return `$${Number(n || 0).toLocaleString("en-US")}`;
 }
 
+// GitHub Pages 등 하위 경로 배포 시 /assets/* 경로에 base를 붙인다 (dataURL은 그대로)
+export function withBase(src) {
+  const base = import.meta.env.BASE_URL || "/";
+  if (!src || !src.startsWith("/") || base === "/") return src;
+  return base.replace(/\/$/, "") + src;
+}
+
 export function MediaThumb({ media, ratio = "1 / 1", alt = "" }) {
   if (!media) return <div className="media-thumb media-empty" style={{ aspectRatio: ratio }} />;
+  const src = withBase(media.src);
   if (media.kind === "video") {
-    return <video className="media-thumb" style={{ aspectRatio: ratio }} src={media.src} muted loop autoPlay playsInline />;
+    return <video className="media-thumb" style={{ aspectRatio: ratio }} src={src} muted loop autoPlay playsInline />;
   }
   if (media.pos) {
     return (
       <div
         className="media-thumb media-crop" role="img" aria-label={alt}
-        style={{ backgroundImage: `url(${media.src})`, backgroundPosition: media.pos, aspectRatio: ratio }}
+        style={{ backgroundImage: `url(${src})`, backgroundPosition: media.pos, aspectRatio: ratio }}
       />
     );
   }
-  return <img className="media-thumb" style={{ aspectRatio: ratio }} src={media.src} alt={alt} />;
+  return <img className="media-thumb" style={{ aspectRatio: ratio }} src={src} alt={alt} />;
 }
 
 export function StatusBadge({ status }) {
