@@ -150,7 +150,7 @@ const en = {
       p1: "A lab-grown diamond is a real diamond — physically, chemically and optically identical to a mined one. The only difference is where it was born: a laboratory instead of the ground.",
       h1: "Identical to mined", p2: "Same hardness (Mohs 10), refractive index and dispersion. Even gemologists cannot tell them apart without specialized equipment.",
       h2: "IGI · GIA certified", p3: "Every LUMINA LAB stone ships with an IGI or GIA certificate you can verify by its number.",
-      h3: "Honest pricing", p4: "Without mining and distribution premiums, you get a bigger, cleaner stone for the same budget — at about 1/10 of the price.",
+      h3: "Honest pricing", p4: "Without mining and distribution premiums, you get a bigger, cleaner stone for the same budget — at about half the price.",
       cta: "Browse diamonds", next: "Next: The 4C guide →",
     },
     fourc: {
@@ -314,7 +314,7 @@ const ko = {
       p1: "랩그로운 다이아몬드는 천연 다이아몬드와 물리적·화학적·광학적으로 100% 동일한 진짜 다이아몬드입니다. 유일한 차이는 탄생지 — 땅속 대신 실험실에서 성장합니다.",
       h1: "천연과 동일한 물성", p2: "경도(모스 10), 굴절률, 분산도 모두 동일합니다. 보석 감정사도 전용 장비 없이는 구분할 수 없습니다.",
       h2: "IGI·GIA 인증", p3: "LUMINA LAB의 모든 스톤은 IGI 또는 GIA 인증서가 함께 제공되며, 인증번호로 진위를 직접 조회할 수 있습니다.",
-      h3: "정직한 가격", p4: "채굴·유통 프리미엄이 없어 동급 천연 대비 1/10 수준의 가격으로, 같은 예산에 더 크고 더 깨끗한 스톤을 선택할 수 있습니다.",
+      h3: "정직한 가격", p4: "채굴·유통 프리미엄이 없어 동급 천연 대비 절반 수준의 가격으로, 같은 예산에 더 크고 더 깨끗한 스톤을 선택할 수 있습니다.",
       cta: "다이아몬드 둘러보기", next: "다음: 4C 가이드 →",
     },
     fourc: {
@@ -478,7 +478,7 @@ const zh = {
       p1: "培育钻石在物理、化学和光学性质上与天然钻石 100% 相同，是真正的钻石。唯一的区别是诞生地 — 在实验室中成长，而非地下。",
       h1: "与天然同质", p2: "硬度（莫氏 10）、折射率、色散完全相同。即便是宝石鉴定师，没有专业设备也无法区分。",
       h2: "IGI·GIA 认证", p3: "LUMINA LAB 的每颗钻石都附带 IGI 或 GIA 证书，可凭编号查询真伪。",
-      h3: "诚实定价", p4: "没有开采与流通溢价，同等预算可以选择更大、更纯净的钻石 — 价格约为天然钻石的 1/10。",
+      h3: "诚实定价", p4: "没有开采与流通溢价，同等预算可以选择更大、更纯净的钻石 — 价格约为天然钻石的一半。",
       cta: "浏览钻石", next: "下一篇：4C 指南 →",
     },
     fourc: {
@@ -642,7 +642,7 @@ const es = {
       p1: "Un diamante de laboratorio es un diamante real — física, química y ópticamente idéntico al extraído de una mina. La única diferencia es su lugar de nacimiento: un laboratorio en vez del subsuelo.",
       h1: "Idéntico al natural", p2: "Misma dureza (Mohs 10), índice de refracción y dispersión. Ni un gemólogo puede distinguirlos sin equipo especializado.",
       h2: "Certificado IGI · GIA", p3: "Cada piedra de LUMINA LAB incluye un certificado IGI o GIA verificable por su número.",
-      h3: "Precio honesto", p4: "Sin primas de minería ni distribución: una piedra más grande y limpia por el mismo presupuesto — a 1/10 del precio.",
+      h3: "Precio honesto", p4: "Sin primas de minería ni distribución: una piedra más grande y limpia por el mismo presupuesto — a la mitad de precio.",
       cta: "Ver diamantes", next: "Siguiente: Guía de las 4C →",
     },
     fourc: {

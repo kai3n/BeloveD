@@ -37,7 +37,7 @@ export const translations = {
     hero: {
       kicker: "Lab-Grown Diamond Maison",
       sub: "A perfect diamond — without digging the earth.",
-      sub2: "Same properties as mined · IGI certified · 1/10 the price",
+      sub2: "Same properties as mined · IGI certified · Half the price",
       primaryCta: "Shop diamonds",
       secondaryCta: "Build a ring",
       scroll: "Scroll",
@@ -119,7 +119,7 @@ export const translations = {
     hero: {
       kicker: "培育钻石专门品牌 — Lab-Grown Diamonds",
       sub: "不开采地球，也能拥有完美钻石",
-      sub2: "与天然同质 · IGI 认证 · 价格仅 1/10",
+      sub2: "与天然同质 · IGI 认证 · 一半的价格",
       primaryCta: "选购钻石",
       secondaryCta: "定制戒指",
       scroll: "向下探索",
@@ -201,7 +201,7 @@ export const translations = {
     hero: {
       kicker: "랩그로운 다이아몬드 메종 — Lab-Grown Diamonds",
       sub: "지구를 캐지 않은, 완벽한 다이아몬드",
-      sub2: "천연과 동일한 물성 · IGI 인증 · 가격은 1/10",
+      sub2: "천연과 동일한 물성 · IGI 인증 · 절반의 가격",
       primaryCta: "다이아몬드 쇼핑하기",
       secondaryCta: "나만의 링 세팅",
       scroll: "아래로 살펴보기",
@@ -283,7 +283,7 @@ export const translations = {
     hero: {
       kicker: "Diamantes de Laboratorio — Lab-Grown Diamond Maison",
       sub: "Un diamante perfecto, sin excavar la tierra.",
-      sub2: "Idéntico al natural · Certificado IGI · 1/10 del precio",
+      sub2: "Idéntico al natural · Certificado IGI · La mitad del precio",
       primaryCta: "Ver diamantes",
       secondaryCta: "Crear anillo",
       scroll: "Explorar",
