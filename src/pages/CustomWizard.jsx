@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../lib/auth.jsx";
 import { createRequest, getDiamond, getTemplate, listDiamonds, listTemplates } from "../lib/store.js";
 import { useDBVersion } from "../lib/useDB.js";
-import { MediaThumb, Stepper, won } from "../components/ui.jsx";
+import { MediaThumb, Stepper, usd } from "../components/ui.jsx";
 import { pickI18n, useLocale } from "../i18n.jsx";
 
 const METALS = ["wg18", "yg18", "rg18", "pt950"];
@@ -23,7 +23,7 @@ export default function CustomWizard() {
   const steps = p.wizard.steps.map((label, i) => ({ key: i, label }));
   const template = templateId ? getTemplate(templateId) : null;
   const diamond = diamondId ? getDiamond(diamondId) : null;
-  const estimate = (template?.basePriceKrw || 0) + (diamond?.priceKrw || 0);
+  const estimate = (template?.basePriceUsd || 0) + (diamond?.priceUsd || 0);
 
   function submit() {
     if (!user) return navigate("/login", { state: { from: "/custom/new" } });
@@ -46,7 +46,7 @@ export default function CustomWizard() {
                 <div className="card-body">
                   <h3>{pickI18n(t.name, locale)}</h3>
                   <p className="spec">{p.categories[t.category]}</p>
-                  <p className="price">{t.basePriceKrw > 0 ? p.templates.fromPrice(won(t.basePriceKrw)) : p.templates.quote}</p>
+                  <p className="price">{t.basePriceUsd > 0 ? p.templates.fromPrice(usd(t.basePriceUsd)) : p.templates.quote}</p>
                 </div>
               </button>
             ))}
@@ -69,7 +69,7 @@ export default function CustomWizard() {
                 <div className="card-body">
                   <h3>{p.shapes[d.shape]} {d.carat.toFixed(1)}ct</h3>
                   <p className="spec">{d.cut} · {d.color} · {d.clarity} · {d.certOrg}</p>
-                  <p className="price">{won(d.priceKrw)}</p>
+                  <p className="price">{usd(d.priceUsd)}</p>
                 </div>
               </button>
             ))}
@@ -92,7 +92,7 @@ export default function CustomWizard() {
           <label className="field"><span>{p.wizard.engraving}</span>
             <input value={details.engraving} onChange={(e) => setD({ engraving: e.target.value })} maxLength={20} /></label>
           <label className="field"><span>{p.wizard.budget}</span>
-            <input type="number" step="100000" value={details.budget} onChange={(e) => setD({ budget: e.target.value })} /></label>
+            <input type="number" step="100" value={details.budget} onChange={(e) => setD({ budget: e.target.value })} /></label>
           <label className="field"><span>{p.wizard.notes}</span>
             <textarea value={details.notes} onChange={(e) => setD({ notes: e.target.value })} placeholder={p.wizard.notesPh} /></label>
           <div className="wizard-nav">
@@ -107,12 +107,12 @@ export default function CustomWizard() {
           <h3>{p.wizard.summary}</h3>
           <table className="data-table"><tbody>
             <tr><th>{p.wizard.design}</th><td>{pickI18n(template?.name, locale)}</td></tr>
-            <tr><th>{p.wizard.diamond}</th><td>{diamond ? `${p.shapes[diamond.shape]} ${diamond.carat.toFixed(1)}ct ${diamond.color}/${diamond.clarity} (${won(diamond.priceKrw)})` : p.wizard.recommend}</td></tr>
+            <tr><th>{p.wizard.diamond}</th><td>{diamond ? `${p.shapes[diamond.shape]} ${diamond.carat.toFixed(1)}ct ${diamond.color}/${diamond.clarity} (${usd(diamond.priceUsd)})` : p.wizard.recommend}</td></tr>
             <tr><th>{p.wizard.metalSize}</th><td>{p.metals[details.metal]} / {details.size}</td></tr>
             {details.engraving && <tr><th>{p.wizard.engraving}</th><td>{details.engraving}</td></tr>}
-            {details.budget && <tr><th>{p.wizard.budget}</th><td>{won(details.budget)}</td></tr>}
+            {details.budget && <tr><th>{p.wizard.budget}</th><td>{usd(details.budget)}</td></tr>}
             {details.notes && <tr><th>{p.wizard.notes}</th><td>{details.notes}</td></tr>}
-            <tr><th>{p.wizard.expected}</th><td className="price">{estimate > 0 ? `${won(estimate)}~` : p.wizard.quoteLater}</td></tr>
+            <tr><th>{p.wizard.expected}</th><td className="price">{estimate > 0 ? `${usd(estimate)}~` : p.wizard.quoteLater}</td></tr>
           </tbody></table>
           <p className="form-hint" style={{ marginTop: 14 }}>{p.wizard.submitNote}</p>
           <div className="wizard-nav">

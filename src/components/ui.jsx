@@ -4,8 +4,9 @@ import { useLocale } from "../i18n.jsx";
 // 신규 화면 공통 빌딩블록. 라벨은 전부 useLocale().p 사전에서 — 4개 언어 지원.
 // 샘플 사진은 jewelry-lineup.png 크롭(pos) 또는 단일 이미지(src).
 
-export function won(n) {
-  return `₩${Number(n || 0).toLocaleString("ko-KR")}`;
+// 가격은 미국 달러($)로만 표기한다 (2026-06-12 사용자 확정)
+export function usd(n) {
+  return `$${Number(n || 0).toLocaleString("en-US")}`;
 }
 
 export function MediaThumb({ media, ratio = "1 / 1", alt = "" }) {

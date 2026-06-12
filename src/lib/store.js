@@ -71,7 +71,7 @@ export function saveDiamond(diamond) {
 }
 export function adjustDiamondPrices(percent) {
   db().diamonds.forEach((d) => {
-    d.priceKrw = Math.round((d.priceKrw * (1 + percent / 100)) / 1000) * 1000;
+    d.priceUsd = Math.round((d.priceUsd * (1 + percent / 100)) / 10) * 10;
   });
   persist();
 }
@@ -179,10 +179,10 @@ export function addFeedback(proposalId, { decision, choices, comment }, actor) {
   if (to === "CONFIRMED") {
     const tpl = getTemplate(r.templateId);
     const dia = r.diamondId ? getDiamond(r.diamondId) : null;
-    const totalKrw = (tpl?.basePriceKrw || 0) + (dia?.priceKrw || 0);
+    const totalUsd = (tpl?.basePriceUsd || 0) + (dia?.priceUsd || 0);
     order = {
-      id: nextId("ord"), requestId: r.id, totalKrw,
-      depositKrw: Math.round(totalKrw * db().settings.depositRate),
+      id: nextId("ord"), requestId: r.id, totalUsd,
+      depositUsd: Math.round(totalUsd * db().settings.depositRate),
       depositPaidAt: null, finalPaidAt: null, shippingStage: null, trackingNo: null, createdAt: now(),
     };
     db().orders.push(order);
@@ -201,8 +201,8 @@ export function payOrder(orderId, kind, actor) {
   const r = getRequest(order.requestId);
   const to = kind === "deposit" ? "DEPOSIT_PAID" : "FINAL_PAYMENT_PAID";
   assertTransition(r.status, to, actor.role);
-  const amount = kind === "deposit" ? order.depositKrw : order.totalKrw - order.depositKrw;
-  db().payments.push({ id: nextId("pay"), orderId, kind, provider: "mock-pg", amount, currency: "KRW", status: "paid", at: now() });
+  const amount = kind === "deposit" ? order.depositUsd : order.totalUsd - order.depositUsd;
+  db().payments.push({ id: nextId("pay"), orderId, kind, provider: "mock-pg", amount, currency: "USD", status: "paid", at: now() });
   if (kind === "deposit") order.depositPaidAt = now();
   else order.finalPaidAt = now();
   logEvent(r.id, r.status, to, actor.id);

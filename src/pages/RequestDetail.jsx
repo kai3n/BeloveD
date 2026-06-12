@@ -7,7 +7,7 @@ import {
   listFeedback, listProductionMedia, listProposals, payOrder, transitionRequest,
 } from "../lib/store.js";
 import { useDBVersion } from "../lib/useDB.js";
-import { EmptyNote, MediaThumb, StatusBadge, Stepper, won } from "../components/ui.jsx";
+import { EmptyNote, MediaThumb, StatusBadge, Stepper, usd } from "../components/ui.jsx";
 import { pickI18n, useLocale } from "../i18n.jsx";
 
 const REVISION_CHOICE_KEYS = ["size", "stone", "band", "color", "engraving"];
@@ -85,11 +85,11 @@ export default function RequestDetail() {
         <div className="panel pay-panel">
           <h3>{p.request.depositTitle}</h3>
           <table className="data-table"><tbody>
-            <tr><th>{p.request.totalAmount}</th><td>{won(order.totalKrw)}</td></tr>
-            <tr><th>{p.request.depositLbl(Math.round(settings.depositRate * 100))}</th><td className="price">{won(order.depositKrw)}</td></tr>
+            <tr><th>{p.request.totalAmount}</th><td>{usd(order.totalUsd)}</td></tr>
+            <tr><th>{p.request.depositLbl(Math.round(settings.depositRate * 100))}</th><td className="price">{usd(order.depositUsd)}</td></tr>
           </tbody></table>
           <button className="button primary" style={{ marginTop: 16 }} onClick={() => payOrder(order.id, "deposit", user)}>
-            {p.request.payDeposit(won(order.depositKrw))}
+            {p.request.payDeposit(usd(order.depositUsd))}
           </button>
           <p className="form-hint" style={{ marginTop: 10 }}>{p.request.mockNote}</p>
         </div>
@@ -99,7 +99,7 @@ export default function RequestDetail() {
           <h3>{p.request.finalTitle}</h3>
           <p className="form-hint">{p.request.qcHint}</p>
           <button className="button primary" style={{ marginTop: 12 }} onClick={() => payOrder(order.id, "final", user)}>
-            {p.request.payFinal(won(order.totalKrw - order.depositKrw))}
+            {p.request.payFinal(usd(order.totalUsd - order.depositUsd))}
           </button>
         </div>
       )}

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getDiamond } from "../lib/store.js";
 import { useDBVersion } from "../lib/useDB.js";
-import { MediaThumb, won } from "../components/ui.jsx";
+import { MediaThumb, usd } from "../components/ui.jsx";
 import { useLocale } from "../i18n.jsx";
 
 export default function DiamondDetail() {
@@ -43,7 +43,7 @@ export default function DiamondDetail() {
 
       <div className="detail-info">
         <h1 className="page-title">{p.shapes[diamond.shape]} {diamond.carat.toFixed(1)}ct</h1>
-        <p className="price detail-price">{won(diamond.priceKrw)}</p>
+        <p className="price detail-price">{usd(diamond.priceUsd)}</p>
 
         <table className="data-table">
           <tbody>

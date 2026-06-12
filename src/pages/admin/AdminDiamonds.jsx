@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { adjustDiamondPrices, listDiamonds, saveDiamond } from "../../lib/store.js";
 import { useDBVersion } from "../../lib/useDB.js";
-import { MediaPicker, won } from "../../components/ui.jsx";
+import { MediaPicker, usd } from "../../components/ui.jsx";
 import { useLocale } from "../../i18n.jsx";
 
 const SHAPES = ["round", "oval", "princess", "emerald", "pear", "marquise", "cushion", "radiant", "asscher", "heart"];
 
-const emptyForm = { shape: "round", carat: "1.0", cut: "Excellent", color: "D", clarity: "VS1", certOrg: "IGI", certNo: "", priceKrw: "" };
+const emptyForm = { shape: "round", carat: "1.0", cut: "Excellent", color: "D", clarity: "VS1", certOrg: "IGI", certNo: "", priceUsd: "" };
 
 export default function AdminDiamonds() {
   useDBVersion();
@@ -22,7 +22,7 @@ export default function AdminDiamonds() {
     saveDiamond({
       shape: form.shape, carat: Number(form.carat), cut: form.cut, color: form.color,
       clarity: form.clarity, certOrg: form.certOrg, certNo: form.certNo,
-      priceKrw: Number(form.priceKrw), visible: true,
+      priceUsd: Number(form.priceUsd), visible: true,
       ...(formMedia.length ? { media: formMedia } : {}),
     });
     setForm(emptyForm); setFormMedia([]);
@@ -54,10 +54,10 @@ export default function AdminDiamonds() {
                 <td>{d.certOrg} {d.certNo}</td>
                 <td>
                   <input
-                    type="number" step="10000" defaultValue={d.priceKrw} key={`${d.id}-${d.priceKrw}`}
-                    onBlur={(e) => { const v = Number(e.target.value); if (v && v !== d.priceKrw) saveDiamond({ id: d.id, priceKrw: v }); }}
+                    type="number" step="10" defaultValue={d.priceUsd} key={`${d.id}-${d.priceUsd}`}
+                    onBlur={(e) => { const v = Number(e.target.value); if (v && v !== d.priceUsd) saveDiamond({ id: d.id, priceUsd: v }); }}
                   />
-                  <span className="form-hint"> {won(d.priceKrw)}</span>
+                  <span className="form-hint"> {usd(d.priceUsd)}</span>
                 </td>
                 <td>
                   <button className={`chip ${d.visible ? "is-active" : ""}`} onClick={() => saveDiamond({ id: d.id, visible: !d.visible })}>
@@ -85,7 +85,7 @@ export default function AdminDiamonds() {
           <label className="field"><span>{p.admin.dia.certOrg}</span>
             <select value={form.certOrg} onChange={(e) => setF({ certOrg: e.target.value })}><option>IGI</option><option>GIA</option></select></label>
           <label className="field"><span>{p.admin.dia.certNo}</span><input value={form.certNo} onChange={(e) => setF({ certNo: e.target.value })} required /></label>
-          <label className="field"><span>{p.admin.dia.price}</span><input type="number" step="10000" value={form.priceKrw} onChange={(e) => setF({ priceKrw: e.target.value })} required /></label>
+          <label className="field"><span>{p.admin.dia.price}</span><input type="number" step="10" value={form.priceUsd} onChange={(e) => setF({ priceUsd: e.target.value })} required /></label>
         </div>
         <MediaPicker value={formMedia} onChange={setFormMedia} />
         <button className="button primary" type="submit">{p.admin.dia.addBtn}</button>

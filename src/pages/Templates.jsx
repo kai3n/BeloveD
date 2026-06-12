@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { listTemplates } from "../lib/store.js";
 import { useDBVersion } from "../lib/useDB.js";
-import { MediaThumb, won } from "../components/ui.jsx";
+import { MediaThumb, usd } from "../components/ui.jsx";
 import { pickI18n, useLocale } from "../i18n.jsx";
 
 const CATEGORIES = ["all", "ring", "necklace", "earring", "bracelet"];
@@ -33,7 +33,7 @@ export default function Templates() {
             <div className="card-body">
               <h3>{pickI18n(t.name, locale)}</h3>
               <p className="spec">{p.categories[t.category]} · {pickI18n(t.desc, locale)}</p>
-              <p className="price">{t.basePriceKrw > 0 ? p.templates.fromPrice(won(t.basePriceKrw)) : p.templates.quote}</p>
+              <p className="price">{t.basePriceUsd > 0 ? p.templates.fromPrice(usd(t.basePriceUsd)) : p.templates.quote}</p>
             </div>
           </Link>
         ))}

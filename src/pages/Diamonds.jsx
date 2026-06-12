@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { listDiamonds } from "../lib/store.js";
 import { useDBVersion } from "../lib/useDB.js";
-import { MediaThumb, won } from "../components/ui.jsx";
+import { MediaThumb, usd } from "../components/ui.jsx";
 import { useLocale } from "../i18n.jsx";
 
 const SHAPES = ["round", "oval", "princess", "emerald", "pear", "marquise", "cushion", "radiant", "asscher", "heart"];
@@ -11,8 +11,8 @@ const CLARITIES = ["IF", "VVS1", "VVS2", "VS1", "VS2", "SI1"];
 const CUTS = ["Excellent", "Very Good", "Good"];
 const CERTS = ["IGI", "GIA"];
 const SORT_FNS = {
-  "price-asc": (a, b) => a.priceKrw - b.priceKrw,
-  "price-desc": (a, b) => b.priceKrw - a.priceKrw,
+  "price-asc": (a, b) => a.priceUsd - b.priceUsd,
+  "price-desc": (a, b) => b.priceUsd - a.priceUsd,
   "carat-desc": (a, b) => b.carat - a.carat,
 };
 
@@ -30,7 +30,7 @@ export default function Diamonds() {
     if (filters.shape) list = list.filter((d) => d.shape === filters.shape);
     if (filters.caratMin) list = list.filter((d) => d.carat >= Number(filters.caratMin));
     if (filters.caratMax) list = list.filter((d) => d.carat <= Number(filters.caratMax));
-    if (filters.priceMax) list = list.filter((d) => d.priceKrw <= Number(filters.priceMax));
+    if (filters.priceMax) list = list.filter((d) => d.priceUsd <= Number(filters.priceMax));
     if (filters.cut) list = list.filter((d) => d.cut === filters.cut);
     if (filters.color) list = list.filter((d) => d.color === filters.color);
     if (filters.clarity) list = list.filter((d) => d.clarity === filters.clarity);
@@ -62,7 +62,7 @@ export default function Diamonds() {
           <label className="field"><span>{p.diamonds.caratMax}</span>
             <input type="number" step="0.1" value={filters.caratMax} onChange={(e) => set({ caratMax: e.target.value })} /></label>
           <label className="field"><span>{p.diamonds.maxPrice}</span>
-            <input type="number" step="100000" value={filters.priceMax} onChange={(e) => set({ priceMax: e.target.value })} /></label>
+            <input type="number" step="100" value={filters.priceMax} onChange={(e) => set({ priceMax: e.target.value })} /></label>
           <label className="field"><span>{p.diamonds.cut}</span>
             <select value={filters.cut} onChange={(e) => set({ cut: e.target.value })}>
               <option value="">{p.common.all}</option>{CUTS.map((c) => <option key={c}>{c}</option>)}
@@ -98,7 +98,7 @@ export default function Diamonds() {
               <div className="card-body">
                 <h3>{p.shapes[d.shape]} {d.carat.toFixed(1)}ct</h3>
                 <p className="spec">{d.cut} · {d.color} · {d.clarity} · {d.certOrg}</p>
-                <p className="price">{won(d.priceKrw)}</p>
+                <p className="price">{usd(d.priceUsd)}</p>
               </div>
             </Link>
           ))}

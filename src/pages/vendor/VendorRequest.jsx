@@ -6,7 +6,7 @@ import {
   getTemplate, listFeedback, listProductionMedia, listProposals, transitionRequest,
 } from "../../lib/store.js";
 import { useDBVersion } from "../../lib/useDB.js";
-import { EmptyNote, MediaPicker, MediaThumb, StatusBadge, won } from "../../components/ui.jsx";
+import { EmptyNote, MediaPicker, MediaThumb, StatusBadge, usd } from "../../components/ui.jsx";
 import { pickI18n, useLocale } from "../../i18n.jsx";
 
 const UPLOADABLE = ["VENDOR_ASSIGNED", "REVISION_REQUESTED"];
@@ -54,7 +54,7 @@ export default function VendorRequest() {
           <tr><th>{p.vendor.metalRow}</th><td>{p.metals[request.details.metal] || request.details.metal}</td></tr>
           <tr><th>{p.vendor.sizeRow}</th><td>{request.details.size}</td></tr>
           {request.details.engraving && <tr><th>{p.vendor.engravingRow}</th><td>{request.details.engraving}</td></tr>}
-          {request.details.budget && <tr><th>{p.vendor.budgetRow}</th><td>{won(request.details.budget)}</td></tr>}
+          {request.details.budget && <tr><th>{p.vendor.budgetRow}</th><td>{usd(request.details.budget)}</td></tr>}
           {request.details.notes && <tr><th>{p.vendor.notesRow}</th><td>{request.details.notes}</td></tr>}
         </tbody></table>
       </div>

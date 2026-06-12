@@ -20,13 +20,13 @@ describe("store", () => {
   });
 
   it("일괄 % 가격 조정", () => {
-    const before = listDiamonds()[0].priceKrw;
+    const before = listDiamonds()[0].priceUsd;
     adjustDiamondPrices(10);
-    expect(listDiamonds()[0].priceKrw).toBeGreaterThan(before);
+    expect(listDiamonds()[0].priceUsd).toBeGreaterThan(before);
   });
 
   it("주문제작 전체 플로우: 제출→배정→시안→수정→시안→컨펌→디파짓→제작→검수→잔금→배송→수령", () => {
-    const req = createRequest({ customerId: "u-customer", templateId: "t-1", diamondId: "d-2", details: { metal: "yg18", size: "12", engraving: "", budget: 5000000, notes: "" } });
+    const req = createRequest({ customerId: "u-customer", templateId: "t-1", diamondId: "d-2", details: { metal: "yg18", size: "12", engraving: "", budget: 3800, notes: "" } });
     expect(req.status).toBe("SUBMITTED");
     expect(req.code).toMatch(/^#\d+$/);
 
@@ -41,8 +41,8 @@ describe("store", () => {
     const p2 = addProposal(req.id, "u-vendor1", { media: [], comment: "2차 시안" });
     const { order } = addFeedback(p2.id, { decision: "confirm", choices: [], comment: "" }, customer);
     expect(getRequest(req.id).status).toBe("CONFIRMED");
-    expect(order.totalKrw).toBe(690000 + 3200000);
-    expect(order.depositKrw).toBe(Math.round(order.totalKrw * 0.3));
+    expect(order.totalUsd).toBe(530 + 2450);
+    expect(order.depositUsd).toBe(Math.round(order.totalUsd * 0.3));
 
     payOrder(order.id, "deposit", customer);
     expect(getRequest(req.id).status).toBe("DEPOSIT_PAID");

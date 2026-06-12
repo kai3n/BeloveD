@@ -4,7 +4,7 @@ import { useAuth } from "../lib/auth.jsx";
 import { getTemplate, listPayments, listRequests } from "../lib/store.js";
 import { useDBVersion } from "../lib/useDB.js";
 import { EmptyNote, StatusBadge } from "../components/ui.jsx";
-import { won } from "../components/ui.jsx";
+import { usd } from "../components/ui.jsx";
 import { pickI18n, useLocale } from "../i18n.jsx";
 
 export default function Account() {
@@ -62,7 +62,7 @@ export default function Account() {
                 <tr key={pay.id}>
                   <td>{pay.at.slice(0, 10)}</td>
                   <td>{pay.kind === "deposit" ? p.account.deposit : p.account.final}</td>
-                  <td>{won(pay.amount)}</td>
+                  <td>{usd(pay.amount)}</td>
                   <td>{pay.status === "paid" ? p.account.paid : pay.status}</td>
                 </tr>
               ))}

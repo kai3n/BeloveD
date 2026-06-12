@@ -5,7 +5,7 @@ import {
 } from "../../lib/store.js";
 import { useAuth } from "../../lib/auth.jsx";
 import { useDBVersion } from "../../lib/useDB.js";
-import { EmptyNote, StatusBadge, won } from "../../components/ui.jsx";
+import { EmptyNote, StatusBadge, usd } from "../../components/ui.jsx";
 import { pickI18n, useLocale } from "../../i18n.jsx";
 
 export default function AdminOrders() {
@@ -47,7 +47,7 @@ export default function AdminOrders() {
                   <td>
                     {order ? (
                       <>
-                        {won(order.totalKrw)}<br />
+                        {usd(order.totalUsd)}<br />
                         <span className="form-hint">
                           {p.admin.orders.dep} {order.depositPaidAt ? "✓" : "—"} · {p.admin.orders.fin} {order.finalPaidAt ? "✓" : "—"}
                         </span>
