@@ -231,6 +231,10 @@ export function submitQcForPr(prId, { video, cert, actualWeightG }) {
   pr.status = "submitted";
   upsertMilestone(pr.orderId, "finalQcVideo", { status: "done", publishToClient: true, link: video || "" });
   upsertMilestone(pr.orderId, "igiInscriptionVerified", { status: "inProgress", publishToClient: false });
+  // 체크포인트 ③: 완성품 영상 → 고객 최종 컨펌 액션 (증거 보존)
+  createCustomerAction(pr.orderId, { type: "finalConfirmation", prompt: "finalQc", link: video || "" });
+  const o = getOpsOrder(pr.orderId);
+  if (o.status === "PRODUCTION") updateOpsOrder(o.id, { status: "QC" }, pr.supplierId);
   audit(pr.supplierId, "procurement", prId, "result", null, "qc");
   persist();
   return pr;
@@ -503,6 +507,15 @@ export function respondCustomerAction(actionId, response, actor) {
   return a;
 }
 
+// 최종 실물 컨펌 — "이 영상의 실물이 배송됩니다"에 대한 고객 동의. 분쟁 방어 증거.
+export function confirmFinal(orderId, actor) {
+  const a = db().customerActions.find((x) => x.orderId === orderId && x.type === "finalConfirmation" && x.status === "open");
+  if (!a) return null;
+  respondCustomerAction(a.id, "confirmed", actor);
+  updateOpsOrder(orderId, { status: "BALANCE" }, actor);
+  return a;
+}
+
 // ---------- client portal (보안 프로젝션 적용) ----------
 export function portalView(orderId, { customerId, queryCode } = {}) {
   const order = getOpsOrder(orderId);
@@ -526,6 +539,7 @@ export function portalView(orderId, { customerId, queryCode } = {}) {
     cad: listCadReviews(orderId)[0] || null,
     freeRevisionsLeft: freeRevisionsLeft(orderId),
     designChangeFeeUsd: db().settings.designChangeFeeUsd,
+    finalAction: listCustomerActions(orderId, true).find((a) => a.type === "finalConfirmation") || null,
     actions: listCustomerActions(orderId, true),
   };
 }

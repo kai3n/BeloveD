@@ -4,6 +4,7 @@ import {
   createIntake, getIntake, reviewReferenceMedia, supplierTasks, createProcurement,
   addCadVersion, decideCad, freeRevisionsLeft, portalView, getSettings,
   submitCadForPr, listCadReviews,
+  submitQcForPr, confirmFinal, getOpsOrder, listCustomerActions, updateOpsOrder,
 } from "../store.js";
 
 beforeEach(() => resetDB());
@@ -111,5 +112,23 @@ describe("visual store — CAD 슬롯 제출", () => {
     const pr = createProcurement("DM-000002", { type: "cad", supplierId: "u-supplier1", dueDate: "d", brief: "" });
     submitCadForPr(pr.id, "/single.png");
     expect(listCadReviews("DM-000002")[0].fileUrl).toBe("/single.png");
+  });
+});
+
+describe("visual store — 최종 실물 컨펌", () => {
+  it("QC 제출 → finalConfirmation 액션 생성(영상 링크), 컨펌 → BALANCE + 증거 보존", () => {
+    updateOpsOrder("DM-000002", { status: "PRODUCTION" });
+    const pr = createProcurement("DM-000002", { type: "qc", supplierId: "u-supplier1", dueDate: "d", brief: "" });
+    submitQcForPr(pr.id, { video: "/final.mp4", cert: "/igi.png", actualWeightG: 4.3 });
+    expect(getOpsOrder("DM-000002").status).toBe("QC");
+    const action = listCustomerActions("DM-000002", true).find((a) => a.type === "finalConfirmation");
+    expect(action.link).toBe("/final.mp4");
+    confirmFinal("DM-000002", "customer");
+    expect(getOpsOrder("DM-000002").status).toBe("BALANCE");
+    const closed = listCustomerActions("DM-000002").find((a) => a.type === "finalConfirmation");
+    expect(closed.status).toBe("done");
+    expect(closed.respondedAt).toBeTruthy(); // 컨펌 증거 (타임스탬프)
+    const v = portalView("DM-000002", { queryCode: "H3WT-8RVK" });
+    expect(v.finalAction).toBeNull(); // 컨펌 후 open 액션 없음
   });
 });
