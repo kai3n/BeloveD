@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../lib/auth.jsx";
 import { CHAIN_LENGTHS, OPS_CATEGORIES, OPS_METALS, PRODUCT_LINES, BENCHMARK_SHAPES } from "../lib/ops.js";
-import { createIntake, listOpsStyles } from "../lib/store.js";
+import { createIntake, getDiamond, listOpsStyles } from "../lib/store.js";
 import { useDBVersion } from "../lib/useDB.js";
 import { pickI18n, useLocale } from "../i18n.jsx";
 
@@ -14,17 +14,26 @@ export default function IntakeForm() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const styles = listOpsStyles({ publishedOnly: true });
+  // 쇼케이스 다이아에서 진입 시 스톤 선호 프리필
+  const refDiamond = params.get("diamond") ? getDiamond(params.get("diamond")) : null;
 
   const [form, setForm] = useState({
     name: user?.name || "", contact: user?.email || "", productLine: "solitaire", category: "ring",
     styleId: params.get("style") || "", budget: "", metal: "18kw",
-    conditional: {}, stonePrefs: { shape: "round", carat: "1.5", color: "E", clarity: "VS1", growth: "CVD", lab: "IGI India", colorTreatment: "disclosed", fluorescence: "none", lwRatio: "" },
+    conditional: {},
+    stonePrefs: {
+      shape: refDiamond?.shape || "round", carat: String(refDiamond?.carat || "1.5"),
+      color: refDiamond?.color || "E", clarity: refDiamond?.clarity || "VS1",
+      growth: "CVD", lab: "IGI India", colorTreatment: "disclosed", fluorescence: "none", lwRatio: "",
+    },
+    multiSpec: { meleeSpec: "", overallDims: "", arrangement: "", standard: "" },
     requiredDate: "", country: "", termsAccepted: false,
   });
   const [done, setDone] = useState(null);
   const setF = (patch) => setForm((f) => ({ ...f, ...patch }));
   const setC = (patch) => setForm((f) => ({ ...f, conditional: { ...f.conditional, ...patch } }));
   const setS = (patch) => setForm((f) => ({ ...f, stonePrefs: { ...f.stonePrefs, ...patch } }));
+  const setM = (patch) => setForm((f) => ({ ...f, multiSpec: { ...f.multiSpec, ...patch } }));
 
   function submit(e) {
     e.preventDefault();
@@ -32,6 +41,7 @@ export default function IntakeForm() {
       ...form,
       budget: Number(form.budget) || null,
       stonePrefs: form.productLine === "solitaire" ? { ...form.stonePrefs, carat: Number(form.stonePrefs.carat) || null } : null,
+      multiSpec: form.productLine === "multi" ? form.multiSpec : null,
     };
     const { order } = createIntake(payload, user?.id || null);
     setDone(order);
@@ -131,6 +141,19 @@ export default function IntakeForm() {
               <label className="field"><span>{t.lwRatio}</span><input value={form.stonePrefs.lwRatio} onChange={(e) => setS({ lwRatio: e.target.value })} placeholder="1.0" /></label>
             </div>
             {bigStone && <p className="warn-note">{t.bigStoneNote}</p>}
+          </>
+        )}
+
+        {/* 멀티스톤 사양 (매뉴얼 §5.1) */}
+        {!solitaire && (
+          <>
+            <h3 style={{ margin: "10px 0 0" }}>{t.multiTitle}</h3>
+            <div className="filter-grid" style={{ gridTemplateColumns: "1fr 1fr" }}>
+              <label className="field"><span>{t.meleeSpec}</span><input value={form.multiSpec.meleeSpec} onChange={(e) => setM({ meleeSpec: e.target.value })} required /></label>
+              <label className="field"><span>{t.overallDims}</span><input value={form.multiSpec.overallDims} onChange={(e) => setM({ overallDims: e.target.value })} required /></label>
+              <label className="field"><span>{t.arrangement}</span><input value={form.multiSpec.arrangement} onChange={(e) => setM({ arrangement: e.target.value })} /></label>
+              <label className="field"><span>{t.multiStandard}</span><input value={form.multiSpec.standard} onChange={(e) => setM({ standard: e.target.value })} /></label>
+            </div>
           </>
         )}
 

@@ -115,6 +115,7 @@ export default function AdminOpsOrder() {
             {t.intake}: {p.productLines[intake.productLine]} · {p.opsCategories[intake.category]} · {p.opsMetals[intake.metal]}
             {intake.conditional && Object.entries(intake.conditional).map(([k, v]) => ` · ${k}: ${v}`)}
             {intake.stonePrefs && ` · ${intake.stonePrefs.shape} ${intake.stonePrefs.carat}ct ${intake.stonePrefs.color}/${intake.stonePrefs.clarity} ${intake.stonePrefs.growth}`}
+            {intake.multiSpec && ` · melee: ${intake.multiSpec.meleeSpec} · ${intake.multiSpec.overallDims} · ${intake.multiSpec.standard}`}
             {intake.budget && ` · $${intake.budget}`} · {intake.contact}
           </p>
         )}

@@ -132,9 +132,9 @@ const en = {
       trackingPh: "Enter tracking no.", dep: "Deposit", fin: "Final",
     },
     vendors: {
-      title: "Vendor accounts", displayName: "Display name", emailCol: "Email", assigned: "Assigned",
+      title: "Supplier accounts", displayName: "Display name", emailCol: "Email", assigned: "Assigned",
       uploads: "Proposals", stateCol: "State", active: "Active", suspended: "Suspended",
-      issueTitle: "Issue vendor account", nameLbl: "Display name (e.g. ATELIER-03)", emailLbl: "Email",
+      issueTitle: "Issue supplier account", nameLbl: "Display name (e.g. ATELIER-03)", emailLbl: "Email",
       issueBtn: "Issue (password: demo1234)",
     },
     settings: {
@@ -296,9 +296,9 @@ const ko = {
       trackingPh: "운송장 입력", dep: "디파짓", fin: "잔금",
     },
     vendors: {
-      title: "벤더 계정", displayName: "표시명", emailCol: "이메일", assigned: "배정 주문",
+      title: "서플라이어 계정", displayName: "표시명", emailCol: "이메일", assigned: "배정 주문",
       uploads: "업로드 시안", stateCol: "상태", active: "활성", suspended: "정지",
-      issueTitle: "벤더 계정 발급", nameLbl: "표시명 (예: ATELIER-03)", emailLbl: "이메일",
+      issueTitle: "서플라이어 계정 발급", nameLbl: "표시명 (예: ATELIER-03)", emailLbl: "이메일",
       issueBtn: "발급 (비밀번호: demo1234)",
     },
     settings: {
@@ -624,9 +624,9 @@ const es = {
       trackingPh: "N.º de seguimiento", dep: "Depósito", fin: "Final",
     },
     vendors: {
-      title: "Cuentas de taller", displayName: "Nombre visible", emailCol: "Correo", assigned: "Asignados",
+      title: "Cuentas de proveedor", displayName: "Nombre visible", emailCol: "Correo", assigned: "Asignados",
       uploads: "Propuestas", stateCol: "Estado", active: "Activo", suspended: "Suspendido",
-      issueTitle: "Emitir cuenta de taller", nameLbl: "Nombre visible (ej.: ATELIER-03)", emailLbl: "Correo",
+      issueTitle: "Emitir cuenta de proveedor", nameLbl: "Nombre visible (ej.: ATELIER-03)", emailLbl: "Correo",
       issueBtn: "Emitir (contraseña: demo1234)",
     },
     settings: {

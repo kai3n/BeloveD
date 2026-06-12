@@ -13,8 +13,15 @@ export function pickI18n(value, locale) {
   return value[locale] ?? value.ko ?? value.en ?? Object.values(value)[0] ?? "";
 }
 
+const VALID_LOCALES = ["en", "zh", "ko", "es"];
+
 export function LocaleProvider({ children }) {
-  const [locale, setLocale] = useState(() => localStorage.getItem("lumina-locale") || "ko");
+  // 저장값이 손상돼도 앱이 죽지 않도록 검증 후 폴백
+  const [locale, setLocaleRaw] = useState(() => {
+    const stored = localStorage.getItem("lumina-locale");
+    return VALID_LOCALES.includes(stored) ? stored : "ko";
+  });
+  const setLocale = (code) => { if (VALID_LOCALES.includes(code)) setLocaleRaw(code); };
   const t = { ...translations[locale], platform: { ...platformStrings[locale], ...dealerStrings[locale], ...opsStrings[locale] } };
 
   useEffect(() => {

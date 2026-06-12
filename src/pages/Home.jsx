@@ -125,7 +125,7 @@ function Collections({ t }) {
         <p className="section-label">{t.collections.label}</p>
         <h2>{renderLines(t.collections.title)}</h2>
         <p>{t.collections.body}</p>
-        <Link className="text-link" to="/templates">
+        <Link className="text-link" to="/styles">
           {t.collections.link}
           <ArrowRight size={18} strokeWidth={1.6} />
         </Link>
@@ -159,7 +159,7 @@ function ProductCard({ product, t }) {
       <div className={`product-image ${product.imageClass}`} role="img" aria-label={product.name} />
       <h3>{product.name}</h3>
       <p>{product.price}</p>
-      <Link to="/templates">{t.products.detail}</Link>
+      <Link to="/styles">{t.products.detail}</Link>
     </article>
   );
 }
