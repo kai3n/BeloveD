@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import {
   resetDB, listChips, saveChip,
   createIntake, getIntake, reviewReferenceMedia, supplierTasks, createProcurement,
-  addCadVersion, decideCad,
+  addCadVersion, decideCad, freeRevisionsLeft, portalView, getSettings,
 } from "../store.js";
 
 beforeEach(() => resetDB());
@@ -64,5 +64,31 @@ describe("visual store — 레퍼런스 미디어와 벤더 브리프", () => {
     const task = supplierTasks("u-supplier2").find((x) => x.brief === "v2");
     expect(task.revision.fileUrl).toBe("/cad-v1.png");
     expect(task.revision.annotations[0].chipKey).toBe("thinner");
+  });
+});
+
+describe("visual store — 구조화 피드백과 수정 한도", () => {
+  it("주석은 검증 후 버전 레코드에 불변 저장", () => {
+    const r1 = addCadVersion("DM-000002", { fileUrl: "/v1.png", supplierId: "u-supplier1" });
+    decideCad(r1.id, { decision: "minorRevision", annotations: [
+      { pinId: 1, x: 20, y: 20, part: "chain", chipKey: "thinner", value: 1.2 },
+      { pinId: 2, x: 200, y: 20, part: "chain", chipKey: "thinner", value: 1.2 }, // 좌표 무효 → 드랍
+    ] }, "customer");
+    expect(r1.annotations.length).toBe(1);
+    expect(r1.feeAppliedUsd).toBe(0); // 1회차 무료
+  });
+
+  it("무료 한도 초과 시 accepted 견적 잔금에 designChangeFeeUsd 가산", () => {
+    // DM-000002는 시드에 accepted 견적(잔금 577) 보유
+    const fee = getSettings().designChangeFeeUsd;
+    const r1 = addCadVersion("DM-000002", { fileUrl: "/v1.png", supplierId: "u-supplier1" });
+    decideCad(r1.id, { decision: "minorRevision", annotations: [] }, "customer");
+    expect(freeRevisionsLeft("DM-000002")).toBe(0);
+    const r2 = addCadVersion("DM-000002", { fileUrl: "/v2.png", supplierId: "u-supplier1" });
+    decideCad(r2.id, { decision: "minorRevision", annotations: [] }, "customer");
+    expect(r2.feeAppliedUsd).toBe(fee);
+    const v = portalView("DM-000002", { queryCode: "H3WT-8RVK" });
+    expect(v.quote.balanceUsd).toBe(577 + fee);
+    expect(v.freeRevisionsLeft).toBe(0);
   });
 });

@@ -433,7 +433,7 @@ export function addCadVersion(orderId, { fileUrl, supplierId }) {
   const review = {
     id: nextSeqId("CADR"), orderId, version, fileUrl,
     supplierUploadedAt: now(), internalReview: "", sentAt: null,
-    decision: null, feedback: [], confirmedMeasurements: "", evidence: "", decidedAt: null,
+    decision: null, feedback: [], annotations: [], confirmedMeasurements: "", evidence: "", decidedAt: null,
   };
   db().cadReviews.push(review);
   upsertMilestone(orderId, "cadIssued", { status: "waitingClient", publishToClient: true, clientUpdate: `CAD V${version} ready for review`, link: fileUrl });
@@ -442,13 +442,29 @@ export function addCadVersion(orderId, { fileUrl, supplierId }) {
   persist();
   return review;
 }
-export function decideCad(reviewId, { decision, feedback, confirmedMeasurements }, actor) {
+export function decideCad(reviewId, { decision, feedback, annotations, confirmedMeasurements }, actor) {
   const r = db().cadReviews.find((x) => x.id === reviewId);
   r.decision = decision;
   r.feedback = (feedback || []).map((f) => maskContacts(f)).filter(Boolean);
+  r.annotations = (annotations || []).filter((a) => validateAnnotation(a, db().chipCatalog));
   r.confirmedMeasurements = confirmedMeasurements || "";
   r.decidedAt = now();
+  r.feeAppliedUsd = 0;
   audit(actor, "cad", reviewId, "decision", null, decision);
+  if (decision === "minorRevision") {
+    // 무료 한도(freeMinorRevisions) 소진 후엔 디자인비를 잔금에 가산 — 무한 수정 루프 방지
+    const prior = db().cadReviews.filter((c) => c.orderId === r.orderId && c.id !== r.id && c.decision === "minorRevision").length;
+    if (prior >= db().settings.freeMinorRevisions) {
+      const q = db().quotes.find((x) => x.orderId === r.orderId && x.status === "accepted");
+      if (q) {
+        const fee = db().settings.designChangeFeeUsd;
+        audit(actor, "quote", q.id, "balanceUsd", String(q.balanceUsd), String(q.balanceUsd + fee));
+        q.balanceUsd += fee;
+        q.totalUsd += fee;
+        r.feeAppliedUsd = fee;
+      }
+    }
+  }
   if (decision === "approved") {
     upsertMilestone(r.orderId, "cadApproved", { status: "done", publishToClient: true, clientUpdate: `CAD V${r.version} approved` });
     upsertMilestone(r.orderId, "productionStarted", { status: "inProgress", publishToClient: true });
@@ -456,6 +472,11 @@ export function decideCad(reviewId, { decision, feedback, confirmedMeasurements 
   }
   persist();
   return r;
+}
+
+export function freeRevisionsLeft(orderId) {
+  const used = db().cadReviews.filter((c) => c.orderId === orderId && c.decision === "minorRevision").length;
+  return Math.max(0, db().settings.freeMinorRevisions - used);
 }
 
 // ---------- customer actions ----------
@@ -499,6 +520,8 @@ export function portalView(orderId, { customerId, queryCode } = {}) {
     }, // 내부 원가·멀티플라이어 미포함
     milestones: listMilestones(orderId).filter((m) => m.publishToClient),
     cad: listCadReviews(orderId)[0] || null,
+    freeRevisionsLeft: freeRevisionsLeft(orderId),
+    designChangeFeeUsd: db().settings.designChangeFeeUsd,
     actions: listCustomerActions(orderId, true),
   };
 }
