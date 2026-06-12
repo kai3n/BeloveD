@@ -195,8 +195,8 @@ img {
   inset: 0;
   z-index: -1;
   background:
-    radial-gradient(ellipse 46% 52% at 50% 46%, rgba(0, 0, 0, 0) 18%, rgba(0, 0, 0, 0.42) 52%, rgba(0, 0, 0, 0.88) 76%, #000 96%),
-    linear-gradient(180deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.3) 30%, rgba(0, 0, 0, 0) 46%, rgba(0, 0, 0, 0) 62%, rgba(0, 0, 0, 0.82) 92%);
+    radial-gradient(ellipse 56% 62% at 50% 46%, rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, 0.28) 58%, rgba(0, 0, 0, 0.72) 80%, rgba(0, 0, 0, 0.92) 96%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.22) 28%, rgba(0, 0, 0, 0) 44%, rgba(0, 0, 0, 0) 62%, rgba(0, 0, 0, 0.8) 92%);
   pointer-events: none;
 }
 
@@ -215,7 +215,7 @@ img {
   object-fit: cover;
   object-position: center 46%;
   transform: scale(1.06);
-  filter: contrast(1.05) brightness(1.04);
+  filter: contrast(1.06) brightness(1.12);
 }
 
 .hero-media video {
@@ -923,7 +923,7 @@ img {
 
   .hero-media video,
   .hero-media img {
-    object-position: 60% 46%;
+    object-position: 50% 46%;
     transform: none;
   }
 

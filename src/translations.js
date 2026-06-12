@@ -117,7 +117,7 @@ export const translations = {
       concierge: "礼宾服务",
     },
     hero: {
-      kicker: "Lab-Grown Diamond Maison",
+      kicker: "培育钻石专门品牌 — Lab-Grown Diamonds",
       sub: "不开采地球，也能拥有完美钻石",
       sub2: "与天然同质 · IGI 认证 · 一半的价格",
       primaryCta: "选购钻石",
@@ -199,7 +199,7 @@ export const translations = {
       concierge: "콘시어지",
     },
     hero: {
-      kicker: "Lab-Grown Diamond Maison",
+      kicker: "랩그로운 다이아몬드 메종 — Lab-Grown Diamonds",
       sub: "지구를 캐지 않은, 완벽한 다이아몬드",
       sub2: "천연과 동일한 물성 · IGI 인증 · 절반의 가격",
       primaryCta: "다이아몬드 쇼핑하기",
@@ -281,7 +281,7 @@ export const translations = {
       concierge: "Concierge",
     },
     hero: {
-      kicker: "Lab-Grown Diamond Maison",
+      kicker: "Diamantes de Laboratorio — Lab-Grown Diamond Maison",
       sub: "Un diamante perfecto, sin excavar la tierra.",
       sub2: "Idéntico al natural · Certificado IGI · La mitad del precio",
       primaryCta: "Ver diamantes",

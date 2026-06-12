@@ -68,9 +68,9 @@ function Hero({ t }) {
           loop
           playsInline
           preload="auto"
-          poster={withBase("/assets/diamond-ring-macro-poster.png")}
+          poster={withBase("/assets/diamond-hero-white-poster.png")}
         >
-          <source src={withBase("/assets/diamond-ring-macro.mp4")} type="video/mp4" />
+          <source src={withBase("/assets/diamond-hero-white.mp4")} type="video/mp4" />
         </video>
       </div>
       <span className="spark sparkle-one" aria-hidden="true" />
