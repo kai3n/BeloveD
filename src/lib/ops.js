@@ -73,7 +73,8 @@ export function customerOrderView(order) {
 }
 
 // 서플라이어 태스크 뷰: 고객 신원·판매가·Order ID 제외 (PR ID로만 식별)
-export function supplierTaskView(pr, order, style) {
+// visualBrief: 검수 승인 레퍼런스 + 직전 리비전 핀만 — pending/rejected 절대 미포함
+export function supplierTaskView(pr, order, style, intake = null, revisionReview = null) {
   return {
     id: pr.id,
     type: pr.type,
@@ -86,6 +87,12 @@ export function supplierTaskView(pr, order, style) {
     styleEstWeightG: style?.estWeightG ?? null,
     metal: pr.metal ?? null,
     measurements: pr.measurements ?? null,
+    references: (intake?.referenceMedia || [])
+      .filter((m) => m.status === "approved")
+      .map(({ id, kind, src, annotations }) => ({ id, kind, src, annotations })),
+    revision: revisionReview
+      ? { version: revisionReview.version, fileUrl: revisionReview.fileUrl, annotations: revisionReview.annotations || [] }
+      : null,
   };
 }
 

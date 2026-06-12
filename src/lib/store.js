@@ -1,5 +1,6 @@
 import { seed } from "./seed.js";
 import { maskContacts } from "./masking.js";
+import { validateAnnotation } from "./chips.js";
 import { assertClaimTransition, computeTier, salvageCredit, unitWholesale, metalQuote } from "./dealer.js";
 import {
   MILESTONE_STAGES, publicDiamondView, customerOrderView, supplierTaskView,
@@ -124,7 +125,12 @@ export function createIntake(form, customerId = null) {
   const intakeId = nextSeqId("IN");
   const orderId = nextOrderId();
   const status = !form.styleId ? "STYLE_SELECTION" : form.productLine === "solitaire" ? "STONE_SELECTION" : "QUOTATION";
-  const intake = { id: intakeId, orderId, ...form, createdAt: now() };
+  // 레퍼런스는 pending으로 시작 — 운영 검수 승인 전에는 벤더에게 절대 안 나간다
+  const referenceMedia = (form.referenceMedia || []).map((m) => ({
+    id: nextSeqId("REF"), kind: m.kind || "image", src: m.src, status: "pending",
+    annotations: (m.annotations || []).filter((a) => validateAnnotation(a, db().chipCatalog)),
+  }));
+  const intake = { id: intakeId, orderId, ...form, referenceMedia, createdAt: now() };
   const order = {
     id: orderId, intakeId, customerId, customerName: form.name, styleId: form.styleId || null,
     status, owner: "Operations", queryCode: randomQueryCode(), selectedDiamondId: null,
@@ -135,6 +141,16 @@ export function createIntake(form, customerId = null) {
   audit(customerId || "guest", "order", orderId, "create", null, status);
   persist();
   return { intake, order };
+}
+
+// 레퍼런스 검수 — 승인분만 벤더 브리프에 포함 (타인 디자인 도용·연락처 포함 이미지 차단)
+export function reviewReferenceMedia(intakeId, refId, status, actor = "ops") {
+  const m = getIntake(intakeId)?.referenceMedia?.find((r) => r.id === refId);
+  if (!m) return null;
+  audit(actor, "referenceMedia", refId, "status", m.status, status);
+  m.status = status;
+  persist();
+  return m;
 }
 
 export function listOpsOrders(filter = {}) {
@@ -177,7 +193,12 @@ export function supplierTasks(supplierId) {
   return listProcurements({ supplierId }).map((pr) => {
     const order = getOpsOrder(pr.orderId);
     const style = order?.styleId ? getOpsStyle(order.styleId) : null;
-    return supplierTaskView(pr, order, style);
+    const intake = order ? getIntake(order.intakeId) : null;
+    // CAD 태스크에는 최신 minorRevision 리뷰(이미지+핀)를 브리프로 동봉
+    const revision = pr.type === "cad" && order
+      ? listCadReviews(order.id).find((c) => c.decision === "minorRevision") || null
+      : null;
+    return supplierTaskView(pr, order, style, intake, revision);
   });
 }
 export function submitWeightLabor(prId, result) {
