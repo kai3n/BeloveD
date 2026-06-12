@@ -1,4 +1,5 @@
 import { defaultBenchmark } from "./ops.js";
+import { defaultChipCatalog } from "./chips.js";
 
 const TWEEZERS = "/assets/lab-diamond-tweezers.png";
 const NOIR_VIDEO = "/assets/diamond-noir-white.mp4";
@@ -38,10 +39,16 @@ export function seed() {
       { id: "IN-000001", orderId: "DM-000001", name: "김지원", contact: "customer@demo.com", productLine: "solitaire", category: "ring",
         styleId: "RING-001", budget: 4500, metal: "18kw", conditional: { ringSize: "6 US" },
         stonePrefs: { shape: "round", carat: 1.5, color: "E", clarity: "VS1", growth: "CVD", lab: "IGI India", colorTreatment: "disclosed", fluorescence: "none", lwRatio: "" },
-        requiredDate: "2026-08-15", country: "USA", termsAccepted: true, createdAt: "2026-06-08T09:00:00.000Z" },
+        requiredDate: "2026-08-15", country: "USA", termsAccepted: true,
+        referenceMedia: [
+          { id: "REF-000001", kind: "image", src: "/assets/lineup-band.png", status: "approved",
+            annotations: [{ pinId: 1, x: 50, y: 30, part: "prong", chipKey: "prong6" }] },
+          { id: "REF-000002", kind: "image", src: "/assets/lineup-pendant.png", status: "pending", annotations: [] },
+        ],
+        createdAt: "2026-06-08T09:00:00.000Z" },
       { id: "IN-000002", orderId: "DM-000002", name: "Noah Lee", contact: "+1 213-555-0188", productLine: "multi", category: "necklace",
         styleId: "NECK-001", budget: 2600, metal: "18ky", conditional: { chainStyle: "cable", chainLength: "18in", clasp: "lobster" },
-        stonePrefs: null, requiredDate: "2026-07-30", country: "USA", termsAccepted: true, createdAt: "2026-06-05T10:00:00.000Z" },
+        stonePrefs: null, requiredDate: "2026-07-30", country: "USA", termsAccepted: true, referenceMedia: [], createdAt: "2026-06-05T10:00:00.000Z" },
     ],
     opsOrders: [
       { id: "DM-000001", intakeId: "IN-000001", customerId: "u-customer", customerName: "김지원", styleId: "RING-001",
@@ -84,6 +91,7 @@ export function seed() {
         estWeightG: 4.2, variancePct: 6, laborUsd: 85, materialsUsd: 25, status: "approved", evidence: "supplier quote 2026-05-10" },
     ],
     diamondPricing: defaultBenchmark(),
+    chipCatalog: defaultChipCatalog(),
     procurementReqs: [
       { id: "PR-000001", orderId: "DM-000001", type: "diamondCandidates", supplierId: "u-supplier1",
         dueDate: "2026-06-14", batchValidUntil: "2026-06-22", brief: "1.4-1.6ct round, D-F, VS1+, CVD, IGI. 10-20 candidates.",
@@ -192,7 +200,7 @@ export function seed() {
       // Operations Manual
       opsDepositRate: 0.5, opsMultiplier: 1.8, defaultLossRatePct: 8, productionLeadDays: 10,
       metalRefUsdPerG: { "14ky": 62, "18ky": 80, "14kr": 62, "18kr": 80, "18kw": 85, "pt": 38 },
-      designChangeFeeUsd: 15, cancelAfterProductionMinUsd: 140,
+      designChangeFeeUsd: 15, cancelAfterProductionMinUsd: 140, freeMinorRevisions: 1,
     },
   };
 }

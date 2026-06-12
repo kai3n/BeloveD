@@ -6,7 +6,7 @@ import {
   quoteCompute, reconcileDelta, randomQueryCode, tierForCarat,
 } from "./ops.js";
 
-const KEY = "lumina-db-v6"; // v6: Operations Manual 리팩토링 (레거시 마켓플레이스 → ops 플로우)
+const KEY = "lumina-db-v7"; // v7: 비주얼 커뮤니케이션 레이어 (chipCatalog, referenceMedia, 구조화 CAD 피드백)
 
 // 테스트(node) 환경 폴백
 const memoryStorage = (() => {
@@ -25,6 +25,7 @@ function isValidDB(d) {
     && Array.isArray(d.catalogItems) && d.settings?.goldSpotPerGram != null
     && Array.isArray(d.opsOrders) && Array.isArray(d.diamondPricing)
     && d.settings?.opsDepositRate != null
+    && Array.isArray(d.chipCatalog)
   );
 }
 
@@ -35,6 +36,7 @@ function db() {
     storage.removeItem("lumina-db-v3");
     storage.removeItem("lumina-db-v4");
     storage.removeItem("lumina-db-v5");
+    storage.removeItem("lumina-db-v6");
     let parsed = null;
     try {
       const raw = storage.getItem(KEY);
@@ -652,6 +654,18 @@ export function markClaimReplaced(claimId) {
   return c;
 }
 export function listSalvage() { return [...db().salvageLedger]; }
+
+// ---------- visual comm layer: chip catalog ----------
+export function listChips({ part } = {}) {
+  return db().chipCatalog.filter((c) => c.active !== false && (!part || !c.parts || c.parts.includes(part)));
+}
+export function saveChip(chip) {
+  const list = db().chipCatalog;
+  const i = list.findIndex((c) => c.key === chip.key);
+  if (i >= 0) list[i] = { ...list[i], ...chip };
+  else list.push(chip);
+  persist();
+}
 
 // ---------- misc ----------
 export function getSettings() { return db().settings; }
