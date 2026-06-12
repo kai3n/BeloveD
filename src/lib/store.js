@@ -1,8 +1,9 @@
 import { seed } from "./seed.js";
 import { assertTransition } from "./statusMachine.js";
 import { maskContacts } from "./masking.js";
+import { assertClaimTransition, computeTier, salvageCredit, unitWholesale, metalQuote } from "./dealer.js";
 
-const KEY = "lumina-db-v3"; // 스키마/시드 변경 시 버전업 (v3: 샘플 사진을 제품별 단독 파일로)
+const KEY = "lumina-db-v4"; // 스키마/시드 변경 시 버전업 (v4: 딜러 네트워크 도메인 추가)
 
 // 테스트(node) 환경 폴백
 const memoryStorage = (() => {
@@ -19,6 +20,7 @@ function isValidDB(d) {
   return Boolean(
     d && Array.isArray(d.diamonds) && d.diamonds[0]?.priceUsd != null
     && d.settings?.shippingStages?.[0] === "production"
+    && Array.isArray(d.catalogItems) && d.settings?.goldSpotPerGram != null
   );
 }
 
@@ -26,6 +28,7 @@ function db() {
   if (!cache) {
     storage.removeItem("lumina-db-v1");
     storage.removeItem("lumina-db-v2");
+    storage.removeItem("lumina-db-v3");
     let parsed = null;
     try {
       const raw = storage.getItem(KEY);
@@ -246,6 +249,165 @@ export function addProductionMedia(requestId, media) {
   db().productionMedia.push({ id: nextId("pm"), requestId, ...media, createdAt: now() });
   persist();
 }
+
+// ---------- dealer network (diamond_qc.pdf) ----------
+export function listApplications() { return [...db().dealerApplications].sort((a, b) => b.createdAt.localeCompare(a.createdAt)); }
+export function submitApplication(form) {
+  const app = { id: nextId("app"), ...form, status: "pending", createdAt: now() };
+  db().dealerApplications.push(app);
+  persist();
+  return app;
+}
+export function approveApplication(appId) {
+  const app = db().dealerApplications.find((a) => a.id === appId);
+  app.status = "approved";
+  const user = { id: nextId("u"), email: app.email.toLowerCase(), name: app.bizName, role: "dealer", active: true };
+  db().users.push(user);
+  db().dealerProfiles.push({
+    userId: user.id, tier: 2, city: app.city, permitNo: app.permitNo,
+    resaleCertNo: app.resaleCertNo || "", active: true, tierOverride: null,
+  });
+  persist();
+  return user;
+}
+export function rejectApplication(appId) {
+  const app = db().dealerApplications.find((a) => a.id === appId);
+  app.status = "rejected";
+  persist();
+}
+
+export function getDealerProfile(userId) { return db().dealerProfiles.find((p) => p.userId === userId) || null; }
+export function listDealers() {
+  return db().users.filter((u) => u.role === "dealer").map((u) => ({ user: u, profile: getDealerProfile(u.id) }));
+}
+export function updateDealerProfile(userId, patch) {
+  const p = getDealerProfile(userId);
+  if (p) { Object.assign(p, patch); persist(); }
+}
+// 티어는 주문 이력에서 산정 (오버라이드 > 볼륨)
+export function dealerTierInfo(userId, nowDate = new Date()) {
+  const profile = getDealerProfile(userId);
+  const orders = db().wholesaleOrders.filter((o) => o.dealerId === userId);
+  const r = computeTier(orders, profile, db().settings, nowDate);
+  if (r.tier !== profile.tier && !r.override) { profile.tier = r.tier; persist(); }
+  return { ...r, profile };
+}
+
+export function listCatalog({ includeHidden = false } = {}) {
+  return db().catalogItems.filter((c) => includeHidden || c.visible);
+}
+export function getCatalogItem(id) { return db().catalogItems.find((c) => c.id === id) || null; }
+export function saveCatalogItem(item) {
+  const list = db().catalogItems;
+  const i = list.findIndex((c) => c.id === item.id);
+  if (i >= 0) list[i] = { ...list[i], ...item };
+  else list.push({ visible: true, resizable: true, ...item, id: nextId("c") });
+  persist();
+}
+
+export function listWholesaleOrders(filter = {}) {
+  let os = [...db().wholesaleOrders];
+  if (filter.dealerId) os = os.filter((o) => o.dealerId === filter.dealerId);
+  return os.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+export function createWholesaleOrder(dealerId, lines, shipTo) {
+  const profile = getDealerProfile(dealerId);
+  if (!profile?.resaleCertNo) throw new Error("resaleCertRequired"); // 첫 주문 전 resale cert 필수
+  const settings = db().settings;
+  const { tier } = dealerTierInfo(dealerId);
+  const items = lines.filter((l) => l.qty > 0).map((l) => {
+    const item = getCatalogItem(l.itemId);
+    const metalUsd = metalQuote(item, settings.goldSpotPerGram, settings.goldPurity);
+    const stoneUsd = tier === 1 ? item.stoneWholesaleT1 : item.stoneWholesaleT2;
+    return { itemId: item.id, qty: l.qty, stoneUsd, metalUsd, unitUsd: stoneUsd + metalUsd };
+  });
+  if (items.length === 0) throw new Error("emptyOrder");
+  const order = {
+    id: nextId("wo"), dealerId, items, shipTo,
+    goldSpotAtOrder: settings.goldSpotPerGram, // 주문 시점 견적 고정
+    status: "PLACED", qcPhotos: [], trackingNo: null,
+    totalUsd: items.reduce((sum, it) => sum + it.unitUsd * it.qty, 0), createdAt: now(),
+  };
+  db().wholesaleOrders.push(order);
+  persist();
+  return order;
+}
+const WHOLESALE_FLOW = { PLACED: ["QC_PASSED", "CANCELLED"], QC_PASSED: ["SHIPPED"], SHIPPED: ["DELIVERED"], DELIVERED: [], CANCELLED: [] };
+export function transitionWholesale(orderId, to, extra = {}) {
+  const o = db().wholesaleOrders.find((x) => x.id === orderId);
+  if (!WHOLESALE_FLOW[o.status].includes(to)) throw new Error(`Invalid wholesale transition ${o.status} -> ${to}`);
+  if (to === "QC_PASSED" && !(extra.qcPhotos?.length)) throw new Error("qcPhotosRequired"); // 개체별 QC 사진 필수
+  if (extra.qcPhotos) o.qcPhotos = extra.qcPhotos;
+  if (extra.trackingNo !== undefined) o.trackingNo = extra.trackingNo;
+  o.status = to;
+  persist();
+  return o;
+}
+
+export function listWarrantyRegs(filter = {}) {
+  let rs = [...db().warrantyRegs];
+  if (filter.dealerId) rs = rs.filter((r) => r.dealerId === filter.dealerId);
+  return rs.sort((a, b) => b.soldAt.localeCompare(a.soldAt));
+}
+export function registerWarranty(dealerId, { itemId, orderId, buyerName, buyerContact, soldAt }) {
+  const until = new Date(soldAt);
+  until.setMonth(until.getMonth() + db().settings.warrantyMonths);
+  const reg = {
+    id: nextId("wr"), dealerId, itemId, orderId: orderId || null,
+    buyerName, buyerContact, soldAt, warrantyUntil: until.toISOString().slice(0, 10),
+  };
+  db().warrantyRegs.push(reg);
+  persist();
+  return reg;
+}
+
+export function listClaims(filter = {}) {
+  let cs = [...db().claims];
+  if (filter.dealerId) cs = cs.filter((c) => c.dealerId === filter.dealerId);
+  return cs.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+export function getClaim(id) { return db().claims.find((c) => c.id === id) || null; }
+export function submitClaim(dealerId, { regId, defectType, desc, photos }) {
+  const claim = {
+    id: nextId("cl"), dealerId, regId, defectType,
+    desc: maskContacts(desc || ""), photos: photos || [],
+    status: "SUBMITTED", adminNote: "", salvage: null, createdAt: now(),
+  };
+  db().claims.push(claim);
+  persist();
+  return claim;
+}
+export function adjudicateClaim(claimId, decision, note) {
+  const c = getClaim(claimId);
+  if (decision === "approve") {
+    assertClaimTransition(c.status, "APPROVED");
+    c.status = "AWAITING_RETURN"; // 승인 = 교체 확정, 불량품 반환 대기 (선불 라벨)
+  } else {
+    assertClaimTransition(c.status, "DENIED");
+    c.status = "DENIED";
+  }
+  c.adminNote = note || "";
+  persist();
+  return c;
+}
+export function receiveClaimReturn(claimId, { goldGrams, stoneToPool }) {
+  const c = getClaim(claimId);
+  assertClaimTransition(c.status, "RETURN_RECEIVED");
+  c.status = "RETURN_RECEIVED";
+  const creditUsd = salvageCredit(goldGrams, db().settings.goldSpotPerGram);
+  c.salvage = { goldGrams, stoneToPool, creditUsd };
+  db().salvageLedger.push({ id: nextId("sv"), claimId, goldGrams, stoneToPool, creditUsd, at: now() });
+  persist();
+  return c;
+}
+export function markClaimReplaced(claimId) {
+  const c = getClaim(claimId);
+  assertClaimTransition(c.status, "REPLACED");
+  c.status = "REPLACED";
+  persist();
+  return c;
+}
+export function listSalvage() { return [...db().salvageLedger]; }
 
 // ---------- misc ----------
 export function listEvents(refId) { return db().statusEvents.filter((e) => e.refId === refId); }
