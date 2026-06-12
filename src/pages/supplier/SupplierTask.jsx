@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../lib/auth.jsx";
-import { BENCHMARK_SHAPES } from "../../lib/ops.js";
-import { supplierTaskView } from "../../lib/ops.js";
+import { BENCHMARK_SHAPES, CAD_SLOTS, supplierTaskView } from "../../lib/ops.js";
 import {
-  getOpsOrder, getOpsStyle, getProcurement, submitCadForPr, submitCandidates, submitQcForPr, submitWeightLabor,
+  getIntake, getOpsOrder, getOpsStyle, getProcurement, listCadReviews, submitCadForPr, submitCandidates, submitQcForPr, submitWeightLabor,
 } from "../../lib/store.js";
 import { useDBVersion } from "../../lib/useDB.js";
 import { EmptyNote, MediaPicker } from "../../components/ui.jsx";
+import PinAnnotator from "../../components/PinAnnotator.jsx";
 import { useLocale } from "../../i18n.jsx";
 
 const emptyCand = () => ({ igiNo: "", shape: "round", carat: "", color: "E", clarity: "VS1", growth: "CVD", lab: "IGI India", procurementCostUsd: "", table: "", depth: "", faceUp: "" });
@@ -24,13 +24,18 @@ export default function SupplierTask() {
   const [media, setMedia] = useState([]);
   const [wl, setWl] = useState({ estWeightG: "", lossIncluded: true, laborUsd: "", meleeUsd: "", leadDays: "", assumptions: "" });
   const [qc, setQc] = useState({ actualWeightG: "" });
+  const [slots, setSlots] = useState({ render360: [], side: [], wear: [] });
 
   if (!pr || pr.supplierId !== user.id) {
     return <div className="page"><EmptyNote>{t.empty}</EmptyNote></div>;
   }
-  // 보안 프로젝션: 고객 신원/Order ID 미노출 뷰
+  // 보안 프로젝션: 고객 신원/Order ID 미노출 뷰 (승인 레퍼런스 + 직전 리비전 핀 포함)
   const order = getOpsOrder(pr.orderId);
-  const view = supplierTaskView(pr, order, order?.styleId ? getOpsStyle(order.styleId) : null);
+  const intake = order ? getIntake(order.intakeId) : null;
+  const revisionReview = pr.type === "cad" && order
+    ? listCadReviews(order.id).find((c) => c.decision === "minorRevision") || null
+    : null;
+  const view = supplierTaskView(pr, order, order?.styleId ? getOpsStyle(order.styleId) : null, intake, revisionReview);
   const setRow = (i, patch) => setRows((rs) => rs.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
 
   function sendCandidates(e) {
@@ -60,6 +65,22 @@ export default function SupplierTask() {
         <p className="form-hint" style={{ fontSize: 13.5 }}>{view.brief || "—"}</p>
         {view.styleRef && <p className="form-hint">{t.styleRef}: {view.styleRef}{view.styleEstWeightG && ` · ${view.styleEstWeightG}g`}{view.metal && ` · ${view.metal}`}{view.measurements && ` · ${view.measurements}`}</p>}
       </div>
+
+      {/* 비주얼 브리프 — 같은 핀이 공급자 언어로 렌더링된다 */}
+      {(view.references.length > 0 || view.revision) && (
+        <div className="panel form-stack">
+          <h3>{p.visual.refTitle}</h3>
+          {view.references.map((r) => (
+            <PinAnnotator key={r.id} src={r.src} annotations={r.annotations} readOnly />
+          ))}
+          {view.revision && (
+            <>
+              <h3>CAD V{view.revision.version} — {p.portal.cadDecided.minorRevision}</h3>
+              <PinAnnotator src={view.revision.fileUrl} annotations={view.revision.annotations} readOnly />
+            </>
+          )}
+        </div>
+      )}
 
       {pr.status !== "open" ? (
         <EmptyNote>{t.status.submitted}</EmptyNote>
@@ -106,11 +127,22 @@ export default function SupplierTask() {
           <button className="button primary" type="submit">{t.submit}</button>
         </form>
       ) : pr.type === "cad" ? (
-        <form className="panel form-stack" onSubmit={(e) => { e.preventDefault(); if (media[0]) { submitCadForPr(prId, media[0].src); navigate("/supplier"); } }}>
+        <form className="panel form-stack" onSubmit={(e) => {
+          e.preventDefault();
+          const cadMedia = CAD_SLOTS.filter((s) => slots[s][0]).map((s) => ({ slot: s, ...slots[s][0] }));
+          if (cadMedia.length > 0) { submitCadForPr(prId, cadMedia); navigate("/supplier"); }
+        }}>
           <h3>{t.cadTitle}</h3>
           <p className="form-hint">{t.cadFile}</p>
-          <MediaPicker value={media} onChange={setMedia} />
-          <button className="button primary" type="submit" disabled={!media[0]}>{t.submit}</button>
+          <div className="filter-grid" style={{ gridTemplateColumns: "1fr 1fr 1fr", alignItems: "start" }}>
+            {CAD_SLOTS.map((s) => (
+              <div key={s} className="form-stack">
+                <p className="label">{p.visual.slots[s]}</p>
+                <MediaPicker value={slots[s]} onChange={(v) => setSlots({ ...slots, [s]: v.slice(-1) })} />
+              </div>
+            ))}
+          </div>
+          <button className="button primary" type="submit" disabled={!slots.render360[0]}>{t.submit}</button>
         </form>
       ) : (
         <form className="panel form-stack" onSubmit={(e) => { e.preventDefault(); submitQcForPr(prId, { video: media.find((m) => m.kind === "video")?.src || media[0]?.src || "", cert: media[1]?.src || "", actualWeightG: Number(qc.actualWeightG) || null }); navigate("/supplier"); }}>
