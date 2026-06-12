@@ -24,6 +24,8 @@
 .form-stack { display: grid; gap: 16px; }
 .field { display: grid; gap: 8px; font-size: 13px; color: var(--muted); }
 .field input, .field select, .field textarea {
+  width: 100%;
+  min-width: 0; /* 인풋 고유 최소폭이 좁은 그리드 트랙을 밀어내지 않도록 */
   background: var(--bg-2);
   border: 1px solid var(--line);
   color: var(--text);
@@ -151,6 +153,7 @@
 
 /* 어드민 셸 */
 .admin-shell { display: grid; grid-template-columns: 200px 1fr; gap: 36px; }
+.admin-shell > * { min-width: 0; } /* 테이블 min-content가 1fr 트랙을 밀어내는 블로우아웃 방지 */
 .admin-side { display: grid; gap: 2px; align-content: start; position: sticky; top: 110px; }
 .admin-side a { padding: 11px 14px; color: var(--muted); font-size: 14px; border-left: 2px solid transparent; }
 .admin-side a.active { color: var(--text); border-left-color: var(--accent); background: var(--surface); }
@@ -186,6 +189,6 @@
   .card-grid, .card-grid.cols-3 { grid-template-columns: 1fr 1fr; }
   .proposal-media { grid-template-columns: 1fr 1fr; }
   .data-table { display: block; overflow-x: auto; }
-  .stepper { flex-wrap: wrap; row-gap: 14px; }
-  .stepper li { min-width: 33%; }
+  .stepper { display: grid; grid-template-columns: 1fr 1fr; row-gap: 14px; }
+  .stepper li::before { display: none; }
 }
