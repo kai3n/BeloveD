@@ -58,11 +58,11 @@ export function EmptyNote({ children }) {
 
 // 샘플 라이브러리(영구 저장) + 파일 업로드(dataURL, 데모용 2MB 제한)
 const SAMPLE_LIBRARY = [
-  { kind: "image", src: "/assets/jewelry-lineup.png", pos: "0% center", labelKey: "sol" },
-  { kind: "image", src: "/assets/jewelry-lineup.png", pos: "24% center", labelKey: "band" },
-  { kind: "image", src: "/assets/jewelry-lineup.png", pos: "50% center", labelKey: "pendant" },
-  { kind: "image", src: "/assets/jewelry-lineup.png", pos: "72% center", labelKey: "studs" },
-  { kind: "image", src: "/assets/jewelry-lineup.png", pos: "100% center", labelKey: "bracelet" },
+  { kind: "image", src: "/assets/lineup-ring.png", labelKey: "sol" },
+  { kind: "image", src: "/assets/lineup-band.png", labelKey: "band" },
+  { kind: "image", src: "/assets/lineup-pendant.png", labelKey: "pendant" },
+  { kind: "image", src: "/assets/lineup-studs.png", labelKey: "studs" },
+  { kind: "image", src: "/assets/lineup-bracelet.png", labelKey: "bracelet" },
   { kind: "image", src: "/assets/lab-diamond-tweezers.png", labelKey: "loose" },
   { kind: "video", src: "/assets/diamond-noir-white.mp4", labelKey: "video" },
 ];

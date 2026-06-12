@@ -2,7 +2,7 @@ import { seed } from "./seed.js";
 import { assertTransition } from "./statusMachine.js";
 import { maskContacts } from "./masking.js";
 
-const KEY = "lumina-db-v2"; // 스키마 변경 시 버전업 (v1: KRW/한글 단계 키 → v2: USD/키 기반)
+const KEY = "lumina-db-v3"; // 스키마/시드 변경 시 버전업 (v3: 샘플 사진을 제품별 단독 파일로)
 
 // 테스트(node) 환경 폴백
 const memoryStorage = (() => {
@@ -25,6 +25,7 @@ function isValidDB(d) {
 function db() {
   if (!cache) {
     storage.removeItem("lumina-db-v1");
+    storage.removeItem("lumina-db-v2");
     let parsed = null;
     try {
       const raw = storage.getItem(KEY);

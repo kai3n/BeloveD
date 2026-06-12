@@ -529,26 +529,26 @@ img {
 
 .lineup-crop,
 .product-image {
-  background-image: url("/assets/jewelry-lineup.png");
   background-repeat: no-repeat;
   background-color: #050607;
+  background-size: cover;
+  background-position: center 62%; /* 제품이 중앙 살짝 아래에 위치 */
 }
 
 .lineup-crop {
   aspect-ratio: 1 / 1.18;
-  background-size: 500% auto;
 }
 
 .shot-ring {
-  background-position: 0% center;
+  background-image: url("/assets/lineup-ring.png");
 }
 
 .shot-necklace {
-  background-position: 50% center;
+  background-image: url("/assets/lineup-pendant.png");
 }
 
 .shot-earrings {
-  background-position: 72% center;
+  background-image: url("/assets/lineup-studs.png");
 }
 
 .section-heading {
@@ -588,28 +588,27 @@ img {
 .product-image {
   width: 100%;
   aspect-ratio: 1.08 / 1;
-  background-size: 500% auto;
   border-bottom: 1px solid rgba(232, 240, 255, 0.08);
 }
 
 .product-ring {
-  background-position: 0% center;
+  background-image: url("/assets/lineup-ring.png");
 }
 
 .product-band {
-  background-position: 24% center;
+  background-image: url("/assets/lineup-band.png");
 }
 
 .product-pendant {
-  background-position: 50% center;
+  background-image: url("/assets/lineup-pendant.png");
 }
 
 .product-studs {
-  background-position: 72% center;
+  background-image: url("/assets/lineup-studs.png");
 }
 
 .product-bracelet {
-  background-position: 100% center;
+  background-image: url("/assets/lineup-bracelet.png");
 }
 
 .product-card h3 {

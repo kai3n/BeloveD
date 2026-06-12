@@ -1,9 +1,8 @@
-const LINEUP = "/assets/jewelry-lineup.png";
 const TWEEZERS = "/assets/lab-diamond-tweezers.png";
 const NOIR_VIDEO = "/assets/diamond-noir-white.mp4";
 
-// 샘플 사진: 기존 자산 재사용. pos가 있으면 jewelry-lineup.png 크롭(5분할)
-const crop = (pos) => ({ kind: "image", src: LINEUP, pos });
+// 샘플 사진: jewelry-lineup.png에서 제품별로 잘라낸 단독 이미지 (잘림 없음)
+const lineup = (name) => ({ kind: "image", src: `/assets/lineup-${name}.png` });
 
 // shape/metal/배송단계는 키로 저장하고 언어별 라벨은 translations.js에서 매핑한다.
 export function seed() {
@@ -31,7 +30,7 @@ export function seed() {
     ],
     templates: [
       {
-        id: "t-1", category: "ring", basePriceUsd: 530, visible: true, media: [crop("0% center")],
+        id: "t-1", category: "ring", basePriceUsd: 530, visible: true, media: [lineup("ring")],
         name: { ko: "아우로라 솔리테어", en: "Aurora Solitaire", zh: "Aurora 单钻戒", es: "Solitario Aurora" },
         desc: {
           ko: "6프롱 클래식 솔리테어. 스톤이 주인공이 되는 가장 순수한 형태.",
@@ -41,7 +40,7 @@ export function seed() {
         },
       },
       {
-        id: "t-2", category: "ring", basePriceUsd: 680, visible: true, media: [crop("24% center")],
+        id: "t-2", category: "ring", basePriceUsd: 680, visible: true, media: [lineup("band")],
         name: { ko: "이터니티 밴드", en: "Eternity Band", zh: "永恒排钻戒", es: "Anillo Eternity" },
         desc: {
           ko: "밴드를 따라 흐르는 파베 세팅. 단독 착용과 레이어링 모두.",
@@ -51,7 +50,7 @@ export function seed() {
         },
       },
       {
-        id: "t-3", category: "necklace", basePriceUsd: 450, visible: true, media: [crop("50% center")],
+        id: "t-3", category: "necklace", basePriceUsd: 450, visible: true, media: [lineup("pendant")],
         name: { ko: "루미나 펜던트", en: "Lumina Pendant", zh: "Lumina 吊坠", es: "Colgante Lumina" },
         desc: {
           ko: "쇄골 위에 떠 있는 한 점의 빛. 데일리 펜던트의 정석.",
@@ -61,7 +60,7 @@ export function seed() {
         },
       },
       {
-        id: "t-4", category: "earring", basePriceUsd: 380, visible: true, media: [crop("72% center")],
+        id: "t-4", category: "earring", basePriceUsd: 380, visible: true, media: [lineup("studs")],
         name: { ko: "클래식 스터드", en: "Classic Studs", zh: "经典耳钉", es: "Aretes Clásicos" },
         desc: {
           ko: "각도까지 계산된 4프롱 스터드. 매일의 기본.",
@@ -71,7 +70,7 @@ export function seed() {
         },
       },
       {
-        id: "t-5", category: "bracelet", basePriceUsd: 900, visible: true, media: [crop("100% center")],
+        id: "t-5", category: "bracelet", basePriceUsd: 900, visible: true, media: [lineup("bracelet")],
         name: { ko: "테니스 브레이슬릿", en: "Tennis Bracelet", zh: "Tennis 手链", es: "Pulsera Tenis" },
         desc: {
           ko: "손목을 감싸는 연속된 광채.",
@@ -100,7 +99,7 @@ export function seed() {
       },
     ],
     proposals: [
-      { id: "prop-1", requestId: "req-1001", vendorId: "u-vendor1", version: 1, comment: "요청하신 대로 밴드 1.6mm로 제작한 1차 시안입니다.", media: [crop("0% center"), { kind: "image", src: TWEEZERS }], createdAt: "2026-06-11T10:00:00.000Z" },
+      { id: "prop-1", requestId: "req-1001", vendorId: "u-vendor1", version: 1, comment: "요청하신 대로 밴드 1.6mm로 제작한 1차 시안입니다.", media: [lineup("ring"), { kind: "image", src: TWEEZERS }], createdAt: "2026-06-11T10:00:00.000Z" },
     ],
     feedback: [],
     orders: [],
