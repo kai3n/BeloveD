@@ -47,7 +47,7 @@ describe("visual store — 레퍼런스 미디어와 벤더 브리프", () => {
     const json = JSON.stringify(tasks);
     expect(json).toContain("lineup-band.png");          // approved
     expect(json).not.toContain("lineup-pendant.png");   // pending
-    expect(json).not.toContain("김지원");
+    expect(json).not.toContain("Jiwon Kim");            // 고객명 (시드)
     expect(json).not.toContain("DM-000001");
   });
 

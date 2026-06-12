@@ -7,7 +7,7 @@ import {
   quoteCompute, reconcileDelta, randomQueryCode, tierForCarat,
 } from "./ops.js";
 
-const KEY = "lumina-db-v7"; // v7: 비주얼 커뮤니케이션 레이어 (chipCatalog, referenceMedia, 구조화 CAD 피드백)
+const KEY = "lumina-db-v8"; // v8: 비주얼 커뮤니케이션 레이어 (chipCatalog, referenceMedia, 구조화 CAD 피드백) + 시드 영어화
 
 // 테스트(node) 환경 폴백
 const memoryStorage = (() => {
@@ -38,6 +38,7 @@ function db() {
     storage.removeItem("lumina-db-v4");
     storage.removeItem("lumina-db-v5");
     storage.removeItem("lumina-db-v6");
+    storage.removeItem("lumina-db-v7");
     let parsed = null;
     try {
       const raw = storage.getItem(KEY);
