@@ -201,3 +201,10 @@
 .wst-DELIVERED, .cst-REPLACED { border-color: rgba(140, 210, 160, 0.4); color: #aee0bd; }
 .wst-CANCELLED, .cst-DENIED { border-color: rgba(224, 133, 133, 0.4); color: #e0a5a5; }
 .cst-SUBMITTED { border-color: rgba(214, 197, 160, 0.65); color: var(--accent-bright); }
+
+/* Operations Manual 채널 */
+.ost-STYLE_SELECTION, .ost-STONE_SELECTION, .ost-QUOTATION, .prt-open { border-color: rgba(214, 197, 160, 0.65); color: var(--accent-bright); }
+.ost-CAD, .ost-PRODUCTION, .ost-QC, .ost-BALANCE, .ost-SHIPPING, .mst-inProgress, .mst-waitingClient, .prt-submitted { border-color: rgba(150, 190, 255, 0.4); color: #b9d2f5; }
+.ost-DELIVERED, .ost-ARCHIVED, .mst-done, .prt-closed { border-color: rgba(140, 210, 160, 0.4); color: #aee0bd; }
+.ost-PAUSED, .ost-CANCELLED, .mst-blocked { border-color: rgba(224, 133, 133, 0.4); color: #e0a5a5; }
+.mst-pending { color: var(--quiet); }

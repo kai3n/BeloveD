@@ -23,7 +23,7 @@ const en = {
     loginBtn: "Sign in", signupBtn: "Create account",
     toSignup: "New here? Create an account", toLogin: "Already have an account? Sign in",
     demoTitle: "Demo accounts (password: demo1234)",
-    demoCustomer: "Browse as customer", demoVendor: "Browse as vendor", demoDealer: "Browse as dealer", demoAdmin: "Browse as admin",
+    demoCustomer: "Browse as customer", demoVendor: "Browse as supplier", demoDealer: "Browse as dealer", demoAdmin: "Browse as admin",
     errors: { badCredentials: "Invalid email or password. (Demo password: demo1234)", emailExists: "This email is already registered." },
   },
   diamonds: {
@@ -107,7 +107,7 @@ const en = {
   },
   admin: {
     title: "Admin",
-    menu: { dashboard: "Dashboard", diamonds: "Diamonds", templates: "Templates", orders: "Orders", vendors: "Vendors", settings: "Settings" },
+    menu: { dashboard: "Dashboard", diamonds: "Diamonds", templates: "Templates", orders: "Orders", vendors: "Suppliers", settings: "Settings" },
     dash: {
       active: "Active orders", unassigned: "Unassigned", sla: "SLA 48h+ overdue", inventory: "Stones in inventory",
       slaWarn: (codes) => `⚠ Vendor unresponsive over 48h: ${codes} — reassign in Orders.`,
@@ -187,7 +187,7 @@ const ko = {
     loginBtn: "로그인", signupBtn: "가입하기",
     toSignup: "처음이신가요? 회원가입", toLogin: "이미 계정이 있으신가요? 로그인",
     demoTitle: "데모 계정 (비밀번호 demo1234)",
-    demoCustomer: "고객으로 둘러보기", demoVendor: "벤더로 둘러보기", demoDealer: "딜러로 둘러보기", demoAdmin: "운영자로 둘러보기",
+    demoCustomer: "고객으로 둘러보기", demoVendor: "서플라이어로 둘러보기", demoDealer: "딜러로 둘러보기", demoAdmin: "운영자로 둘러보기",
     errors: { badCredentials: "이메일 또는 비밀번호가 올바르지 않습니다. (데모 비밀번호: demo1234)", emailExists: "이미 가입된 이메일입니다." },
   },
   diamonds: {
@@ -271,7 +271,7 @@ const ko = {
   },
   admin: {
     title: "어드민",
-    menu: { dashboard: "대시보드", diamonds: "다이아몬드", templates: "템플릿", orders: "주문 감독", vendors: "벤더", settings: "설정" },
+    menu: { dashboard: "대시보드", diamonds: "다이아몬드", templates: "템플릿", orders: "주문 감독", vendors: "서플라이어", settings: "설정" },
     dash: {
       active: "진행중 주문", unassigned: "벤더 미배정", sla: "SLA 48h 초과", inventory: "인벤토리 스톤",
       slaWarn: (codes) => `⚠ 벤더 무응답 48시간 초과: ${codes} — 주문 감독에서 재배정하세요.`,
@@ -515,7 +515,7 @@ const es = {
     loginBtn: "Entrar", signupBtn: "Crear cuenta",
     toSignup: "¿Primera vez? Crea una cuenta", toLogin: "¿Ya tienes cuenta? Inicia sesión",
     demoTitle: "Cuentas demo (contraseña: demo1234)",
-    demoCustomer: "Explorar como cliente", demoVendor: "Explorar como taller", demoDealer: "Explorar como distribuidor", demoAdmin: "Explorar como admin",
+    demoCustomer: "Explorar como cliente", demoVendor: "Explorar como proveedor", demoDealer: "Explorar como distribuidor", demoAdmin: "Explorar como admin",
     errors: { badCredentials: "Correo o contraseña incorrectos. (Contraseña demo: demo1234)", emailExists: "Este correo ya está registrado." },
   },
   diamonds: {
@@ -599,7 +599,7 @@ const es = {
   },
   admin: {
     title: "Admin",
-    menu: { dashboard: "Panel", diamonds: "Diamantes", templates: "Plantillas", orders: "Pedidos", vendors: "Talleres", settings: "Ajustes" },
+    menu: { dashboard: "Panel", diamonds: "Diamantes", templates: "Plantillas", orders: "Pedidos", vendors: "Proveedores", settings: "Ajustes" },
     dash: {
       active: "Pedidos activos", unassigned: "Sin asignar", sla: "SLA +48h", inventory: "Piedras en inventario",
       slaWarn: (codes) => `⚠ Taller sin responder más de 48h: ${codes} — reasigna en Pedidos.`,

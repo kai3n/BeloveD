@@ -7,7 +7,7 @@ import { useAuth } from "./lib/auth.jsx";
 
 function roleHome(user) {
   if (!user) return "/login";
-  if (user.role === "vendor") return "/vendor";
+  if (user.role === "supplier") return "/supplier";
   if (user.role === "dealer") return "/dealer";
   if (user.role === "admin") return "/admin";
   return "/account";
@@ -21,7 +21,7 @@ export function Header() {
 
   const navItems = [
     { to: "/diamonds", label: p.nav.diamonds },
-    { to: "/templates", label: p.nav.gallery },
+    { to: "/styles", label: p.styleCat.title },
     { to: "/custom/new", label: p.nav.custom },
     { to: "/guide/lab-diamond", label: p.nav.guide },
   ];
@@ -72,7 +72,7 @@ export function Header() {
           <NavLink to={item.to} key={item.to} onClick={() => setOpen(false)}>{item.label}</NavLink>
         ))}
         <NavLink to={roleHome(user)} onClick={() => setOpen(false)}>
-          {user ? (user.role === "vendor" ? p.nav.vendorPortal : user.role === "dealer" ? p.dealer.title : user.role === "admin" ? p.nav.admin : p.nav.account) : p.nav.login}
+          {user ? (user.role === "supplier" ? p.supplierP.title : user.role === "dealer" ? p.dealer.title : user.role === "admin" ? p.nav.admin : p.nav.account) : p.nav.login}
         </NavLink>
       </div>
     </header>
@@ -87,6 +87,7 @@ export function Footer() {
     { to: "/guide/lab-diamond", label: t.footer.links[1] },
     { to: "/#concierge", label: t.footer.links[2] },
     { to: "/#products", label: t.footer.links[3] },
+    { to: "/track", label: p.portal.guestTitle },
     { to: "/dealers/apply", label: p.dealerApply.title },
   ];
   return (

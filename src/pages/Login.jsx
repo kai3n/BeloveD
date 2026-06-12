@@ -5,7 +5,7 @@ import { useLocale } from "../i18n.jsx";
 
 const DEMO_ACCOUNTS = [
   { key: "demoCustomer", email: "customer@demo.com" },
-  { key: "demoVendor", email: "vendor@demo.com" },
+  { key: "demoVendor", email: "supplier@demo.com" },
   { key: "demoDealer", email: "dealer@demo.com" },
   { key: "demoAdmin", email: "admin@demo.com" },
 ];
@@ -25,7 +25,7 @@ export default function Login() {
 
   function afterLogin(user) {
     if (from) return navigate(from, { replace: true });
-    if (user.role === "vendor") return navigate("/vendor", { replace: true });
+    if (user.role === "supplier") return navigate("/supplier", { replace: true });
     if (user.role === "dealer") return navigate("/dealer", { replace: true });
     if (user.role === "admin") return navigate("/admin", { replace: true });
     navigate("/account", { replace: true });

@@ -22,9 +22,9 @@ const listeners = new Set();
 function isValidDB(d) {
   return Boolean(
     d && Array.isArray(d.diamonds) && d.diamonds[0]?.priceUsd != null
-    && d.settings?.shippingStages?.[0] === "production"
     && Array.isArray(d.catalogItems) && d.settings?.goldSpotPerGram != null
     && Array.isArray(d.opsOrders) && Array.isArray(d.diamondPricing)
+    && d.settings?.opsDepositRate != null
   );
 }
 
@@ -76,7 +76,7 @@ export function addUser({ email, name, role = "customer" }) {
   persist();
   return user;
 }
-export function listVendors() { return db().users.filter((u) => u.role === "vendor"); }
+export function listVendors() { return db().users.filter((u) => u.role === "supplier"); }
 export function setVendorActive(id, active) {
   const v = getUser(id);
   if (v) { v.active = active; persist(); }
@@ -190,6 +190,25 @@ export function closeProcurement(prId) {
   const pr = getProcurement(prId);
   pr.status = "closed";
   persist();
+}
+
+// 서플라이어가 PR ID로 CAD/QC 제출 — Order ID는 내부에서만 해석
+export function submitCadForPr(prId, fileUrl) {
+  const pr = getProcurement(prId);
+  const review = addCadVersion(pr.orderId, { fileUrl, supplierId: pr.supplierId });
+  pr.status = "submitted";
+  persist();
+  return review;
+}
+export function submitQcForPr(prId, { video, cert, actualWeightG }) {
+  const pr = getProcurement(prId);
+  pr.result = { video, cert, actualWeightG };
+  pr.status = "submitted";
+  upsertMilestone(pr.orderId, "finalQcVideo", { status: "done", publishToClient: true, link: video || "" });
+  upsertMilestone(pr.orderId, "igiInscriptionVerified", { status: "inProgress", publishToClient: false });
+  audit(pr.supplierId, "procurement", prId, "result", null, "qc");
+  persist();
+  return pr;
 }
 
 // ---------- diamond candidates ----------

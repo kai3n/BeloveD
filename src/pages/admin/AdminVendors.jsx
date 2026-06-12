@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { addUser, getDB, listRequests, listVendors, setVendorActive } from "../../lib/store.js";
+import { addUser, getDB, listVendors, setVendorActive } from "../../lib/store.js";
 import { useDBVersion } from "../../lib/useDB.js";
 import { useLocale } from "../../i18n.jsx";
 
@@ -10,10 +10,9 @@ export default function AdminVendors() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
 
-  function stats(vendorId) {
-    const assigned = listRequests({ vendorId });
-    const proposals = getDB().proposals.filter((pr) => pr.vendorId === vendorId);
-    return { assigned: assigned.length, proposals: proposals.length };
+  function stats(supplierId) {
+    const tasks = getDB().procurementReqs.filter((pr) => pr.supplierId === supplierId);
+    return { assigned: tasks.length, proposals: tasks.filter((x) => x.status !== "open").length };
   }
 
   return (
@@ -42,7 +41,7 @@ export default function AdminVendors() {
           </tbody>
         </table>
       </div>
-      <form className="panel form-stack" onSubmit={(e) => { e.preventDefault(); addUser({ email, name, role: "vendor" }); setName(""); setEmail(""); }}>
+      <form className="panel form-stack" onSubmit={(e) => { e.preventDefault(); addUser({ email, name, role: "supplier" }); setName(""); setEmail(""); }}>
         <h3>{p.admin.vendors.issueTitle}</h3>
         <label className="field"><span>{p.admin.vendors.nameLbl}</span><input value={name} onChange={(e) => setName(e.target.value)} required /></label>
         <label className="field"><span>{p.admin.vendors.emailLbl}</span><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></label>
