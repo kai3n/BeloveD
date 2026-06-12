@@ -80,9 +80,9 @@ function Hero({ t }) {
       <div className="hero-copy-top">
         <p className="hero-kicker">{t.hero.kicker}</p>
         <h1>
-          GROWN,
+          PERFECTION,
           <br />
-          <em>not mined.</em>
+          <em>grown.</em>
         </h1>
       </div>
 
