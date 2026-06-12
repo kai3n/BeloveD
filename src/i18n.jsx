@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { localeOptions, translations } from "./translations.js";
 import { platformStrings } from "./platformStrings.js";
 import { dealerStrings } from "./dealerStrings.js";
+import { opsStrings } from "./opsStrings.js";
 
 const LocaleContext = createContext(null);
 
@@ -14,7 +15,7 @@ export function pickI18n(value, locale) {
 
 export function LocaleProvider({ children }) {
   const [locale, setLocale] = useState(() => localStorage.getItem("lumina-locale") || "ko");
-  const t = { ...translations[locale], platform: { ...platformStrings[locale], ...dealerStrings[locale] } };
+  const t = { ...translations[locale], platform: { ...platformStrings[locale], ...dealerStrings[locale], ...opsStrings[locale] } };
 
   useEffect(() => {
     localStorage.setItem("lumina-locale", locale);
