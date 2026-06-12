@@ -15,8 +15,8 @@
   --gold-soft: #e7d8b9;
   --silver: #d9e1ef;
   --shadow: 0 28px 90px rgba(0, 0, 0, 0.58);
-  --serif: "Bodoni Moda", "Noto Serif KR", "Noto Serif SC", "Iowan Old Style", Georgia, serif;
-  --brand-serif: Cinzel, "Bodoni Moda", "Noto Serif KR", "Noto Serif SC", Georgia, serif;
+  --serif: "Cormorant Garamond", "Noto Serif KR", "Noto Serif SC", Georgia, serif;
+  --brand-serif: "Cormorant Garamond", "Noto Serif KR", "Noto Serif SC", Georgia, serif;
   --sans: Manrope, "Apple SD Gothic Neo", "Noto Sans KR", "Noto Sans SC", "Malgun Gothic", Arial, sans-serif;
 }
 
@@ -81,10 +81,11 @@ img {
   justify-self: center;
   font-family: var(--brand-serif);
   font-size: 26px;
-  font-weight: 600;
+  font-weight: 400;
   line-height: 1;
-  letter-spacing: 0;
-  color: #fff;
+  letter-spacing: 10px;
+  margin-right: -10px; /* letter-spacing 끝글자 보정 */
+  color: #f5f3ee;
   white-space: nowrap;
 }
 
@@ -886,8 +887,9 @@ img {
   }
 
   .brand {
-    font-size: 18px;
-    letter-spacing: 0;
+    font-size: 19px;
+    letter-spacing: 6px;
+    margin-right: -6px;
   }
 
   .language-control {
