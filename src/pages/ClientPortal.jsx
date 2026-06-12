@@ -134,8 +134,10 @@ export default function ClientPortal() {
   const anySelected = selected || candidates.some((c) => c.clientSelection === "selected");
 
   // 타임라인 체크포인트 상태 — 스톤(솔리테어만) → 디자인 → 최종 실물
-  const stoneState = order.selectedDiamondId || anySelected ? "done"
+  // 선택했지만 아직 벤더 재고 확인(자동 락) 전이면 "확인 중" 상태로 유지
+  const stoneState = order.selectedDiamondId ? "done"
     : order.status === "STONE_SELECTION" ? "active" : "upcoming";
+  const stockChecking = !order.selectedDiamondId && anySelected;
   const designState = cad?.decision === "approved" ? "done" : cad && !cad.decision ? "active" : "upcoming";
   const finalState = finalAction ? "active"
     : ["BALANCE", "SHIPPING", "DELIVERED", "ARCHIVED"].includes(order.status) ? "done" : "upcoming";
@@ -169,6 +171,7 @@ export default function ClientPortal() {
       {showStone && (
         <Checkpoint index={1} title={p.visual.checkpoint.stone} state={stoneState}
           summary={selected && `${p.shapes[selected.shape] || selected.shape} ${selected.carat?.toFixed(2)}ct · ${selected.igiNo}`}>
+          {stockChecking && <p className="warn-note" style={{ marginBottom: 14 }}>{p.visual.stockChecking}</p>}
           {candidates.length > 0 && (
             <>
               <p className="form-hint" style={{ marginBottom: 14 }}>{t.batchNote}</p>

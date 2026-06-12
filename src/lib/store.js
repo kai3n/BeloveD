@@ -178,10 +178,11 @@ export function listProcurements(filter = {}) {
   return ps.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 export function getProcurement(id) { return db().procurementReqs.find((p) => p.id === id) || null; }
-export function createProcurement(orderId, { type, supplierId, dueDate, batchValidUntil, brief, metal, measurements }) {
+export function createProcurement(orderId, { type, supplierId, dueDate, batchValidUntil, brief, metal, measurements, diamondId }) {
   const pr = {
     id: nextSeqId("PR"), orderId, type, supplierId, dueDate, batchValidUntil: batchValidUntil || null,
     brief: brief || "", metal: metal || null, measurements: measurements || null,
+    diamondId: diamondId || null,
     status: "open", result: null, createdAt: now(),
   };
   db().procurementReqs.push(pr);
@@ -199,7 +200,9 @@ export function supplierTasks(supplierId) {
     const revision = pr.type === "cad" && order
       ? listCadReviews(order.id).find((c) => c.decision === "minorRevision") || null
       : null;
-    return supplierTaskView(pr, order, style, intake, revision);
+    // 재고 확인 태스크에는 대상 다이아의 안전 필드만 동봉 (고객가 미노출)
+    const diamond = pr.diamondId ? getCandidate(pr.diamondId) : null;
+    return supplierTaskView(pr, order, style, intake, revision, diamond);
   });
 }
 export function submitWeightLabor(prId, result) {
@@ -296,13 +299,35 @@ export function setCandidateAvailability(diaId, availability) {
   if (availability === "sold") c.published = false; // 매뉴얼 §13: Sold는 즉시 비공개
   persist();
 }
-// 고객 선택 → Operations 락 → 주문 기록 + 마일스톤
+// 고객 선택 → 후보를 제출한 벤더에게 재고 확인 태스크 자동 발행
+// (벤더 승인 시 자동 락, 품절 시 후보 제외 — submitStockConfirm)
 export function selectCandidate(diaId, actor) {
   const c = getCandidate(diaId);
   c.clientSelection = "selected";
   audit(actor, "diamond", diaId, "clientSelection", "none", "selected");
+  const due = new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10);
+  createProcurement(c.orderId, { type: "stockConfirm", supplierId: c.supplierId, dueDate: due, brief: c.igiNo, diamondId: c.id });
   persist();
   return c;
+}
+
+// 벤더 재고 확인 응답: 재고 있음 → hold + 자동 락(QUOTATION), 품절 → sold·비공개·선택 초기화
+export function submitStockConfirm(prId, available) {
+  const pr = getProcurement(prId);
+  const c = getCandidate(pr.diamondId);
+  pr.status = "submitted";
+  pr.result = { available };
+  audit(pr.supplierId, "procurement", prId, "result", null, available ? "inStock" : "soldOut");
+  if (available) {
+    c.availability = "hold";
+    lockCandidate(c.id);
+  } else {
+    setCandidateAvailability(c.id, "sold"); // §13: 즉시 비공개 포함
+    c.clientSelection = "none";
+    audit(pr.supplierId, "diamond", c.id, "clientSelection", "selected", "none");
+  }
+  persist();
+  return pr;
 }
 export function lockCandidate(diaId) {
   const c = getCandidate(diaId);

@@ -18,7 +18,7 @@ export const OPS_METALS = ["14ky", "18ky", "14kr", "18kr", "18kw", "pt"];
 export const CHAIN_LENGTHS = ["16in", "18in", "20in"]; // 단일 선택 — 자유 입력 금지
 export const PRODUCT_LINES = ["solitaire", "multi"];
 export const OPS_CATEGORIES = ["ring", "necklace", "earrings", "bangle"];
-export const PR_TYPES = ["diamondCandidates", "weightLabor", "cad", "qc"];
+export const PR_TYPES = ["diamondCandidates", "weightLabor", "stockConfirm", "cad", "qc"];
 // 슬롯 구조가 "어떤 각도를 찍어야 하는지"를 언어 설명 없이 강제한다
 export const CAD_SLOTS = ["render360", "side", "wear"];
 export const DEFECT_REVIEWS = ["recommended", "alternate", "excluded"];
@@ -74,12 +74,25 @@ export function customerOrderView(order) {
   return safe;
 }
 
+// 재고 확인 태스크용 다이아 안전 필드 — 고객가·원가·내부검수 제외.
+// 내부 id(DIA-{OrderID}-NN)는 주문번호가 박혀 있으므로 IGI 번호로만 식별시킨다.
+const SUPPLIER_DIAMOND_FIELDS = ["igiNo", "shape", "carat", "color", "clarity", "growth", "lab", "image", "video"];
+export function supplierDiamondView(cand) {
+  if (!cand) return null;
+  const out = {};
+  for (const f of SUPPLIER_DIAMOND_FIELDS) {
+    if (cand[f] !== undefined) out[f] = cand[f];
+  }
+  return out;
+}
+
 // 서플라이어 태스크 뷰: 고객 신원·판매가·Order ID 제외 (PR ID로만 식별)
 // visualBrief: 검수 승인 레퍼런스 + 직전 리비전 핀만 — pending/rejected 절대 미포함
-export function supplierTaskView(pr, order, style, intake = null, revisionReview = null) {
+export function supplierTaskView(pr, order, style, intake = null, revisionReview = null, diamond = null) {
   return {
     id: pr.id,
     type: pr.type,
+    diamond: supplierDiamondView(diamond),
     dueDate: pr.dueDate,
     batchValidUntil: pr.batchValidUntil ?? null,
     brief: pr.brief,

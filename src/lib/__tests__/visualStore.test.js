@@ -5,6 +5,7 @@ import {
   addCadVersion, decideCad, freeRevisionsLeft, portalView, getSettings,
   submitCadForPr, listCadReviews,
   submitQcForPr, confirmFinal, getOpsOrder, listCustomerActions, updateOpsOrder,
+  selectCandidate, submitStockConfirm, getCandidate, listProcurements, listMilestones, listCandidates,
 } from "../store.js";
 
 beforeEach(() => resetDB());
@@ -130,5 +131,46 @@ describe("visual store — 최종 실물 컨펌", () => {
     expect(closed.respondedAt).toBeTruthy(); // 컨펌 증거 (타임스탬프)
     const v = portalView("DM-000002", { queryCode: "H3WT-8RVK" });
     expect(v.finalAction).toBeNull(); // 컨펌 후 open 액션 없음
+  });
+});
+
+describe("visual store — 스톤 선택 → 벤더 재고 확인", () => {
+  it("고객 선택 시 후보 제출 벤더에게 stockConfirm PR 자동 발행 (가격 미노출)", () => {
+    selectCandidate("DIA-DM-000001-01", "customer");
+    const pr = listProcurements({ orderId: "DM-000001" }).find((p) => p.type === "stockConfirm");
+    expect(pr.supplierId).toBe("u-supplier1"); // 후보를 낸 벤더에게 배정
+    expect(pr.diamondId).toBe("DIA-DM-000001-01");
+    const task = supplierTasks("u-supplier1").find((t) => t.type === "stockConfirm");
+    expect(task.diamond.igiNo).toBe("LG591234001");
+    const json = JSON.stringify(task);
+    expect(json).not.toContain("customerPriceUsd");
+    expect(json).not.toContain("1180"); // 고객가
+    expect(json).not.toContain("DM-000001");
+  });
+
+  it("벤더 재고 확인 → hold + 자동 락 + QUOTATION + 마일스톤", () => {
+    selectCandidate("DIA-DM-000001-01", "customer");
+    const pr = listProcurements({ orderId: "DM-000001" }).find((p) => p.type === "stockConfirm");
+    submitStockConfirm(pr.id, true);
+    const c = getCandidate("DIA-DM-000001-01");
+    expect(c.availability).toBe("hold");
+    expect(c.locked).toBe(true);
+    expect(getOpsOrder("DM-000001").selectedDiamondId).toBe("DIA-DM-000001-01");
+    expect(getOpsOrder("DM-000001").status).toBe("QUOTATION");
+    expect(listMilestones("DM-000001").find((m) => m.stage === "diamondLocked").status).toBe("done");
+    expect(pr.status).toBe("submitted");
+  });
+
+  it("벤더 품절 처리 → sold·비공개·선택 초기화, 주문은 STONE_SELECTION 유지", () => {
+    selectCandidate("DIA-DM-000001-01", "customer");
+    const pr = listProcurements({ orderId: "DM-000001" }).find((p) => p.type === "stockConfirm");
+    submitStockConfirm(pr.id, false);
+    const c = getCandidate("DIA-DM-000001-01");
+    expect(c.availability).toBe("sold");
+    expect(c.published).toBe(false); // §13: Sold 즉시 비공개
+    expect(c.clientSelection).toBe("none"); // 고객은 다른 후보 재선택 가능
+    expect(getOpsOrder("DM-000001").status).toBe("STONE_SELECTION");
+    expect(getOpsOrder("DM-000001").selectedDiamondId).toBeNull();
+    expect(listCandidates({ orderId: "DM-000001", publishedOnly: true }).length).toBe(1);
   });
 });

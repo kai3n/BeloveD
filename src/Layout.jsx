@@ -102,9 +102,10 @@ export function Footer() {
 }
 
 // ESC = 뒤로가기. 입력 중에는 포커스 해제만 (폼 작성 중 페이지 이탈 방지),
-// 모바일 메뉴가 열려 있으면 무시, 히스토리가 없으면 홈으로.
+// 모바일 메뉴가 열려 있으면 무시, 히스토리가 없으면 홈으로, 홈에서는 아무 동작 안 함.
 function EscapeBack() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   useEffect(() => {
     function onKey(e) {
       if (e.key !== "Escape") return;
@@ -114,12 +115,13 @@ function EscapeBack() {
         return;
       }
       if (document.querySelector(".mobile-panel.is-open")) return;
+      if (pathname === "/") return;
       if (window.history.state?.idx > 0) navigate(-1);
       else navigate("/");
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [navigate]);
+  }, [navigate, pathname]);
   return null;
 }
 

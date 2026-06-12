@@ -3,10 +3,10 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../lib/auth.jsx";
 import { BENCHMARK_SHAPES, CAD_SLOTS, supplierTaskView } from "../../lib/ops.js";
 import {
-  getIntake, getOpsOrder, getOpsStyle, getProcurement, listCadReviews, submitCadForPr, submitCandidates, submitQcForPr, submitWeightLabor,
+  getCandidate, getIntake, getOpsOrder, getOpsStyle, getProcurement, listCadReviews, submitCadForPr, submitCandidates, submitQcForPr, submitStockConfirm, submitWeightLabor,
 } from "../../lib/store.js";
 import { useDBVersion } from "../../lib/useDB.js";
-import { EmptyNote, MediaPicker } from "../../components/ui.jsx";
+import { EmptyNote, MediaPicker, MediaThumb } from "../../components/ui.jsx";
 import PinAnnotator from "../../components/PinAnnotator.jsx";
 import { useLocale } from "../../i18n.jsx";
 
@@ -35,7 +35,8 @@ export default function SupplierTask() {
   const revisionReview = pr.type === "cad" && order
     ? listCadReviews(order.id).find((c) => c.decision === "minorRevision") || null
     : null;
-  const view = supplierTaskView(pr, order, order?.styleId ? getOpsStyle(order.styleId) : null, intake, revisionReview);
+  const stockDiamond = pr.diamondId ? getCandidate(pr.diamondId) : null;
+  const view = supplierTaskView(pr, order, order?.styleId ? getOpsStyle(order.styleId) : null, intake, revisionReview, stockDiamond);
   const setRow = (i, patch) => setRows((rs) => rs.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
 
   function sendCandidates(e) {
@@ -84,6 +85,26 @@ export default function SupplierTask() {
 
       {pr.status !== "open" ? (
         <EmptyNote>{t.status.submitted}</EmptyNote>
+      ) : pr.type === "stockConfirm" ? (
+        <div className="panel form-stack">
+          <h3>{t.stockTitle}</h3>
+          {view.diamond && (
+            <div className="card-grid cols-3">
+              <div className="item-card">
+                <MediaThumb media={view.diamond.video ? { kind: "video", src: view.diamond.video } : { kind: "image", src: view.diamond.image }} alt={view.diamond.igiNo} />
+                <div className="card-body">
+                  <h3>{view.diamond.shape} {Number(view.diamond.carat).toFixed(2)}ct</h3>
+                  <p className="spec">{view.diamond.color} / {view.diamond.clarity} · {view.diamond.growth} · {view.diamond.lab}</p>
+                  <p className="spec">{t.igiNo}: {view.diamond.igiNo}</p>
+                </div>
+              </div>
+            </div>
+          )}
+          <div className="row-actions">
+            <button className="button primary" onClick={() => { submitStockConfirm(prId, true); navigate("/supplier"); }}>{t.stockYes}</button>
+            <button className="button danger" onClick={() => { submitStockConfirm(prId, false); navigate("/supplier"); }}>{t.stockNo}</button>
+          </div>
+        </div>
       ) : pr.type === "diamondCandidates" ? (
         <form className="panel form-stack" onSubmit={sendCandidates}>
           <h3>{t.candTitle}</h3>
