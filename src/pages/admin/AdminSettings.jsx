@@ -19,6 +19,14 @@ export default function AdminSettings() {
         <p className="form-hint">{p.admin.settings.applyNote}</p>
       </div>
       <div className="panel form-stack" style={{ maxWidth: 480 }}>
+        <h3>{p.adminDealer.settings.tierThreshold}</h3>
+        <label className="field"><span>{p.adminDealer.settings.tierThreshold}</span>
+          <input
+            type="number" step="1000" defaultValue={settings.tierThresholdUsd} key={settings.tierThresholdUsd}
+            onBlur={(e) => updateSettings({ tierThresholdUsd: Number(e.target.value) })}
+          /></label>
+      </div>
+      <div className="panel form-stack" style={{ maxWidth: 480 }}>
         <h3>{p.admin.settings.stagesTitle}</h3>
         <p className="form-hint">{settings.shippingStages.map((s) => p.stages[s] || s).join(" → ")}</p>
       </div>

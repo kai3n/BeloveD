@@ -56,6 +56,7 @@ export default function DiamondDetail() {
         <p className="form-hint" style={{ marginTop: 14 }}>
           {p.detail.certNote(diamond.certOrg, diamond.certNo)}
         </p>
+        <p className="form-hint" style={{ marginTop: 6 }}>{p.ftc}</p>
 
         <div className="hero-ctas" style={{ justifyContent: "flex-start" }}>
           <Link className="button primary" to={`/custom/new?diamond=${diamond.id}`}>

@@ -16,7 +16,7 @@ export default function Templates() {
   return (
     <div className="page">
       <h1 className="page-title">{p.templates.title}</h1>
-      <p className="page-sub">{p.templates.sub}</p>
+      <p className="page-sub">{p.templates.sub}<br /><span className="form-hint">{p.ftc}</span></p>
 
       <div className="chip-row" style={{ marginBottom: 30 }}>
         {CATEGORIES.map((c) => (

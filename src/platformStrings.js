@@ -23,7 +23,7 @@ const en = {
     loginBtn: "Sign in", signupBtn: "Create account",
     toSignup: "New here? Create an account", toLogin: "Already have an account? Sign in",
     demoTitle: "Demo accounts (password: demo1234)",
-    demoCustomer: "Browse as customer", demoVendor: "Browse as vendor", demoAdmin: "Browse as admin",
+    demoCustomer: "Browse as customer", demoVendor: "Browse as vendor", demoDealer: "Browse as dealer", demoAdmin: "Browse as admin",
     errors: { badCredentials: "Invalid email or password. (Demo password: demo1234)", emailExists: "This email is already registered." },
   },
   diamonds: {
@@ -187,7 +187,7 @@ const ko = {
     loginBtn: "로그인", signupBtn: "가입하기",
     toSignup: "처음이신가요? 회원가입", toLogin: "이미 계정이 있으신가요? 로그인",
     demoTitle: "데모 계정 (비밀번호 demo1234)",
-    demoCustomer: "고객으로 둘러보기", demoVendor: "벤더로 둘러보기", demoAdmin: "운영자로 둘러보기",
+    demoCustomer: "고객으로 둘러보기", demoVendor: "벤더로 둘러보기", demoDealer: "딜러로 둘러보기", demoAdmin: "운영자로 둘러보기",
     errors: { badCredentials: "이메일 또는 비밀번호가 올바르지 않습니다. (데모 비밀번호: demo1234)", emailExists: "이미 가입된 이메일입니다." },
   },
   diamonds: {
@@ -351,7 +351,7 @@ const zh = {
     loginBtn: "登录", signupBtn: "注册",
     toSignup: "新用户？注册账户", toLogin: "已有账户？登录",
     demoTitle: "演示账户（密码 demo1234）",
-    demoCustomer: "以顾客身份浏览", demoVendor: "以供应商身份浏览", demoAdmin: "以管理员身份浏览",
+    demoCustomer: "以顾客身份浏览", demoVendor: "以供应商身份浏览", demoDealer: "以经销商身份浏览", demoAdmin: "以管理员身份浏览",
     errors: { badCredentials: "邮箱或密码不正确。（演示密码：demo1234）", emailExists: "该邮箱已注册。" },
   },
   diamonds: {
@@ -515,7 +515,7 @@ const es = {
     loginBtn: "Entrar", signupBtn: "Crear cuenta",
     toSignup: "¿Primera vez? Crea una cuenta", toLogin: "¿Ya tienes cuenta? Inicia sesión",
     demoTitle: "Cuentas demo (contraseña: demo1234)",
-    demoCustomer: "Explorar como cliente", demoVendor: "Explorar como taller", demoAdmin: "Explorar como admin",
+    demoCustomer: "Explorar como cliente", demoVendor: "Explorar como taller", demoDealer: "Explorar como distribuidor", demoAdmin: "Explorar como admin",
     errors: { badCredentials: "Correo o contraseña incorrectos. (Contraseña demo: demo1234)", emailExists: "Este correo ya está registrado." },
   },
   diamonds: {

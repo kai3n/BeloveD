@@ -192,3 +192,12 @@
   .stepper { display: grid; grid-template-columns: 1fr 1fr; row-gap: 14px; }
   .stepper li::before { display: none; }
 }
+
+/* 딜러 채널 */
+.meter { height: 8px; background: var(--surface-2); border: 1px solid var(--line); }
+.meter-fill { height: 100%; background: linear-gradient(90deg, var(--gold-deep), var(--accent)); transition: width 300ms ease; }
+.wst-PLACED { border-color: rgba(214, 197, 160, 0.65); color: var(--accent-bright); }
+.wst-QC_PASSED, .wst-SHIPPED, .cst-AWAITING_RETURN, .cst-RETURN_RECEIVED { border-color: rgba(150, 190, 255, 0.4); color: #b9d2f5; }
+.wst-DELIVERED, .cst-REPLACED { border-color: rgba(140, 210, 160, 0.4); color: #aee0bd; }
+.wst-CANCELLED, .cst-DENIED { border-color: rgba(224, 133, 133, 0.4); color: #e0a5a5; }
+.cst-SUBMITTED { border-color: rgba(214, 197, 160, 0.65); color: var(--accent-bright); }

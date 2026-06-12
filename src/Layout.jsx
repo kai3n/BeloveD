@@ -8,6 +8,7 @@ import { useAuth } from "./lib/auth.jsx";
 function roleHome(user) {
   if (!user) return "/login";
   if (user.role === "vendor") return "/vendor";
+  if (user.role === "dealer") return "/dealer";
   if (user.role === "admin") return "/admin";
   return "/account";
 }
@@ -71,7 +72,7 @@ export function Header() {
           <NavLink to={item.to} key={item.to} onClick={() => setOpen(false)}>{item.label}</NavLink>
         ))}
         <NavLink to={roleHome(user)} onClick={() => setOpen(false)}>
-          {user ? (user.role === "vendor" ? p.nav.vendorPortal : user.role === "admin" ? p.nav.admin : p.nav.account) : p.nav.login}
+          {user ? (user.role === "vendor" ? p.nav.vendorPortal : user.role === "dealer" ? p.dealer.title : user.role === "admin" ? p.nav.admin : p.nav.account) : p.nav.login}
         </NavLink>
       </div>
     </header>
@@ -79,13 +80,14 @@ export function Header() {
 }
 
 export function Footer() {
-  const { t } = useLocale();
+  const { t, p } = useLocale();
   // GitHub Pages 하위 경로에서도 동작하도록 router Link 사용
   const footerLinks = [
     { to: "/#collections", label: t.footer.links[0] },
     { to: "/guide/lab-diamond", label: t.footer.links[1] },
     { to: "/#concierge", label: t.footer.links[2] },
     { to: "/#products", label: t.footer.links[3] },
+    { to: "/dealers/apply", label: p.dealerApply.title },
   ];
   return (
     <footer className="footer">

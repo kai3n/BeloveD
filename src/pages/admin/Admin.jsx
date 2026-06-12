@@ -12,6 +12,11 @@ export default function Admin() {
     { to: "/admin/templates", key: "templates" },
     { to: "/admin/orders", key: "orders" },
     { to: "/admin/vendors", key: "vendors" },
+    { to: "/admin/dealers", key: "dealers", dealer: true },
+    { to: "/admin/catalog", key: "catalog", dealer: true },
+    { to: "/admin/wholesale", key: "wholesale", dealer: true },
+    { to: "/admin/claims", key: "claims", dealer: true },
+    { to: "/admin/warranty", key: "warranty", dealer: true },
     { to: "/admin/settings", key: "settings" },
   ];
 
@@ -20,7 +25,7 @@ export default function Admin() {
       <h1 className="page-title">{p.admin.title}</h1>
       <div className="admin-shell">
         <nav className="admin-side">
-          {menu.map((m) => <NavLink key={m.to} to={m.to} end={m.end}>{p.admin.menu[m.key]}</NavLink>)}
+          {menu.map((m) => <NavLink key={m.to} to={m.to} end={m.end}>{m.dealer ? p.adminDealer.menu[m.key] : p.admin.menu[m.key]}</NavLink>)}
         </nav>
         <div><Outlet /></div>
       </div>
