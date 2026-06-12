@@ -1,9 +1,12 @@
 import { seed } from "./seed.js";
-import { assertTransition } from "./statusMachine.js";
 import { maskContacts } from "./masking.js";
 import { assertClaimTransition, computeTier, salvageCredit, unitWholesale, metalQuote } from "./dealer.js";
+import {
+  MILESTONE_STAGES, publicDiamondView, customerOrderView, supplierTaskView,
+  quoteCompute, reconcileDelta, randomQueryCode, tierForCarat,
+} from "./ops.js";
 
-const KEY = "lumina-db-v5"; // 스키마/시드 변경 시 버전업 (v5: 프리스타일 템플릿 영상)
+const KEY = "lumina-db-v6"; // v6: Operations Manual 리팩토링 (레거시 마켓플레이스 → ops 플로우)
 
 // 테스트(node) 환경 폴백
 const memoryStorage = (() => {
@@ -21,6 +24,7 @@ function isValidDB(d) {
     d && Array.isArray(d.diamonds) && d.diamonds[0]?.priceUsd != null
     && d.settings?.shippingStages?.[0] === "production"
     && Array.isArray(d.catalogItems) && d.settings?.goldSpotPerGram != null
+    && Array.isArray(d.opsOrders) && Array.isArray(d.diamondPricing)
   );
 }
 
@@ -30,6 +34,7 @@ function db() {
     storage.removeItem("lumina-db-v2");
     storage.removeItem("lumina-db-v3");
     storage.removeItem("lumina-db-v4");
+    storage.removeItem("lumina-db-v5");
     let parsed = null;
     try {
       const raw = storage.getItem(KEY);
@@ -96,159 +101,378 @@ export function adjustDiamondPrices(percent) {
   persist();
 }
 
-// ---------- templates ----------
-export function listTemplates({ includeHidden = false } = {}) {
-  return db().templates.filter((t) => includeHidden || t.visible);
+// ---------- operations manual: intake & orders ----------
+function audit(actor, entity, entityId, field, before, after) {
+  db().auditLog.push({ id: nextId("aud"), actor, entity, entityId, field: field ?? null, before: before ?? null, after: after ?? null, at: now() });
 }
-export function getTemplate(id) { return db().templates.find((t) => t.id === id) || null; }
-export function saveTemplate(tpl) {
-  const list = db().templates;
-  const i = list.findIndex((t) => t.id === tpl.id);
-  if (i >= 0) list[i] = { ...list[i], ...tpl };
-  else list.push({ media: [], visible: true, ...tpl, id: nextId("t") });
-  persist();
+export function listAudit(entityId) { return db().auditLog.filter((a) => a.entityId === entityId); }
+
+function nextOrderId() {
+  db().opsCounter += 1;
+  return `DM-${String(db().opsCounter).padStart(6, "0")}`;
+}
+function nextSeqId(prefix, slice) {
+  db().opsCounter += 1;
+  return `${prefix}-${String(db().opsCounter).padStart(6, "0")}`;
 }
 
-// ---------- custom requests ----------
-export function listRequests(filter = {}) {
-  let rs = [...db().requests];
-  if (filter.customerId) rs = rs.filter((r) => r.customerId === filter.customerId);
-  if (filter.vendorId) rs = rs.filter((r) => r.vendorId === filter.vendorId);
-  return rs.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-}
-export function getRequest(id) { return db().requests.find((r) => r.id === id) || null; }
-
-export function createRequest({ customerId, templateId, diamondId, details }) {
-  const id = nextId("req");
-  const request = {
-    id, code: `#${id.slice(4)}`, customerId, templateId, diamondId: diamondId || null,
-    details: { ...details, notes: maskContacts(details?.notes || "") },
-    status: "SUBMITTED", vendorId: null, createdAt: now(), assignedAt: null,
+export function listIntakes() { return [...db().intakes]; }
+// 인테이크 제출 → Order 자동 생성 (매뉴얼 P1 자동화)
+export function createIntake(form, customerId = null) {
+  const intakeId = nextSeqId("IN");
+  const orderId = nextOrderId();
+  const status = !form.styleId ? "STYLE_SELECTION" : form.productLine === "solitaire" ? "STONE_SELECTION" : "QUOTATION";
+  const intake = { id: intakeId, orderId, ...form, createdAt: now() };
+  const order = {
+    id: orderId, intakeId, customerId, customerName: form.name, styleId: form.styleId || null,
+    status, owner: "Operations", queryCode: randomQueryCode(), selectedDiamondId: null,
+    requiredDate: form.requiredDate || null, internalNotes: "", createdAt: now(),
   };
-  db().requests.push(request);
-  logEvent(id, "DRAFT", "SUBMITTED", customerId);
+  db().intakes.push(intake);
+  db().opsOrders.push(order);
+  audit(customerId || "guest", "order", orderId, "create", null, status);
   persist();
-  return request;
+  return { intake, order };
 }
 
-// 상태 전이 공통 경로 + 주문 배송단계 동기화 (단계 키 — 라벨은 i18n 사전)
-const STAGE_BY_STATUS = {
-  IN_PRODUCTION: "production", QUALITY_CHECK: "qc", FINAL_PAYMENT_PAID: "ready",
-  SHIPPED: "shipping", DELIVERED: "delivered", COMPLETED: "delivered",
-};
-export function transitionRequest(id, to, actor) {
-  const r = getRequest(id);
-  assertTransition(r.status, to, actor.role);
-  logEvent(id, r.status, to, actor.id);
-  r.status = to;
-  const order = getOrderByRequest(id);
-  if (order && STAGE_BY_STATUS[to]) order.shippingStage = STAGE_BY_STATUS[to];
-  persist();
-  return r;
+export function listOpsOrders(filter = {}) {
+  let os = [...db().opsOrders];
+  if (filter.customerId) os = os.filter((o) => o.customerId === filter.customerId);
+  return os.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
-
-export function assignVendor(requestId, vendorId, actor) {
-  const r = getRequest(requestId);
-  assertTransition(r.status, "VENDOR_ASSIGNED", actor.role);
-  logEvent(requestId, r.status, "VENDOR_ASSIGNED", actor.id);
-  r.status = "VENDOR_ASSIGNED";
-  r.vendorId = vendorId;
-  r.assignedAt = now();
-  persist();
-  return r;
-}
-
-// 벤더에게 보여줄 때 PII 제거 (핵심 익명성 규칙)
-export function anonymizeForVendor(request) {
-  const { customerId, ...rest } = request;
-  return { ...rest, customerLabel: request.code };
-}
-
-// ---------- proposals & feedback ----------
-export function listProposals(requestId) {
-  return db().proposals.filter((p) => p.requestId === requestId).sort((a, b) => a.version - b.version);
-}
-export function addProposal(requestId, vendorId, { media, comment }) {
-  const r = getRequest(requestId);
-  assertTransition(r.status, "PROPOSAL_UPLOADED", "vendor");
-  const proposal = {
-    id: nextId("prop"), requestId, vendorId, version: listProposals(requestId).length + 1,
-    media: media || [], comment: maskContacts(comment || ""), createdAt: now(),
-  };
-  db().proposals.push(proposal);
-  logEvent(requestId, r.status, "PROPOSAL_UPLOADED", vendorId);
-  r.status = "PROPOSAL_UPLOADED";
-  persist();
-  return proposal;
-}
-export function listFeedback(proposalId) {
-  return db().feedback.filter((f) => f.proposalId === proposalId);
-}
-export function addFeedback(proposalId, { decision, choices, comment }, actor) {
-  const proposal = db().proposals.find((p) => p.id === proposalId);
-  const r = getRequest(proposal.requestId);
-  const to = decision === "confirm" ? "CONFIRMED" : "REVISION_REQUESTED";
-  assertTransition(r.status, to, actor.role);
-  db().feedback.push({
-    id: nextId("fb"), proposalId, customerId: actor.id, decision,
-    choices: choices || [], comment: maskContacts(comment || ""), createdAt: now(),
-  });
-  logEvent(r.id, r.status, to, actor.id);
-  r.status = to;
-  let order = null;
-  if (to === "CONFIRMED") {
-    const tpl = getTemplate(r.templateId);
-    const dia = r.diamondId ? getDiamond(r.diamondId) : null;
-    const totalUsd = (tpl?.basePriceUsd || 0) + (dia?.priceUsd || 0);
-    order = {
-      id: nextId("ord"), requestId: r.id, totalUsd,
-      depositUsd: Math.round(totalUsd * db().settings.depositRate),
-      depositPaidAt: null, finalPaidAt: null, shippingStage: null, trackingNo: null, createdAt: now(),
-    };
-    db().orders.push(order);
+export function getOpsOrder(id) { return db().opsOrders.find((o) => o.id === id) || null; }
+export function getIntake(id) { return db().intakes.find((i) => i.id === id) || null; }
+export function updateOpsOrder(id, patch, actor = "ops") {
+  const o = getOpsOrder(id);
+  for (const [k, v] of Object.entries(patch)) {
+    if (o[k] !== v) { audit(actor, "order", id, k, o[k], v); o[k] = v; }
   }
   persist();
-  return { request: r, order };
+  return o;
 }
 
-// ---------- orders & payments ----------
-export function listOrders() { return [...db().orders]; }
-export function getOrderByRequest(requestId) {
-  return db().orders.find((o) => o.requestId === requestId) || null;
+// ---------- procurement & supplier ----------
+export function listProcurements(filter = {}) {
+  let ps = [...db().procurementReqs];
+  if (filter.supplierId) ps = ps.filter((p) => p.supplierId === filter.supplierId);
+  if (filter.orderId) ps = ps.filter((p) => p.orderId === filter.orderId);
+  return ps.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
-export function payOrder(orderId, kind, actor) {
-  const order = db().orders.find((o) => o.id === orderId);
-  const r = getRequest(order.requestId);
-  const to = kind === "deposit" ? "DEPOSIT_PAID" : "FINAL_PAYMENT_PAID";
-  assertTransition(r.status, to, actor.role);
-  const amount = kind === "deposit" ? order.depositUsd : order.totalUsd - order.depositUsd;
-  db().payments.push({ id: nextId("pay"), orderId, kind, provider: "mock-pg", amount, currency: "USD", status: "paid", at: now() });
-  if (kind === "deposit") order.depositPaidAt = now();
-  else order.finalPaidAt = now();
-  logEvent(r.id, r.status, to, actor.id);
-  r.status = to;
-  if (STAGE_BY_STATUS[to]) order.shippingStage = STAGE_BY_STATUS[to];
+export function getProcurement(id) { return db().procurementReqs.find((p) => p.id === id) || null; }
+export function createProcurement(orderId, { type, supplierId, dueDate, batchValidUntil, brief, metal, measurements }) {
+  const pr = {
+    id: nextSeqId("PR"), orderId, type, supplierId, dueDate, batchValidUntil: batchValidUntil || null,
+    brief: brief || "", metal: metal || null, measurements: measurements || null,
+    status: "open", result: null, createdAt: now(),
+  };
+  db().procurementReqs.push(pr);
+  audit("ops", "procurement", pr.id, "create", null, type);
   persist();
-  return order;
+  return pr;
 }
-export function listPayments(customerId) {
-  const reqIds = new Set(listRequests({ customerId }).map((r) => r.id));
-  const orderIds = new Set(db().orders.filter((o) => reqIds.has(o.requestId)).map((o) => o.id));
-  return db().payments.filter((p) => orderIds.has(p.orderId));
+// 서플라이어 화면용 — 고객 신원/Order ID 미노출
+export function supplierTasks(supplierId) {
+  return listProcurements({ supplierId }).map((pr) => {
+    const order = getOpsOrder(pr.orderId);
+    const style = order?.styleId ? getOpsStyle(order.styleId) : null;
+    return supplierTaskView(pr, order, style);
+  });
 }
-export function updateShipping(orderId, { trackingNo }) {
-  const order = db().orders.find((o) => o.id === orderId);
-  if (trackingNo !== undefined) order.trackingNo = trackingNo;
+export function submitWeightLabor(prId, result) {
+  const pr = getProcurement(prId);
+  pr.result = result;
+  pr.status = "submitted";
+  audit(pr.supplierId, "procurement", prId, "result", null, "weightLabor");
+  persist();
+  return pr;
+}
+export function closeProcurement(prId) {
+  const pr = getProcurement(prId);
+  pr.status = "closed";
   persist();
 }
 
-// ---------- production media ----------
-export function listProductionMedia(requestId) {
-  return db().productionMedia.filter((m) => m.requestId === requestId);
+// ---------- diamond candidates ----------
+export function listCandidates(filter = {}) {
+  let cs = [...db().diamondCands];
+  if (filter.orderId) cs = cs.filter((c) => c.orderId === filter.orderId);
+  if (filter.prId) cs = cs.filter((c) => c.prId === filter.prId);
+  if (filter.publishedOnly) cs = cs.filter((c) => c.published);
+  return cs;
 }
-export function addProductionMedia(requestId, media) {
-  db().productionMedia.push({ id: nextId("pm"), requestId, ...media, createdAt: now() });
+export function getCandidate(id) { return db().diamondCands.find((c) => c.id === id) || null; }
+export function submitCandidates(prId, candidates) {
+  const pr = getProcurement(prId);
+  const existing = listCandidates({ orderId: pr.orderId }).length;
+  const created = candidates.map((cand, i) => ({
+    id: `DIA-${pr.orderId}-${String(existing + i + 1).padStart(2, "0")}`,
+    orderId: pr.orderId, prId,
+    igiNo: cand.igiNo, shape: cand.shape, carat: cand.carat, color: cand.color, clarity: cand.clarity,
+    growth: cand.growth, lab: cand.lab, proportions: cand.proportions || {},
+    reportUrl: cand.reportUrl || "", image: cand.image || "", video: cand.video || "",
+    colorTreatment: cand.colorTreatment || "disclosed", availability: "available",
+    procurementCostUsd: cand.procurementCostUsd, supplierId: pr.supplierId,
+    internalReview: null, internalNotes: "", published: false, customerPriceUsd: null,
+    clientSelection: "none", locked: false, createdAt: now(),
+  }));
+  db().diamondCands.push(...created);
+  pr.status = "submitted";
+  audit(pr.supplierId, "procurement", prId, "candidates", null, String(created.length));
   persist();
+  return created;
+}
+export function reviewCandidate(diaId, internalReview, notes) {
+  const c = getCandidate(diaId);
+  c.internalReview = internalReview;
+  if (notes !== undefined) c.internalNotes = notes;
+  persist();
+  return c;
+}
+export function publishCandidate(diaId, customerPriceUsd) {
+  const c = getCandidate(diaId);
+  c.customerPriceUsd = customerPriceUsd;
+  c.published = true;
+  audit("ops", "diamond", diaId, "published", "false", "true");
+  persist();
+  return c;
+}
+export function unpublishCandidate(diaId) {
+  const c = getCandidate(diaId);
+  c.published = false;
+  persist();
+}
+export function setCandidateAvailability(diaId, availability) {
+  const c = getCandidate(diaId);
+  c.availability = availability;
+  if (availability === "sold") c.published = false; // 매뉴얼 §13: Sold는 즉시 비공개
+  persist();
+}
+// 고객 선택 → Operations 락 → 주문 기록 + 마일스톤
+export function selectCandidate(diaId, actor) {
+  const c = getCandidate(diaId);
+  c.clientSelection = "selected";
+  audit(actor, "diamond", diaId, "clientSelection", "none", "selected");
+  persist();
+  return c;
+}
+export function lockCandidate(diaId) {
+  const c = getCandidate(diaId);
+  c.locked = true;
+  const order = getOpsOrder(c.orderId);
+  updateOpsOrder(order.id, { selectedDiamondId: diaId, status: "QUOTATION" });
+  upsertMilestone(order.id, "diamondLocked", { status: "done", publishToClient: true, clientUpdate: c.id });
+  return c;
+}
+
+// ---------- styles & specs ----------
+export function listOpsStyles({ publishedOnly = false } = {}) {
+  return db().opsStyles.filter((st) => !publishedOnly || (st.published && st.availableForSale));
+}
+export function getOpsStyle(id) { return db().opsStyles.find((st) => st.id === id) || null; }
+export function saveOpsStyle(style) {
+  const list = db().opsStyles;
+  const i = list.findIndex((st) => st.id === style.id);
+  if (i >= 0) list[i] = { ...list[i], ...style };
+  else {
+    const prefix = { ring: "RING", necklace: "NECK", earrings: "EARR", bangle: "BRAC" }[style.category] || "STYL";
+    const count = list.filter((st) => st.category === style.category).length + 1;
+    list.push({ published: false, availableForSale: false, mediaComplete: false, ...style, id: `${prefix}-${String(count).padStart(3, "0")}` });
+  }
+  persist();
+}
+export function listStyleSpecs(styleId) {
+  return db().styleSpecs.filter((sp) => !styleId || sp.styleId === styleId);
+}
+export function saveStyleSpec(spec) {
+  const list = db().styleSpecs;
+  const i = list.findIndex((sp) => sp.id === spec.id);
+  if (i >= 0) list[i] = { ...list[i], ...spec };
+  else list.push({ status: "approved", ...spec, id: nextSeqId("SPEC") });
+  persist();
+}
+
+// ---------- diamond pricing benchmark (9×7) ----------
+export function getBenchmark() { return db().diamondPricing; }
+export function benchmarkFor(shape, carat) {
+  const tier = tierForCarat(carat);
+  return db().diamondPricing.find((r) => r.shape === shape && r.tier === tier) || null;
+}
+export function setBenchmarkPrice(shape, tier, unitUsdPerCt) {
+  const row = db().diamondPricing.find((r) => r.shape === shape && r.tier === tier);
+  if (row) {
+    audit("ops", "benchmark", `${shape}/${tier}`, "unitUsdPerCt", String(row.unitUsdPerCt), String(unitUsdPerCt));
+    row.unitUsdPerCt = unitUsdPerCt;
+    row.quoteDate = now().slice(0, 10);
+    persist();
+  }
+}
+
+// ---------- quotes ----------
+export function listQuotes(orderId) { return db().quotes.filter((q) => q.orderId === orderId).sort((a, b) => b.version - a.version); }
+export function createQuote(orderId, { estWeightG, metalRefUsdPerG, lossRatePct, nonMetalUsd, internal }) {
+  const order = getOpsOrder(orderId);
+  const dia = order.selectedDiamondId ? getCandidate(order.selectedDiamondId) : null;
+  const bench = dia ? benchmarkFor(dia.shape, dia.carat) : null;
+  const computed = quoteCompute({
+    carat: dia?.carat || 0, benchmarkUsdPerCt: bench?.unitUsdPerCt || 0,
+    multiplier: internal?.multiplier ?? db().settings.opsMultiplier,
+    estWeightG, metalRefUsdPerG, lossRatePct, nonMetalUsd, depositRate: db().settings.opsDepositRate,
+  });
+  const version = listQuotes(orderId).length + 1;
+  const quote = {
+    id: `Q-${orderId}-V${version}`, orderId, version, status: "draft",
+    estWeightG, metalRefUsdPerG, lossRatePct, nonMetalUsd,
+    internal: internal || {}, // 원가·멀티플라이어 — 고객 미노출
+    snapshot: { benchmarkUsdPerCt: bench?.unitUsdPerCt || 0, carat: dia?.carat || 0 }, // 벤치마크 변경이 과거 견적에 영향 없음
+    ...computed, validUntil: new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10),
+    leadDays: db().settings.productionLeadDays, acceptedAt: null, createdAt: now(),
+  };
+  db().quotes.push(quote);
+  audit("ops", "quote", quote.id, "create", null, "draft");
+  persist();
+  return quote;
+}
+export function sendQuote(quoteId) {
+  const q = db().quotes.find((x) => x.id === quoteId);
+  q.status = "sent";
+  createCustomerAction(q.orderId, { type: "quoteAcceptance", prompt: q.id, link: "" });
+  persist();
+  return q;
+}
+export function acceptQuote(quoteId, actor) {
+  const q = db().quotes.find((x) => x.id === quoteId);
+  q.status = "accepted";
+  q.acceptedAt = now();
+  audit(actor, "quote", quoteId, "status", "sent", "accepted");
+  persist();
+  return q;
+}
+// 디파짓 수령(증빙) → 주문 CAD 단계 + 마일스톤
+export function markDepositReceived(orderId) {
+  upsertMilestone(orderId, "depositReceived", { status: "done", publishToClient: true });
+  updateOpsOrder(orderId, { status: "CAD" });
+}
+// 실중량 정산 → 잔금 가감
+export function recordActualWeight(orderId, actualWeightG) {
+  const q = listQuotes(orderId).find((x) => x.status === "accepted");
+  const delta = reconcileDelta(q.estWeightG, actualWeightG, q.metalRefUsdPerG, q.lossRatePct);
+  audit("ops", "quote", q.id, "balanceUsd", String(q.balanceUsd), String(q.balanceUsd + delta));
+  q.actualWeightG = actualWeightG;
+  q.balanceUsd += delta;
+  q.totalUsd += delta;
+  upsertMilestone(orderId, "actualMetalReconciled", { status: "done", publishToClient: true, clientUpdate: `${actualWeightG}g` });
+  persist();
+  return { quote: q, delta };
+}
+
+// ---------- milestones (스테이지당 1레코드) ----------
+export function listMilestones(orderId) {
+  const ms = db().milestones.filter((m) => m.orderId === orderId);
+  return MILESTONE_STAGES.map((stage) => ms.find((m) => m.stage === stage)).filter(Boolean);
+}
+export function upsertMilestone(orderId, stage, patch) {
+  let m = db().milestones.find((x) => x.orderId === orderId && x.stage === stage);
+  if (!m) {
+    m = {
+      id: `M-${orderId}-${String(MILESTONE_STAGES.indexOf(stage) + 1).padStart(2, "0")}`,
+      orderId, stage, status: "pending", clientUpdate: "", clientAction: "", link: "", publishToClient: false, at: now(),
+    };
+    db().milestones.push(m);
+  }
+  Object.assign(m, patch, { at: now() });
+  persist();
+  return m;
+}
+
+// ---------- CAD reviews (버전당 1레코드 — 히스토리 불변) ----------
+export function listCadReviews(orderId) { return db().cadReviews.filter((c) => c.orderId === orderId).sort((a, b) => b.version - a.version); }
+export function addCadVersion(orderId, { fileUrl, supplierId }) {
+  const version = listCadReviews(orderId).length + 1;
+  const review = {
+    id: nextSeqId("CADR"), orderId, version, fileUrl,
+    supplierUploadedAt: now(), internalReview: "", sentAt: null,
+    decision: null, feedback: [], confirmedMeasurements: "", evidence: "", decidedAt: null,
+  };
+  db().cadReviews.push(review);
+  upsertMilestone(orderId, "cadIssued", { status: "waitingClient", publishToClient: true, clientUpdate: `CAD V${version} ready for review`, link: fileUrl });
+  createCustomerAction(orderId, { type: "cadReview", prompt: `CAD V${version}`, link: fileUrl });
+  audit(supplierId || "supplier", "cad", review.id, "create", null, `V${version}`);
+  persist();
+  return review;
+}
+export function decideCad(reviewId, { decision, feedback, confirmedMeasurements }, actor) {
+  const r = db().cadReviews.find((x) => x.id === reviewId);
+  r.decision = decision;
+  r.feedback = (feedback || []).map((f) => maskContacts(f)).filter(Boolean);
+  r.confirmedMeasurements = confirmedMeasurements || "";
+  r.decidedAt = now();
+  audit(actor, "cad", reviewId, "decision", null, decision);
+  if (decision === "approved") {
+    upsertMilestone(r.orderId, "cadApproved", { status: "done", publishToClient: true, clientUpdate: `CAD V${r.version} approved` });
+    upsertMilestone(r.orderId, "productionStarted", { status: "inProgress", publishToClient: true });
+    updateOpsOrder(r.orderId, { status: "PRODUCTION" }, actor);
+  }
+  persist();
+  return r;
+}
+
+// ---------- customer actions ----------
+export function listCustomerActions(orderId, openOnly = false) {
+  return db().customerActions.filter((a) => a.orderId === orderId && (!openOnly || a.status === "open"));
+}
+export function createCustomerAction(orderId, { type, prompt, link, dueDate }) {
+  const action = { id: nextSeqId("CA"), orderId, type, prompt: prompt || "", link: link || "", dueDate: dueDate || null, status: "open", response: null, respondedAt: null, createdAt: now() };
+  db().customerActions.push(action);
+  persist();
+  return action;
+}
+export function respondCustomerAction(actionId, response, actor) {
+  const a = db().customerActions.find((x) => x.id === actionId);
+  a.status = "done";
+  a.response = maskContacts(response || "");
+  a.respondedAt = now();
+  audit(actor, "customerAction", actionId, "status", "open", "done");
+  persist();
+  return a;
+}
+
+// ---------- client portal (보안 프로젝션 적용) ----------
+export function portalView(orderId, { customerId, queryCode } = {}) {
+  const order = getOpsOrder(orderId);
+  if (!order) return null;
+  const authorized = (customerId && order.customerId === customerId) || (queryCode && order.queryCode === queryCode);
+  if (!authorized) return null;
+  const quote = listQuotes(orderId).find((q) => q.status === "sent" || q.status === "accepted") || null;
+  return {
+    order: customerOrderView(order),
+    intake: getIntake(order.intakeId),
+    style: order.styleId ? getOpsStyle(order.styleId) : null,
+    candidates: listCandidates({ orderId, publishedOnly: true }).map(publicDiamondView),
+    selected: order.selectedDiamondId ? publicDiamondView(getCandidate(order.selectedDiamondId)) : null,
+    quote: quote && {
+      id: quote.id, status: quote.status, estWeightG: quote.estWeightG,
+      metalAmountUsd: quote.metalAmountUsd, nonMetalUsd: quote.nonMetalUsd, diamondAmountUsd: quote.diamondAmountUsd,
+      totalUsd: quote.totalUsd, depositUsd: quote.depositUsd, balanceUsd: quote.balanceUsd,
+      validUntil: quote.validUntil, leadDays: quote.leadDays,
+    }, // 내부 원가·멀티플라이어 미포함
+    milestones: listMilestones(orderId).filter((m) => m.publishToClient),
+    cad: listCadReviews(orderId)[0] || null,
+    actions: listCustomerActions(orderId, true),
+  };
+}
+
+// ---------- daily checklist (매뉴얼 §12) ----------
+export function dailyChecklist() {
+  const orders = listOpsOrders();
+  const soon = (d) => d && (new Date(d) - Date.now()) < 7 * 86400000;
+  return {
+    waitingClient: db().milestones.filter((m) => m.status === "waitingClient").map((m) => m.orderId),
+    blocked: db().milestones.filter((m) => m.status === "blocked").map((m) => m.orderId),
+    quotesExpiring: db().quotes.filter((q) => q.status === "sent" && soon(q.validUntil)).map((q) => q.id),
+    lowCandidates: orders.filter((o) => o.status === "STONE_SELECTION" && listCandidates({ orderId: o.id, publishedOnly: true }).length < 3).map((o) => o.id),
+    dueSoon: orders.filter((o) => !["DELIVERED", "ARCHIVED", "CANCELLED"].includes(o.status) && soon(o.requiredDate)).map((o) => o.id),
+    openProcurements: db().procurementReqs.filter((p) => p.status === "open").map((p) => p.id),
+  };
 }
 
 // ---------- dealer network (diamond_qc.pdf) ----------
@@ -411,6 +635,5 @@ export function markClaimReplaced(claimId) {
 export function listSalvage() { return [...db().salvageLedger]; }
 
 // ---------- misc ----------
-export function listEvents(refId) { return db().statusEvents.filter((e) => e.refId === refId); }
 export function getSettings() { return db().settings; }
 export function updateSettings(patch) { Object.assign(db().settings, patch); persist(); }

@@ -1,3 +1,5 @@
+import { defaultBenchmark } from "./ops.js";
+
 const TWEEZERS = "/assets/lab-diamond-tweezers.png";
 const NOIR_VIDEO = "/assets/diamond-noir-white.mp4";
 
@@ -10,8 +12,8 @@ export function seed() {
     counter: 1100,
     users: [
       { id: "u-admin", email: "admin@demo.com", role: "admin", name: "운영자" },
-      { id: "u-vendor1", email: "vendor@demo.com", role: "vendor", name: "ATELIER-01", active: true },
-      { id: "u-vendor2", email: "vendor2@demo.com", role: "vendor", name: "ATELIER-02", active: true },
+      { id: "u-supplier1", email: "supplier@demo.com", role: "supplier", name: "SUPPLIER-CN-01", active: true },
+      { id: "u-supplier2", email: "supplier2@demo.com", role: "supplier", name: "SUPPLIER-CN-02", active: true },
       { id: "u-customer", email: "customer@demo.com", role: "customer", name: "김지원" },
       { id: "u-dealer1", email: "dealer@demo.com", role: "dealer", name: "LA Diamond Atelier", active: true },
       { id: "u-dealer2", email: "dealer2@demo.com", role: "dealer", name: "Bay Area Gems", active: true },
@@ -30,87 +32,110 @@ export function seed() {
       { id: "d-11", shape: "heart", carat: 1.0, cut: "Very Good", color: "F", clarity: "VS1", certOrg: "IGI", certNo: "IGI-588301254", priceUsd: 1500, visible: true, media: [{ kind: "image", src: TWEEZERS }] },
       { id: "d-12", shape: "round", carat: 2.0, cut: "Excellent", color: "D", clarity: "IF", certOrg: "IGI", certNo: "IGI-588301255", priceUsd: 6450, visible: true, media: [{ kind: "image", src: TWEEZERS }, { kind: "video", src: NOIR_VIDEO }] },
     ],
-    templates: [
-      {
-        id: "t-1", category: "ring", basePriceUsd: 530, visible: true, media: [lineup("ring")],
-        name: { ko: "아우로라 솔리테어", en: "Aurora Solitaire", zh: "Aurora 单钻戒", es: "Solitario Aurora" },
-        desc: {
-          ko: "6프롱 클래식 솔리테어. 스톤이 주인공이 되는 가장 순수한 형태.",
-          en: "Classic six-prong solitaire. The purest form — the stone takes center stage.",
-          zh: "经典六爪单钻戒，最纯粹的形态，让钻石成为主角。",
-          es: "Solitario clásico de seis garras. La forma más pura — la piedra es la protagonista.",
-        },
-      },
-      {
-        id: "t-2", category: "ring", basePriceUsd: 680, visible: true, media: [lineup("band")],
-        name: { ko: "이터니티 밴드", en: "Eternity Band", zh: "永恒排钻戒", es: "Anillo Eternity" },
-        desc: {
-          ko: "밴드를 따라 흐르는 파베 세팅. 단독 착용과 레이어링 모두.",
-          en: "Pavé stones flowing along the band. Wear alone or layered.",
-          zh: "沿戒圈流动的密镶钻石，单戴或叠戴皆宜。",
-          es: "Pavé que fluye a lo largo del aro. Solo o en capas.",
-        },
-      },
-      {
-        id: "t-3", category: "necklace", basePriceUsd: 450, visible: true, media: [lineup("pendant")],
-        name: { ko: "루미나 펜던트", en: "Lumina Pendant", zh: "Lumina 吊坠", es: "Colgante Lumina" },
-        desc: {
-          ko: "쇄골 위에 떠 있는 한 점의 빛. 데일리 펜던트의 정석.",
-          en: "A single point of light at the collarbone. The definitive daily pendant.",
-          zh: "锁骨上的一点光芒，日常吊坠的典范。",
-          es: "Un punto de luz sobre la clavícula. El colgante diario por excelencia.",
-        },
-      },
-      {
-        id: "t-4", category: "earring", basePriceUsd: 380, visible: true, media: [lineup("studs")],
-        name: { ko: "클래식 스터드", en: "Classic Studs", zh: "经典耳钉", es: "Aretes Clásicos" },
-        desc: {
-          ko: "각도까지 계산된 4프롱 스터드. 매일의 기본.",
-          en: "Four-prong studs, engineered to the degree. An everyday essential.",
-          zh: "连角度都经过计算的四爪耳钉，每日基本款。",
-          es: "Aretes de cuatro garras, calculados al grado. Un básico diario.",
-        },
-      },
-      {
-        id: "t-5", category: "bracelet", basePriceUsd: 900, visible: true, media: [lineup("bracelet")],
-        name: { ko: "테니스 브레이슬릿", en: "Tennis Bracelet", zh: "Tennis 手链", es: "Pulsera Tenis" },
-        desc: {
-          ko: "손목을 감싸는 연속된 광채.",
-          en: "Continuous brilliance around the wrist.",
-          zh: "环绕手腕的连续光辉。",
-          es: "Brillo continuo alrededor de la muñeca.",
-        },
-      },
-      {
-        id: "t-6", category: "ring", basePriceUsd: 0, visible: true, media: [{ kind: "video", src: "/assets/freestyle-trump.mp4" }, { kind: "image", src: "/assets/concept-lumina-lab.png" }],
-        name: { ko: "프리스타일 (자유 디자인)", en: "Freestyle (Custom Design)", zh: "自由设计", es: "Diseño Libre" },
-        desc: {
-          ko: "참고 이미지를 첨부해 원하는 디자인을 자유롭게 의뢰하세요.",
-          en: "Attach reference images and commission any design you can imagine.",
-          zh: "附上参考图片，自由定制您想要的设计。",
-          es: "Adjunta imágenes de referencia y encarga el diseño que imagines.",
-        },
-      },
+    // ---------- Operations Manual 도메인 ----------
+    opsCounter: 2,
+    intakes: [
+      { id: "IN-000001", orderId: "DM-000001", name: "김지원", contact: "customer@demo.com", productLine: "solitaire", category: "ring",
+        styleId: "RING-001", budget: 4500, metal: "18kw", conditional: { ringSize: "6 US" },
+        stonePrefs: { shape: "round", carat: 1.5, color: "E", clarity: "VS1", growth: "CVD", lab: "IGI India", colorTreatment: "disclosed", fluorescence: "none", lwRatio: "" },
+        requiredDate: "2026-08-15", country: "USA", termsAccepted: true, createdAt: "2026-06-08T09:00:00.000Z" },
+      { id: "IN-000002", orderId: "DM-000002", name: "Noah Lee", contact: "+1 213-555-0188", productLine: "multi", category: "necklace",
+        styleId: "NECK-001", budget: 2600, metal: "18ky", conditional: { chainStyle: "cable", chainLength: "18in", clasp: "lobster" },
+        stonePrefs: null, requiredDate: "2026-07-30", country: "USA", termsAccepted: true, createdAt: "2026-06-05T10:00:00.000Z" },
     ],
-    requests: [
-      {
-        id: "req-1001", code: "#1001", customerId: "u-customer", templateId: "t-1", diamondId: "d-1",
-        details: { metal: "wg18", size: "11", engraving: "J ♥ M", budget: 2300, notes: "최대한 심플하고 가늘게 부탁드려요" },
-        status: "PROPOSAL_UPLOADED", vendorId: "u-vendor1",
-        createdAt: "2026-06-10T09:00:00.000Z", assignedAt: "2026-06-10T12:00:00.000Z",
-      },
+    opsOrders: [
+      { id: "DM-000001", intakeId: "IN-000001", customerId: "u-customer", customerName: "김지원", styleId: "RING-001",
+        status: "STONE_SELECTION", owner: "Operations", queryCode: "QX7K-M9P2", selectedDiamondId: null,
+        requiredDate: "2026-08-15", internalNotes: "필요일 여유 있음. 1.5ct E/VS1 선호.", createdAt: "2026-06-08T09:10:00.000Z" },
+      { id: "DM-000002", intakeId: "IN-000002", customerId: null, customerName: "Noah Lee", styleId: "NECK-001",
+        status: "CAD", owner: "Operations", queryCode: "H3WT-8RVK", selectedDiamondId: null,
+        requiredDate: "2026-07-30", internalNotes: "멀티스톤 — 멜리 스펙 확정 완료", createdAt: "2026-06-05T10:20:00.000Z" },
     ],
-    proposals: [
-      { id: "prop-1", requestId: "req-1001", vendorId: "u-vendor1", version: 1, comment: "요청하신 대로 밴드 1.6mm로 제작한 1차 시안입니다.", media: [lineup("ring"), { kind: "image", src: TWEEZERS }], createdAt: "2026-06-11T10:00:00.000Z" },
+    opsStyles: [
+      { id: "RING-001", category: "ring", coverImage: "/assets/lineup-ring.png", mediaComplete: true,
+        metalOptions: ["18kw", "18ky", "pt"], estWeightG: 4.2, laborUsd: 85, leadDays: 10,
+        availableForSale: true, published: true, supplierEvidence: "PR-2026-05 견적", firstQuoteAt: "2026-05-10",
+        name: { ko: "솔리테어 링 (6프롱)", en: "Solitaire Ring (6-prong)", zh: "六爪单钻戒", es: "Anillo solitario (6 garras)" } },
+      { id: "RING-002", category: "ring", coverImage: "/assets/lineup-band.png", mediaComplete: true,
+        metalOptions: ["18kw", "18ky", "18kr"], estWeightG: 3.8, laborUsd: 110, leadDays: 12,
+        availableForSale: true, published: true, supplierEvidence: "", firstQuoteAt: "2026-05-12",
+        name: { ko: "이터니티 밴드", en: "Eternity Band", zh: "永恒排钻戒", es: "Anillo Eternity" } },
+      { id: "NECK-001", category: "necklace", coverImage: "/assets/lineup-pendant.png", mediaComplete: true,
+        metalOptions: ["18ky", "18kw", "pt"], estWeightG: 4.2, laborUsd: 75, leadDays: 10,
+        availableForSale: true, published: true, supplierEvidence: "매뉴얼 예시 스펙", firstQuoteAt: "2026-05-15",
+        name: { ko: "솔리테어 펜던트", en: "Solitaire Pendant", zh: "单钻吊坠", es: "Colgante solitario" } },
+      { id: "EARR-001", category: "earrings", coverImage: "/assets/lineup-studs.png", mediaComplete: true,
+        metalOptions: ["14ky", "18ky", "18kw"], estWeightG: 2.4, laborUsd: 70, leadDays: 9,
+        availableForSale: true, published: true, supplierEvidence: "", firstQuoteAt: "2026-05-18",
+        name: { ko: "클래식 스터드", en: "Classic Studs", zh: "经典耳钉", es: "Aretes clásicos" } },
+      { id: "BRAC-001", category: "bangle", coverImage: "/assets/lineup-bracelet.png", mediaComplete: true,
+        metalOptions: ["18kw", "18ky"], estWeightG: 9.6, laborUsd: 160, leadDays: 14,
+        availableForSale: true, published: true, supplierEvidence: "", firstQuoteAt: "2026-05-20",
+        name: { ko: "테니스 브레이슬릿", en: "Tennis Bracelet", zh: "Tennis 手链", es: "Pulsera tenis" } },
+      { id: "RING-003", category: "ring", coverImage: "/assets/freestyle-trump.mp4", mediaComplete: false,
+        metalOptions: ["18kw"], estWeightG: 5.0, laborUsd: 240, leadDays: 18,
+        availableForSale: true, published: true, supplierEvidence: "커스텀 커팅 데모", firstQuoteAt: "2026-06-01",
+        name: { ko: "프리스타일 커스텀 커팅", en: "Freestyle Custom Cut", zh: "自由定制切割", es: "Talla personalizada" } },
     ],
-    feedback: [],
-    orders: [],
-    payments: [],
-    productionMedia: [],
-    statusEvents: [
-      { id: "evt-1", refId: "req-1001", from: "DRAFT", to: "SUBMITTED", actorId: "u-customer", at: "2026-06-10T09:00:00.000Z" },
-      { id: "evt-2", refId: "req-1001", from: "SUBMITTED", to: "VENDOR_ASSIGNED", actorId: "u-admin", at: "2026-06-10T12:00:00.000Z" },
-      { id: "evt-3", refId: "req-1001", from: "VENDOR_ASSIGNED", to: "PROPOSAL_UPLOADED", actorId: "u-vendor1", at: "2026-06-11T10:00:00.000Z" },
+    styleSpecs: [
+      { id: "SPEC-000001", styleId: "NECK-001", metal: "18ky", size: "18in", centerStoneSpec: "standard center stone",
+        estWeightG: 4.2, variancePct: 6, laborUsd: 75, materialsUsd: 30, status: "approved", evidence: "supplier quote 2026-05-15" },
+      { id: "SPEC-000002", styleId: "RING-001", metal: "18kw", size: "6 US", centerStoneSpec: "1.5ct round",
+        estWeightG: 4.2, variancePct: 6, laborUsd: 85, materialsUsd: 25, status: "approved", evidence: "supplier quote 2026-05-10" },
+    ],
+    diamondPricing: defaultBenchmark(),
+    procurementReqs: [
+      { id: "PR-000001", orderId: "DM-000001", type: "diamondCandidates", supplierId: "u-supplier1",
+        dueDate: "2026-06-14", batchValidUntil: "2026-06-22", brief: "1.4-1.6ct round, D-F, VS1+, CVD, IGI. 10-20 candidates.",
+        metal: null, measurements: null, status: "submitted", result: null, createdAt: "2026-06-09T09:00:00.000Z" },
+      { id: "PR-000002", orderId: "DM-000002", type: "cad", supplierId: "u-supplier1",
+        dueDate: "2026-06-13", batchValidUntil: null, brief: "NECK-001 18KY 18in standard center — 3D CAD",
+        metal: "18ky", measurements: "chain 18in", status: "submitted", result: null, createdAt: "2026-06-10T09:00:00.000Z" },
+    ],
+    diamondCands: [
+      { id: "DIA-DM-000001-01", orderId: "DM-000001", prId: "PR-000001", igiNo: "LG591234001", shape: "round", carat: 1.50,
+        color: "E", clarity: "VS1", growth: "CVD", lab: "IGI India",
+        proportions: { table: 57, depth: 62.4, crown: 35, pavilion: 40.8, lw: 1.0, faceUp: "7.3mm" },
+        reportUrl: "", image: TWEEZERS, video: NOIR_VIDEO, colorTreatment: "disclosed", availability: "available",
+        procurementCostUsd: 540, supplierId: "u-supplier1", internalReview: "recommended", internalNotes: "비율 우수",
+        published: true, customerPriceUsd: 1180, clientSelection: "none", locked: false, createdAt: "2026-06-10T11:00:00.000Z" },
+      { id: "DIA-DM-000001-02", orderId: "DM-000001", prId: "PR-000001", igiNo: "LG591234002", shape: "round", carat: 1.52,
+        color: "D", clarity: "VS1", growth: "CVD", lab: "IGI India",
+        proportions: { table: 56, depth: 61.9, crown: 34.5, pavilion: 40.6, lw: 1.0, faceUp: "7.35mm" },
+        reportUrl: "", image: TWEEZERS, video: "", colorTreatment: "disclosed", availability: "available",
+        procurementCostUsd: 580, supplierId: "u-supplier1", internalReview: "alternate", internalNotes: "",
+        published: true, customerPriceUsd: 1260, clientSelection: "none", locked: false, createdAt: "2026-06-10T11:00:00.000Z" },
+      { id: "DIA-DM-000001-03", orderId: "DM-000001", prId: "PR-000001", igiNo: "LG591234003", shape: "round", carat: 1.45,
+        color: "F", clarity: "VS2", growth: "CVD", lab: "IGI India",
+        proportions: { table: 58, depth: 62.8, crown: 35.5, pavilion: 41, lw: 1.0, faceUp: "7.2mm" },
+        reportUrl: "", image: TWEEZERS, video: "", colorTreatment: "disclosed", availability: "available",
+        procurementCostUsd: 470, supplierId: "u-supplier1", internalReview: "excluded", internalNotes: "깊이 과다 — 페이스업 작음",
+        published: false, customerPriceUsd: null, clientSelection: "none", locked: false, createdAt: "2026-06-10T11:00:00.000Z" },
+    ],
+    quotes: [
+      { id: "Q-DM-000002-V1", orderId: "DM-000002", version: 1, status: "accepted",
+        estWeightG: 4.2, metalRefUsdPerG: 95, lossRatePct: 8, nonMetalUsd: 320,
+        internal: { diamondCostUsd: 380, laborUsd: 75, extrasUsd: 60, riskUsd: 40, multiplier: 1.8 },
+        snapshot: { benchmarkUsdPerCt: 224, carat: 1.0 },
+        diamondAmountUsd: 403, metalAmountUsd: 431, totalUsd: 1154, depositUsd: 577, balanceUsd: 577,
+        validUntil: "2026-06-20", leadDays: 10, acceptedAt: "2026-06-10T15:00:00.000Z", createdAt: "2026-06-09T15:00:00.000Z" },
+    ],
+    milestones: [
+      { id: "M-DM-000002-01", orderId: "DM-000002", stage: "depositReceived", status: "done", clientUpdate: "", clientAction: "", link: "", publishToClient: true, at: "2026-06-10T16:00:00.000Z" },
+      { id: "M-DM-000002-03", orderId: "DM-000002", stage: "cadIssued", status: "waitingClient", clientUpdate: "CAD V1 ready for review", clientAction: "Check chain length 18in / pendant connection", link: "", publishToClient: true, at: "2026-06-11T10:00:00.000Z" },
+    ],
+    cadReviews: [
+      { id: "CADR-000001", orderId: "DM-000002", version: 1, fileUrl: "/assets/concept-lumina-lab.png",
+        supplierUploadedAt: "2026-06-11T09:30:00.000Z", internalReview: "치수 검수 통과", sentAt: "2026-06-11T10:00:00.000Z",
+        decision: null, feedback: [], confirmedMeasurements: "", evidence: "", decidedAt: null },
+    ],
+    customerActions: [
+      { id: "CA-000001", orderId: "DM-000001", type: "diamondSelection", prompt: "Select a center stone from candidates", link: "", dueDate: "2026-06-20", status: "open", response: null, respondedAt: null, createdAt: "2026-06-10T12:00:00.000Z" },
+      { id: "CA-000002", orderId: "DM-000002", type: "cadReview", prompt: "CAD V1", link: "", dueDate: "2026-06-15", status: "open", response: null, respondedAt: null, createdAt: "2026-06-11T10:00:00.000Z" },
+    ],
+    auditLog: [
+      { id: "aud-1", actor: "ops", entity: "order", entityId: "DM-000001", field: "create", before: null, after: "STONE_SELECTION", at: "2026-06-08T09:10:00.000Z" },
+      { id: "aud-2", actor: "ops", entity: "order", entityId: "DM-000002", field: "status", before: "QUOTATION", after: "CAD", at: "2026-06-10T16:00:00.000Z" },
     ],
     // ---------- 딜러 네트워크 (diamond_qc.pdf) ----------
     dealerProfiles: [
@@ -163,8 +188,11 @@ export function seed() {
     salvageLedger: [],
     // shippingStages는 키 — 라벨은 translations.js platform.stages에서 언어별 매핑
     settings: {
-      depositRate: 0.3, shippingStages: ["production", "qc", "ready", "shipping", "delivered"],
       goldSpotPerGram: 85, goldPurity: 0.75, tierThresholdUsd: 20000, warrantyMonths: 12, cosmeticWindowDays: 7,
+      // Operations Manual
+      opsDepositRate: 0.5, opsMultiplier: 1.8, defaultLossRatePct: 8, productionLeadDays: 10,
+      metalRefUsdPerG: { "14ky": 62, "18ky": 80, "14kr": 62, "18kr": 80, "18kw": 85, "pt": 38 },
+      designChangeFeeUsd: 15, cancelAfterProductionMinUsd: 140,
     },
   };
 }
