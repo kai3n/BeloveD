@@ -216,9 +216,11 @@ export function closeProcurement(prId) {
 }
 
 // 서플라이어가 PR ID로 CAD/QC 제출 — Order ID는 내부에서만 해석
-export function submitCadForPr(prId, fileUrl) {
+// CAD payload: 문자열(레거시) 또는 슬롯 배열 [{slot, kind, src}]
+export function submitCadForPr(prId, payload) {
   const pr = getProcurement(prId);
-  const review = addCadVersion(pr.orderId, { fileUrl, supplierId: pr.supplierId });
+  const args = typeof payload === "string" ? { fileUrl: payload } : { media: payload };
+  const review = addCadVersion(pr.orderId, { ...args, supplierId: pr.supplierId });
   pr.status = "submitted";
   persist();
   return review;
@@ -428,15 +430,17 @@ export function upsertMilestone(orderId, stage, patch) {
 
 // ---------- CAD reviews (버전당 1레코드 — 히스토리 불변) ----------
 export function listCadReviews(orderId) { return db().cadReviews.filter((c) => c.orderId === orderId).sort((a, b) => b.version - a.version); }
-export function addCadVersion(orderId, { fileUrl, supplierId }) {
+export function addCadVersion(orderId, { fileUrl, media, supplierId }) {
   const version = listCadReviews(orderId).length + 1;
   const review = {
-    id: nextSeqId("CADR"), orderId, version, fileUrl,
+    id: nextSeqId("CADR"), orderId, version,
+    fileUrl: fileUrl || media?.[0]?.src || "",
+    media: media || [],
     supplierUploadedAt: now(), internalReview: "", sentAt: null,
     decision: null, feedback: [], annotations: [], confirmedMeasurements: "", evidence: "", decidedAt: null,
   };
   db().cadReviews.push(review);
-  upsertMilestone(orderId, "cadIssued", { status: "waitingClient", publishToClient: true, clientUpdate: `CAD V${version} ready for review`, link: fileUrl });
+  upsertMilestone(orderId, "cadIssued", { status: "waitingClient", publishToClient: true, clientUpdate: `CAD V${version} ready for review`, link: review.fileUrl });
   createCustomerAction(orderId, { type: "cadReview", prompt: `CAD V${version}`, link: fileUrl });
   audit(supplierId || "supplier", "cad", review.id, "create", null, `V${version}`);
   persist();

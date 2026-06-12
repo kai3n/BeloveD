@@ -3,6 +3,7 @@ import {
   resetDB, listChips, saveChip,
   createIntake, getIntake, reviewReferenceMedia, supplierTasks, createProcurement,
   addCadVersion, decideCad, freeRevisionsLeft, portalView, getSettings,
+  submitCadForPr, listCadReviews,
 } from "../store.js";
 
 beforeEach(() => resetDB());
@@ -90,5 +91,25 @@ describe("visual store — 구조화 피드백과 수정 한도", () => {
     const v = portalView("DM-000002", { queryCode: "H3WT-8RVK" });
     expect(v.quote.balanceUsd).toBe(577 + fee);
     expect(v.freeRevisionsLeft).toBe(0);
+  });
+});
+
+describe("visual store — CAD 슬롯 제출", () => {
+  it("슬롯 배열 제출 → media 보존, fileUrl은 첫 슬롯", () => {
+    const pr = createProcurement("DM-000002", { type: "cad", supplierId: "u-supplier1", dueDate: "d", brief: "" });
+    submitCadForPr(pr.id, [
+      { slot: "render360", kind: "video", src: "/r360.mp4" },
+      { slot: "side", kind: "image", src: "/side.png" },
+    ]);
+    const r = listCadReviews("DM-000002")[0];
+    expect(r.media.length).toBe(2);
+    expect(r.media[0].slot).toBe("render360");
+    expect(r.fileUrl).toBe("/r360.mp4");
+  });
+
+  it("레거시 문자열 제출도 동작", () => {
+    const pr = createProcurement("DM-000002", { type: "cad", supplierId: "u-supplier1", dueDate: "d", brief: "" });
+    submitCadForPr(pr.id, "/single.png");
+    expect(listCadReviews("DM-000002")[0].fileUrl).toBe("/single.png");
   });
 });
