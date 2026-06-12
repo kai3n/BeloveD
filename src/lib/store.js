@@ -6,7 +6,7 @@ import {
   quoteCompute, reconcileDelta, randomQueryCode, tierForCarat,
 } from "./ops.js";
 
-const KEY = "lumina-db-v6"; // v6: Operations Manual 리팩토링 (레거시 마켓플레이스 → ops 플로우)
+const KEY = "lumina-db-v7"; // v7: 시드 데이터 영어화
 
 // 테스트(node) 환경 폴백
 const memoryStorage = (() => {
@@ -35,6 +35,7 @@ function db() {
     storage.removeItem("lumina-db-v3");
     storage.removeItem("lumina-db-v4");
     storage.removeItem("lumina-db-v5");
+    storage.removeItem("lumina-db-v6");
     let parsed = null;
     try {
       const raw = storage.getItem(KEY);
