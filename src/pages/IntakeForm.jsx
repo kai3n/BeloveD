@@ -7,6 +7,7 @@ import { useDBVersion } from "../lib/useDB.js";
 import { pickI18n, useLocale } from "../i18n.jsx";
 import { MediaPicker } from "../components/ui.jsx";
 import PinAnnotator from "../components/PinAnnotator.jsx";
+import StoneEduPanel from "../components/StoneEducation.jsx";
 
 export default function IntakeForm() {
   useDBVersion();
@@ -34,6 +35,7 @@ export default function IntakeForm() {
   const [done, setDone] = useState(null);
   const [refs, setRefs] = useState([]); // [{kind, src, annotations[]}]
   const [annotIdx, setAnnotIdx] = useState(0);
+  const [eduField, setEduField] = useState("shape"); // 교육 패널이 따라가는 포커스 필드
   const setF = (patch) => setForm((f) => ({ ...f, ...patch }));
   const setC = (patch) => setForm((f) => ({ ...f, conditional: { ...f.conditional, ...patch } }));
   const setS = (patch) => setForm((f) => ({ ...f, stonePrefs: { ...f.stonePrefs, ...patch } }));
@@ -73,10 +75,11 @@ export default function IntakeForm() {
   const bigStone = solitaire && Number(form.stonePrefs.carat) >= 2;
 
   return (
-    <div className="page page-narrow" style={{ maxWidth: 680 }}>
+    <div className="page page-narrow" style={{ maxWidth: solitaire ? 1020 : 680 }}>
       <h1 className="page-title">{t.title}</h1>
       <p className="page-sub">{t.sub}</p>
 
+      <div className={`intake-layout ${solitaire ? "has-edu" : ""}`}>
       <form className="panel form-stack" onSubmit={submit}>
         <div className="filter-grid" style={{ gridTemplateColumns: "1fr 1fr" }}>
           <label className="field"><span>{t.name}</span><input value={form.name} onChange={(e) => setF({ name: e.target.value })} required /></label>
@@ -130,22 +133,25 @@ export default function IntakeForm() {
             <h3 style={{ margin: "10px 0 0" }}>{t.stoneTitle}</h3>
             <div className="filter-grid" style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
               <label className="field"><span>{t.shape}</span>
-                <select value={form.stonePrefs.shape} onChange={(e) => setS({ shape: e.target.value })}>
+                <select value={form.stonePrefs.shape} onFocus={() => setEduField("shape")} onChange={(e) => setS({ shape: e.target.value })}>
                   {BENCHMARK_SHAPES.map((sh) => <option key={sh} value={sh}>{p.shapes[sh] || sh}</option>)}
                 </select></label>
-              <label className="field"><span>{t.carat}</span><input type="number" step="0.1" value={form.stonePrefs.carat} onChange={(e) => setS({ carat: e.target.value })} /></label>
+              <label className="field"><span>{t.carat}</span><input type="number" step="0.1" value={form.stonePrefs.carat} onFocus={() => setEduField("carat")} onChange={(e) => setS({ carat: e.target.value })} /></label>
               <label className="field"><span>{t.color}</span>
-                <select value={form.stonePrefs.color} onChange={(e) => setS({ color: e.target.value })}>{["D", "E", "F", "G"].map((c) => <option key={c}>{c}</option>)}</select></label>
+                <select value={form.stonePrefs.color} onFocus={() => setEduField("color")} onChange={(e) => setS({ color: e.target.value })}>{["D", "E", "F", "G"].map((c) => <option key={c}>{c}</option>)}</select></label>
               <label className="field"><span>{t.clarity}</span>
-                <select value={form.stonePrefs.clarity} onChange={(e) => setS({ clarity: e.target.value })}>{["IF", "VVS1", "VVS2", "VS1", "VS2"].map((c) => <option key={c}>{c}</option>)}</select></label>
+                <select value={form.stonePrefs.clarity} onFocus={() => setEduField("clarity")} onChange={(e) => setS({ clarity: e.target.value })}>{["IF", "VVS1", "VVS2", "VS1", "VS2"].map((c) => <option key={c}>{c}</option>)}</select></label>
               <label className="field"><span>{t.growth}</span>
-                <select value={form.stonePrefs.growth} onChange={(e) => setS({ growth: e.target.value })}><option>CVD</option><option>HPHT</option></select></label>
-              <label className="field"><span>{t.lab}</span><input value={form.stonePrefs.lab} onChange={(e) => setS({ lab: e.target.value })} /></label>
+                <select value={form.stonePrefs.growth} onFocus={() => setEduField("growth")} onChange={(e) => setS({ growth: e.target.value })}><option>CVD</option><option>HPHT</option></select></label>
+              <label className="field"><span>{t.lab}</span><input value={form.stonePrefs.lab} onFocus={() => setEduField("lab")} onChange={(e) => setS({ lab: e.target.value })} /></label>
               <label className="field"><span>{t.fluorescence}</span>
-                <select value={form.stonePrefs.fluorescence} onChange={(e) => setS({ fluorescence: e.target.value })}><option value="none">None</option><option value="faint">Faint</option><option value="medium">Medium</option></select></label>
-              <label className="field"><span>{t.lwRatio}</span><input value={form.stonePrefs.lwRatio} onChange={(e) => setS({ lwRatio: e.target.value })} placeholder="1.0" /></label>
+                <select value={form.stonePrefs.fluorescence} onFocus={() => setEduField("fluorescence")} onChange={(e) => setS({ fluorescence: e.target.value })}><option value="none">None</option><option value="faint">Faint</option><option value="medium">Medium</option></select></label>
+              <label className="field"><span>{t.lwRatio}</span><input value={form.stonePrefs.lwRatio} onFocus={() => setEduField("lwRatio")} onChange={(e) => setS({ lwRatio: e.target.value })} placeholder="1.0" /></label>
             </div>
             {bigStone && <p className="warn-note">{t.bigStoneNote}</p>}
+            <div className="stone-edu-inline">
+              <StoneEduPanel field={eduField} prefs={form.stonePrefs} />
+            </div>
           </>
         )}
 
@@ -191,6 +197,12 @@ export default function IntakeForm() {
         <button className="button primary" type="submit" disabled={!form.termsAccepted}>{t.submit}</button>
         <p className="form-hint">{p.ftc}</p>
       </form>
+      {solitaire && (
+        <aside className="stone-edu-aside">
+          <StoneEduPanel field={eduField} prefs={form.stonePrefs} />
+        </aside>
+      )}
+      </div>
       <p style={{ marginTop: 16 }}><Link className="text-link" to="/styles">{p.styleCat.title} →</Link></p>
     </div>
   );
