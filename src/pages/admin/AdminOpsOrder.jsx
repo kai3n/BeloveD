@@ -6,8 +6,9 @@ import {
   listCandidates, listCadReviews, listCustomerActions, listMilestones, listProcurements, listQuotes,
   lockCandidate, markDepositReceived, publishCandidate, recordActualWeight, reviewCandidate, sendQuote,
   setCandidateAvailability, unpublishCandidate, updateOpsOrder, upsertMilestone, listDealers, getSettings,
-  getDB,
+  getDB, reviewReferenceMedia,
 } from "../../lib/store.js";
+import { formatAnnotation } from "../../lib/chips.js";
 import { useDBVersion } from "../../lib/useDB.js";
 import { EmptyNote, MediaThumb, usd } from "../../components/ui.jsx";
 import { pickI18n, useLocale } from "../../i18n.jsx";
@@ -120,6 +121,32 @@ export default function AdminOpsOrder() {
           </p>
         )}
       </div>
+
+      {/* 레퍼런스 검수 — 승인분만 벤더 브리프로 나간다 */}
+      {intake?.referenceMedia?.length > 0 && (
+        <div className="panel form-stack">
+          <h3>{p.visual.refReviewTitle}</h3>
+          <div className="card-grid cols-3">
+            {intake.referenceMedia.map((m) => (
+              <div key={m.id} className="item-card">
+                <MediaThumb media={m} alt={m.id} />
+                <div className="card-body">
+                  <p className="spec">{m.id} · {p.visual.refStatus[m.status]}</p>
+                  {m.annotations?.map((a) => (
+                    <p key={a.pinId} className="form-hint">📍{a.pinId} {formatAnnotation(a, getDB().chipCatalog, locale, p.visual.parts)}</p>
+                  ))}
+                  {m.status === "pending" && (
+                    <div className="row-actions">
+                      <button className="button primary small" onClick={() => reviewReferenceMedia(intake.id, m.id, "approved")}>{p.visual.approve}</button>
+                      <button className="button secondary small" onClick={() => reviewReferenceMedia(intake.id, m.id, "rejected")}>{p.visual.reject}</button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 조달 요청 */}
       <div className="panel form-stack">
@@ -238,6 +265,10 @@ export default function AdminOpsOrder() {
             <div key={c.id} className="feedback-note">
               V{c.version} · {c.decision ? p.portal.cadDecided[c.decision] : p.msStatus.waitingClient}
               {c.feedback.length > 0 && ` · ${c.feedback.join(" / ")}`}
+              {c.annotations?.length > 0 && c.annotations.map((a) => (
+                <span key={a.pinId}> · 📍{a.pinId} {formatAnnotation(a, getDB().chipCatalog, locale, p.visual.parts)}</span>
+              ))}
+              {c.feeAppliedUsd > 0 && <span> · fee {usd(c.feeAppliedUsd)}</span>}
               {c.confirmedMeasurements && ` · ${c.confirmedMeasurements}`}
             </div>
           ))}

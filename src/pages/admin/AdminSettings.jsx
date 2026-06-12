@@ -1,4 +1,4 @@
-import { getSettings, resetDB, updateSettings } from "../../lib/store.js";
+import { getDB, getSettings, resetDB, saveChip, updateSettings } from "../../lib/store.js";
 import { useDBVersion } from "../../lib/useDB.js";
 import { useLocale } from "../../i18n.jsx";
 
@@ -45,6 +45,18 @@ export default function AdminSettings() {
       <div className="panel form-stack" style={{ maxWidth: 480 }}>
         <h3>{p.admin.settings.heroTitle}</h3>
         <p className="form-hint">{p.admin.settings.heroNote}</p>
+      </div>
+      <div className="panel form-stack" style={{ maxWidth: 480 }}>
+        <h3>{p.visual.chipTitle}</h3>
+        {getDB().chipCatalog.map((c) => (
+          <div className="row-actions" key={c.key}>
+            <button className={`chip ${c.active !== false ? "is-active" : ""}`}
+              onClick={() => saveChip({ key: c.key, active: c.active === false })}>
+              {c.labels.ko} / {c.labels.zh}
+            </button>
+            <span className="form-hint">{c.key} · {(c.parts || ["all"]).join(",")} · {c.valueType}</span>
+          </div>
+        ))}
       </div>
       <div className="panel form-stack" style={{ maxWidth: 480 }}>
         <h3>{p.admin.settings.demoTitle}</h3>
