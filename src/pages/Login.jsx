@@ -76,7 +76,7 @@ export default function Login() {
         {DEMO_ACCOUNTS.map((acc) => (
           <button
             key={acc.email} className="button secondary"
-            onClick={() => { afterLogin(login(acc.email, "demo1234")); }}
+            onClick={() => { try { afterLogin(login(acc.email, "demo1234")); } catch (err) { setError(p.login.errors[err.message] || err.message); } }}
           >
             {p.login[acc.key]}
           </button>

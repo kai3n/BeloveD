@@ -19,7 +19,7 @@ const SORT_FNS = {
 const initialFilters = { shape: null, caratMin: "", caratMax: "", priceMax: "", cut: "", color: "", clarity: "", cert: "" };
 
 export default function Diamonds() {
-  useDBVersion();
+  const dbVersion = useDBVersion();
   const { p } = useLocale();
   const [filters, setFilters] = useState(initialFilters);
   const [sort, setSort] = useState("price-asc");
@@ -36,7 +36,8 @@ export default function Diamonds() {
     if (filters.clarity) list = list.filter((d) => d.clarity === filters.clarity);
     if (filters.cert) list = list.filter((d) => d.certOrg === filters.cert);
     return [...list].sort(SORT_FNS[sort]);
-  }, [filters, sort]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters, sort, dbVersion]);
 
   const sortOptions = [
     { key: "price-asc", label: p.diamonds.sortPriceAsc },

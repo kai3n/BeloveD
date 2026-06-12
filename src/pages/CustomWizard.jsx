@@ -25,8 +25,17 @@ export default function CustomWizard() {
   const diamond = diamondId ? getDiamond(diamondId) : null;
   const estimate = (template?.basePriceUsd || 0) + (diamond?.priceUsd || 0);
 
+  // 로그인 후 돌아올 때 선택한 템플릿/다이아 유지
+  const returnUrl = (() => {
+    const q = new URLSearchParams();
+    if (templateId) q.set("template", templateId);
+    if (diamondId) q.set("diamond", diamondId);
+    const qs = q.toString();
+    return qs ? `/custom/new?${qs}` : "/custom/new";
+  })();
+
   function submit() {
-    if (!user) return navigate("/login", { state: { from: "/custom/new" } });
+    if (!user) return navigate("/login", { state: { from: returnUrl } });
     const request = createRequest({ customerId: user.id, templateId, diamondId, details: { ...details, budget: Number(details.budget) || null } });
     navigate(`/account/requests/${request.id}`, { state: { submitted: true } });
   }
@@ -119,7 +128,7 @@ export default function CustomWizard() {
             <button className="button secondary" onClick={() => setStep(2)}>{p.common.prev}</button>
             {user
               ? <button className="button primary" onClick={submit}>{p.wizard.submit}</button>
-              : <Link className="button primary" to="/login" state={{ from: "/custom/new" }}>{p.wizard.loginToSubmit}</Link>}
+              : <Link className="button primary" to="/login" state={{ from: returnUrl }}>{p.wizard.loginToSubmit}</Link>}
           </div>
         </section>
       )}

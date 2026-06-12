@@ -108,6 +108,10 @@ img {
   transition: color 180ms ease;
 }
 
+.desktop-nav a.active {
+  color: var(--text);
+}
+
 .desktop-nav a:hover,
 .footer nav a:hover {
   color: #fff;

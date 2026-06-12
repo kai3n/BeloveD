@@ -2,7 +2,7 @@ import { seed } from "./seed.js";
 import { assertTransition } from "./statusMachine.js";
 import { maskContacts } from "./masking.js";
 
-const KEY = "lumina-db-v1";
+const KEY = "lumina-db-v2"; // 스키마 변경 시 버전업 (v1: KRW/한글 단계 키 → v2: USD/키 기반)
 
 // 테스트(node) 환경 폴백
 const memoryStorage = (() => {
@@ -14,11 +14,26 @@ const storage = typeof localStorage !== "undefined" ? localStorage : memoryStora
 let cache = null;
 const listeners = new Set();
 
+// 저장된 DB가 현재 스키마와 맞는지 검사 — 깨진/구버전 데이터면 재시드
+function isValidDB(d) {
+  return Boolean(
+    d && Array.isArray(d.diamonds) && d.diamonds[0]?.priceUsd != null
+    && d.settings?.shippingStages?.[0] === "production"
+  );
+}
+
 function db() {
   if (!cache) {
-    const raw = storage.getItem(KEY);
-    cache = raw ? JSON.parse(raw) : seed();
-    if (!raw) storage.setItem(KEY, JSON.stringify(cache));
+    storage.removeItem("lumina-db-v1");
+    let parsed = null;
+    try {
+      const raw = storage.getItem(KEY);
+      parsed = raw ? JSON.parse(raw) : null;
+    } catch {
+      parsed = null;
+    }
+    cache = isValidDB(parsed) ? parsed : seed();
+    storage.setItem(KEY, JSON.stringify(cache));
   }
   return cache;
 }

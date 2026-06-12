@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Languages, LogOut, Menu, Search, ShoppingBag, UserRound, X } from "lucide-react";
 import { localeOptions } from "./translations.js";
 import { useLocale } from "./i18n.jsx";
@@ -80,26 +80,44 @@ export function Header() {
 
 export function Footer() {
   const { t } = useLocale();
+  // GitHub Pages 하위 경로에서도 동작하도록 router Link 사용
   const footerLinks = [
-    { href: "/#collections", label: t.footer.links[0] },
-    { href: "/guide/lab-diamond", label: t.footer.links[1] },
-    { href: "/#concierge", label: t.footer.links[2] },
-    { href: "/#products", label: t.footer.links[3] },
+    { to: "/#collections", label: t.footer.links[0] },
+    { to: "/guide/lab-diamond", label: t.footer.links[1] },
+    { to: "/#concierge", label: t.footer.links[2] },
+    { to: "/#products", label: t.footer.links[3] },
   ];
   return (
     <footer className="footer">
       <span className="brand">LUMINA LAB</span>
       <nav aria-label={t.aria.footerNav}>
-        {footerLinks.map((link) => <a href={link.href} key={link.href}>{link.label}</a>)}
+        {footerLinks.map((link) => <Link to={link.to} key={link.to}>{link.label}</Link>)}
       </nav>
       <span>{t.footer.copyright}</span>
     </footer>
   );
 }
 
+// 라우트 이동 시 맨 위로, 해시가 있으면 해당 섹션으로
+function ScrollManager() {
+  const { pathname, hash } = useLocation();
+  useEffect(() => {
+    if (hash) {
+      const el = document.querySelector(hash);
+      if (el) {
+        el.scrollIntoView({ block: "start" });
+        return;
+      }
+    }
+    window.scrollTo(0, 0);
+  }, [pathname, hash]);
+  return null;
+}
+
 export default function Layout() {
   return (
     <>
+      <ScrollManager />
       <Header />
       <main>
         <Outlet />

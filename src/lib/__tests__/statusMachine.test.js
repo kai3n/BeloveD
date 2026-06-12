@@ -39,6 +39,11 @@ describe("statusMachine", () => {
     expect(canTransition("QUALITY_CHECK", "IN_PRODUCTION", "admin")).toBe(true);
   });
 
+  it("운영자는 배정된 주문을 재배정할 수 있다 (SLA 초과 대응)", () => {
+    expect(canTransition("VENDOR_ASSIGNED", "VENDOR_ASSIGNED", "admin")).toBe(true);
+    expect(canTransition("VENDOR_ASSIGNED", "VENDOR_ASSIGNED", "vendor")).toBe(false);
+  });
+
   it("취소 규칙: 고객은 CONFIRMED까지, 디파짓 후는 운영자만", () => {
     expect(canTransition("SUBMITTED", "CANCELLED", "customer")).toBe(true);
     expect(canTransition("CONFIRMED", "CANCELLED", "customer")).toBe(true);

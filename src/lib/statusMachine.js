@@ -7,7 +7,7 @@ export const STATUSES = [
 // to 상태 기준 허용 규칙: 어떤 from에서, 어떤 역할이 일으킬 수 있는가
 const TRANSITIONS = {
   SUBMITTED: { from: ["DRAFT"], roles: ["customer"] },
-  VENDOR_ASSIGNED: { from: ["SUBMITTED", "ON_HOLD"], roles: ["admin"] },
+  VENDOR_ASSIGNED: { from: ["SUBMITTED", "ON_HOLD", "VENDOR_ASSIGNED"], roles: ["admin"] }, // 자기 전이 = 재배정
   PROPOSAL_UPLOADED: { from: ["VENDOR_ASSIGNED", "REVISION_REQUESTED"], roles: ["vendor"] },
   REVISION_REQUESTED: { from: ["PROPOSAL_UPLOADED"], roles: ["customer"] },
   CONFIRMED: { from: ["PROPOSAL_UPLOADED"], roles: ["customer"] },
