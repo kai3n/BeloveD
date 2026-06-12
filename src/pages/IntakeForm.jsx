@@ -5,6 +5,8 @@ import { CHAIN_LENGTHS, OPS_CATEGORIES, OPS_METALS, PRODUCT_LINES, BENCHMARK_SHA
 import { createIntake, getDiamond, listOpsStyles } from "../lib/store.js";
 import { useDBVersion } from "../lib/useDB.js";
 import { pickI18n, useLocale } from "../i18n.jsx";
+import { MediaPicker } from "../components/ui.jsx";
+import PinAnnotator from "../components/PinAnnotator.jsx";
 
 export default function IntakeForm() {
   useDBVersion();
@@ -30,6 +32,8 @@ export default function IntakeForm() {
     requiredDate: "", country: "", termsAccepted: false,
   });
   const [done, setDone] = useState(null);
+  const [refs, setRefs] = useState([]); // [{kind, src, annotations[]}]
+  const [annotIdx, setAnnotIdx] = useState(0);
   const setF = (patch) => setForm((f) => ({ ...f, ...patch }));
   const setC = (patch) => setForm((f) => ({ ...f, conditional: { ...f.conditional, ...patch } }));
   const setS = (patch) => setForm((f) => ({ ...f, stonePrefs: { ...f.stonePrefs, ...patch } }));
@@ -42,6 +46,7 @@ export default function IntakeForm() {
       budget: Number(form.budget) || null,
       stonePrefs: form.productLine === "solitaire" ? { ...form.stonePrefs, carat: Number(form.stonePrefs.carat) || null } : null,
       multiSpec: form.productLine === "multi" ? form.multiSpec : null,
+      referenceMedia: refs,
     };
     const { order } = createIntake(payload, user?.id || null);
     setDone(order);
@@ -155,6 +160,25 @@ export default function IntakeForm() {
               <label className="field"><span>{t.multiStandard}</span><input value={form.multiSpec.standard} onChange={(e) => setM({ standard: e.target.value })} /></label>
             </div>
           </>
+        )}
+
+        {/* 레퍼런스 + 핀 주석 — 공방은 같은 핀을 자기 언어로 본다 */}
+        <h3 style={{ margin: "10px 0 0" }}>{p.visual.refTitle}</h3>
+        <p className="form-hint">{p.visual.refHint}</p>
+        <MediaPicker value={refs} onChange={(v) => {
+          setRefs(v.map((m) => refs.find((r) => r.src === m.src) || { ...m, annotations: [] }));
+          setAnnotIdx(0);
+        }} />
+        {refs.length > 1 && (
+          <div className="row-actions">
+            {refs.map((m, i) => (
+              <button type="button" key={m.src} className={`chip ${i === annotIdx ? "is-active" : ""}`} onClick={() => setAnnotIdx(i)}>#{i + 1}</button>
+            ))}
+          </div>
+        )}
+        {refs[annotIdx] && (
+          <PinAnnotator src={refs[annotIdx].src} annotations={refs[annotIdx].annotations || []}
+            onChange={(ann) => setRefs(refs.map((m, i) => (i === annotIdx ? { ...m, annotations: ann } : m)))} />
         )}
 
         <div className="panel" style={{ background: "var(--bg-2)" }}>
