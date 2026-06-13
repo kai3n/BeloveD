@@ -68,7 +68,7 @@ function Hero({ t }) {
           loop
           playsInline
           preload="auto"
-          poster={withBase("/assets/diamond-hero-white-poster.png")}
+          poster={withBase("/assets/diamond-hero-white-poster.webp")}
         >
           <source src={withBase("/assets/diamond-hero-white.mp4")} type="video/mp4" />
         </video>
@@ -218,7 +218,7 @@ function Quality({ t }) {
   return (
     <section className="quality" id="lab-diamond">
       <div className="quality-image">
-        <img src={withBase("/assets/lab-diamond-tweezers.png")} alt={t.aria.looseDiamondAlt} />
+        <img src={withBase("/assets/lab-diamond-tweezers.webp")} alt={t.aria.looseDiamondAlt} loading="lazy" decoding="async" />
       </div>
       <div className="quality-copy">
         <p className="section-label">{t.quality.label}</p>
@@ -254,7 +254,7 @@ function Concierge({ t }) {
         </Link>
       </div>
       <div className="concierge-visual" aria-hidden="true">
-        <img src={withBase("/assets/lab-diamond-tweezers.png")} alt="" />
+        <img src={withBase("/assets/lab-diamond-tweezers.webp")} alt="" loading="lazy" decoding="async" />
       </div>
     </section>
   );

@@ -22,7 +22,7 @@ export default function AdminCatalogW() {
     e.preventDefault();
     saveCatalogItem({
       name: { ko: form.name, en: form.name, zh: form.name, es: form.name },
-      category: form.category, image: "/assets/lab-diamond-tweezers.png",
+      category: form.category, image: "/assets/lab-diamond-tweezers.webp",
       msrpUsd: Number(form.msrpUsd), stoneWholesaleT1: Number(form.stoneWholesaleT1), stoneWholesaleT2: Number(form.stoneWholesaleT2),
       metalGrams: Number(form.metalGrams), laborUsd: Number(form.laborUsd), resizable: true, visible: true,
     });

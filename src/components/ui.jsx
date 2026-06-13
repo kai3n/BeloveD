@@ -17,11 +17,13 @@ export function withBase(src) {
   return base.replace(/\/$/, "") + src;
 }
 
-export function MediaThumb({ media, ratio = "1 / 1", alt = "" }) {
+// eager=true는 히어로/단독 노출처럼 즉시 보여야 할 때만. 그 외(그리드·카드)는 기본 lazy.
+export function MediaThumb({ media, ratio = "1 / 1", alt = "", eager = false }) {
   if (!media) return <div className="media-thumb media-empty" style={{ aspectRatio: ratio }} />;
   const src = withBase(media.src);
   if (media.kind === "video") {
-    return <video className="media-thumb" style={{ aspectRatio: ratio }} src={src} muted loop autoPlay playsInline />;
+    // 그리드 영상 썸네일은 화면 밖에서 버퍼링하지 않도록 preload="none" — 보이면 autoplay
+    return <video className="media-thumb" style={{ aspectRatio: ratio }} src={src} muted loop autoPlay playsInline preload="none" />;
   }
   if (media.pos) {
     return (
@@ -31,7 +33,7 @@ export function MediaThumb({ media, ratio = "1 / 1", alt = "" }) {
       />
     );
   }
-  return <img className="media-thumb" style={{ aspectRatio: ratio }} src={src} alt={alt} />;
+  return <img className="media-thumb" style={{ aspectRatio: ratio }} src={src} alt={alt} loading={eager ? "eager" : "lazy"} decoding="async" />;
 }
 
 export function StatusBadge({ status }) {
@@ -64,7 +66,7 @@ const SAMPLE_LIBRARY = [
   { kind: "image", src: "/assets/lineup-pendant.png", labelKey: "pendant" },
   { kind: "image", src: "/assets/lineup-studs.png", labelKey: "studs" },
   { kind: "image", src: "/assets/lineup-bracelet.png", labelKey: "bracelet" },
-  { kind: "image", src: "/assets/lab-diamond-tweezers.png", labelKey: "loose" },
+  { kind: "image", src: "/assets/lab-diamond-tweezers.webp", labelKey: "loose" },
   { kind: "video", src: "/assets/diamond-noir-white.mp4", labelKey: "video" },
 ];
 

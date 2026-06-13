@@ -126,7 +126,7 @@ export default function SupplierTask() {
       igiNo: r.igiNo, shape: r.shape, carat: Number(r.carat), color: r.color, clarity: r.clarity,
       growth: r.growth, lab: r.lab, procurementCostUsd: Number(r.procurementCostUsd) || 0,
       proportions: { table: Number(r.table) || null, depth: Number(r.depth) || null, faceUp: r.faceUp || "" },
-      image: media[i]?.src || media[0]?.src || "/assets/lab-diamond-tweezers.png",
+      image: media[i]?.src || media[0]?.src || "/assets/lab-diamond-tweezers.webp",
       video: media[i]?.kind === "video" ? media[i].src : "",
     }));
     if (cands.length === 0) return;

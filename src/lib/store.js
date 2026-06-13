@@ -8,7 +8,7 @@ import {
   autoBrief, candidateAutoPrice, isCandidateComplete, poolStoneMatches,
 } from "./ops.js";
 
-const KEY = "lumina-db-v11"; // v11: 벤더 다이아 풀(poolDiamonds) 추가
+const KEY = "lumina-db-v12"; // v12: 무거운 이미지 webp 전환(시드 경로 .png→.webp) — 재시드 필요
 
 // 테스트(node) 환경 폴백
 const memoryStorage = (() => {
@@ -45,6 +45,7 @@ function db() {
     storage.removeItem("lumina-db-v8");
     storage.removeItem("lumina-db-v9");
     storage.removeItem("lumina-db-v10");
+    storage.removeItem("lumina-db-v11");
     let parsed = null;
     try {
       const raw = storage.getItem(KEY);
@@ -107,7 +108,7 @@ export function saveDiamond(diamond) {
   const list = db().diamonds;
   const i = list.findIndex((d) => d.id === diamond.id);
   if (i >= 0) list[i] = { ...list[i], ...diamond };
-  else list.push({ media: [{ kind: "image", src: "/assets/lab-diamond-tweezers.png" }], visible: true, ...diamond, id: nextId("d") });
+  else list.push({ media: [{ kind: "image", src: "/assets/lab-diamond-tweezers.webp" }], visible: true, ...diamond, id: nextId("d") });
   persist();
 }
 export function adjustDiamondPrices(percent) {

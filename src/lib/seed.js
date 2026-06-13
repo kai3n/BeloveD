@@ -1,7 +1,7 @@
 import { defaultBenchmark } from "./ops.js";
 import { defaultChipCatalog } from "./chips.js";
 
-const TWEEZERS = "/assets/lab-diamond-tweezers.png";
+const TWEEZERS = "/assets/lab-diamond-tweezers.webp";
 const NOIR_VIDEO = "/assets/diamond-noir-white.mp4";
 
 // 샘플 사진: jewelry-lineup.png에서 제품별로 잘라낸 단독 이미지 (잘림 없음)
@@ -148,7 +148,7 @@ export function seed() {
       { id: "M-DM-000002-03", orderId: "DM-000002", stage: "cadIssued", status: "waitingClient", clientUpdate: "CAD V1 ready for review", clientAction: "Check chain length 18in / pendant connection", link: "", publishToClient: true, at: "2026-06-11T10:00:00.000Z" },
     ],
     cadReviews: [
-      { id: "CADR-000001", orderId: "DM-000002", version: 1, fileUrl: "/assets/concept-lumina-lab.png",
+      { id: "CADR-000001", orderId: "DM-000002", version: 1, fileUrl: "/assets/concept-lumina-lab.webp",
         supplierUploadedAt: "2026-06-11T09:30:00.000Z", internalReview: "Dimensions check passed", sentAt: "2026-06-11T10:00:00.000Z",
         decision: null, feedback: [], confirmedMeasurements: "", evidence: "", decidedAt: null },
     ],
@@ -188,7 +188,7 @@ export function seed() {
           { itemId: "c-ring", qty: 5, stoneUsd: 750, metalUsd: 323, unitUsd: 1073 },
         ],
         shipTo: { type: "dealer", name: "LA Diamond Atelier", address: "550 S Hill St #900, Los Angeles, CA" },
-        status: "DELIVERED", qcPhotos: ["/assets/lab-diamond-tweezers.png"], trackingNo: "1Z45X990318842",
+        status: "DELIVERED", qcPhotos: ["/assets/lab-diamond-tweezers.webp"], trackingNo: "1Z45X990318842",
         totalUsd: 21935, createdAt: "2026-05-20T17:00:00.000Z" },
       { id: "wo-2", dealerId: "u-dealer1", goldSpotAtOrder: 85,
         items: [{ itemId: "c-pendant", qty: 2, stoneUsd: 420, metalUsd: 236, unitUsd: 656 }],

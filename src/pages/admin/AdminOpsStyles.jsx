@@ -39,7 +39,7 @@ export default function AdminOpsStyles() {
         e.preventDefault();
         saveOpsStyle({
           name: { ko: f.name, en: f.name, zh: f.name, es: f.name }, category: f.category,
-          coverImage: "/assets/lab-diamond-tweezers.png", metalOptions: ["18kw", "18ky"],
+          coverImage: "/assets/lab-diamond-tweezers.webp", metalOptions: ["18kw", "18ky"],
           estWeightG: Number(f.estWeightG), laborUsd: Number(f.laborUsd), leadDays: Number(f.leadDays),
         });
         setF({ name: "", category: "ring", estWeightG: "", laborUsd: "", leadDays: "" });
