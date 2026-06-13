@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { COLOR_ORDER, CLARITY_ORDER, poolStoneMatches } from "../ops.js";
-import { resetDB, listPoolDiamonds, getPoolDiamond, savePoolDiamond, archivePoolDiamond, setPoolAvailability, createIntake, listCandidates, listProcurements, matchPoolForOrder } from "../store.js";
+import { resetDB, listPoolDiamonds, getPoolDiamond, savePoolDiamond, archivePoolDiamond, setPoolAvailability, createIntake, listCandidates, listProcurements, matchPoolForOrder, lockCandidate } from "../store.js";
 
 beforeEach(() => resetDB()); // 테스트 간 격리 — 시드만으로 매칭 카운트 결정적
 
@@ -92,5 +92,27 @@ describe("자동매칭 → 후보 생성 + 폴백", () => {
     const { order } = createIntake(form(noMatch));
     expect(listCandidates({ orderId: order.id }).length).toBe(0);
     expect(listProcurements({ orderId: order.id }).some((p) => p.type === "diamondCandidates" && p.status === "open")).toBe(true);
+  });
+});
+
+describe("락 → 풀 sold + 형제 후보 무효화", () => {
+  const prefs = { shape: "oval", carat: 1.5, color: "E", clarity: "VS1", growth: "CVD", lab: "IGI India", colorTreatment: "disclosed", fluorescence: "none", lwRatio: "" };
+  const form = () => ({ name: "T", contact: "t@t.com", productLine: "solitaire", category: "ring", styleId: "", budget: null, metal: "18kw", conditional: { ringSize: "6" }, stonePrefs: prefs, requiredDate: "", country: "USA", termsAccepted: true, referenceMedia: [] });
+
+  it("두 주문이 같은 풀 스톤(POOL-000006 oval)을 후보로 가짐 → 락 시 sold + 형제 무효화", () => {
+    const o1 = createIntake(form()).order;
+    const o2 = createIntake(form()).order;
+    const c1 = listCandidates({ orderId: o1.id }).find((c) => c.poolDiamondId === "POOL-000006");
+    const c2 = listCandidates({ orderId: o2.id }).find((c) => c.poolDiamondId === "POOL-000006");
+    expect(c1 && c2).toBeTruthy();
+
+    lockCandidate(c1.id);
+    expect(getPoolDiamond("POOL-000006").availability).toBe("sold");
+    // 다른 주문의 형제 후보는 무효화(unpublish + sold)
+    const c2after = listCandidates({ orderId: o2.id }).find((c) => c.poolDiamondId === "POOL-000006");
+    expect(c2after.published).toBe(false);
+    expect(c2after.availability).toBe("sold");
+    // sold 풀 스톤은 이후 새 주문에 매칭 안 됨
+    expect(matchPoolForOrder(prefs).map((s) => s.id)).not.toContain("POOL-000006");
   });
 });

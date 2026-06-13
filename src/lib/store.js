@@ -575,6 +575,20 @@ export function submitStockConfirm(prId, available) {
 export function lockCandidate(diaId) {
   const c = getCandidate(diaId);
   c.locked = true;
+  // 풀 스톤 소진 + 같은 스톤을 가리키는 다른 주문 후보 무효화 (이중 판매 방지)
+  if (c.poolDiamondId) {
+    const pool = getPoolDiamond(c.poolDiamondId);
+    if (pool && pool.availability !== "sold") {
+      pool.availability = "sold"; pool.updatedAt = now();
+      audit("auto", "pool", pool.id, "availability", "available", "sold");
+    }
+    db().diamondCands.forEach((other) => {
+      if (other.poolDiamondId === c.poolDiamondId && other.id !== c.id && !other.locked) {
+        other.published = false;
+        other.availability = "sold";
+      }
+    });
+  }
   const order = getOpsOrder(c.orderId);
   updateOpsOrder(order.id, { selectedDiamondId: diaId, status: "QUOTATION" });
   upsertMilestone(order.id, "diamondLocked", { status: "done", publishToClient: true, clientUpdate: c.id });
