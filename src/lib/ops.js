@@ -182,3 +182,27 @@ export function defaultBenchmark() {
   }
   return rows;
 }
+
+// ---------- 벤더 다이아 풀 매칭 (순수) ----------
+// 등급 순서: 인덱스가 작을수록 고등급. "등급 이상" = 스톤 인덱스 ≤ 요청 인덱스.
+export const COLOR_ORDER = ["D", "E", "F", "G", "H", "I", "J", "K"];
+export const CLARITY_ORDER = ["FL", "IF", "VVS1", "VVS2", "VS1", "VS2", "SI1", "SI2"];
+
+function gradeAtLeast(order, stoneGrade, prefGrade) {
+  const pi = order.indexOf(prefGrade);
+  if (pi < 0) return true; // 요청 등급이 목록에 없으면 해당 축 무시(관대)
+  const si = order.indexOf(stoneGrade);
+  return si >= 0 && si <= pi;
+}
+
+// 풀 스톤이 고객 선호(prefs)에 매칭되는지. opts: { caratUnder, caratOver }
+export function poolStoneMatches(stone, prefs, opts) {
+  if (!stone || !prefs) return false;
+  if (stone.shape !== prefs.shape) return false;
+  const carat = Number(stone.carat), want = Number(prefs.carat);
+  if (!(carat >= want - opts.caratUnder && carat <= want + opts.caratOver)) return false;
+  if (!gradeAtLeast(COLOR_ORDER, stone.color, prefs.color)) return false;
+  if (!gradeAtLeast(CLARITY_ORDER, stone.clarity, prefs.clarity)) return false;
+  if (prefs.growth && stone.growth !== prefs.growth) return false;
+  return true;
+}
