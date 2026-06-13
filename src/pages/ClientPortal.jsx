@@ -168,8 +168,15 @@ export default function ClientPortal() {
   const phaseNote = (stages) => {
     const ms = milestones.filter((m) => stages.includes(m.stage) && (m.clientUpdate || m.clientAction));
     const last = ms[ms.length - 1];
-    return last ? [last.clientUpdate, last.clientAction].filter(Boolean).join(" — ") : "";
+    if (!last) return "";
+    const note = [last.clientUpdate, last.clientAction].filter(Boolean).join(" — ");
+    return /^\d+(\.\d+)?\s*g$/.test(note) ? t.phaseWeightDone : note; // 실중량 raw("4.35g")는 친절한 문구로
   };
+
+  // 고객용 "다음 단계" 한 줄 — 어드민의 next-step 카드를 고객에게도 (문의 감소)
+  const nextMsg = (order.status === "QUOTATION" && quote?.status === "accepted") ? t.nextDeposit
+    : (order.status === "CAD" && cad && !cad.decision) ? t.nextCadReview
+      : t.nextStep?.[order.status] || "";
 
   return (
     <div className="page" style={{ maxWidth: 980 }}>
@@ -177,8 +184,16 @@ export default function ClientPortal() {
       <p className="page-sub">
         {style && <>{style.id} — {pickI18n(style.name, locale)} · </>}
         {order.requiredDate && <>{t.requiredDate}: {order.requiredDate} · </>}
-        <span className={`status-badge ost-${order.status}`}>{p.orderStatus[order.status]}</span>
+        <span className={`status-badge ost-${order.status}`}>{t.statusLabel?.[order.status] || p.orderStatus[order.status]}</span>
       </p>
+
+      {/* 고객용 다음 단계 안내 — "이제 뭘 기다리지?"를 없앤다 */}
+      {nextMsg && (
+        <div className="panel" style={{ borderColor: "rgba(214,197,160,0.5)", background: "rgba(214,197,160,0.05)", padding: "14px 18px" }}>
+          <span style={{ color: "var(--accent-bright)", letterSpacing: 1, fontSize: 12 }}>{p.visual.nowAction}</span>
+          <p style={{ margin: "4px 0 0" }}>{nextMsg}</p>
+        </div>
+      )}
 
       {/* 체크포인트 ① 스톤 (published 후보만) */}
       {showStone && (
@@ -187,7 +202,7 @@ export default function ClientPortal() {
           {stockChecking && <p className="warn-note" style={{ marginBottom: 14 }}>{p.visual.stockChecking}</p>}
           {candidates.length > 0 && (
             <>
-              <p className="form-hint" style={{ marginBottom: 14 }}>{t.batchNote}</p>
+              <p className="form-hint" style={{ marginBottom: 14 }}>{t.optionsLabel(candidates.length)} · {t.batchNote}</p>
               <div className="card-grid cols-3">
                 {candidates.map((c) => (
                   <div className={`item-card ${c.clientSelection === "selected" || selected?.id === c.id ? "select-card is-selected" : ""}`} key={c.id}>

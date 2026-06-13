@@ -47,10 +47,19 @@ function OrderBrief({ view, t, p, locale }) {
       ? `${p.shapes[sp.shape] || sp.shape} ${sp.carat}ct · ${sp.color}/${sp.clarity} · ${sp.growth}`
       : (view.multiSpec?.meleeSpec || null);
   const cover = view.styleCover ? { kind: view.styleCover.endsWith(".mp4") ? "video" : "image", src: view.styleCover } : null;
+  // 태스크 유형별 카드 — 배송엔 주소가 히어로, QC엔 검수 프레이밍, 그 외엔 제작 사양
+  const title = view.type === "ship" ? t.briefShip : view.type === "qc" ? t.briefQc : t.briefTitle;
+  const shipAddress = view.type === "ship" ? (view.brief || "").replace(/^ship to:\s*/i, "") : null;
 
   return (
     <div className="panel brief-card form-stack">
-      <h2 className="brief-title">{t.briefTitle}</h2>
+      <h2 className="brief-title">{title}</h2>
+      {shipAddress && (
+        <div className="brief-ship">
+          <p className="brief-section-label">📦 {t.shipTo}</p>
+          <p style={{ fontSize: 17, lineHeight: 1.5, margin: "4px 0 0" }}>{shipAddress}</p>
+        </div>
+      )}
       <div className="brief-hero">
         {cover && <div className="brief-cover"><MediaThumb media={cover} ratio="1 / 1" alt={view.styleRef || ""} /></div>}
         <div className="brief-chips">
