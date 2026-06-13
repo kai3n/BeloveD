@@ -166,7 +166,7 @@ export default function ClientPortal() {
           <h3>{t.actionsTitle}</h3>
           {actions.map((a) => (
             <p key={a.id} className="form-hint" style={{ fontSize: 13.5 }}>
-              · {a.prompt || a.type}{a.dueDate && ` — ${a.dueDate}`}
+              · {t.todo?.[a.type] || a.prompt || a.type}{a.dueDate && ` — ${a.dueDate}`}
             </p>
           ))}
         </div>

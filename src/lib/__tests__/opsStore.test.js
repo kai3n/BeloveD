@@ -3,7 +3,7 @@ import {
   resetDB, createIntake, getOpsOrder, createProcurement, supplierTasks, submitCandidates,
   reviewCandidate, publishCandidate, selectCandidate, lockCandidate, createQuote, sendQuote,
   acceptQuote, markDepositReceived, addCadVersion, decideCad, listMilestones, recordActualWeight,
-  portalView, listCadReviews, dailyChecklist, setCandidateAvailability, listCandidates,
+  portalView, listCadReviews, dailyChecklist, setCandidateAvailability, listCandidates, listProcurements,
 } from "../store.js";
 
 beforeEach(() => resetDB());
@@ -27,6 +27,28 @@ describe("ops store — 매뉴얼 풀 플로우", () => {
     expect(json).not.toContain("김지원");
     expect(json).not.toContain("DM-000001");
     expect(json).toContain("PR-000001");
+  });
+
+  it("벤더 태스크: 같은 주문은 같은 jobCode, 다른 주문은 다름 (Order ID 미노출)", () => {
+    const tasks = supplierTasks("u-supplier1");
+    const t1 = tasks.find((x) => x.id === "PR-000001"); // DM-000001
+    const t2 = tasks.find((x) => x.id === "PR-000002"); // DM-000002
+    expect(t1.jobCode).toMatch(/^JOB-[A-Z0-9]{4}$/);
+    expect(t1.jobCode).not.toBe(t2.jobCode);
+    expect(JSON.stringify(tasks)).not.toContain("DM-000001"); // 코드만, 주문번호 미노출
+  });
+
+  it("재선택 시 이전 미완료 재고확인은 닫혀 중복 누적 안 됨", () => {
+    const pr = createProcurement("DM-000001", { type: "diamondCandidates", supplierId: "u-supplier1", dueDate: "d", brief: "" });
+    const [a, b] = submitCandidates(pr.id, [
+      { igiNo: "X1", shape: "round", carat: 1.5, color: "E", clarity: "VS1", growth: "CVD", lab: "IGI", procurementCostUsd: 500, image: "/a.png" },
+      { igiNo: "X2", shape: "round", carat: 1.5, color: "D", clarity: "VS1", growth: "CVD", lab: "IGI", procurementCostUsd: 520, image: "/b.png" },
+    ]);
+    publishCandidate(a.id, 1100); publishCandidate(b.id, 1200);
+    selectCandidate(a.id, "customer");
+    selectCandidate(b.id, "customer"); // 재선택
+    const open = listProcurements({ orderId: "DM-000001" }).filter((p) => p.type === "stockConfirm" && p.status === "open");
+    expect(open.length).toBe(1); // 직전 것은 closed
   });
 
   it("후보 제출 → 검수 → publish → 고객 선택 → 락 → QUOTATION", () => {

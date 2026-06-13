@@ -14,6 +14,17 @@ import { useDBVersion } from "../../lib/useDB.js";
 import { EmptyNote, MediaThumb, usd } from "../../components/ui.jsx";
 import { pickI18n, useLocale } from "../../i18n.jsx";
 
+// 조달요청 결과를 raw JSON 대신 사람이 읽을 요약으로 (어드민 가독성)
+function prResultSummary(pr) {
+  const r = pr.result;
+  if (!r) return "";
+  if (pr.type === "stockConfirm") return r.available ? "in stock" : "sold out";
+  if (pr.type === "ship") return [r.trackingNo, r.shippedAt].filter(Boolean).join(" · ");
+  if (pr.type === "qc") return [r.actualWeightG && `${r.actualWeightG}g`, r.video && "video", r.cert && "cert"].filter(Boolean).join(" · ");
+  if (pr.type === "weightLabor") return [r.estWeightG && `${r.estWeightG}g`, r.laborUsd && `labor $${r.laborUsd}`, r.leadDays && `${r.leadDays}d`].filter(Boolean).join(" · ");
+  return "submitted";
+}
+
 function PrForm({ orderId, suppliers, t }) {
   const [f, setF] = useState({ type: "diamondCandidates", supplierId: suppliers[0]?.id || "", dueDate: "", batchValidUntil: "", brief: "" });
   return (
@@ -165,7 +176,7 @@ export default function AdminOpsOrder() {
         {listProcurements({ orderId }).map((pr) => (
           <p key={pr.id} className="form-hint">
             {pr.id} · {pr.type} · {suppliers.find((su) => su.id === pr.supplierId)?.name} · {pr.dueDate} · <span className={`status-badge prt-${pr.status}`}>{p.supplierP.status[pr.status]}</span>
-            {pr.result && ` · ${JSON.stringify(pr.result).slice(0, 80)}`}
+            {pr.result && ` · ${prResultSummary(pr)}`}
           </p>
         ))}
       </div>

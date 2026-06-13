@@ -8,13 +8,65 @@ import {
 import { useDBVersion } from "../../lib/useDB.js";
 import { EmptyNote, MediaPicker, MediaThumb } from "../../components/ui.jsx";
 import PinAnnotator from "../../components/PinAnnotator.jsx";
-import { useLocale } from "../../i18n.jsx";
+import { pickI18n, useLocale } from "../../i18n.jsx";
 
 const emptyCand = () => ({ igiNo: "", shape: "round", carat: "", color: "E", clarity: "VS1", growth: "CVD", lab: "IGI India", procurementCostUsd: "", table: "", depth: "", faceUp: "" });
 
+// 고객 요구를 한눈에 종합하는 제작 브리프 — 텍스트 최소화, 시각 우선 (어르신 벤더 친화적)
+function BriefChip({ label, value }) {
+  if (!value) return null;
+  return <div className="brief-chip"><span className="bc-label">{label}</span><span className="bc-value">{value}</span></div>;
+}
+
+function OrderBrief({ view, t, p, locale }) {
+  const sizeText = view.measurements
+    || (view.conditional && Object.values(view.conditional).filter(Boolean).join(" · "))
+    || null;
+  const d = view.diamond;
+  const sp = view.stonePrefs;
+  const stoneText = d
+    ? `${p.shapes[d.shape] || d.shape} ${Number(d.carat).toFixed(2)}ct · ${d.color}/${d.clarity} · ${d.growth}`
+    : sp
+      ? `${p.shapes[sp.shape] || sp.shape} ${sp.carat}ct · ${sp.color}/${sp.clarity} · ${sp.growth}`
+      : (view.multiSpec?.meleeSpec || null);
+  const cover = view.styleCover ? { kind: view.styleCover.endsWith(".mp4") ? "video" : "image", src: view.styleCover } : null;
+
+  return (
+    <div className="panel brief-card form-stack">
+      <h2 className="brief-title">{t.briefTitle}</h2>
+      <div className="brief-hero">
+        {cover && <div className="brief-cover"><MediaThumb media={cover} ratio="1 / 1" alt={view.styleRef || ""} /></div>}
+        <div className="brief-chips">
+          <BriefChip label={t.bCategory} value={view.category ? p.opsCategories[view.category] : null} />
+          <BriefChip label={t.bMetal} value={view.metal ? p.opsMetals[view.metal] : null} />
+          <BriefChip label={t.bSize} value={sizeText} />
+          <BriefChip label={t.bStone} value={stoneText} />
+          {view.styleRef && <BriefChip label={t.styleRef} value={`${view.styleRef}${view.styleName ? ` · ${pickI18n(view.styleName, locale)}` : ""}`} />}
+        </div>
+      </div>
+
+      {view.references.length > 0 && (
+        <div className="form-stack">
+          <p className="label">💚 {t.refLikes}</p>
+          <div className="card-grid cols-2">
+            {view.references.map((r) => <PinAnnotator key={r.id} src={r.src} annotations={r.annotations} readOnly />)}
+          </div>
+        </div>
+      )}
+
+      {view.revision && (
+        <div className="form-stack brief-revision">
+          <p className="label">⚠ {t.changeThis} — CAD V{view.revision.version}</p>
+          <PinAnnotator src={view.revision.fileUrl} annotations={view.revision.annotations} readOnly />
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function SupplierTask() {
   useDBVersion();
-  const { p } = useLocale();
+  const { p, locale } = useLocale();
   const t = p.supplierP;
   const { prId } = useParams();
   const { user } = useAuth();
@@ -36,8 +88,10 @@ export default function SupplierTask() {
   const revisionReview = pr.type === "cad" && order
     ? listCadReviews(order.id).find((c) => c.decision === "minorRevision" && !c.hidden) || null
     : null;
-  const stockDiamond = pr.diamondId ? getCandidate(pr.diamondId) : null;
-  const view = supplierTaskView(pr, order, order?.styleId ? getOpsStyle(order.styleId) : null, intake, revisionReview, stockDiamond);
+  // 재고확인엔 대상 다이아, CAD/QC엔 확정된 센터스톤 — 둘 다 안전 필드만
+  const diaId = pr.diamondId || (["cad", "qc"].includes(pr.type) ? order?.selectedDiamondId : null);
+  const briefDiamond = diaId ? getCandidate(diaId) : null;
+  const view = supplierTaskView(pr, order, order?.styleId ? getOpsStyle(order.styleId) : null, intake, revisionReview, briefDiamond);
   const setRow = (i, patch) => setRows((rs) => rs.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
 
   function sendCandidates(e) {
@@ -56,33 +110,14 @@ export default function SupplierTask() {
 
   return (
     <div className="page" style={{ maxWidth: 880 }}>
-      <h1 className="page-title">{pr.id}</h1>
+      <h1 className="page-title">{pr.id} <span className="status-badge" style={{ verticalAlign: "middle" }}>{view.jobCode}</span></h1>
       <p className="page-sub">{t.taskTypes[pr.type]} · {t.due}: {view.dueDate}
         {view.batchValidUntil && <> · {t.batchUntil}: {view.batchValidUntil}</>}
         {view.requiredDate && <> · {t.required}: {view.requiredDate}</>}
       </p>
 
-      <div className="panel">
-        <h3>{t.brief}</h3>
-        <p className="form-hint" style={{ fontSize: 13.5 }}>{view.brief || "—"}</p>
-        {view.styleRef && <p className="form-hint">{t.styleRef}: {view.styleRef}{view.styleEstWeightG && ` · ${view.styleEstWeightG}g`}{view.metal && ` · ${view.metal}`}{view.measurements && ` · ${view.measurements}`}</p>}
-      </div>
-
-      {/* 비주얼 브리프 — 같은 핀이 공급자 언어로 렌더링된다 */}
-      {(view.references.length > 0 || view.revision) && (
-        <div className="panel form-stack">
-          <h3>{p.visual.refTitle}</h3>
-          {view.references.map((r) => (
-            <PinAnnotator key={r.id} src={r.src} annotations={r.annotations} readOnly />
-          ))}
-          {view.revision && (
-            <>
-              <h3>CAD V{view.revision.version} — {p.portal.cadDecided.minorRevision}</h3>
-              <PinAnnotator src={view.revision.fileUrl} annotations={view.revision.annotations} readOnly />
-            </>
-          )}
-        </div>
-      )}
+      {/* 고객 요구 종합 — 시각 우선 카드 (제작 내용·메탈·사이즈·스톤 + 레퍼런스/수정 핀) */}
+      <OrderBrief view={view} t={t} p={p} locale={locale} />
 
       {pr.status !== "open" ? (
         <EmptyNote>{t.status.submitted}</EmptyNote>

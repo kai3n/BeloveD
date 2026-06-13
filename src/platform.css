@@ -10,6 +10,8 @@
   font-weight: 400;
   font-size: clamp(34px, 4vw, 52px);
   margin: 0 0 12px;
+  /* Cormorant 기본 oldstyle 숫자가 Order ID(DM-000004)를 ooooo4처럼 보이게 함 — lining 숫자로 교정 */
+  font-variant-numeric: lining-nums tabular-nums;
 }
 .page-sub { color: var(--muted); margin: 0 0 42px; line-height: 1.6; }
 
@@ -143,8 +145,22 @@
 
 /* 미디어 피커 */
 .picker-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
-.picker-cell { background: none; border: 1px solid var(--line); padding: 0 0 6px; cursor: pointer; font-size: 11px; color: var(--quiet); display: grid; gap: 5px; }
+.picker-cell { background: none; border: 1px solid var(--line); padding: 0 0 6px; cursor: pointer; font-size: 11px; color: var(--quiet); display: grid; gap: 5px; position: relative; }
 .picker-cell.is-selected { border-color: var(--accent); color: var(--text); }
+.picker-cell .remove-media { position: absolute; top: 4px; right: 4px; padding: 2px 7px; }
+.picker-samples-grid { opacity: 0.78; }
+
+/* 드래그&드롭 업로드 — 어르신 벤더 친화적으로 크게 */
+.drop-zone {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  min-height: 130px; padding: 22px; cursor: pointer; text-align: center;
+  border: 2px dashed var(--line); border-radius: 12px; background: var(--bg-2);
+  transition: border-color .15s, background .15s;
+}
+.drop-zone:hover { border-color: var(--accent); }
+.drop-zone.is-over { border-color: var(--accent); background: rgba(214,197,160,0.1); }
+.drop-zone .drop-icon { font-size: 28px; line-height: 1; color: var(--accent); }
+.drop-zone .drop-title { font-size: 16px; font-weight: 600; color: var(--text); }
 
 /* 위저드 */
 .select-card { text-align: left; cursor: pointer; padding: 0; }
@@ -167,7 +183,7 @@
 
 .summary-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
 .summary-card { border: 1px solid var(--line); background: var(--surface); padding: 20px; }
-.summary-card .num { font-size: 30px; font-family: var(--serif); color: var(--accent-bright); }
+.summary-card .num { font-size: 30px; font-family: var(--serif); color: var(--accent-bright); font-variant-numeric: lining-nums tabular-nums; }
 .summary-card .lbl { font-size: 12px; color: var(--quiet); margin-top: 4px; }
 
 /* 가이드 */
@@ -282,3 +298,23 @@ button.text-link:hover {
   border-radius: 999px; background: #b3463f; color: #fff;
   font-size: 10px; font-weight: 600; text-align: center;
 }
+
+/* 벤더 제작 브리프 — 고객 요구 시각 종합 (어르신 친화: 큰 라벨·여백) */
+.brief-card { border-left: 3px solid var(--accent); }
+.brief-title { font-size: 22px; margin: 0; }
+.brief-hero { display: grid; grid-template-columns: 120px 1fr; gap: 16px; align-items: start; }
+.brief-cover { width: 120px; }
+.brief-cover .media-thumb { border-radius: 10px; }
+.brief-chips { display: flex; flex-wrap: wrap; gap: 10px; align-content: start; }
+.brief-chip { display: flex; flex-direction: column; gap: 2px; padding: 8px 14px; background: var(--bg-2); border: 1px solid var(--line); border-radius: 10px; min-width: 96px; }
+.brief-chip .bc-label { font-size: 11px; letter-spacing: .04em; text-transform: uppercase; color: var(--quiet); }
+.brief-chip .bc-value { font-size: 15px; font-weight: 600; color: var(--text); }
+.brief-revision { border: 1px solid #6e4a2a; background: rgba(232,192,122,0.06); border-radius: 10px; padding: 12px; }
+.brief-revision .label { color: #e8c07a; }
+@media (max-width: 640px) {
+  .brief-hero { grid-template-columns: 1fr; }
+  .brief-cover { width: 140px; }
+}
+
+/* 벤더 큐: 같은 주문(Job) 작업 그룹 구분선 */
+.data-table tr.job-start td { border-top: 2px solid var(--line-strong); }

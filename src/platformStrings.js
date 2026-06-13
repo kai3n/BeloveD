@@ -101,8 +101,10 @@ const en = {
     fb: "Customer feedback", fbConfirmed: "✓ Confirmed", fbRevise: (c) => `Revision: ${c}`,
   },
   picker: {
-    hint: (n) => `Pick from the sample library or upload a file (${n} selected)`,
-    fileLabel: "Upload file (image, up to 2MB)", fileError: "Demo accepts images up to 2MB only.",
+    hint: (n) => `${n} selected`,
+    dropHint: "Drag photos or videos here", dropSub: "or tap to choose from your phone",
+    sampleToggle: "Or pick a sample",
+    fileLabel: "Upload file", fileError: (mb) => `File too large — keep it under ${mb}MB.`, typeError: "Only photos and videos are supported.",
     labels: { sol: "Solitaire", band: "Band", pendant: "Pendant", studs: "Studs", bracelet: "Bracelet", loose: "Loose stone", video: "Stone video" },
   },
   admin: {
@@ -265,8 +267,10 @@ const ko = {
     fb: "고객 피드백", fbConfirmed: "✓ 확정", fbRevise: (c) => `수정 요청: ${c}`,
   },
   picker: {
-    hint: (n) => `샘플 라이브러리에서 선택하거나 파일을 업로드하세요 (${n}개 선택됨)`,
-    fileLabel: "파일 업로드 (이미지, 2MB 이하)", fileError: "데모에서는 2MB 이하 이미지만 업로드할 수 있습니다.",
+    hint: (n) => `${n}개 선택됨`,
+    dropHint: "사진·영상을 여기로 끌어다 놓으세요", dropSub: "또는 눌러서 휴대폰에서 선택",
+    sampleToggle: "또는 샘플에서 선택",
+    fileLabel: "파일 업로드", fileError: (mb) => `파일이 너무 큽니다 — ${mb}MB 이하로 올려주세요.`, typeError: "사진과 영상만 올릴 수 있습니다.",
     labels: { sol: "솔리테어", band: "밴드", pendant: "펜던트", studs: "스터드", bracelet: "브레이슬릿", loose: "루스 스톤", video: "스톤 영상" },
   },
   admin: {
@@ -429,8 +433,10 @@ const zh = {
     fb: "顾客反馈", fbConfirmed: "✓ 已确认", fbRevise: (c) => `修改请求：${c}`,
   },
   picker: {
-    hint: (n) => `从样品库选择或上传文件（已选 ${n} 个）`,
-    fileLabel: "上传文件（图片，2MB 以内）", fileError: "演示版仅支持 2MB 以内的图片。",
+    hint: (n) => `已选 ${n} 个`,
+    dropHint: "把照片或视频拖到这里", dropSub: "或点击从手机选择",
+    sampleToggle: "或从样例中选择",
+    fileLabel: "上传文件", fileError: (mb) => `文件太大 — 请控制在 ${mb}MB 以内。`, typeError: "仅支持照片和视频。",
     labels: { sol: "单钻戒", band: "戒圈", pendant: "吊坠", studs: "耳钉", bracelet: "手链", loose: "裸石", video: "钻石视频" },
   },
   admin: {
@@ -593,8 +599,10 @@ const es = {
     fb: "Comentarios del cliente", fbConfirmed: "✓ Confirmado", fbRevise: (c) => `Revisión: ${c}`,
   },
   picker: {
-    hint: (n) => `Elige de la biblioteca de muestras o sube un archivo (${n} seleccionados)`,
-    fileLabel: "Subir archivo (imagen, hasta 2MB)", fileError: "La demo solo acepta imágenes de hasta 2MB.",
+    hint: (n) => `${n} seleccionados`,
+    dropHint: "Arrastra fotos o videos aquí", dropSub: "o toca para elegir desde tu teléfono",
+    sampleToggle: "O elige una muestra",
+    fileLabel: "Subir archivo", fileError: (mb) => `Archivo muy grande — menos de ${mb}MB.`, typeError: "Solo se admiten fotos y videos.",
     labels: { sol: "Solitario", band: "Aro", pendant: "Colgante", studs: "Aretes", bracelet: "Pulsera", loose: "Piedra suelta", video: "Video de piedra" },
   },
   admin: {

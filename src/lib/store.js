@@ -283,8 +283,9 @@ export function supplierTasks(supplierId) {
     const revision = pr.type === "cad" && order
       ? listCadReviews(order.id).find((c) => c.decision === "minorRevision" && !c.hidden) || null
       : null;
-    // 재고 확인 태스크에는 대상 다이아의 안전 필드만 동봉 (고객가 미노출)
-    const diamond = pr.diamondId ? getCandidate(pr.diamondId) : null;
+    // 재고확인엔 대상 다이아, CAD/QC엔 확정된 센터스톤 사양 동봉 (둘 다 안전 필드만 — 고객가 미노출)
+    const diaId = pr.diamondId || (["cad", "qc"].includes(pr.type) ? order?.selectedDiamondId : null);
+    const diamond = diaId ? getCandidate(diaId) : null;
     return supplierTaskView(pr, order, style, intake, revision, diamond);
   });
 }
@@ -443,6 +444,10 @@ export function selectCandidate(diaId, actor) {
   if (!c.published || c.availability !== "available" || expired) throw new Error("notSelectable");
   c.clientSelection = "selected";
   audit(actor, "diamond", diaId, "clientSelection", "none", "selected");
+  // 재선택 시 이전 미완료 재고확인이 큐에 쌓이지 않도록 정리
+  listProcurements({ orderId: c.orderId }).forEach((p) => {
+    if (p.type === "stockConfirm" && p.status === "open") p.status = "closed";
+  });
   const due = new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10);
   createProcurement(c.orderId, { type: "stockConfirm", supplierId: c.supplierId, dueDate: due, brief: c.igiNo, diamondId: c.id });
   persist();

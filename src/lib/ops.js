@@ -86,11 +86,21 @@ export function supplierDiamondView(cand) {
   return out;
 }
 
+// 벤더에게 보여줄 익명 "작업 묶음" 코드 — Order ID를 노출하지 않으면서 같은 주문의 작업을 묶는다.
+// 결정적 해시라 같은 주문이면 항상 같은 코드, 주문번호는 역산 불가.
+export function jobCode(orderId) {
+  if (!orderId) return "";
+  let h = 2166136261;
+  for (let i = 0; i < orderId.length; i++) { h ^= orderId.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return "JOB-" + (h >>> 0).toString(36).toUpperCase().slice(-4);
+}
+
 // 서플라이어 태스크 뷰: 고객 신원·판매가·Order ID 제외 (PR ID로만 식별)
 // visualBrief: 검수 승인 레퍼런스 + 직전 리비전 핀만 — pending/rejected 절대 미포함
 export function supplierTaskView(pr, order, style, intake = null, revisionReview = null, diamond = null) {
   return {
     id: pr.id,
+    jobCode: jobCode(pr.orderId), // 같은 주문 작업을 묶는 익명 코드 (Order ID는 미노출)
     type: pr.type,
     diamond: supplierDiamondView(diamond),
     dueDate: pr.dueDate,
@@ -100,7 +110,15 @@ export function supplierTaskView(pr, order, style, intake = null, revisionReview
     requiredDate: order?.requiredDate ?? null,
     styleRef: style?.id ?? null,
     styleEstWeightG: style?.estWeightG ?? null,
-    metal: pr.metal ?? null,
+    // 요구사항 종합 카드용 안전 필드 (제품 사양만 — 고객 신원·가격 절대 미포함)
+    category: intake?.category ?? null,
+    productLine: intake?.productLine ?? null,
+    conditional: intake?.conditional ?? null,
+    stonePrefs: intake?.stonePrefs ?? null,
+    multiSpec: intake?.multiSpec ?? null,
+    styleCover: style?.coverImage ?? null,
+    styleName: style?.name ?? null,
+    metal: pr.metal ?? intake?.metal ?? null,
     measurements: pr.measurements ?? null,
     references: (intake?.referenceMedia || [])
       .filter((m) => m.status === "approved")
