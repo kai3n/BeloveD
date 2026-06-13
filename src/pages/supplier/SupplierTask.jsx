@@ -3,10 +3,10 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../lib/auth.jsx";
 import { BENCHMARK_SHAPES, CAD_SLOTS, supplierTaskView } from "../../lib/ops.js";
 import {
-  getCandidate, getIntake, getOpsOrder, getOpsStyle, getProcurement, listCadReviews, submitCadForPr, submitCandidates, submitQcForPr, submitShipment, submitStockConfirm, submitWeightLabor,
+  getCandidate, getIntake, getOpsOrder, getOpsStyle, getProcurement, listCadReviews, listPoolDiamonds, submitCadForPr, submitCandidates, submitPoolCandidates, submitQcForPr, submitShipment, submitStockConfirm, submitWeightLabor,
 } from "../../lib/store.js";
 import { useDBVersion } from "../../lib/useDB.js";
-import { EmptyNote, MediaPicker, MediaThumb } from "../../components/ui.jsx";
+import { EmptyNote, MediaPicker, MediaThumb, usd } from "../../components/ui.jsx";
 import PinAnnotator from "../../components/PinAnnotator.jsx";
 import { pickI18n, useLocale } from "../../i18n.jsx";
 
@@ -104,6 +104,8 @@ export default function SupplierTask() {
   const [qc, setQc] = useState({ actualWeightG: "" });
   const [slots, setSlots] = useState({ render360: [], side: [], wear: [] });
   const [ship, setShip] = useState({ trackingNo: "", shippedAt: "" });
+  const [poolPick, setPoolPick] = useState(() => new Set());
+  const togglePool = (id) => setPoolPick((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
   if (!pr || pr.supplierId !== user.id) {
     return <div className="page"><EmptyNote>{t.empty}</EmptyNote></div>;
@@ -170,6 +172,35 @@ export default function SupplierTask() {
       ) : pr.type === "diamondCandidates" ? (
         <form className="panel form-stack" onSubmit={sendCandidates}>
           <h3>{t.candTitle}</h3>
+          {(() => {
+            const poolStones = listPoolDiamonds({ supplierId: user.id }).filter((s) => s.availability === "available");
+            return (
+              <div className="panel" style={{ background: "var(--bg-2)", marginBottom: 16 }}>
+                <h4 style={{ margin: "0 0 10px" }}>{t.fromPool}</h4>
+                {poolStones.length === 0 ? <p className="form-hint">{t.poolEmpty}</p> : (
+                  <>
+                    <table className="data-table">
+                      <tbody>
+                        {poolStones.map((s) => (
+                          <tr key={s.id}>
+                            <td><input type="checkbox" checked={poolPick.has(s.id)} onChange={() => togglePool(s.id)} /></td>
+                            <td>{p.shapes[s.shape]} {Number(s.carat).toFixed(2)}ct</td>
+                            <td>{s.color} · {s.clarity} · {s.growth}</td>
+                            <td>{s.certOrg} {s.igiNo}</td>
+                            <td>{usd(s.procurementCostUsd)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <button type="button" className="button primary small" style={{ marginTop: 12 }} disabled={poolPick.size === 0}
+                      onClick={() => { submitPoolCandidates(prId, [...poolPick]); navigate("/supplier"); }}>
+                      {t.poolSubmit} ({poolPick.size})
+                    </button>
+                  </>
+                )}
+              </div>
+            );
+          })()}
           {rows.map((r, i) => (
             <div key={i} style={{ borderBottom: "1px solid var(--line)", paddingBottom: 14, marginBottom: 4 }}>
               {/* 필수: IGI·캐럿·원가 */}
