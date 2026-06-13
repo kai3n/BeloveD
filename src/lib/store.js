@@ -620,11 +620,12 @@ export function addCadVersion(orderId, { fileUrl, media, supplierId }) {
   persist();
   return review;
 }
-export function decideCad(reviewId, { decision, feedback, annotations, confirmedMeasurements }, actor) {
+export function decideCad(reviewId, { decision, feedback, annotations, annotatedSrc, confirmedMeasurements }, actor) {
   const r = db().cadReviews.find((x) => x.id === reviewId);
   r.decision = decision;
   r.feedback = (feedback || []).map((f) => maskContacts(f)).filter(Boolean);
   r.annotations = (annotations || []).filter((a) => validateAnnotation(a, db().chipCatalog));
+  r.annotatedSrc = annotatedSrc || ""; // 핀이 찍힌 정지 이미지 — 벤더에게 같은 캔버스로 전달
   r.confirmedMeasurements = confirmedMeasurements || "";
   r.decidedAt = now();
   r.feeAppliedUsd = 0;

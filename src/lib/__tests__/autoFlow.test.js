@@ -180,6 +180,22 @@ describe("모니터링 — 미디어 피드와 숨김", () => {
     expect(getProcurement("PR-000002").status).toBe("open"); // 벤더 재제출 유도
   });
 
+  it("CAD 대표 파일이 영상이어도 핀은 이미지 캔버스에 — 벤더도 같은 이미지로 본다", () => {
+    const pr = createProcurement("DM-000002", { type: "cad", supplierId: "u-supplier1", dueDate: "d", brief: "" });
+    submitCadForPr(pr.id, [
+      { slot: "render360", kind: "video", src: "/r360.mp4" },
+      { slot: "side", kind: "image", src: "/side.png" },
+    ]);
+    const r = listCadReviews("DM-000002")[0];
+    decideCad(r.id, {
+      decision: "minorRevision", annotatedSrc: "/side.png",
+      annotations: [{ pinId: 1, x: 30, y: 60, part: "band", chipKey: "thinner", value: 1.4 }],
+    }, "customer");
+    const task = supplierTasks("u-supplier1").find((x) => x.type === "cad" && x.status === "open");
+    expect(task.revision.fileUrl).toBe("/side.png"); // 영상이 아닌, 핀이 찍힌 이미지
+    expect(task.revision.annotations[0].chipKey).toBe("thinner");
+  });
+
   it("역할별 배지 카운트 — 벤더는 열린 태스크 수", () => {
     const before = pendingCount({ id: "u-supplier1", role: "supplier" });
     createIntake(solitaireForm); // 기본 벤더에게 태스크 자동 발행

@@ -53,9 +53,14 @@ function DesignCard({ cad, mineMedia, orderId, actor, revisionsLeft, feeUsd }) {
   const [revising, setRevising] = useState(false);
   const [ann, setAnn] = useState([]);
   const [measure, setMeasure] = useState("");
+  // 핀은 정지 이미지에만 찍는다 — 대표 파일이 영상이면 슬롯 중 첫 이미지를 주석 캔버스로 사용
+  const pinSrc = [cad.fileUrl, ...(cad.media || []).map((m) => m.src)].find((s) => s && !s.endsWith(".mp4")) || cad.fileUrl;
 
   function send(decision) {
-    decideCad(cad.id, { decision, annotations: decision === "minorRevision" ? ann : [], confirmedMeasurements: measure }, actor);
+    decideCad(cad.id, {
+      decision, annotations: decision === "minorRevision" ? ann : [],
+      annotatedSrc: decision === "minorRevision" ? pinSrc : "", confirmedMeasurements: measure,
+    }, actor);
     const ca = listCustomerActions(orderId, true).find((a) => a.type === "cadReview");
     if (ca) respondCustomerAction(ca.id, decision, actor);
     setRevising(false); setAnn([]);
@@ -72,7 +77,7 @@ function DesignCard({ cad, mineMedia, orderId, actor, revisionsLeft, feeUsd }) {
         <div>
           <p className="label">{t2.compareVendor} — {t.cadVersion(cad.version)}</p>
           {revising
-            ? <PinAnnotator src={cad.fileUrl} annotations={ann} onChange={setAnn} />
+            ? <PinAnnotator src={pinSrc} annotations={ann} onChange={setAnn} />
             : <MediaThumb media={{ kind: cad.fileUrl.endsWith(".mp4") ? "video" : "image", src: cad.fileUrl }} ratio="4 / 3" alt={t.cadTitle} />}
         </div>
       </div>

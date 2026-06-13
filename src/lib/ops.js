@@ -106,7 +106,12 @@ export function supplierTaskView(pr, order, style, intake = null, revisionReview
       .filter((m) => m.status === "approved")
       .map(({ id, kind, src, annotations }) => ({ id, kind, src, annotations })),
     revision: revisionReview
-      ? { version: revisionReview.version, fileUrl: revisionReview.fileUrl, annotations: revisionReview.annotations || [] }
+      ? {
+        version: revisionReview.version,
+        // 핀이 찍힌 이미지를 우선 — 대표 파일이 영상일 때 핀 좌표가 어긋나지 않도록
+        fileUrl: revisionReview.annotatedSrc || revisionReview.fileUrl,
+        annotations: revisionReview.annotations || [],
+      }
       : null,
   };
 }
