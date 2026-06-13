@@ -61,6 +61,7 @@ const en = {
   },
   intake: {
     title: "Custom Order Request", sub: "Tell us what you want to create. An Order ID and a private tracking code are issued on submission — no payment until you accept the quote.",
+    wizardSteps: ["Product", "Center stone", "References"], next: "Next", back: "Back",
     name: "Name", contact: "Email or phone", productLine: "Product line", category: "Category",
     style: "Selected style (from the catalog)", noStyle: "Not decided yet", budget: "Budget ($, optional)", metal: "Metal",
     ringSize: "Ring size (written confirmation required)", chainStyle: "Chain style", chainLength: "Chain length",
@@ -258,6 +259,7 @@ const ko = {
   },
   intake: {
     title: "주문제작 요청", sub: "원하시는 피스를 알려주세요. 제출 즉시 Order ID와 전용 조회 코드가 발급됩니다 — 견적 수락 전에는 결제가 없습니다.",
+    wizardSteps: ["제품", "센터스톤", "레퍼런스"], next: "다음", back: "뒤로",
     name: "이름", contact: "이메일 또는 연락처", productLine: "제품 라인", category: "카테고리",
     style: "선택한 스타일 (카탈로그에서)", noStyle: "아직 미정", budget: "예산 ($, 선택)", metal: "메탈",
     ringSize: "링 사이즈 (서면 확인 필수)", chainStyle: "체인 스타일", chainLength: "체인 길이",
@@ -455,6 +457,7 @@ const zh = {
   },
   intake: {
     title: "定制订单申请", sub: "告诉我们您想打造的作品。提交后立即生成 Order ID 与专属查询码 — 接受报价前无需付款。",
+    wizardSteps: ["产品", "主石", "参考图"], next: "下一步", back: "上一步",
     name: "姓名", contact: "邮箱或电话", productLine: "产品线", category: "类别",
     style: "已选款式（来自目录）", noStyle: "尚未决定", budget: "预算（$，可选）", metal: "金属",
     ringSize: "戒指尺寸（需书面确认）", chainStyle: "链条款式", chainLength: "链长",
@@ -652,6 +655,7 @@ const es = {
   },
   intake: {
     title: "Solicitud de Pedido a Medida", sub: "Cuéntanos qué quieres crear. Al enviar se emiten un Order ID y un código privado de seguimiento — sin pago hasta aceptar la cotización.",
+    wizardSteps: ["Producto", "Piedra central", "Referencias"], next: "Siguiente", back: "Atrás",
     name: "Nombre", contact: "Correo o teléfono", productLine: "Línea de producto", category: "Categoría",
     style: "Estilo elegido (del catálogo)", noStyle: "Aún sin decidir", budget: "Presupuesto ($, opcional)", metal: "Metal",
     ringSize: "Talla de anillo (confirmación escrita requerida)", chainStyle: "Estilo de cadena", chainLength: "Largo de cadena",
