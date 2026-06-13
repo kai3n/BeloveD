@@ -50,7 +50,7 @@ describe("ops store — 매뉴얼 풀 플로우", () => {
     selectCandidate(cand.id, "customer");
     lockCandidate(cand.id);
     const q = createQuote("DM-000001", { estWeightG: 4.2, metalRefUsdPerG: 85, lossRatePct: 8, nonMetalUsd: 250, internal: { multiplier: 1.8, diamondCostUsd: 500 } });
-    expect(q.id).toBe("Q-DM-000001-V1");
+    expect(q.id).toBe("Q-DM-000001-V2"); // V1은 다이아 락 시점에 자동 발송된 견적 (어드민 최소 개입)
     expect(q.snapshot.benchmarkUsdPerCt).toBeGreaterThan(0);
     expect(q.totalUsd).toBe(q.diamondAmountUsd + q.metalAmountUsd + 250);
     sendQuote(q.id);

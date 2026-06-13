@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../lib/auth.jsx";
 import { BENCHMARK_SHAPES, CAD_SLOTS, supplierTaskView } from "../../lib/ops.js";
 import {
-  getCandidate, getIntake, getOpsOrder, getOpsStyle, getProcurement, listCadReviews, submitCadForPr, submitCandidates, submitQcForPr, submitStockConfirm, submitWeightLabor,
+  getCandidate, getIntake, getOpsOrder, getOpsStyle, getProcurement, listCadReviews, submitCadForPr, submitCandidates, submitQcForPr, submitShipment, submitStockConfirm, submitWeightLabor,
 } from "../../lib/store.js";
 import { useDBVersion } from "../../lib/useDB.js";
 import { EmptyNote, MediaPicker, MediaThumb } from "../../components/ui.jsx";
@@ -25,6 +25,7 @@ export default function SupplierTask() {
   const [wl, setWl] = useState({ estWeightG: "", lossIncluded: true, laborUsd: "", meleeUsd: "", leadDays: "", assumptions: "" });
   const [qc, setQc] = useState({ actualWeightG: "" });
   const [slots, setSlots] = useState({ render360: [], side: [], wear: [] });
+  const [ship, setShip] = useState({ trackingNo: "", shippedAt: "" });
 
   if (!pr || pr.supplierId !== user.id) {
     return <div className="page"><EmptyNote>{t.empty}</EmptyNote></div>;
@@ -33,7 +34,7 @@ export default function SupplierTask() {
   const order = getOpsOrder(pr.orderId);
   const intake = order ? getIntake(order.intakeId) : null;
   const revisionReview = pr.type === "cad" && order
-    ? listCadReviews(order.id).find((c) => c.decision === "minorRevision") || null
+    ? listCadReviews(order.id).find((c) => c.decision === "minorRevision" && !c.hidden) || null
     : null;
   const stockDiamond = pr.diamondId ? getCandidate(pr.diamondId) : null;
   const view = supplierTaskView(pr, order, order?.styleId ? getOpsStyle(order.styleId) : null, intake, revisionReview, stockDiamond);
@@ -164,6 +165,15 @@ export default function SupplierTask() {
             ))}
           </div>
           <button className="button primary" type="submit" disabled={!slots.render360[0]}>{t.submit}</button>
+        </form>
+      ) : pr.type === "ship" ? (
+        <form className="panel form-stack" onSubmit={(e) => { e.preventDefault(); submitShipment(prId, { trackingNo: ship.trackingNo, shippedAt: ship.shippedAt }); navigate("/supplier"); }}>
+          <h3>{t.shipTitle}</h3>
+          <div className="filter-grid" style={{ gridTemplateColumns: "1fr 1fr" }}>
+            <label className="field"><span>{t.trackingNo}</span><input value={ship.trackingNo} onChange={(e) => setShip({ ...ship, trackingNo: e.target.value })} required /></label>
+            <label className="field"><span>{t.shippedAt}</span><input type="date" value={ship.shippedAt} onChange={(e) => setShip({ ...ship, shippedAt: e.target.value })} /></label>
+          </div>
+          <button className="button primary" type="submit">{t.submit}</button>
         </form>
       ) : (
         <form className="panel form-stack" onSubmit={(e) => { e.preventDefault(); submitQcForPr(prId, { video: media.find((m) => m.kind === "video")?.src || media[0]?.src || "", cert: media[1]?.src || "", actualWeightG: Number(qc.actualWeightG) || null }); navigate("/supplier"); }}>

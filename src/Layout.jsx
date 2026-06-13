@@ -4,6 +4,8 @@ import { Languages, LogOut, Menu, Search, ShoppingBag, UserRound, X } from "luci
 import { localeOptions } from "./translations.js";
 import { useLocale } from "./i18n.jsx";
 import { useAuth } from "./lib/auth.jsx";
+import { pendingCount } from "./lib/store.js";
+import { useDBVersion } from "./lib/useDB.js";
 
 function roleHome(user) {
   if (!user) return "/login";
@@ -14,10 +16,12 @@ function roleHome(user) {
 }
 
 export function Header() {
+  useDBVersion();
   const { locale, setLocale, t, p } = useLocale();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const pending = pendingCount(user); // 역할별 "내 차례" 수 — 알림 대신 배지
 
   const navItems = [
     { to: "/diamonds", label: p.nav.diamonds },
@@ -50,8 +54,9 @@ export function Header() {
         <button className="icon-button" aria-label={t.aria.search} onClick={() => navigate("/diamonds")}>
           <Search size={20} strokeWidth={1.7} />
         </button>
-        <button className="icon-button" aria-label={user ? p.nav.account : p.nav.login} onClick={() => navigate(roleHome(user))}>
+        <button className="icon-button" aria-label={user ? p.nav.account : p.nav.login} onClick={() => navigate(roleHome(user))} style={{ position: "relative" }}>
           <UserRound size={20} strokeWidth={1.7} />
+          {pending > 0 && <span className="nav-badge">{pending}</span>}
         </button>
         {user ? (
           <button className="icon-button" aria-label={p.nav.logout} onClick={() => { navigate("/"); logout(); }}>

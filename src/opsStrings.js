@@ -107,7 +107,9 @@ const en = {
   },
   supplierP: {
     title: "Supplier Portal", sub: (name) => `${name} — assigned tasks only. Customer identity and selling prices are never shown.`,
-    queue: "Task queue", taskTypes: { diamondCandidates: "Diamond candidates", weightLabor: "Metal weight & labor", cad: "3D CAD", qc: "Final QC files" },
+    queue: "Task queue", taskTypes: { diamondCandidates: "Diamond candidates", weightLabor: "Metal weight & labor", stockConfirm: "Stock confirmation", cad: "3D CAD", qc: "Final QC files", ship: "Ship to operator" },
+    stockTitle: "Is this stone still available?", stockYes: "In stock — hold for this order", stockNo: "Sold out",
+    shipTitle: "Submit shipment", trackingNo: "Tracking number", shippedAt: "Ship date",
     due: "Due", batchUntil: "Batch valid until", required: "Customer required date", styleRef: "Style",
     brief: "Requirements", status: { open: "Open", submitted: "Submitted", closed: "Closed" }, openTask: "Open task", empty: "No tasks.",
     candTitle: "Submit diamond candidates", addRow: "Add candidate", igiNo: "IGI no.", costUsd: "Cost ($)",
@@ -120,7 +122,7 @@ const en = {
     parts: { band: "Band", prong: "Prongs", stone: "Center stone", halo: "Halo", gallery: "Gallery", chain: "Chain", clasp: "Clasp", surface: "Surface" },
     refTitle: "Reference photos (optional)",
     refHint: "Show us what you like. Pin a spot and pick a tag — our workshop sees the same pins in their own language. No text needed.",
-    refStatus: { pending: "Under review", approved: "Approved", rejected: "Not usable" },
+    refStatus: { pending: "Under review", approved: "Approved", rejected: "Not usable", hidden: "Hidden" },
     pinHint: "Click the image to drop a pin, then choose a tag.",
     addValue: "Target (mm)", removePin: "Remove",
     checkpoint: { stone: "Choose your diamond", design: "Approve the design", final: "Confirm the finished piece" },
@@ -151,6 +153,8 @@ const en = {
       actualWeight: "Actual weight (g)", reconcile: "Reconcile balance",
       msTitle: "Milestones", publishClient: "Publish", cadTitle: "CAD reviews", sendCad: "Issue CAD version",
       auditTitle: "Audit log", actionsTitle: "Customer actions", statusSet: "Set status",
+      markBalance: "Balance received → ship task", markDelivered: "Received — mark delivered",
+      hideRef: "Hide from vendor", showRef: "Restore",
     },
     styles: {
       title: "Style Library", available: "Available for sale", published: "Published", specs: "Specifications",
@@ -161,6 +165,11 @@ const en = {
     check: {
       title: "Daily Checklist", waiting: "Waiting-client items", blocked: "Blocked milestones", expiring: "Quotes near expiry",
       lowCand: "Stone-selection orders with <3 published candidates", dueSoon: "Orders near required date", openPr: "Open procurement requests", clear: "All clear",
+      depositWait: "Deposits to confirm", balanceWait: "Balances to confirm", held: "Held candidates (not auto-published)",
+    },
+    monitor: {
+      title: "Media feed (vendor ↔ customer)", hide: "Hide", hidden: "Hidden",
+      kinds: { reference: "Reference", cad: "CAD", qc: "QC" },
     },
   },
 };
@@ -272,7 +281,9 @@ const ko = {
   },
   supplierP: {
     title: "서플라이어 포털", sub: (name) => `${name} — 배정된 태스크만 표시됩니다. 고객 신원과 판매가는 절대 노출되지 않습니다.`,
-    queue: "태스크 큐", taskTypes: { diamondCandidates: "다이아 후보", weightLabor: "메탈 중량·공임", cad: "3D CAD", qc: "최종 QC 파일" },
+    queue: "태스크 큐", taskTypes: { diamondCandidates: "다이아 후보", weightLabor: "메탈 중량·공임", stockConfirm: "재고 확인", cad: "3D CAD", qc: "최종 QC 파일", ship: "운영자 배송" },
+    stockTitle: "이 스톤 아직 구매 가능한가요?", stockYes: "재고 있음 — 이 주문에 홀드", stockNo: "품절",
+    shipTitle: "발송 정보 제출", trackingNo: "운송장 번호", shippedAt: "발송일",
     due: "마감", batchUntil: "배치 유효기한", required: "고객 필요일", styleRef: "스타일",
     brief: "요구사항", status: { open: "대기", submitted: "제출됨", closed: "종료" }, openTask: "작업", empty: "태스크가 없습니다.",
     candTitle: "다이아 후보 제출", addRow: "후보 추가", igiNo: "IGI 번호", costUsd: "공급가 ($)",
@@ -285,7 +296,7 @@ const ko = {
     parts: { band: "밴드", prong: "프롱", stone: "센터스톤", halo: "헤일로", gallery: "갤러리", chain: "체인", clasp: "클래스프", surface: "표면" },
     refTitle: "레퍼런스 사진 (선택)",
     refHint: "원하는 느낌을 보여주세요. 사진에 핀을 찍고 태그를 고르면 공방은 같은 핀을 자기 언어로 봅니다 — 글이 필요 없습니다.",
-    refStatus: { pending: "검수중", approved: "승인됨", rejected: "사용 불가" },
+    refStatus: { pending: "검수중", approved: "승인됨", rejected: "사용 불가", hidden: "숨김" },
     pinHint: "이미지를 클릭해 핀을 찍고 태그를 선택하세요.",
     addValue: "목표 (mm)", removePin: "삭제",
     checkpoint: { stone: "다이아몬드 선택", design: "디자인 승인", final: "완성품 최종 컨펌" },
@@ -316,6 +327,8 @@ const ko = {
       actualWeight: "실중량 (g)", reconcile: "잔금 정산",
       msTitle: "마일스톤", publishClient: "고객 공개", cadTitle: "CAD 리뷰", sendCad: "CAD 버전 발행",
       auditTitle: "감사 로그", actionsTitle: "고객 액션", statusSet: "상태 변경",
+      markBalance: "잔금 수령 → 배송 태스크", markDelivered: "수령 완료 — 배송 처리",
+      hideRef: "벤더에서 숨김", showRef: "복원",
     },
     styles: {
       title: "스타일 라이브러리", available: "판매 가능", published: "공개됨", specs: "스펙",
@@ -326,6 +339,11 @@ const ko = {
     check: {
       title: "데일리 체크리스트", waiting: "고객 응답 대기", blocked: "차단된 마일스톤", expiring: "만료 임박 견적",
       lowCand: "공개 후보 3개 미만인 스톤선택 주문", dueSoon: "필요일 임박 주문", openPr: "미응답 조달 요청", clear: "모두 정상",
+      depositWait: "디파짓 확인 대기", balanceWait: "잔금 확인 대기", held: "보류 후보 (자동 공개 안 됨)",
+    },
+    monitor: {
+      title: "미디어 피드 (벤더 ↔ 고객)", hide: "숨김", hidden: "숨김됨",
+      kinds: { reference: "레퍼런스", cad: "CAD", qc: "QC" },
     },
   },
 };
@@ -437,7 +455,9 @@ const zh = {
   },
   supplierP: {
     title: "供应商门户", sub: (name) => `${name} — 仅显示分配的任务。绝不显示客户身份与销售价格。`,
-    queue: "任务队列", taskTypes: { diamondCandidates: "钻石候选", weightLabor: "金重·工费", cad: "3D CAD", qc: "最终质检文件" },
+    queue: "任务队列", taskTypes: { diamondCandidates: "钻石候选", weightLabor: "金重·工费", stockConfirm: "库存确认", cad: "3D CAD", qc: "最终质检文件", ship: "发货给运营方" },
+    stockTitle: "这颗钻石仍可购买吗？", stockYes: "有货 — 为此订单保留", stockNo: "已售出",
+    shipTitle: "提交发货信息", trackingNo: "运单号", shippedAt: "发货日期",
     due: "截止", batchUntil: "批次有效期", required: "客户需要日期", styleRef: "款式",
     brief: "要求", status: { open: "待处理", submitted: "已提交", closed: "已关闭" }, openTask: "处理", empty: "暂无任务。",
     candTitle: "提交钻石候选", addRow: "添加候选", igiNo: "IGI 编号", costUsd: "成本 ($)",
@@ -450,7 +470,7 @@ const zh = {
     parts: { band: "戒臂", prong: "镶爪", stone: "主石", halo: "光环", gallery: "底座", chain: "链条", clasp: "扣环", surface: "表面" },
     refTitle: "参考图（可选）",
     refHint: "把喜欢的感觉拍给我们。在图上钉一个点并选择标签 — 工坊会以自己的语言看到同样的标记，无需文字。",
-    refStatus: { pending: "审核中", approved: "已通过", rejected: "不可用" },
+    refStatus: { pending: "审核中", approved: "已通过", rejected: "不可用", hidden: "已隐藏" },
     pinHint: "点击图片放置图钉，然后选择标签。",
     addValue: "目标 (mm)", removePin: "删除",
     checkpoint: { stone: "挑选钻石", design: "确认设计", final: "确认成品" },
@@ -481,6 +501,8 @@ const zh = {
       actualWeight: "实际重量 (g)", reconcile: "结算尾款",
       msTitle: "里程碑", publishClient: "对客户可见", cadTitle: "CAD 审核", sendCad: "发布 CAD 版本",
       auditTitle: "审计日志", actionsTitle: "客户任务", statusSet: "设置状态",
+      markBalance: "已收尾款 → 发货任务", markDelivered: "已收货 — 标记送达",
+      hideRef: "对供应商隐藏", showRef: "恢复",
     },
     styles: {
       title: "款式库", available: "可售", published: "已发布", specs: "规格",
@@ -491,6 +513,11 @@ const zh = {
     check: {
       title: "每日检查", waiting: "等待客户项", blocked: "受阻里程碑", expiring: "临近过期报价",
       lowCand: "已发布候选 <3 的选石订单", dueSoon: "临近需要日期的订单", openPr: "未响应采购任务", clear: "全部正常",
+      depositWait: "待确认定金", balanceWait: "待确认尾款", held: "保留候选（未自动发布）",
+    },
+    monitor: {
+      title: "媒体流（供应商 ↔ 客户）", hide: "隐藏", hidden: "已隐藏",
+      kinds: { reference: "参考图", cad: "CAD", qc: "质检" },
     },
   },
 };
@@ -602,7 +629,9 @@ const es = {
   },
   supplierP: {
     title: "Portal del Proveedor", sub: (name) => `${name} — solo tareas asignadas. Nunca se muestran identidad del cliente ni precios de venta.`,
-    queue: "Cola de tareas", taskTypes: { diamondCandidates: "Candidatos de diamante", weightLabor: "Peso de metal y mano de obra", cad: "CAD 3D", qc: "Archivos de QC final" },
+    queue: "Cola de tareas", taskTypes: { diamondCandidates: "Candidatos de diamante", weightLabor: "Peso de metal y mano de obra", stockConfirm: "Confirmación de stock", cad: "CAD 3D", qc: "Archivos de QC final", ship: "Enviar al operador" },
+    stockTitle: "¿Esta piedra sigue disponible?", stockYes: "En stock — reservar para este pedido", stockNo: "Agotada",
+    shipTitle: "Enviar datos de despacho", trackingNo: "Número de guía", shippedAt: "Fecha de envío",
     due: "Vence", batchUntil: "Lote válido hasta", required: "Fecha requerida del cliente", styleRef: "Estilo",
     brief: "Requisitos", status: { open: "Abierta", submitted: "Enviada", closed: "Cerrada" }, openTask: "Abrir", empty: "Sin tareas.",
     candTitle: "Enviar candidatos", addRow: "Añadir candidato", igiNo: "N.º IGI", costUsd: "Costo ($)",
@@ -615,7 +644,7 @@ const es = {
     parts: { band: "Banda", prong: "Garras", stone: "Piedra central", halo: "Halo", gallery: "Galería", chain: "Cadena", clasp: "Broche", surface: "Superficie" },
     refTitle: "Fotos de referencia (opcional)",
     refHint: "Muéstranos lo que te gusta. Marca un punto y elige una etiqueta — el taller ve los mismos pines en su idioma. Sin texto.",
-    refStatus: { pending: "En revisión", approved: "Aprobada", rejected: "No utilizable" },
+    refStatus: { pending: "En revisión", approved: "Aprobada", rejected: "No utilizable", hidden: "Oculta" },
     pinHint: "Haz clic en la imagen para poner un pin y elige una etiqueta.",
     addValue: "Objetivo (mm)", removePin: "Quitar",
     checkpoint: { stone: "Elige tu diamante", design: "Aprueba el diseño", final: "Confirma la pieza terminada" },
@@ -646,6 +675,8 @@ const es = {
       actualWeight: "Peso real (g)", reconcile: "Conciliar saldo",
       msTitle: "Hitos", publishClient: "Visible al cliente", cadTitle: "Revisiones CAD", sendCad: "Emitir versión CAD",
       auditTitle: "Registro de auditoría", actionsTitle: "Acciones del cliente", statusSet: "Cambiar estado",
+      markBalance: "Saldo recibido → tarea de envío", markDelivered: "Recibido — marcar entregado",
+      hideRef: "Ocultar al proveedor", showRef: "Restaurar",
     },
     styles: {
       title: "Biblioteca de Estilos", available: "A la venta", published: "Publicado", specs: "Especificaciones",
@@ -656,6 +687,11 @@ const es = {
     check: {
       title: "Checklist Diario", waiting: "Esperando al cliente", blocked: "Hitos bloqueados", expiring: "Cotizaciones por vencer",
       lowCand: "Pedidos en selección con <3 candidatos publicados", dueSoon: "Pedidos cerca de la fecha requerida", openPr: "Solicitudes de compra abiertas", clear: "Todo en orden",
+      depositWait: "Depósitos por confirmar", balanceWait: "Saldos por confirmar", held: "Candidatos retenidos (sin publicación automática)",
+    },
+    monitor: {
+      title: "Feed de medios (taller ↔ cliente)", hide: "Ocultar", hidden: "Oculto",
+      kinds: { reference: "Referencia", cad: "CAD", qc: "QC" },
     },
   },
 };

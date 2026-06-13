@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from "react-router-dom";
-import { dailyChecklist, listOpsOrders } from "../../lib/store.js";
+import { dailyChecklist, hideMedia, listOpsOrders, mediaFeed } from "../../lib/store.js";
 import { useDBVersion } from "../../lib/useDB.js";
+import { MediaThumb } from "../../components/ui.jsx";
 import { useLocale } from "../../i18n.jsx";
 
 export default function Admin() {
@@ -46,20 +47,26 @@ export function AdminDashboard() {
   const active = orders.filter((o) => !["DELIVERED", "ARCHIVED", "CANCELLED"].includes(o.status));
 
   const items = [
+    // 어드민 터치포인트(입금 확인)를 맨 위로 — 자동화 흐름이 여기서만 멈춘다
+    [t.depositWait, c.depositWait || []],
+    [t.balanceWait, c.balanceWait || []],
+    [t.held, c.heldCandidates || []],
     [t.waiting, [...new Set(c.waitingClient)]],
     [t.blocked, [...new Set(c.blocked)]],
     [t.expiring, c.quotesExpiring],
     [t.lowCand, c.lowCandidates],
     [t.dueSoon, c.dueSoon],
-    [t.openPr, c.openPr ?? c.openProcurements],
+    [t.openPr, c.openProcurements],
   ];
+  const feed = mediaFeed(12);
+  const tm = p.opsA.monitor;
 
   return (
     <>
       <div className="summary-grid">
         <div className="summary-card"><div className="num">{active.length}</div><div className="lbl">{p.opsA.orders.title}</div></div>
-        <div className="summary-card"><div className="num">{[...new Set(c.waitingClient)].length}</div><div className="lbl">{t.waiting}</div></div>
-        <div className="summary-card"><div className="num">{c.lowCandidates.length}</div><div className="lbl">{t.lowCand}</div></div>
+        <div className="summary-card"><div className="num">{(c.depositWait || []).length + (c.balanceWait || []).length}</div><div className="lbl">{t.depositWait}</div></div>
+        <div className="summary-card"><div className="num">{(c.heldCandidates || []).length}</div><div className="lbl">{t.held}</div></div>
         <div className="summary-card"><div className="num">{(c.openProcurements || []).length}</div><div className="lbl">{t.openPr}</div></div>
       </div>
       <div className="panel" style={{ marginTop: 18 }}>
@@ -69,6 +76,25 @@ export function AdminDashboard() {
         ) : items.map(([label, list]) => list.length > 0 && (
           <p key={label} className="warn-note" style={{ margin: "6px 0" }}>· {label}: {list.join(", ")}</p>
         ))}
+      </div>
+      {/* 벤더↔고객 시각자료 사후 모니터링 — 사전 승인 게이트 대신 */}
+      <div className="panel" style={{ marginTop: 18 }}>
+        <h3>{tm.title}</h3>
+        <div className="card-grid cols-3">
+          {feed.map((m) => (
+            <div key={`${m.feedKind}-${m.id}`} className="item-card" style={m.hidden ? { opacity: 0.45 } : undefined}>
+              <MediaThumb media={{ kind: m.kind, src: m.src }} alt={m.id} />
+              <div className="card-body">
+                <p className="spec">{tm.kinds[m.feedKind]} · {m.orderId} · {String(m.at).slice(5, 10)}</p>
+                {m.hidden ? (
+                  <p className="form-hint">{tm.hidden}</p>
+                ) : (
+                  <button className="button secondary small" onClick={() => hideMedia(m.feedKind, m.id, m.refId)}>{tm.hide}</button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </>
   );

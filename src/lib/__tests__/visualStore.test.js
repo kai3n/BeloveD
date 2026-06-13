@@ -26,7 +26,7 @@ describe("visual store — 칩 카탈로그", () => {
 });
 
 describe("visual store — 레퍼런스 미디어와 벤더 브리프", () => {
-  it("인테이크 레퍼런스는 pending으로 저장, 무효 주석은 드랍", () => {
+  it("인테이크 레퍼런스는 즉시 approved 저장(사후 모니터링), 무효 주석은 드랍", () => {
     const { intake } = createIntake({
       name: "Ref", contact: "r@x.com", productLine: "solitaire", category: "ring", styleId: "RING-001",
       metal: "18kw", conditional: { ringSize: "6" }, termsAccepted: true,
@@ -36,18 +36,18 @@ describe("visual store — 레퍼런스 미디어와 벤더 브리프", () => {
       ] }],
     });
     const saved = getIntake(intake.id).referenceMedia;
-    expect(saved[0].status).toBe("pending");
+    expect(saved[0].status).toBe("approved"); // 즉시 전달 — 어드민 사전 승인 게이트 없음
     expect(saved[0].id).toMatch(/^REF-\d{6}$/);
     expect(saved[0].annotations.length).toBe(1);
   });
 
-  it("벤더 태스크에는 승인된 레퍼런스만 — pending/rejected/고객명 미노출", () => {
-    // 시드: IN-000001에 approved 1 + pending 1
+  it("벤더 태스크에는 승인 레퍼런스만 — hidden/고객명 미노출", () => {
+    // 시드: IN-000001에 approved 1 + hidden 1
     createProcurement("DM-000001", { type: "cad", supplierId: "u-supplier2", dueDate: "2026-06-25", brief: "ring cad" });
     const tasks = supplierTasks("u-supplier2");
     const json = JSON.stringify(tasks);
     expect(json).toContain("lineup-band.png");          // approved
-    expect(json).not.toContain("lineup-pendant.png");   // pending
+    expect(json).not.toContain("lineup-pendant.png");   // hidden (모니터링 숨김)
     expect(json).not.toContain("Jiwon Kim");            // 고객명 (시드)
     expect(json).not.toContain("DM-000001");
   });

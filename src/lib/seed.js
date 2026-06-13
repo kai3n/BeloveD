@@ -43,7 +43,8 @@ export function seed() {
         referenceMedia: [
           { id: "REF-000001", kind: "image", src: "/assets/lineup-band.png", status: "approved",
             annotations: [{ pinId: 1, x: 50, y: 30, part: "prong", chipKey: "prong6" }] },
-          { id: "REF-000002", kind: "image", src: "/assets/lineup-pendant.png", status: "pending", annotations: [] },
+          // 모니터링에서 숨김 처리된 예시 — 벤더 브리프에서 제외된다
+          { id: "REF-000002", kind: "image", src: "/assets/lineup-pendant.png", status: "hidden", annotations: [] },
         ],
         createdAt: "2026-06-08T09:00:00.000Z" },
       { id: "IN-000002", orderId: "DM-000002", name: "Noah Lee", contact: "+1 213-555-0188", productLine: "multi", category: "necklace",
@@ -201,6 +202,9 @@ export function seed() {
       opsDepositRate: 0.5, opsMultiplier: 1.8, defaultLossRatePct: 8, productionLeadDays: 10,
       metalRefUsdPerG: { "14ky": 62, "18ky": 80, "14kr": 62, "18kr": 80, "18kw": 85, "pt": 38 },
       designChangeFeeUsd: 15, cancelAfterProductionMinUsd: 140, freeMinorRevisions: 1,
+      // 어드민 최소 개입 자동화: 전 주문이 기본 벤더로 자동 매칭 (스타일별 supplierId로 오버라이드 가능)
+      defaultSupplierId: "u-supplier1", autoDueDays: 3, batchValidDays: 10,
+      shipToAddress: "LUMINA LAB Receiving, 550 S Hill St #1100, Los Angeles, CA 90013",
     },
   };
 }

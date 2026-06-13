@@ -5,9 +5,10 @@ import { assertClaimTransition, computeTier, salvageCredit, unitWholesale, metal
 import {
   MILESTONE_STAGES, publicDiamondView, customerOrderView, supplierTaskView,
   quoteCompute, reconcileDelta, randomQueryCode, tierForCarat,
+  autoBrief, candidateAutoPrice, isCandidateComplete,
 } from "./ops.js";
 
-const KEY = "lumina-db-v8"; // v8: 비주얼 커뮤니케이션 레이어 (chipCatalog, referenceMedia, 구조화 CAD 피드백) + 시드 영어화
+const KEY = "lumina-db-v9"; // v9: 어드민 최소 개입 자동화 (벤더 자동 라우팅·벤치마크 자동가·ship 태스크·미디어 피드)
 
 // 테스트(node) 환경 폴백
 const memoryStorage = (() => {
@@ -27,6 +28,7 @@ function isValidDB(d) {
     && Array.isArray(d.opsOrders) && Array.isArray(d.diamondPricing)
     && d.settings?.opsDepositRate != null
     && Array.isArray(d.chipCatalog)
+    && d.settings?.defaultSupplierId != null
   );
 }
 
@@ -39,6 +41,7 @@ function db() {
     storage.removeItem("lumina-db-v5");
     storage.removeItem("lumina-db-v6");
     storage.removeItem("lumina-db-v7");
+    storage.removeItem("lumina-db-v8");
     let parsed = null;
     try {
       const raw = storage.getItem(KEY);
@@ -55,7 +58,13 @@ function persist() {
   storage.setItem(KEY, JSON.stringify(cache));
   listeners.forEach((fn) => fn());
 }
+// 렌더 중 호출되는 lazy 정리(배치 만료 스윕)용 — 리스너 통지 없이 저장만 (렌더 중 setState 방지)
+function persistQuiet() {
+  storage.setItem(KEY, JSON.stringify(cache));
+}
 const now = () => new Date().toISOString();
+const today = () => now().slice(0, 10);
+const plusDays = (n) => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
 
 export function subscribe(fn) { listeners.add(fn); return () => listeners.delete(fn); }
 export function getDB() { return db(); }
@@ -126,9 +135,9 @@ export function createIntake(form, customerId = null) {
   const intakeId = nextSeqId("IN");
   const orderId = nextOrderId();
   const status = !form.styleId ? "STYLE_SELECTION" : form.productLine === "solitaire" ? "STONE_SELECTION" : "QUOTATION";
-  // 레퍼런스는 pending으로 시작 — 운영 검수 승인 전에는 벤더에게 절대 안 나간다
+  // 레퍼런스는 즉시 벤더에게 전달(approved) — 문제 자료는 미디어 피드에서 사후 숨김 처리
   const referenceMedia = (form.referenceMedia || []).map((m) => ({
-    id: nextSeqId("REF"), kind: m.kind || "image", src: m.src, status: "pending",
+    id: nextSeqId("REF"), kind: m.kind || "image", src: m.src, status: "approved",
     annotations: (m.annotations || []).filter((a) => validateAnnotation(a, db().chipCatalog)),
   }));
   const intake = { id: intakeId, orderId, ...form, referenceMedia, createdAt: now() };
@@ -140,8 +149,66 @@ export function createIntake(form, customerId = null) {
   db().intakes.push(intake);
   db().opsOrders.push(order);
   audit(customerId || "guest", "order", orderId, "create", null, status);
+  autoDispatchIntake(order, intake);
   persist();
   return { intake, order };
+}
+
+// ---------- 자동 발행 (어드민 최소 개입) ----------
+// 벤더 자동 매칭: 스타일 담당 벤더 → 기본 벤더. 비활성/미설정이면 null (주문은 멈추지 않고 체크리스트 표시)
+function routeSupplier(styleId) {
+  const sid = (styleId && getOpsStyle(styleId)?.supplierId) || db().settings.defaultSupplierId;
+  const v = sid ? getUser(sid) : null;
+  return v && v.role === "supplier" && v.active !== false ? v.id : null;
+}
+// 주문 담당 벤더: 직전 태스크의 벤더 우선 (스톤 확정 후엔 그 벤더가 제작까지 담당)
+function orderSupplier(orderId) {
+  const last = listProcurements({ orderId })[0];
+  return last?.supplierId || routeSupplier(getOpsOrder(orderId)?.styleId);
+}
+// 같은 유형의 열린 태스크가 있으면 중복 발행하지 않는다
+function autoIssuePr(orderId, type, extra = {}) {
+  if (listProcurements({ orderId }).some((p) => p.type === type && p.status === "open")) return null;
+  const supplierId = extra.supplierId || orderSupplier(orderId);
+  if (!supplierId) return null;
+  return createProcurement(orderId, { dueDate: plusDays(db().settings.autoDueDays), ...extra, type, supplierId }, "auto");
+}
+// 인테이크 제출 즉시 벤더 태스크/견적 발행 — 매뉴얼 P1 자동화
+function autoDispatchIntake(order, intake) {
+  if (intake.productLine === "solitaire") {
+    autoIssuePr(order.id, "diamondCandidates", {
+      supplierId: routeSupplier(order.styleId),
+      batchValidUntil: plusDays(db().settings.batchValidDays), brief: autoBrief(intake),
+    });
+  } else if (!tryAutoQuote(order.id)) {
+    autoIssuePr(order.id, "weightLabor", {
+      supplierId: routeSupplier(order.styleId), brief: autoBrief(intake), metal: intake.metal || null,
+      measurements: Object.entries(intake.conditional || {}).map(([k, v]) => `${k}: ${v}`).join(", ") || null,
+    });
+  }
+}
+function findSpec(styleId, metal) {
+  return db().styleSpecs.find((sp) => sp.styleId === styleId && sp.metal === metal && sp.status === "approved") || null;
+}
+// 스펙이 준비됐으면 어드민 없이 견적 생성·발송. 스펙이 없으면 false (weightLabor 경유 후 재시도)
+export function tryAutoQuote(orderId) {
+  const order = getOpsOrder(orderId);
+  const intake = order ? getIntake(order.intakeId) : null;
+  if (!order?.styleId || !intake) return false;
+  if (listQuotes(orderId).some((q) => q.status === "sent" || q.status === "accepted")) return true; // 이미 진행중
+  const spec = findSpec(order.styleId, intake.metal);
+  if (!spec) return false;
+  const dia = order.selectedDiamondId ? getCandidate(order.selectedDiamondId) : null;
+  if (intake.productLine === "solitaire" && !dia) return false; // 다이아 락 이후 재시도
+  const s = db().settings;
+  const q = createQuote(orderId, {
+    estWeightG: spec.estWeightG, metalRefUsdPerG: s.metalRefUsdPerG[intake.metal] || 85,
+    lossRatePct: s.defaultLossRatePct, nonMetalUsd: (spec.laborUsd || 0) + (spec.materialsUsd || 0),
+    internal: { diamondCostUsd: dia?.procurementCostUsd || 0, laborUsd: spec.laborUsd || 0, multiplier: s.opsMultiplier },
+  });
+  sendQuote(q.id);
+  audit("auto", "quote", q.id, "autoSend", null, "sent");
+  return true;
 }
 
 // 레퍼런스 검수 — 승인분만 벤더 브리프에 포함 (타인 디자인 도용·연락처 포함 이미지 차단)
@@ -178,7 +245,7 @@ export function listProcurements(filter = {}) {
   return ps.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 export function getProcurement(id) { return db().procurementReqs.find((p) => p.id === id) || null; }
-export function createProcurement(orderId, { type, supplierId, dueDate, batchValidUntil, brief, metal, measurements, diamondId }) {
+export function createProcurement(orderId, { type, supplierId, dueDate, batchValidUntil, brief, metal, measurements, diamondId }, actor = "ops") {
   const pr = {
     id: nextSeqId("PR"), orderId, type, supplierId, dueDate, batchValidUntil: batchValidUntil || null,
     brief: brief || "", metal: metal || null, measurements: measurements || null,
@@ -186,19 +253,35 @@ export function createProcurement(orderId, { type, supplierId, dueDate, batchVal
     status: "open", result: null, createdAt: now(),
   };
   db().procurementReqs.push(pr);
-  audit("ops", "procurement", pr.id, "create", null, type);
+  audit(actor, "procurement", pr.id, "create", null, type);
   persist();
   return pr;
 }
+// 매뉴얼 §6.2: 배치 만료 시 태스크 종료 + 미판매 후보 자동 비공개 (큐/포털/체크리스트 진입 시 lazy 실행)
+export function sweepExpiredBatches() {
+  const t = today();
+  let changed = false;
+  db().procurementReqs.forEach((pr) => {
+    if (pr.type !== "diamondCandidates" || !pr.batchValidUntil || pr.batchValidUntil >= t || pr.status === "closed") return;
+    pr.status = "closed";
+    listCandidates({ prId: pr.id }).forEach((c) => {
+      if (!c.locked && c.published) c.published = false;
+    });
+    audit("auto", "procurement", pr.id, "status", "open", "closed");
+    changed = true;
+  });
+  if (changed) persistQuiet();
+}
 // 서플라이어 화면용 — 고객 신원/Order ID 미노출
 export function supplierTasks(supplierId) {
+  sweepExpiredBatches();
   return listProcurements({ supplierId }).map((pr) => {
     const order = getOpsOrder(pr.orderId);
     const style = order?.styleId ? getOpsStyle(order.styleId) : null;
     const intake = order ? getIntake(order.intakeId) : null;
-    // CAD 태스크에는 최신 minorRevision 리뷰(이미지+핀)를 브리프로 동봉
+    // CAD 태스크에는 최신 minorRevision 리뷰(이미지+핀)를 브리프로 동봉 (숨김 처리된 버전 제외)
     const revision = pr.type === "cad" && order
-      ? listCadReviews(order.id).find((c) => c.decision === "minorRevision") || null
+      ? listCadReviews(order.id).find((c) => c.decision === "minorRevision" && !c.hidden) || null
       : null;
     // 재고 확인 태스크에는 대상 다이아의 안전 필드만 동봉 (고객가 미노출)
     const diamond = pr.diamondId ? getCandidate(pr.diamondId) : null;
@@ -210,6 +293,18 @@ export function submitWeightLabor(prId, result) {
   pr.result = result;
   pr.status = "submitted";
   audit(pr.supplierId, "procurement", prId, "result", null, "weightLabor");
+  // 벤더 제출값으로 스펙 자동 등록 → 자동 견적 재시도 (어드민 손 거치지 않음)
+  const order = getOpsOrder(pr.orderId);
+  const intake = order ? getIntake(order.intakeId) : null;
+  if (order?.styleId && intake && result.estWeightG && !findSpec(order.styleId, intake.metal)) {
+    saveStyleSpec({
+      styleId: order.styleId, metal: intake.metal, size: pr.measurements || "",
+      centerStoneSpec: intake.productLine === "solitaire" ? "per order" : "none",
+      estWeightG: Number(result.estWeightG), variancePct: 6, laborUsd: Number(result.laborUsd) || 0,
+      materialsUsd: Number(result.meleeUsd) || 0, status: "approved", evidence: prId,
+    });
+  }
+  if (order) tryAutoQuote(order.id);
   persist();
   return pr;
 }
@@ -235,6 +330,10 @@ export function submitQcForPr(prId, { video, cert, actualWeightG }) {
   pr.status = "submitted";
   upsertMilestone(pr.orderId, "finalQcVideo", { status: "done", publishToClient: true, link: video || "" });
   upsertMilestone(pr.orderId, "igiInscriptionVerified", { status: "inProgress", publishToClient: false });
+  // 실중량 증빙 제출 즉시 잔금 자동 정산 (어드민 수동 정산 제거)
+  if (actualWeightG && listQuotes(pr.orderId).some((q) => q.status === "accepted")) {
+    recordActualWeight(pr.orderId, actualWeightG);
+  }
   // 체크포인트 ③: 완성품 영상 → 고객 최종 컨펌 액션 (증거 보존)
   createCustomerAction(pr.orderId, { type: "finalConfirmation", prompt: "finalQc", link: video || "" });
   const o = getOpsOrder(pr.orderId);
@@ -242,6 +341,32 @@ export function submitQcForPr(prId, { video, cert, actualWeightG }) {
   audit(pr.supplierId, "procurement", prId, "result", null, "qc");
   persist();
   return pr;
+}
+
+// 어드민 터치포인트 ②: 잔금 입금 확인 → 벤더 발송 태스크 자동 발행
+export function markBalanceReceived(orderId) {
+  upsertMilestone(orderId, "balanceReceived", { status: "done", publishToClient: true });
+  autoIssuePr(orderId, "ship", { brief: `Ship to: ${db().settings.shipToAddress}` });
+  audit("ops", "order", orderId, "balance", null, "received");
+  persist();
+}
+// 벤더 운송장 제출 → 배송 마일스톤 자동 갱신 + SHIPPING (고객 포털에 트래킹 표시)
+export function submitShipment(prId, { trackingNo, shippedAt }) {
+  const pr = getProcurement(prId);
+  pr.result = { trackingNo, shippedAt: shippedAt || today() };
+  pr.status = "submitted";
+  upsertMilestone(pr.orderId, "sentDomesticWarehouse", { status: "done", publishToClient: true, clientUpdate: pr.result.shippedAt });
+  upsertMilestone(pr.orderId, "oceanShipment", { status: "inProgress", publishToClient: true, clientUpdate: trackingNo || "" });
+  updateOpsOrder(pr.orderId, { status: "SHIPPING" }, pr.supplierId);
+  audit(pr.supplierId, "procurement", prId, "result", null, "shipped");
+  persist();
+  return pr;
+}
+// 어드민 터치포인트 ③: 실물 수령 확인 → 완료 처리
+export function markOrderDelivered(orderId) {
+  upsertMilestone(orderId, "oceanShipment", { status: "done", publishToClient: true });
+  upsertMilestone(orderId, "deliveredArchived", { status: "done", publishToClient: true });
+  updateOpsOrder(orderId, { status: "DELIVERED" });
 }
 
 // ---------- diamond candidates ----------
@@ -270,6 +395,15 @@ export function submitCandidates(prId, candidates) {
   db().diamondCands.push(...created);
   pr.status = "submitted";
   audit(pr.supplierId, "procurement", prId, "candidates", null, String(created.length));
+  // 완결성+벤치마크 충족 후보는 벤치마크 자동가로 즉시 고객 공개 — 미달분은 보류(체크리스트 표시)
+  created.forEach((c) => {
+    const bench = benchmarkFor(c.shape, c.carat);
+    if (isCandidateComplete(c) && bench) {
+      c.customerPriceUsd = candidateAutoPrice(bench.unitUsdPerCt, c.carat, db().settings.opsMultiplier);
+      c.published = true;
+      audit("auto", "diamond", c.id, "published", "false", "true");
+    }
+  });
   persist();
   return created;
 }
@@ -303,6 +437,10 @@ export function setCandidateAvailability(diaId, availability) {
 // (벤더 승인 시 자동 락, 품절 시 후보 제외 — submitStockConfirm)
 export function selectCandidate(diaId, actor) {
   const c = getCandidate(diaId);
+  // 매뉴얼 §13: 무효 후보(비공개·품절·배치 만료)는 스토어 레벨에서 선택 차단
+  const pr = c.prId ? getProcurement(c.prId) : null;
+  const expired = pr?.batchValidUntil && pr.batchValidUntil < today();
+  if (!c.published || c.availability !== "available" || expired) throw new Error("notSelectable");
   c.clientSelection = "selected";
   audit(actor, "diamond", diaId, "clientSelection", "none", "selected");
   const due = new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10);
@@ -335,6 +473,7 @@ export function lockCandidate(diaId) {
   const order = getOpsOrder(c.orderId);
   updateOpsOrder(order.id, { selectedDiamondId: diaId, status: "QUOTATION" });
   upsertMilestone(order.id, "diamondLocked", { status: "done", publishToClient: true, clientUpdate: c.id });
+  tryAutoQuote(order.id); // 스펙이 준비돼 있으면 어드민 없이 견적 즉시 발송
   return c;
 }
 
@@ -421,10 +560,15 @@ export function acceptQuote(quoteId, actor) {
   persist();
   return q;
 }
-// 디파짓 수령(증빙) → 주문 CAD 단계 + 마일스톤
+// 어드민 터치포인트 ①: 디파짓 입금 확인 → CAD 단계 + 벤더 CAD 태스크 자동 발행
 export function markDepositReceived(orderId) {
   upsertMilestone(orderId, "depositReceived", { status: "done", publishToClient: true });
   updateOpsOrder(orderId, { status: "CAD" });
+  const intake = getIntake(getOpsOrder(orderId)?.intakeId);
+  autoIssuePr(orderId, "cad", {
+    brief: intake ? autoBrief(intake) : "", metal: intake?.metal || null,
+    measurements: Object.entries(intake?.conditional || {}).map(([k, v]) => `${k}: ${v}`).join(", ") || null,
+  });
 }
 // 실중량 정산 → 잔금 가감
 export function recordActualWeight(orderId, actualWeightG) {
@@ -498,11 +642,18 @@ export function decideCad(reviewId, { decision, feedback, annotations, confirmed
         r.feeAppliedUsd = fee;
       }
     }
+    // 고객 핀이 그대로 벤더에게 재전달되도록 새 CAD 태스크 자동 발행 (supplierTaskView가 최신 리비전 동봉)
+    autoIssuePr(r.orderId, "cad", { brief: `CAD V${r.version} minor revision — see pins` });
   }
   if (decision === "approved") {
     upsertMilestone(r.orderId, "cadApproved", { status: "done", publishToClient: true, clientUpdate: `CAD V${r.version} approved` });
     upsertMilestone(r.orderId, "productionStarted", { status: "inProgress", publishToClient: true });
     updateOpsOrder(r.orderId, { status: "PRODUCTION" }, actor);
+    // 제작 완료 시점에 받을 QC 태스크를 미리 발행 (마감 = 제작 리드타임)
+    autoIssuePr(r.orderId, "qc", {
+      dueDate: plusDays(db().settings.productionLeadDays),
+      brief: "Final QC video · certificate · actual weight evidence",
+    });
   }
   persist();
   return r;
@@ -544,6 +695,7 @@ export function confirmFinal(orderId, actor) {
 
 // ---------- client portal (보안 프로젝션 적용) ----------
 export function portalView(orderId, { customerId, queryCode } = {}) {
+  sweepExpiredBatches();
   const order = getOpsOrder(orderId);
   if (!order) return null;
   const authorized = (customerId && order.customerId === customerId) || (queryCode && order.queryCode === queryCode);
@@ -562,7 +714,8 @@ export function portalView(orderId, { customerId, queryCode } = {}) {
       validUntil: quote.validUntil, leadDays: quote.leadDays,
     }, // 내부 원가·멀티플라이어 미포함
     milestones: listMilestones(orderId).filter((m) => m.publishToClient),
-    cad: listCadReviews(orderId)[0] || null,
+    cad: listCadReviews(orderId).find((c) => !c.hidden) || null, // 모니터링 숨김 버전 제외
+
     freeRevisionsLeft: freeRevisionsLeft(orderId),
     designChangeFeeUsd: db().settings.designChangeFeeUsd,
     finalAction: listCustomerActions(orderId, true).find((a) => a.type === "finalConfirmation") || null,
@@ -571,7 +724,7 @@ export function portalView(orderId, { customerId, queryCode } = {}) {
 }
 
 // ---------- daily checklist (매뉴얼 §12) ----------
-export function dailyChecklist() {
+function checklistCounts() {
   const orders = listOpsOrders();
   const soon = (d) => d && (new Date(d) - Date.now()) < 7 * 86400000;
   return {
@@ -581,7 +734,73 @@ export function dailyChecklist() {
     lowCandidates: orders.filter((o) => o.status === "STONE_SELECTION" && listCandidates({ orderId: o.id, publishedOnly: true }).length < 3).map((o) => o.id),
     dueSoon: orders.filter((o) => !["DELIVERED", "ARCHIVED", "CANCELLED"].includes(o.status) && soon(o.requiredDate)).map((o) => o.id),
     openProcurements: db().procurementReqs.filter((p) => p.status === "open").map((p) => p.id),
+    // 어드민 터치포인트: 입금 확인 대기 (자동화 흐름이 여기서만 어드민을 기다린다)
+    depositWait: orders.filter((o) => o.status === "QUOTATION" && db().quotes.some((q) => q.orderId === o.id && q.status === "accepted")).map((o) => o.id),
+    balanceWait: orders.filter((o) => o.status === "BALANCE" && !db().milestones.some((m) => m.orderId === o.id && m.stage === "balanceReceived" && m.status === "done")).map((o) => o.id),
+    // 자동 공개 보류 후보 (완결성/벤치마크 미달) — 수동 가격 입력으로 공개 가능
+    heldCandidates: db().diamondCands.filter((c) =>
+      !c.published && !c.locked && c.availability === "available" && c.internalReview !== "excluded"
+      && getProcurement(c.prId)?.status !== "closed"
+    ).map((c) => c.id),
   };
+}
+export function dailyChecklist() {
+  sweepExpiredBatches();
+  return checklistCounts();
+}
+
+// ---------- 어드민 모니터링: 미디어 피드 (사전 검수 게이트 대신 사후 감시) ----------
+export function mediaFeed(limit = 30) {
+  const items = [];
+  db().intakes.forEach((i) => (i.referenceMedia || []).forEach((m) => {
+    items.push({ feedKind: "reference", id: m.id, refId: i.id, orderId: i.orderId, kind: m.kind, src: m.src, hidden: m.status === "hidden", at: i.createdAt });
+  }));
+  db().cadReviews.forEach((c) => {
+    items.push({ feedKind: "cad", id: c.id, orderId: c.orderId, kind: c.fileUrl?.endsWith(".mp4") ? "video" : "image", src: c.fileUrl, hidden: Boolean(c.hidden), at: c.supplierUploadedAt });
+  });
+  db().procurementReqs.filter((p) => p.type === "qc" && p.result?.video).forEach((p) => {
+    items.push({ feedKind: "qc", id: p.id, orderId: p.orderId, kind: "video", src: p.result.video, hidden: false, at: p.createdAt });
+  });
+  return items.sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, limit);
+}
+// 문제 자료 숨김 — 상대방 미노출 + 해당 단계 재오픈(벤더 재제출 유도)
+export function hideMedia(feedKind, id, refId) {
+  if (feedKind === "reference") {
+    reviewReferenceMedia(refId, id, "hidden", "ops");
+    return;
+  }
+  if (feedKind === "cad") {
+    const r = db().cadReviews.find((x) => x.id === id);
+    r.hidden = true;
+    if (!r.decision) {
+      const pr = listProcurements({ orderId: r.orderId }).find((p) => p.type === "cad" && p.status === "submitted");
+      if (pr) pr.status = "open"; // 미결정 버전이면 벤더가 다시 올리도록 재오픈
+    }
+    audit("ops", "cad", id, "hidden", "false", "true");
+  } else if (feedKind === "qc") {
+    const pr = getProcurement(id);
+    pr.result = null;
+    pr.status = "open";
+    upsertMilestone(pr.orderId, "finalQcVideo", { status: "inProgress", publishToClient: false, link: "" });
+    const a = db().customerActions.find((x) => x.orderId === pr.orderId && x.type === "finalConfirmation" && x.status === "open");
+    if (a) a.status = "cancelled";
+    audit("ops", "procurement", id, "qcHidden", null, "reopened");
+  }
+  persist();
+}
+
+// 역할별 "내 차례" 카운트 — 헤더 배지 (렌더 중 호출되므로 스윕 없이 읽기만)
+export function pendingCount(user) {
+  if (!user) return 0;
+  if (user.role === "supplier") return listProcurements({ supplierId: user.id }).filter((p) => p.status === "open").length;
+  if (user.role === "customer") {
+    return listOpsOrders({ customerId: user.id }).reduce((n, o) => n + listCustomerActions(o.id, true).length, 0);
+  }
+  if (user.role === "admin") {
+    const c = checklistCounts();
+    return c.depositWait.length + c.balanceWait.length + c.heldCandidates.length;
+  }
+  return 0;
 }
 
 // ---------- dealer network (diamond_qc.pdf) ----------

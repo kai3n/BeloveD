@@ -4,7 +4,8 @@ import { MILESTONE_STAGES, ORDER_STATUSES, PR_TYPES } from "../../lib/ops.js";
 import {
   createProcurement, createQuote, getCandidate, getIntake, getOpsOrder, getOpsStyle, listAudit,
   listCandidates, listCadReviews, listCustomerActions, listMilestones, listProcurements, listQuotes,
-  lockCandidate, markDepositReceived, publishCandidate, recordActualWeight, reviewCandidate, sendQuote,
+  lockCandidate, markBalanceReceived, markDepositReceived, markOrderDelivered, publishCandidate,
+  recordActualWeight, reviewCandidate, sendQuote,
   setCandidateAvailability, unpublishCandidate, updateOpsOrder, upsertMilestone, listDealers, getSettings,
   getDB, reviewReferenceMedia,
 } from "../../lib/store.js";
@@ -111,6 +112,13 @@ export default function AdminOpsOrder() {
           <label className="field" style={{ flex: 1 }}><span>{t.internalNotes}</span>
             <input defaultValue={order.internalNotes} key={order.internalNotes} onBlur={(e) => updateOpsOrder(order.id, { internalNotes: e.target.value })} /></label>
         </div>
+        {/* 어드민 터치포인트 ②③: 잔금 확인 → 배송 태스크 / 수령 확인 → 완료 */}
+        {order.status === "BALANCE" && !milestones.some((m) => m.stage === "balanceReceived" && m.status === "done") && (
+          <button className="button primary small" style={{ alignSelf: "flex-start" }} onClick={() => markBalanceReceived(order.id)}>{t.markBalance}</button>
+        )}
+        {order.status === "SHIPPING" && (
+          <button className="button primary small" style={{ alignSelf: "flex-start" }} onClick={() => markOrderDelivered(order.id)}>{t.markDelivered}</button>
+        )}
         {intake && (
           <p className="form-hint">
             {t.intake}: {p.productLines[intake.productLine]} · {p.opsCategories[intake.category]} · {p.opsMetals[intake.metal]}
@@ -135,12 +143,14 @@ export default function AdminOpsOrder() {
                   {m.annotations?.map((a) => (
                     <p key={a.pinId} className="form-hint">📍{a.pinId} {formatAnnotation(a, getDB().chipCatalog, locale, p.visual.parts)}</p>
                   ))}
-                  {m.status === "pending" && (
-                    <div className="row-actions">
-                      <button className="button primary small" onClick={() => reviewReferenceMedia(intake.id, m.id, "approved")}>{p.visual.approve}</button>
-                      <button className="button secondary small" onClick={() => reviewReferenceMedia(intake.id, m.id, "rejected")}>{p.visual.reject}</button>
-                    </div>
-                  )}
+                  {/* 즉시 전달 정책 — 어드민은 사후 숨김/복원만 */}
+                  <div className="row-actions">
+                    {m.status === "approved" ? (
+                      <button className="button secondary small" onClick={() => reviewReferenceMedia(intake.id, m.id, "hidden")}>{t.hideRef}</button>
+                    ) : (
+                      <button className="button primary small" onClick={() => reviewReferenceMedia(intake.id, m.id, "approved")}>{t.showRef}</button>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}

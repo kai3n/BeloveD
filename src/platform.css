@@ -274,3 +274,11 @@ button.text-link:hover {
   .stone-edu-aside { display: none; }
   .stone-edu-inline { display: block; }
 }
+
+/* 역할별 "내 차례" 헤더 배지 */
+.nav-badge {
+  position: absolute; top: -2px; right: -4px;
+  min-width: 16px; height: 16px; line-height: 16px; padding: 0 4px;
+  border-radius: 999px; background: #b3463f; color: #fff;
+  font-size: 10px; font-weight: 600; text-align: center;
+}

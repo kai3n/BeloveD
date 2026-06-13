@@ -18,7 +18,7 @@ export const OPS_METALS = ["14ky", "18ky", "14kr", "18kr", "18kw", "pt"];
 export const CHAIN_LENGTHS = ["16in", "18in", "20in"]; // 단일 선택 — 자유 입력 금지
 export const PRODUCT_LINES = ["solitaire", "multi"];
 export const OPS_CATEGORIES = ["ring", "necklace", "earrings", "bangle"];
-export const PR_TYPES = ["diamondCandidates", "weightLabor", "stockConfirm", "cad", "qc"];
+export const PR_TYPES = ["diamondCandidates", "weightLabor", "stockConfirm", "cad", "qc", "ship"];
 // 슬롯 구조가 "어떤 각도를 찍어야 하는지"를 언어 설명 없이 강제한다
 export const CAD_SLOTS = ["render360", "side", "wear"];
 export const DEFECT_REVIEWS = ["recommended", "alternate", "excluded"];
@@ -109,6 +109,35 @@ export function supplierTaskView(pr, order, style, intake = null, revisionReview
       ? { version: revisionReview.version, fileUrl: revisionReview.fileUrl, annotations: revisionReview.annotations || [] }
       : null,
   };
+}
+
+// ---------- 어드민 최소 개입 자동화 ----------
+// 인테이크 → 벤더 브리프 자동 생성. 고객 신원은 절대 포함하지 않는다.
+export function autoBrief(intake) {
+  if (intake.productLine === "solitaire" && intake.stonePrefs) {
+    const s = intake.stonePrefs;
+    return [
+      s.carat && `${s.carat}ct ${s.shape}`, s.color && `${s.color}/${s.clarity}`, s.growth, s.lab,
+      s.colorTreatment === "disclosed" ? "post-growth treatment OK" : s.colorTreatment,
+      s.fluorescence && s.fluorescence !== "none" && `fluor ${s.fluorescence}`,
+      s.lwRatio && `L/W ${s.lwRatio}`,
+    ].filter(Boolean).join(" · ");
+  }
+  if (intake.multiSpec) {
+    const m = intake.multiSpec;
+    return [m.meleeSpec && `melee: ${m.meleeSpec}`, m.overallDims, m.arrangement, m.standard].filter(Boolean).join(" · ");
+  }
+  return "see style reference";
+}
+
+// 벤치마크 자동가: $/ct × 캐럿 × 멀티플라이어 — 벤더 원가와 무관하게 일관된 소비자가
+export function candidateAutoPrice(unitUsdPerCt, carat, multiplier) {
+  return Math.round(unitUsdPerCt * carat * multiplier);
+}
+
+// 자동 공개 최소 요건 — 미달 후보는 보류되어 어드민 체크리스트에 표시된다
+export function isCandidateComplete(c) {
+  return Boolean(c.igiNo && Number(c.carat) > 0 && c.image);
 }
 
 // 주문별 조회 코드 — 전화번호/생일 등 추측 가능 값 금지
