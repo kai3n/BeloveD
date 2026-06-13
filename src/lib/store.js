@@ -5,7 +5,7 @@ import { assertClaimTransition, computeTier, salvageCredit, unitWholesale, metal
 import {
   MILESTONE_STAGES, publicDiamondView, customerOrderView, supplierTaskView,
   quoteCompute, reconcileDelta, randomQueryCode, tierForCarat,
-  autoBrief, candidateAutoPrice, isCandidateComplete,
+  autoBrief, candidateAutoPrice, isCandidateComplete, poolStoneMatches,
 } from "./ops.js";
 
 const KEY = "lumina-db-v11"; // v11: 벤더 다이아 풀(poolDiamonds) 추가
@@ -153,6 +153,55 @@ export function setPoolAvailability(id, availability) {
   persist();
 }
 
+// 고객 선호(prefs)에 맞는 available 풀 스톤 — 활성 벤더만, 캐럿 근접→원가 순, 캡 적용
+export function matchPoolForOrder(prefs) {
+  if (!prefs) return [];
+  const s = db().settings;
+  const opts = { caratUnder: s.poolCaratUnder ?? 0.05, caratOver: s.poolCaratOver ?? 0.4 };
+  const limit = s.poolMatchLimit ?? 12;
+  return db().poolDiamonds
+    .filter((stone) => {
+      if (stone.archived || stone.availability !== "available") return false;
+      const owner = getUser(stone.supplierId);
+      if (!owner || owner.active === false) return false;
+      return poolStoneMatches(stone, prefs, opts);
+    })
+    .sort((a, b) =>
+      Math.abs(a.carat - prefs.carat) - Math.abs(b.carat - prefs.carat) ||
+      (a.procurementCostUsd || 0) - (b.procurementCostUsd || 0))
+    .slice(0, limit);
+}
+
+// 매칭된 풀 스톤을 주문 후보(diamondCands)로 스냅샷 복제 — 완결+벤치마크면 자동가·공개
+function autoMatchFromPool(order, intake) {
+  const matches = matchPoolForOrder(intake.stonePrefs);
+  const existing = listCandidates({ orderId: order.id }).length;
+  const created = matches.map((pool, i) => {
+    const image = (pool.media || []).find((m) => m.kind === "image")?.src || "";
+    const video = (pool.media || []).find((m) => m.kind === "video")?.src || "";
+    return {
+      id: `DIA-${order.id}-${String(existing + i + 1).padStart(2, "0")}`,
+      orderId: order.id, prId: null, poolDiamondId: pool.id,
+      igiNo: pool.igiNo, shape: pool.shape, carat: pool.carat, color: pool.color, clarity: pool.clarity,
+      growth: pool.growth, lab: pool.lab, proportions: pool.proportions || {}, reportUrl: pool.reportUrl || "",
+      image, video, colorTreatment: pool.colorTreatment || "disclosed", availability: "available",
+      procurementCostUsd: pool.procurementCostUsd, supplierId: pool.supplierId,
+      internalReview: null, internalNotes: "", published: false, customerPriceUsd: null,
+      clientSelection: "none", locked: false, createdAt: now(),
+    };
+  });
+  db().diamondCands.push(...created);
+  created.forEach((c) => {
+    const bench = benchmarkFor(c.shape, c.carat);
+    if (isCandidateComplete(c) && bench) {
+      c.customerPriceUsd = candidateAutoPrice(bench.unitUsdPerCt, c.carat, db().settings.opsMultiplier);
+      c.published = true;
+      audit("auto", "diamond", c.id, "published", "false", "true");
+    }
+  });
+  return created;
+}
+
 // ---------- operations manual: intake & orders ----------
 function audit(actor, entity, entityId, field, before, after) {
   db().auditLog.push({ id: nextId("aud"), actor, entity, entityId, field: field ?? null, before: before ?? null, after: after ?? null, at: now() });
@@ -215,10 +264,14 @@ function autoIssuePr(orderId, type, extra = {}) {
 // 인테이크 제출 즉시 벤더 태스크/견적 발행 — 매뉴얼 P1 자동화
 function autoDispatchIntake(order, intake) {
   if (intake.productLine === "solitaire") {
-    autoIssuePr(order.id, "diamondCandidates", {
-      supplierId: routeSupplier(order.styleId),
-      batchValidUntil: plusDays(db().settings.batchValidDays), brief: autoBrief(intake),
-    });
+    // 풀에서 자동 매칭 → 후보 생성. 매칭 0건이면 벤더 소싱 요청으로 폴백.
+    const matched = autoMatchFromPool(order, intake);
+    if (matched.length === 0) {
+      autoIssuePr(order.id, "diamondCandidates", {
+        supplierId: routeSupplier(order.styleId),
+        batchValidUntil: plusDays(db().settings.batchValidDays), brief: autoBrief(intake),
+      });
+    }
   } else if (!tryAutoQuote(order.id)) {
     autoIssuePr(order.id, "weightLabor", {
       supplierId: routeSupplier(order.styleId), brief: autoBrief(intake), metal: intake.metal || null,

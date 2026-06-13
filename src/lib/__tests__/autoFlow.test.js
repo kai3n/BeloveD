@@ -14,7 +14,8 @@ beforeEach(() => resetDB());
 const solitaireForm = {
   name: "Auto Kim", contact: "auto@x.com", productLine: "solitaire", category: "ring",
   styleId: "RING-001", metal: "18kw", conditional: { ringSize: "6 US" },
-  stonePrefs: { shape: "round", carat: 1.5, color: "E", clarity: "VS1", growth: "CVD", lab: "IGI India", colorTreatment: "disclosed", fluorescence: "none", lwRatio: "" },
+  // 셰이프 princess = 시드 풀에 없음 → 자동매칭 0건 → 벤더 소싱(diamondCandidates) fallback 경로 검증
+  stonePrefs: { shape: "princess", carat: 1.5, color: "E", clarity: "VS1", growth: "CVD", lab: "IGI India", colorTreatment: "disclosed", fluorescence: "none", lwRatio: "" },
   requiredDate: "2026-09-01", country: "USA", termsAccepted: true,
 };
 
@@ -23,7 +24,7 @@ describe("자동 발행 — 인테이크 → 벤더 태스크 (어드민 개입 
     const { order } = createIntake(solitaireForm);
     const pr = listProcurements({ orderId: order.id }).find((p) => p.type === "diamondCandidates");
     expect(pr.supplierId).toBe(getSettings().defaultSupplierId);
-    expect(pr.brief).toContain("1.5ct round");
+    expect(pr.brief).toContain("1.5ct princess");
     expect(pr.brief).not.toContain("Auto Kim"); // 고객 신원 미포함
     expect(pr.batchValidUntil).toBeTruthy();
     expect(pr.status).toBe("open");

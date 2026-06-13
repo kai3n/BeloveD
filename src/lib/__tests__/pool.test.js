@@ -1,6 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { COLOR_ORDER, CLARITY_ORDER, poolStoneMatches } from "../ops.js";
-import { listPoolDiamonds, getPoolDiamond, savePoolDiamond, archivePoolDiamond, setPoolAvailability } from "../store.js";
+import { resetDB, listPoolDiamonds, getPoolDiamond, savePoolDiamond, archivePoolDiamond, setPoolAvailability, createIntake, listCandidates, listProcurements, matchPoolForOrder } from "../store.js";
+
+beforeEach(() => resetDB()); // 테스트 간 격리 — 시드만으로 매칭 카운트 결정적
 
 const OPTS = { caratUnder: 0.05, caratOver: 0.4 };
 const base = { shape: "round", carat: 1.5, color: "E", clarity: "VS1", growth: "CVD" };
@@ -64,5 +66,31 @@ describe("poolDiamonds — CRUD & 권한 스코프", () => {
     expect(getPoolDiamond(c.id).archived).toBe(true);
     expect(listPoolDiamonds().find((s) => s.id === c.id)).toBeUndefined(); // 기본 목록서 제외
     expect(listPoolDiamonds({ includeArchived: true }).find((s) => s.id === c.id)).toBeTruthy();
+  });
+});
+
+describe("자동매칭 → 후보 생성 + 폴백", () => {
+  const solitairePrefs = { shape: "round", carat: 1.5, color: "E", clarity: "VS1", growth: "CVD", lab: "IGI India", colorTreatment: "disclosed", fluorescence: "none", lwRatio: "" };
+  const form = (prefs) => ({ name: "T", contact: "t@t.com", productLine: "solitaire", category: "ring", styleId: "", budget: null, metal: "18kw", conditional: { ringSize: "6" }, stonePrefs: prefs, requiredDate: "", country: "USA", termsAccepted: true, referenceMedia: [] });
+
+  it("matchPoolForOrder — round/1.5/E/VS1/CVD 매칭 (D/VVS1, E/VS1, E/IF, E/VVS2)", () => {
+    const m = matchPoolForOrder(solitairePrefs);
+    expect(m.map((s) => s.id).sort()).toEqual(["POOL-000001", "POOL-000002", "POOL-000003", "POOL-000005"]);
+  });
+
+  it("솔리테어 인테이크 → 풀에서 published 후보 자동 생성, PR 없음", () => {
+    const { order } = createIntake(form(solitairePrefs));
+    const cands = listCandidates({ orderId: order.id });
+    expect(cands.length).toBeGreaterThanOrEqual(3);
+    expect(cands.every((c) => c.poolDiamondId && c.prId === null)).toBe(true);
+    expect(cands.some((c) => c.published && c.customerPriceUsd > 0)).toBe(true);
+    expect(listProcurements({ orderId: order.id }).some((p) => p.type === "diamondCandidates")).toBe(false);
+  });
+
+  it("매칭 0건 → 후보 0 + diamondCandidates 폴백 PR 발행", () => {
+    const noMatch = { ...solitairePrefs, shape: "heart" }; // 하트 풀 스톤 없음
+    const { order } = createIntake(form(noMatch));
+    expect(listCandidates({ orderId: order.id }).length).toBe(0);
+    expect(listProcurements({ orderId: order.id }).some((p) => p.type === "diamondCandidates" && p.status === "open")).toBe(true);
   });
 });
