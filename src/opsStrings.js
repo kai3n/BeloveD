@@ -62,6 +62,7 @@ const en = {
   intake: {
     title: "Custom Order Request", sub: "Tell us what you want to create. An Order ID and a private tracking code are issued on submission — no payment until you accept the quote.",
     wizardSteps: ["Product", "Center stone", "References"], next: "Next", back: "Back",
+    ringHelp: { kicker: "Ring size guide", title: "How to measure", how1: "Measure the inner diameter of a ring that already fits.", how2: "Or wrap a string around your finger, measure the length, and match it to the table.", colUs: "US", colCirc: "Circumference (mm)", colDia: "Diameter (mm)" },
     name: "Name", contact: "Email or phone", productLine: "Product line", category: "Category",
     style: "Selected style (from the catalog)", noStyle: "Not decided yet", budget: "Budget ($, optional)", metal: "Metal",
     ringSize: "Ring size (written confirmation required)", chainStyle: "Chain style", chainLength: "Chain length",
@@ -261,6 +262,7 @@ const ko = {
   intake: {
     title: "주문제작 요청", sub: "원하시는 피스를 알려주세요. 제출 즉시 Order ID와 전용 조회 코드가 발급됩니다 — 견적 수락 전에는 결제가 없습니다.",
     wizardSteps: ["제품", "센터스톤", "레퍼런스"], next: "다음", back: "뒤로",
+    ringHelp: { kicker: "반지 사이즈 가이드", title: "치수 재는 법", how1: "잘 맞는 반지의 안지름을 재보세요.", how2: "또는 손가락에 실을 감아 둘레를 잰 뒤 아래 표에서 가까운 사이즈를 찾으세요.", colUs: "US", colCirc: "둘레 (mm)", colDia: "지름 (mm)" },
     name: "이름", contact: "이메일 또는 연락처", productLine: "제품 라인", category: "카테고리",
     style: "선택한 스타일 (카탈로그에서)", noStyle: "아직 미정", budget: "예산 ($, 선택)", metal: "메탈",
     ringSize: "링 사이즈 (서면 확인 필수)", chainStyle: "체인 스타일", chainLength: "체인 길이",
@@ -460,6 +462,7 @@ const zh = {
   intake: {
     title: "定制订单申请", sub: "告诉我们您想打造的作品。提交后立即生成 Order ID 与专属查询码 — 接受报价前无需付款。",
     wizardSteps: ["产品", "主石", "参考图"], next: "下一步", back: "上一步",
+    ringHelp: { kicker: "戒指尺寸指南", title: "如何测量", how1: "测量一枚已经合适的戒指的内径。", how2: "或用细绳绕手指一圈，量出长度后对照下表。", colUs: "US", colCirc: "周长 (mm)", colDia: "内径 (mm)" },
     name: "姓名", contact: "邮箱或电话", productLine: "产品线", category: "类别",
     style: "已选款式（来自目录）", noStyle: "尚未决定", budget: "预算（$，可选）", metal: "金属",
     ringSize: "戒指尺寸（需书面确认）", chainStyle: "链条款式", chainLength: "链长",
@@ -659,6 +662,7 @@ const es = {
   intake: {
     title: "Solicitud de Pedido a Medida", sub: "Cuéntanos qué quieres crear. Al enviar se emiten un Order ID y un código privado de seguimiento — sin pago hasta aceptar la cotización.",
     wizardSteps: ["Producto", "Piedra central", "Referencias"], next: "Siguiente", back: "Atrás",
+    ringHelp: { kicker: "Guía de talla de anillo", title: "Cómo medir", how1: "Mide el diámetro interior de un anillo que ya te quede bien.", how2: "O enrolla un hilo alrededor del dedo, mide su longitud y búscala en la tabla.", colUs: "US", colCirc: "Circunferencia (mm)", colDia: "Diámetro (mm)" },
     name: "Nombre", contact: "Correo o teléfono", productLine: "Línea de producto", category: "Categoría",
     style: "Estilo elegido (del catálogo)", noStyle: "Aún sin decidir", budget: "Presupuesto ($, opcional)", metal: "Metal",
     ringSize: "Talla de anillo (confirmación escrita requerida)", chainStyle: "Estilo de cadena", chainLength: "Largo de cadena",

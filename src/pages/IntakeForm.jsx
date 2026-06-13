@@ -8,6 +8,7 @@ import { pickI18n, useLocale } from "../i18n.jsx";
 import { MediaPicker } from "../components/ui.jsx";
 import PinAnnotator from "../components/PinAnnotator.jsx";
 import StoneEduPanel from "../components/StoneEducation.jsx";
+import RingSizeHelp from "../components/RingSizeHelp.jsx";
 
 export default function IntakeForm() {
   useDBVersion();
@@ -96,10 +97,12 @@ export default function IntakeForm() {
   const solitaire = form.productLine === "solitaire";
   const bigStone = solitaire && Number(form.stonePrefs.carat) >= 2;
 
-  const showEdu = solitaire && step === 1; // 센터스톤 단계에서만 교육 사이드패널
+  const showEdu = solitaire && step === 1; // 센터스톤 단계: 교육 사이드패널
+  const showRingHelp = cat === "ring" && step === 0; // 제품 단계 + 링: 사이즈 도움말
+  const sidePanel = showEdu ? "stone" : showRingHelp ? "ring" : null;
 
   return (
-    <div className="page page-narrow" style={{ maxWidth: showEdu ? 1020 : 680 }}>
+    <div className="page page-narrow" style={{ maxWidth: sidePanel ? 1020 : 680 }}>
       <h1 className="page-title">{t.title}</h1>
       <p className="page-sub">{t.sub}</p>
 
@@ -109,7 +112,7 @@ export default function IntakeForm() {
         ))}
       </ol>
 
-      <div className={`intake-layout ${showEdu ? "has-edu" : ""}`}>
+      <div className={`intake-layout ${sidePanel ? "has-edu" : ""}`}>
       <form className="panel form-stack" onSubmit={submit}>
 
         {/* ── Step 1: 제품 ── */}
@@ -138,7 +141,10 @@ export default function IntakeForm() {
               <label className="field"><span>{t.country}</span><input value={form.country} onChange={(e) => setF({ country: e.target.value })} required /></label>
             </div>
             {cat === "ring" && (
-              <label className="field"><span>{t.ringSize}</span><input value={form.conditional.ringSize || ""} onChange={(e) => setC({ ringSize: e.target.value })} required /></label>
+              <>
+                <label className="field"><span>{t.ringSize}</span><input value={form.conditional.ringSize || ""} onChange={(e) => setC({ ringSize: e.target.value })} required /></label>
+                <div className="stone-edu-inline"><RingSizeHelp /></div>
+              </>
             )}
             {cat === "necklace" && (
               <div className="filter-grid" style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
@@ -249,10 +255,13 @@ export default function IntakeForm() {
             : <button className="button primary" type="submit" disabled={!form.termsAccepted}>{t.submit}</button>}
         </div>
       </form>
-      {showEdu && (
+      {sidePanel === "stone" && (
         <aside className="stone-edu-aside">
           <StoneEduPanel field={eduField} prefs={form.stonePrefs} />
         </aside>
+      )}
+      {sidePanel === "ring" && (
+        <aside className="stone-edu-aside"><RingSizeHelp /></aside>
       )}
       </div>
       <p style={{ marginTop: 16 }}><Link className="text-link" to="/styles">{p.styleCat.title} →</Link></p>
