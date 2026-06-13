@@ -6,6 +6,17 @@ dist/
 .env
 .env.*
 
+# 데모 녹화 산출물 (영상·검증 프레임)
+demo-video/
+# 데모 검증용 루트 스크린샷
+admin-dashboard.png
+client-portal.png
+supplier-queue.png
+supplier-cad-revision.png
+vendor-brief-candidates.png
+portal-design-checkpoint.png
+portal-final-confirm.png
+
 # QA/검토용 스크린샷
 qa-*.png
 showcase-*.jpeg
