@@ -109,11 +109,19 @@ const en = {
   },
   admin: {
     title: "Admin",
-    menu: { dashboard: "Dashboard", diamonds: "Diamonds", templates: "Templates", orders: "Orders", vendors: "Suppliers", settings: "Settings" },
+    menu: { dashboard: "Dashboard", diamonds: "Diamonds", pool: "Diamond Pool", templates: "Templates", orders: "Orders", vendors: "Suppliers", settings: "Settings" },
     dash: {
       active: "Active orders", unassigned: "Unassigned", sla: "SLA 48h+ overdue", inventory: "Stones in inventory",
       slaWarn: (codes) => `Vendor unresponsive over 48h: ${codes} — reassign in Orders.`,
       depositWait: (codes) => `Awaiting deposit: ${codes}`, noOrders: "No paid orders yet.",
+    },
+    pool: {
+      title: "Vendor Diamond Pool", sub: "All suppliers' standing stock. Add stones, manage photos, and archive any entry.",
+      filterAll: "All suppliers", supplier: "Supplier", stone: "Stone", fourC: "4C", cert: "Certificate",
+      cost: "Cost", statusCol: "Status", photos: "Photos", edit: "Photos", save: "Save",
+      archive: "Archive", restore: "Restore", archived: "Archived",
+      avail: { available: "Available", unavailable: "Off", sold: "Sold" },
+      newTitle: "Add a stone", addBtn: "Add to pool", count: (n) => `${n} stones`,
     },
     dia: {
       bulkTitle: "Bulk price adjustment", bulkBtn: (p) => `Adjust all by ${p}%`,
@@ -275,11 +283,19 @@ const ko = {
   },
   admin: {
     title: "어드민",
-    menu: { dashboard: "대시보드", diamonds: "다이아몬드", templates: "템플릿", orders: "주문 감독", vendors: "서플라이어", settings: "설정" },
+    menu: { dashboard: "대시보드", diamonds: "다이아몬드", pool: "다이아 풀", templates: "템플릿", orders: "주문 감독", vendors: "서플라이어", settings: "설정" },
     dash: {
       active: "진행중 주문", unassigned: "벤더 미배정", sla: "SLA 48h 초과", inventory: "인벤토리 스톤",
       slaWarn: (codes) => `벤더 무응답 48시간 초과: ${codes} — 주문 감독에서 재배정하세요.`,
       depositWait: (codes) => `디파짓 대기: ${codes}`, noOrders: "아직 결제된 주문이 없습니다.",
+    },
+    pool: {
+      title: "벤더 다이아 풀", sub: "모든 벤더의 상설 재고. 스톤 추가·사진 관리·아카이브 가능.",
+      filterAll: "전체 벤더", supplier: "벤더", stone: "스톤", fourC: "4C", cert: "인증",
+      cost: "원가", statusCol: "상태", photos: "사진", edit: "사진", save: "저장",
+      archive: "아카이브", restore: "복원", archived: "아카이브됨",
+      avail: { available: "재고 있음", unavailable: "내림", sold: "판매됨" },
+      newTitle: "스톤 추가", addBtn: "풀에 추가", count: (n) => `스톤 ${n}개`,
     },
     dia: {
       bulkTitle: "일괄 가격 조정", bulkBtn: (p) => `전체 ${p}% 조정`,
@@ -441,11 +457,19 @@ const zh = {
   },
   admin: {
     title: "管理后台",
-    menu: { dashboard: "仪表盘", diamonds: "钻石", templates: "模板", orders: "订单监管", vendors: "供应商", settings: "设置" },
+    menu: { dashboard: "仪表盘", diamonds: "钻石", pool: "钻石池", templates: "模板", orders: "订单监管", vendors: "供应商", settings: "设置" },
     dash: {
       active: "进行中订单", unassigned: "未分配", sla: "SLA 超 48h", inventory: "库存钻石",
       slaWarn: (codes) => `供应商超 48 小时未响应：${codes} — 请在订单监管中重新分配。`,
       depositWait: (codes) => `等待定金：${codes}`, noOrders: "尚无已付款订单。",
+    },
+    pool: {
+      title: "供应商钻石池", sub: "所有供应商的常备库存。可添加钻石、管理照片、归档任意条目。",
+      filterAll: "全部供应商", supplier: "供应商", stone: "钻石", fourC: "4C", cert: "证书",
+      cost: "成本", statusCol: "状态", photos: "照片", edit: "照片", save: "保存",
+      archive: "归档", restore: "恢复", archived: "已归档",
+      avail: { available: "有货", unavailable: "下架", sold: "已售" },
+      newTitle: "添加钻石", addBtn: "加入池", count: (n) => `${n} 颗`,
     },
     dia: {
       bulkTitle: "批量价格调整", bulkBtn: (p) => `全部调整 ${p}%`,
@@ -607,11 +631,19 @@ const es = {
   },
   admin: {
     title: "Admin",
-    menu: { dashboard: "Panel", diamonds: "Diamantes", templates: "Plantillas", orders: "Pedidos", vendors: "Proveedores", settings: "Ajustes" },
+    menu: { dashboard: "Panel", diamonds: "Diamantes", pool: "Pool de Diamantes", templates: "Plantillas", orders: "Pedidos", vendors: "Proveedores", settings: "Ajustes" },
     dash: {
       active: "Pedidos activos", unassigned: "Sin asignar", sla: "SLA +48h", inventory: "Piedras en inventario",
       slaWarn: (codes) => `Taller sin responder más de 48h: ${codes} — reasigna en Pedidos.`,
       depositWait: (codes) => `Esperando depósito: ${codes}`, noOrders: "Aún no hay pedidos pagados.",
+    },
+    pool: {
+      title: "Pool de Diamantes", sub: "Stock permanente de todos los proveedores. Añade piedras, gestiona fotos y archiva.",
+      filterAll: "Todos los proveedores", supplier: "Proveedor", stone: "Piedra", fourC: "4C", cert: "Certificado",
+      cost: "Costo", statusCol: "Estado", photos: "Fotos", edit: "Fotos", save: "Guardar",
+      archive: "Archivar", restore: "Restaurar", archived: "Archivado",
+      avail: { available: "Disponible", unavailable: "Retirada", sold: "Vendida" },
+      newTitle: "Añadir piedra", addBtn: "Añadir al pool", count: (n) => `${n} piedras`,
     },
     dia: {
       bulkTitle: "Ajuste de precios masivo", bulkBtn: (p) => `Ajustar todo ${p}%`,

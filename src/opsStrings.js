@@ -112,7 +112,7 @@ const en = {
     phaseWeightDone: "Final weight confirmed", optionsLabel: (n) => `${n} diamond${n === 1 ? "" : "s"} reserved for you`,
   },
   supplierP: {
-    title: "Supplier Portal", sub: (name) => `${name} — assigned tasks only. Customer identity and selling prices are never shown.`,
+    title: "Supplier Portal", poolLink: "My Pool", sub: (name) => `${name} — assigned tasks only. Customer identity and selling prices are never shown.`,
     job: "Job", queue: "Task queue", taskTypes: { diamondCandidates: "Diamond candidates", weightLabor: "Metal weight & labor", stockConfirm: "Stock confirmation", cad: "3D CAD", qc: "Final QC files", ship: "Ship to operator" },
     stockTitle: "Is this stone still available?", stockYes: "In stock — hold for this order", stockNo: "Sold out",
     shipTitle: "Submit shipment", trackingNo: "Tracking number", shippedAt: "Ship date",
@@ -127,6 +127,16 @@ const en = {
     wlTitle: "Submit weight & labor", estWeight: "Est. net metal weight (g)", lossIncluded: "Normal production loss included",
     laborUsd: "Labor ($)", meleeUsd: "Melee / materials ($)", leadDays: "Lead time (days)", assumptions: "Assumptions (size, chain, stone dims)",
     cadTitle: "Upload CAD", cadFile: "CAD file / render", qcTitle: "Final QC files", qcVideo: "Front/side/back video", qcCert: "Certificate", qcWeight: "Actual weight evidence (g)",
+  },
+  supplierPool: {
+    title: "My Diamond Pool", sub: "Pre-load your stock — matching orders pull from here automatically.",
+    stone: "Stone", fourC: "4C", cert: "Certificate", cost: "Cost ($)", statusCol: "Status", photos: "Photos",
+    archive: "Archive", restore: "Restore", archived: "Archived",
+    avail: { available: "Available", unavailable: "Off", sold: "Sold" },
+    newTitle: "Add a stone", addBtn: "Add to pool",
+    shape: "Shape", carat: "Carat", color: "Color", clarity: "Clarity", growth: "Growth", lab: "Lab",
+    certOrg: "Cert org", certNo: "Cert no.", treatment: "Color treatment", costField: "Your cost ($)", media: "Photos & video",
+    count: (n) => `${n} stones`,
   },
   visual: {
     parts: { band: "Band", prong: "Prongs", stone: "Center stone", halo: "Halo", gallery: "Gallery", chain: "Chain", clasp: "Clasp", surface: "Surface" },
@@ -298,7 +308,7 @@ const ko = {
     phaseWeightDone: "최종 중량 확정", optionsLabel: (n) => `회원님을 위해 확보한 다이아 ${n}개`,
   },
   supplierP: {
-    title: "서플라이어 포털", sub: (name) => `${name} — 배정된 태스크만 표시됩니다. 고객 신원과 판매가는 절대 노출되지 않습니다.`,
+    title: "서플라이어 포털", poolLink: "내 풀", sub: (name) => `${name} — 배정된 태스크만 표시됩니다. 고객 신원과 판매가는 절대 노출되지 않습니다.`,
     job: "주문 묶음", queue: "태스크 큐", taskTypes: { diamondCandidates: "다이아 후보", weightLabor: "메탈 중량·공임", stockConfirm: "재고 확인", cad: "3D CAD", qc: "최종 QC 파일", ship: "운영자 배송" },
     stockTitle: "이 스톤 아직 구매 가능한가요?", stockYes: "재고 있음 — 이 주문에 홀드", stockNo: "품절",
     shipTitle: "발송 정보 제출", trackingNo: "운송장 번호", shippedAt: "발송일",
@@ -313,6 +323,16 @@ const ko = {
     wlTitle: "중량·공임 제출", estWeight: "예상 순중량 (g)", lossIncluded: "정상 로스 포함",
     laborUsd: "공임 ($)", meleeUsd: "멜리/부자재 ($)", leadDays: "리드타임 (일)", assumptions: "가정 (사이즈·체인·스톤 치수)",
     cadTitle: "CAD 업로드", cadFile: "CAD 파일/렌더", qcTitle: "최종 QC 파일", qcVideo: "전/측/후면 영상", qcCert: "인증서", qcWeight: "실중량 증빙 (g)",
+  },
+  supplierPool: {
+    title: "내 다이아 풀", sub: "재고를 미리 올려두세요 — 조건 맞는 주문이 자동으로 여기서 가져갑니다.",
+    stone: "스톤", fourC: "4C", cert: "인증", cost: "원가 ($)", statusCol: "상태", photos: "사진",
+    archive: "아카이브", restore: "복원", archived: "아카이브됨",
+    avail: { available: "재고 있음", unavailable: "내림", sold: "판매됨" },
+    newTitle: "스톤 추가", addBtn: "풀에 추가",
+    shape: "셰이프", carat: "캐럿", color: "컬러", clarity: "클래리티", growth: "성장방식", lab: "감정소",
+    certOrg: "인증기관", certNo: "인증번호", treatment: "컬러 처리", costField: "내 원가 ($)", media: "사진·영상",
+    count: (n) => `스톤 ${n}개`,
   },
   visual: {
     parts: { band: "밴드", prong: "프롱", stone: "센터스톤", halo: "헤일로", gallery: "갤러리", chain: "체인", clasp: "클래스프", surface: "표면" },
@@ -484,7 +504,7 @@ const zh = {
     phaseWeightDone: "最终重量已确认", optionsLabel: (n) => `为您保留的 ${n} 颗钻石`,
   },
   supplierP: {
-    title: "供应商门户", sub: (name) => `${name} — 仅显示分配的任务。绝不显示客户身份与销售价格。`,
+    title: "供应商门户", poolLink: "我的钻石池", sub: (name) => `${name} — 仅显示分配的任务。绝不显示客户身份与销售价格。`,
     job: "订单组", queue: "任务队列", taskTypes: { diamondCandidates: "钻石候选", weightLabor: "金重·工费", stockConfirm: "库存确认", cad: "3D CAD", qc: "最终质检文件", ship: "发货给运营方" },
     stockTitle: "这颗钻石仍可购买吗？", stockYes: "有货 — 为此订单保留", stockNo: "已售出",
     shipTitle: "提交发货信息", trackingNo: "运单号", shippedAt: "发货日期",
@@ -499,6 +519,16 @@ const zh = {
     wlTitle: "提交金重与工费", estWeight: "预估净金重 (g)", lossIncluded: "已含正常损耗",
     laborUsd: "工费 ($)", meleeUsd: "配钻/辅料 ($)", leadDays: "交期（天）", assumptions: "假设（尺寸·链长·主石尺寸）",
     cadTitle: "上传 CAD", cadFile: "CAD 文件/渲染图", qcTitle: "最终质检文件", qcVideo: "正/侧/背视频", qcCert: "证书", qcWeight: "实际重量证明 (g)",
+  },
+  supplierPool: {
+    title: "我的钻石池", sub: "提前上传库存——符合条件的订单会自动从这里匹配。",
+    stone: "钻石", fourC: "4C", cert: "证书", cost: "成本 ($)", statusCol: "状态", photos: "照片",
+    archive: "归档", restore: "恢复", archived: "已归档",
+    avail: { available: "有货", unavailable: "下架", sold: "已售" },
+    newTitle: "添加钻石", addBtn: "加入池",
+    shape: "形状", carat: "克拉", color: "颜色", clarity: "净度", growth: "生长方式", lab: "鉴定所",
+    certOrg: "鉴定机构", certNo: "证书编号", treatment: "颜色处理", costField: "我的成本 ($)", media: "照片·视频",
+    count: (n) => `${n} 颗`,
   },
   visual: {
     parts: { band: "戒臂", prong: "镶爪", stone: "主石", halo: "光环", gallery: "底座", chain: "链条", clasp: "扣环", surface: "表面" },
@@ -670,7 +700,7 @@ const es = {
     phaseWeightDone: "Peso final confirmado", optionsLabel: (n) => `${n} diamante${n === 1 ? "" : "s"} reservado${n === 1 ? "" : "s"} para ti`,
   },
   supplierP: {
-    title: "Portal del Proveedor", sub: (name) => `${name} — solo tareas asignadas. Nunca se muestran identidad del cliente ni precios de venta.`,
+    title: "Portal del Proveedor", poolLink: "Mi pool", sub: (name) => `${name} — solo tareas asignadas. Nunca se muestran identidad del cliente ni precios de venta.`,
     job: "Trabajo", queue: "Cola de tareas", taskTypes: { diamondCandidates: "Candidatos de diamante", weightLabor: "Peso de metal y mano de obra", stockConfirm: "Confirmación de stock", cad: "CAD 3D", qc: "Archivos de QC final", ship: "Enviar al operador" },
     stockTitle: "¿Esta piedra sigue disponible?", stockYes: "En stock — reservar para este pedido", stockNo: "Agotada",
     shipTitle: "Enviar datos de despacho", trackingNo: "Número de guía", shippedAt: "Fecha de envío",
@@ -685,6 +715,16 @@ const es = {
     wlTitle: "Enviar peso y mano de obra", estWeight: "Peso neto est. (g)", lossIncluded: "Incluye merma normal",
     laborUsd: "Mano de obra ($)", meleeUsd: "Melee / materiales ($)", leadDays: "Plazo (días)", assumptions: "Supuestos (talla, cadena, dimensiones)",
     cadTitle: "Subir CAD", cadFile: "Archivo CAD / render", qcTitle: "Archivos QC final", qcVideo: "Video frontal/lateral/trasero", qcCert: "Certificado", qcWeight: "Evidencia de peso real (g)",
+  },
+  supplierPool: {
+    title: "Mi Pool de Diamantes", sub: "Carga tu stock por adelantado — los pedidos compatibles se surten de aquí automáticamente.",
+    stone: "Piedra", fourC: "4C", cert: "Certificado", cost: "Costo ($)", statusCol: "Estado", photos: "Fotos",
+    archive: "Archivar", restore: "Restaurar", archived: "Archivado",
+    avail: { available: "Disponible", unavailable: "Retirada", sold: "Vendida" },
+    newTitle: "Añadir piedra", addBtn: "Añadir al pool",
+    shape: "Forma", carat: "Quilates", color: "Color", clarity: "Pureza", growth: "Crecimiento", lab: "Laboratorio",
+    certOrg: "Entidad cert.", certNo: "N.º cert.", treatment: "Tratamiento de color", costField: "Tu costo ($)", media: "Fotos y video",
+    count: (n) => `${n} piedras`,
   },
   visual: {
     parts: { band: "Banda", prong: "Garras", stone: "Piedra central", halo: "Halo", gallery: "Galería", chain: "Cadena", clasp: "Broche", surface: "Superficie" },
