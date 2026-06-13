@@ -111,6 +111,7 @@ export default function IntakeForm() {
           <li key={label} className={i === step ? "current" : i < step ? "done" : ""}><span className="dot" />{label}</li>
         ))}
       </ol>
+      <p className="form-hint" style={{ textAlign: "right", margin: "8px 0 -8px" }}>{t.requiredNote}</p>
 
       <div className={`intake-layout ${sidePanel ? "has-edu" : ""}`}>
       <form className="panel form-stack" onSubmit={submit}>
@@ -138,17 +139,17 @@ export default function IntakeForm() {
                 </select></label>
               <label className="field"><span>{t.budget}</span><input type="number" step="100" value={form.budget} onChange={(e) => setF({ budget: e.target.value })} /></label>
               <label className="field"><span>{t.requiredDate}</span><input type="date" value={form.requiredDate} onChange={(e) => setF({ requiredDate: e.target.value })} /></label>
-              <label className="field"><span>{t.country}</span><input value={form.country} onChange={(e) => setF({ country: e.target.value })} required /></label>
+              <label className="field"><span>{t.country} <span className="req">*</span></span><input value={form.country} onChange={(e) => setF({ country: e.target.value })} required /></label>
             </div>
             {cat === "ring" && (
               <>
-                <label className="field"><span>{t.ringSize}</span><input value={form.conditional.ringSize || ""} onChange={(e) => setC({ ringSize: e.target.value })} required /></label>
+                <label className="field"><span>{t.ringSize} <span className="req">*</span></span><input value={form.conditional.ringSize || ""} onChange={(e) => setC({ ringSize: e.target.value })} required /></label>
                 <div className="stone-edu-inline"><RingSizeHelp /></div>
               </>
             )}
             {cat === "necklace" && (
               <div className="filter-grid" style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
-                <label className="field"><span>{t.chainStyle}</span><input value={form.conditional.chainStyle || ""} onChange={(e) => setC({ chainStyle: e.target.value })} required /></label>
+                <label className="field"><span>{t.chainStyle} <span className="req">*</span></span><input value={form.conditional.chainStyle || ""} onChange={(e) => setC({ chainStyle: e.target.value })} required /></label>
                 <label className="field"><span>{t.chainLength}</span>
                   <select value={form.conditional.chainLength || "18in"} onChange={(e) => setC({ chainLength: e.target.value })}>
                     {CHAIN_LENGTHS.map((l) => <option key={l} value={l}>{l === "16in" ? "16 in / 40 cm" : l === "18in" ? "18 in / 45 cm" : "20 in / 50 cm"}</option>)}
@@ -157,10 +158,10 @@ export default function IntakeForm() {
               </div>
             )}
             {cat === "bangle" && (
-              <label className="field"><span>{t.wristSize}</span><input value={form.conditional.wristSize || ""} onChange={(e) => setC({ wristSize: e.target.value })} required /></label>
+              <label className="field"><span>{t.wristSize} <span className="req">*</span></span><input value={form.conditional.wristSize || ""} onChange={(e) => setC({ wristSize: e.target.value })} required /></label>
             )}
             {cat === "earrings" && (
-              <label className="field"><span>{t.earringDetails}</span><input value={form.conditional.earringDetails || ""} onChange={(e) => setC({ earringDetails: e.target.value })} required /></label>
+              <label className="field"><span>{t.earringDetails} <span className="req">*</span></span><input value={form.conditional.earringDetails || ""} onChange={(e) => setC({ earringDetails: e.target.value })} required /></label>
             )}
           </>
         )}
@@ -201,8 +202,8 @@ export default function IntakeForm() {
           <>
             <h3 style={{ margin: "0" }}>{t.multiTitle}</h3>
             <div className="filter-grid" style={{ gridTemplateColumns: "1fr 1fr" }}>
-              <label className="field"><span>{t.meleeSpec}</span><input value={form.multiSpec.meleeSpec} onChange={(e) => setM({ meleeSpec: e.target.value })} required /></label>
-              <label className="field"><span>{t.overallDims}</span><input value={form.multiSpec.overallDims} onChange={(e) => setM({ overallDims: e.target.value })} required /></label>
+              <label className="field"><span>{t.meleeSpec} <span className="req">*</span></span><input value={form.multiSpec.meleeSpec} onChange={(e) => setM({ meleeSpec: e.target.value })} required /></label>
+              <label className="field"><span>{t.overallDims} <span className="req">*</span></span><input value={form.multiSpec.overallDims} onChange={(e) => setM({ overallDims: e.target.value })} required /></label>
               <label className="field"><span>{t.arrangement}</span><input value={form.multiSpec.arrangement} onChange={(e) => setM({ arrangement: e.target.value })} /></label>
               <label className="field"><span>{t.multiStandard}</span><input value={form.multiSpec.standard} onChange={(e) => setM({ standard: e.target.value })} /></label>
             </div>
@@ -231,8 +232,8 @@ export default function IntakeForm() {
             )}
 
             <div className="filter-grid" style={{ gridTemplateColumns: "1fr 1fr" }}>
-              <label className="field"><span>{t.name}</span><input value={form.name} onChange={(e) => setF({ name: e.target.value })} required /></label>
-              <label className="field"><span>{t.contact}</span><input value={form.contact} onChange={(e) => setF({ contact: e.target.value })} required /></label>
+              <label className="field"><span>{t.name} <span className="req">*</span></span><input value={form.name} onChange={(e) => setF({ name: e.target.value })} required /></label>
+              <label className="field"><span>{t.contact} <span className="req">*</span></span><input value={form.contact} onChange={(e) => setF({ contact: e.target.value })} required /></label>
             </div>
 
             <div className="panel" style={{ background: "var(--bg-2)" }}>

@@ -177,6 +177,7 @@
 .select-card { text-align: left; cursor: pointer; padding: 0; }
 .select-card.is-selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 .wizard-nav { display: flex; justify-content: space-between; margin-top: 30px; gap: 12px; }
+.field .req { color: #e08585; margin-left: 2px; }
 
 /* 어드민 셸 */
 .admin-shell { display: grid; grid-template-columns: 200px 1fr; gap: 36px; }
