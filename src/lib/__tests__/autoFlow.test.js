@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   resetDB, createIntake, listProcurements, listQuotes, getOpsOrder, submitCandidates,
-  selectCandidate, submitStockConfirm, markDepositReceived, acceptQuote,
+  toggleShortlist, requestStockConfirm, lockSelectedCandidate, submitStockConfirm, markDepositReceived, acceptQuote,
   submitCadForPr, decideCad, listCadReviews, submitQcForPr, confirmFinal,
   markBalanceReceived, submitShipment, markOrderDelivered, listMilestones,
   submitWeightLabor, mediaFeed, hideMedia, supplierTasks, dailyChecklist,
@@ -78,7 +78,7 @@ describe("자동 공개 — 벤치마크 자동가", () => {
     const [held] = submitCandidates(pr.id, [
       { igiNo: "LG-H1", shape: "round", carat: 1.5, color: "E", clarity: "VS1", growth: "CVD", lab: "IGI", procurementCostUsd: 500 },
     ]);
-    expect(() => selectCandidate(held.id, "customer")).toThrow("notSelectable");
+    expect(() => toggleShortlist(held.id, "customer")).toThrow("notSelectable");
   });
 
   it("배치 만료 시 태스크 종료 + 미판매 후보 자동 비공개 (매뉴얼 §6.2)", () => {
@@ -90,7 +90,7 @@ describe("자동 공개 — 벤치마크 자동가", () => {
     supplierTasks("u-supplier1"); // 진입 시 lazy 스윕
     expect(getProcurement(pr.id).status).toBe("closed");
     expect(getCandidate(c.id).published).toBe(false);
-    expect(() => selectCandidate(c.id, "customer")).toThrow("notSelectable");
+    expect(() => toggleShortlist(c.id, "customer")).toThrow("notSelectable");
   });
 });
 
@@ -99,13 +99,16 @@ describe("풀 체인 — 어드민 터치포인트는 입금 확인 ②회 + 수
     const { order } = createIntake(solitaireForm);
     const supplier = getSettings().defaultSupplierId;
 
-    // 벤더: 후보 제출 (자동 공개) → 고객: 선택 → 신선 배치라 재고확인 없이 자동 락 + 자동 견적
+    // 벤더: 후보 제출 (자동 공개) → 고객: 찜 → 재고확인 요청 → 벤더 '있음' → 확정 락 + 자동 견적
     const candPr = listProcurements({ orderId: order.id }).find((p) => p.type === "diamondCandidates");
     const [cand] = submitCandidates(candPr.id, [
       { igiNo: "LG-F1", shape: "round", carat: 1.5, color: "E", clarity: "VS1", growth: "CVD", lab: "IGI", procurementCostUsd: 500, image: "/f.png" },
     ]);
-    selectCandidate(cand.id, "customer");
-    expect(listProcurements({ orderId: order.id }).some((p) => p.type === "stockConfirm")).toBe(false); // 신선 배치 → 재고확인 생략
+    toggleShortlist(cand.id, "customer");
+    requestStockConfirm(order.id, "customer");
+    const sc = listProcurements({ orderId: order.id }).find((p) => p.type === "stockConfirm" && p.diamondId === cand.id);
+    submitStockConfirm(sc.id, true);
+    lockSelectedCandidate(cand.id, "customer");
     expect(getCandidate(cand.id).locked).toBe(true);
     const quote = listQuotes(order.id)[0];
     expect(quote.status).toBe("sent"); // SPEC-000002 (RING-001/18kw) 재사용 — 어드민 손 안 거침

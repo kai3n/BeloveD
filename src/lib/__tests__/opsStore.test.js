@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   resetDB, createIntake, getOpsOrder, createProcurement, supplierTasks, submitCandidates,
-  reviewCandidate, publishCandidate, selectCandidate, lockCandidate, createQuote, sendQuote,
+  reviewCandidate, publishCandidate, toggleShortlist, requestStockConfirm, submitStockConfirm, lockSelectedCandidate, lockCandidate, createQuote, sendQuote,
   acceptQuote, markDepositReceived, addCadVersion, decideCad, listMilestones, recordActualWeight,
   portalView, listCadReviews, dailyChecklist, setCandidateAvailability, listCandidates, listProcurements,
 } from "../store.js";
@@ -38,17 +38,18 @@ describe("ops store — 매뉴얼 풀 플로우", () => {
     expect(JSON.stringify(tasks)).not.toContain("DM-000001"); // 코드만, 주문번호 미노출
   });
 
-  it("재선택 시 이전 미완료 재고확인은 닫혀 중복 누적 안 됨", () => {
+  it("찜 → 재고확인 요청 → 같은 후보 재요청 시 중복 PR 안 생김", () => {
     const pr = createProcurement("DM-000001", { type: "diamondCandidates", supplierId: "u-supplier1", dueDate: "d", brief: "" });
     const [a, b] = submitCandidates(pr.id, [
       { igiNo: "X1", shape: "round", carat: 1.5, color: "E", clarity: "VS1", growth: "CVD", lab: "IGI", procurementCostUsd: 500, image: "/a.png" },
       { igiNo: "X2", shape: "round", carat: 1.5, color: "D", clarity: "VS1", growth: "CVD", lab: "IGI", procurementCostUsd: 520, image: "/b.png" },
     ]);
     publishCandidate(a.id, 1100); publishCandidate(b.id, 1200);
-    selectCandidate(a.id, "customer");
-    selectCandidate(b.id, "customer"); // 재선택
+    toggleShortlist(a.id, "customer");
+    requestStockConfirm("DM-000001", "customer");
+    requestStockConfirm("DM-000001", "customer"); // 재요청 — 중복 발행 금지
     const open = listProcurements({ orderId: "DM-000001" }).filter((p) => p.type === "stockConfirm" && p.status === "open");
-    expect(open.length).toBe(1); // 직전 것은 closed
+    expect(open.length).toBe(1);
   });
 
   it("후보 제출 → 검수 → publish → 고객 선택 → 락 → QUOTATION", () => {
@@ -57,8 +58,11 @@ describe("ops store — 매뉴얼 풀 플로우", () => {
     expect(cand.id).toMatch(/^DIA-DM-000001-\d{2}$/);
     reviewCandidate(cand.id, "recommended");
     publishCandidate(cand.id, 1150);
-    selectCandidate(cand.id, "customer");
-    lockCandidate(cand.id);
+    toggleShortlist(cand.id, "customer");
+    requestStockConfirm("DM-000001", "customer");
+    const sc = listProcurements({ orderId: "DM-000001" }).find((p) => p.type === "stockConfirm" && p.diamondId === cand.id);
+    submitStockConfirm(sc.id, true);
+    lockSelectedCandidate(cand.id, "customer");
     const order = getOpsOrder("DM-000001");
     expect(order.selectedDiamondId).toBe(cand.id);
     expect(order.status).toBe("QUOTATION");
@@ -69,7 +73,7 @@ describe("ops store — 매뉴얼 풀 플로우", () => {
     const pr = createProcurement("DM-000001", { type: "diamondCandidates", supplierId: "u-supplier1", dueDate: "d", brief: "" });
     const [cand] = submitCandidates(pr.id, [{ igiNo: "X", shape: "round", carat: 1.5, color: "E", clarity: "VS1", growth: "CVD", lab: "IGI", procurementCostUsd: 500 }]);
     publishCandidate(cand.id, 1200);
-    selectCandidate(cand.id, "customer");
+    toggleShortlist(cand.id, "customer");
     lockCandidate(cand.id);
     const q = createQuote("DM-000001", { estWeightG: 4.2, metalRefUsdPerG: 85, lossRatePct: 8, nonMetalUsd: 250, internal: { multiplier: 1.8, diamondCostUsd: 500 } });
     expect(q.id).toBe("Q-DM-000001-V2"); // V1은 다이아 락 시점에 자동 발송된 견적 (어드민 최소 개입)
