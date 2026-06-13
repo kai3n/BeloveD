@@ -19,8 +19,9 @@ function BriefChip({ label, value }) {
 }
 
 function OrderBrief({ view, t, p, locale }) {
-  const sizeText = view.measurements
-    || (view.conditional && Object.values(view.conditional).filter(Boolean).join(" · "))
+  // 깔끔한 값 우선 (conditional은 "6 US" 같은 값만) — measurements는 "ringSize: 6 US"처럼 키가 붙어 후순위
+  const sizeText = (view.conditional && Object.values(view.conditional).filter(Boolean).join(" · "))
+    || view.measurements
     || null;
   const d = view.diamond;
   const sp = view.stonePrefs;
