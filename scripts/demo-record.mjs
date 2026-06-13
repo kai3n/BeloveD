@@ -166,30 +166,26 @@ async function main() {
     await picks("supplier", 0, [0]);
     await clickName("supplier", "Submit", { exact: true });
 
-    // 3. 고객: 스톤 선택 (자동가 $1,123)
-    await go("customer", "/track/DM-000004", "Step 3 — Pick the diamond ($1,123 auto-priced)");
+    // 3. 고객: 스톤 선택 → 신선 배치라 재고확인 없이 자동 견적 발송 (벤더 라운드트립 제거)
+    await go("customer", "/track/DM-000004", "Step 3 — Pick the diamond → auto quote");
     await clickName("customer", "Select this stone");
 
-    // 4. 벤더: 재고 확인 → 자동 락 + 자동 견적
-    await go("supplier", "/supplier/tasks/PR-000007", "Step 4 — Confirm stock → auto quote");
-    await clickName("supplier", "In stock");
-
-    // 5. 고객: 견적 수락
-    await go("customer", "/track/DM-000004", "Step 5 — Accept the quote");
+    // 4. 고객: 견적 수락
+    await go("customer", "/track/DM-000004", "Step 4 — Accept the quote");
     await clickName("customer", "Accept quote");
 
-    // 6. 운영자 ①: 디파짓 확인 → CAD 태스크 자동 발행
+    // 운영자 ①: 디파짓 확인 → CAD 태스크 자동 발행
     await go("admin", "/admin/ops/DM-000004", "Touchpoint ① — Confirm deposit");
     await clickName("admin", "Deposit received");
 
-    // 7. 벤더: CAD V1 제출 — 드래그&드롭 파일 업로드 시연 (어르신 벤더가 폰 사진을 끌어다 놓기)
-    await go("supplier", "/supplier/tasks/PR-000009", "Step 7 — Drag & drop CAD photos");
+    // 5. 벤더: CAD V1 제출 — 드래그&드롭 파일 업로드 시연 (어르신 벤더가 폰 사진을 끌어다 놓기)
+    await go("supplier", "/supplier/tasks/PR-000008", "Step 5 — Drag & drop CAD photos");
     await upload("supplier", 0, "lineup-ring.png");
     await upload("supplier", 1, "lineup-band.png");
     await clickName("supplier", "Submit", { exact: true });
 
-    // 8. 고객: 핀으로 수정 요청
-    await go("customer", "/track/DM-000004", "Step 8 — Request a change (drop a pin)");
+    // 6. 고객: 핀으로 수정 요청
+    await go("customer", "/track/DM-000004", "Step 6 — Request a change (drop a pin)");
     await clickName("customer", "Request changes");
     {
       const canvas = left.locator(".pin-canvas.is-editable");
@@ -207,38 +203,38 @@ async function main() {
     await tap("customer", left.locator(".pin-editor button.chip").filter({ hasNotText: "✕" }).first());
     await clickName("customer", "Send change request");
 
-    // 9. 벤더: CAD V2 제출 (핀 동봉 확인)
-    await go("supplier", "/supplier/tasks/PR-000012", "Step 9 — Customer pins → CAD v2");
+    // 7. 벤더: CAD V2 제출 (핀 동봉 확인)
+    await go("supplier", "/supplier/tasks/PR-000011", "Step 7 — Customer pins → CAD v2");
     await wait(1400);
     await picks("supplier", 0, [0]);
     await picks("supplier", 1, [0]);
     await clickName("supplier", "Submit", { exact: true });
 
-    // 10. 고객: 디자인 승인 → 제작 시작
-    await go("customer", "/track/DM-000004", "Step 10 — Approve design → production");
+    // 8. 고객: 디자인 승인 → 제작 시작
+    await go("customer", "/track/DM-000004", "Step 8 — Approve design → production");
     await clickName("customer", "Approve");
 
-    // 11. 벤더: QC 제출 → 실중량 자동 정산
-    await go("supplier", "/supplier/tasks/PR-000015", "Step 11 — Final QC + actual weight");
+    // 9. 벤더: QC 제출 → 실중량 자동 정산
+    await go("supplier", "/supplier/tasks/PR-000014", "Step 9 — Final QC + actual weight");
     await picks("supplier", 0, [6, 0]);
     await fill("supplier", "spinbutton", "Actual weight", "4.35");
     await clickName("supplier", "Submit", { exact: true });
 
-    // 12. 고객: 최종 실물 컨펌
-    await go("customer", "/track/DM-000004", "Step 12 — Confirm the finished piece");
+    // 10. 고객: 최종 실물 컨펌
+    await go("customer", "/track/DM-000004", "Step 10 — Confirm the finished piece");
     await wait(1000);
     await clickName("customer", "Confirm");
 
-    // 13. 운영자 ②: 잔금 확인 → 배송 태스크 자동 발행
+    // 운영자 ②: 잔금 확인 → 배송 태스크 자동 발행
     await go("admin", "/admin/ops/DM-000004", "Touchpoint ② — Confirm balance → ship task");
     await clickName("admin", "Balance received");
 
-    // 14. 벤더: 운송장 제출 → SHIPPING
-    await go("supplier", "/supplier/tasks/PR-000017", "Step 14 — Submit shipment");
+    // 11. 벤더: 운송장 제출 → SHIPPING
+    await go("supplier", "/supplier/tasks/PR-000016", "Step 11 — Submit shipment");
     await fill("supplier", "textbox", "Tracking number", "1Z-LUMINA-88234901");
     await clickName("supplier", "Submit", { exact: true });
 
-    // 15. 운영자 ③: 수령 확인 → 배송완료
+    // 운영자 ③: 수령 확인 → 배송완료
     await go("admin", "/admin/ops/DM-000004", "Touchpoint ③ — Mark received → delivered");
     await clickName("admin", "delivered");
 

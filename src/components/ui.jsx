@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useLocale } from "../i18n.jsx";
+import { getSettings } from "../lib/store.js";
 
 // 신규 화면 공통 빌딩블록. 라벨은 전부 useLocale().p 사전에서 — 4개 언어 지원.
 // 샘플 사진은 jewelry-lineup.png 크롭(pos) 또는 단일 이미지(src).
@@ -136,19 +137,23 @@ export function MediaPicker({ value, onChange }) {
           ))}
         </div>
       )}
-      {/* 보조: 데모용 샘플 라이브러리 (실제 운영에선 드롭존이 기본) */}
-      <p className="form-hint">{p.picker.sampleToggle}</p>
-      <div className="picker-grid picker-samples-grid">
-        {SAMPLE_LIBRARY.map((item, i) => {
-          const selected = value.some((m) => m.src === item.src && m.pos === item.pos);
-          return (
-            <button type="button" key={i} className={`picker-cell ${selected ? "is-selected" : ""}`} onClick={() => toggleSample(item)}>
-              <MediaThumb media={item} alt={p.picker.labels[item.labelKey]} />
-              <span>{p.picker.labels[item.labelKey]}</span>
-            </button>
-          );
-        })}
-      </div>
+      {/* 보조: 데모용 샘플 라이브러리 — 실서비스에선 settings.showSampleLibrary=false로 숨김 (드롭존이 기본) */}
+      {getSettings().showSampleLibrary !== false && (
+        <>
+          <p className="form-hint">{p.picker.sampleToggle}</p>
+          <div className="picker-grid picker-samples-grid">
+            {SAMPLE_LIBRARY.map((item, i) => {
+              const selected = value.some((m) => m.src === item.src && m.pos === item.pos);
+              return (
+                <button type="button" key={i} className={`picker-cell ${selected ? "is-selected" : ""}`} onClick={() => toggleSample(item)}>
+                  <MediaThumb media={item} alt={p.picker.labels[item.labelKey]} />
+                  <span>{p.picker.labels[item.labelKey]}</span>
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
       {error && <p className="form-error">{error}</p>}
     </div>
   );

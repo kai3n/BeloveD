@@ -8,7 +8,7 @@ import {
   autoBrief, candidateAutoPrice, isCandidateComplete,
 } from "./ops.js";
 
-const KEY = "lumina-db-v9"; // v9: 어드민 최소 개입 자동화 (벤더 자동 라우팅·벤치마크 자동가·ship 태스크·미디어 피드)
+const KEY = "lumina-db-v10"; // v10: 재고확인 자동화(신선 배치)·샘플 라이브러리 토글 설정 추가
 
 // 테스트(node) 환경 폴백
 const memoryStorage = (() => {
@@ -42,6 +42,7 @@ function db() {
     storage.removeItem("lumina-db-v6");
     storage.removeItem("lumina-db-v7");
     storage.removeItem("lumina-db-v8");
+    storage.removeItem("lumina-db-v9");
     let parsed = null;
     try {
       const raw = storage.getItem(KEY);
@@ -448,8 +449,16 @@ export function selectCandidate(diaId, actor) {
   listProcurements({ orderId: c.orderId }).forEach((p) => {
     if (p.type === "stockConfirm" && p.status === "open") p.status = "closed";
   });
-  const due = new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10);
-  createProcurement(c.orderId, { type: "stockConfirm", supplierId: c.supplierId, dueDate: due, brief: c.igiNo, diamondId: c.id });
+  // 배치가 충분히 신선하면(만료까지 stockConfirmWithinDays 이상) 재고확인을 건너뛰고 바로 락 —
+  // 벤더 라운드트립 하나를 제거한다. 만료 임박/배치 없음일 때만 §13 품절 방어로 벤더 확인을 요청.
+  const fresh = pr?.batchValidUntil && pr.batchValidUntil >= plusDays(db().settings.stockConfirmWithinDays);
+  if (fresh) {
+    c.availability = "hold";
+    audit("auto", "diamond", c.id, "stockConfirm", null, "autoFresh");
+    lockCandidate(c.id);
+  } else {
+    createProcurement(c.orderId, { type: "stockConfirm", supplierId: c.supplierId, dueDate: plusDays(2), brief: c.igiNo, diamondId: c.id });
+  }
   persist();
   return c;
 }

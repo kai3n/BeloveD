@@ -160,6 +160,7 @@ const en = {
       auditTitle: "Audit log", actionsTitle: "Customer actions", statusSet: "Set status",
       markBalance: "Balance received → ship task", markDelivered: "Received — mark delivered",
       naTitle: "Your next step", naNone: "Nothing to confirm right now — the order is moving automatically.", advanced: "Full detail & manual controls",
+      overBudget: "over budget", budgetLabel: "Budget",
       hideRef: "Hide from vendor", showRef: "Restore",
     },
     styles: {
@@ -340,6 +341,7 @@ const ko = {
       auditTitle: "감사 로그", actionsTitle: "고객 액션", statusSet: "상태 변경",
       markBalance: "잔금 수령 → 배송 태스크", markDelivered: "수령 완료 — 배송 처리",
       naTitle: "지금 할 일", naNone: "지금 확인할 것이 없습니다 — 주문이 자동으로 진행 중입니다.", advanced: "전체 상세 · 수동 제어",
+      overBudget: "예산 초과", budgetLabel: "예산",
       hideRef: "벤더에서 숨김", showRef: "복원",
     },
     styles: {
@@ -520,6 +522,7 @@ const zh = {
       auditTitle: "审计日志", actionsTitle: "客户任务", statusSet: "设置状态",
       markBalance: "已收尾款 → 发货任务", markDelivered: "已收货 — 标记送达",
       naTitle: "下一步", naNone: "目前无需确认 — 订单正在自动推进。", advanced: "完整详情与手动控制",
+      overBudget: "超预算", budgetLabel: "预算",
       hideRef: "对供应商隐藏", showRef: "恢复",
     },
     styles: {
@@ -700,6 +703,7 @@ const es = {
       auditTitle: "Registro de auditoría", actionsTitle: "Acciones del cliente", statusSet: "Cambiar estado",
       markBalance: "Saldo recibido → tarea de envío", markDelivered: "Recibido — marcar entregado",
       naTitle: "Tu siguiente paso", naNone: "Nada que confirmar ahora — el pedido avanza automáticamente.", advanced: "Detalle completo y controles manuales",
+      overBudget: "sobre presupuesto", budgetLabel: "Presupuesto",
       hideRef: "Ocultar al proveedor", showRef: "Restaurar",
     },
     styles: {

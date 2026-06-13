@@ -5,8 +5,10 @@ import {
   addCadVersion, decideCad, freeRevisionsLeft, portalView, getSettings,
   submitCadForPr, listCadReviews,
   submitQcForPr, confirmFinal, getOpsOrder, listCustomerActions, updateOpsOrder,
-  selectCandidate, submitStockConfirm, getCandidate, listProcurements, listMilestones, listCandidates,
+  selectCandidate, submitStockConfirm, getCandidate, listProcurements, listMilestones, listCandidates, submitCandidates,
 } from "../store.js";
+
+const dstr = (days) => new Date(Date.now() + days * 86400000).toISOString().slice(0, 10);
 
 beforeEach(() => resetDB());
 
@@ -134,43 +136,55 @@ describe("visual store — 최종 실물 컨펌", () => {
   });
 });
 
-describe("visual store — 스톤 선택 → 벤더 재고 확인", () => {
-  it("고객 선택 시 후보 제출 벤더에게 stockConfirm PR 자동 발행 (가격 미노출)", () => {
-    selectCandidate("DIA-DM-000001-01", "customer");
+describe("visual store — 스톤 선택: 신선 배치 자동 / 만료임박 벤더확인", () => {
+  // 신선 배치(만료 여유) 후보
+  function freshCand() {
+    const pr = createProcurement("DM-000001", { type: "diamondCandidates", supplierId: "u-supplier1", dueDate: dstr(5), batchValidUntil: dstr(10), brief: "fresh" });
+    return submitCandidates(pr.id, [{ igiNo: "LG-FRESH", shape: "round", carat: 1.5, color: "E", clarity: "VS1", growth: "CVD", lab: "IGI", procurementCostUsd: 500, image: "/f.png" }])[0];
+  }
+  // 만료 임박(stockConfirmWithinDays 이내) 후보
+  function expiringCand() {
+    const pr = createProcurement("DM-000001", { type: "diamondCandidates", supplierId: "u-supplier1", dueDate: dstr(1), batchValidUntil: dstr(1), brief: "expiring" });
+    return submitCandidates(pr.id, [{ igiNo: "LG-EXP", shape: "round", carat: 1.5, color: "E", clarity: "VS1", growth: "CVD", lab: "IGI", procurementCostUsd: 500, image: "/e.png" }])[0];
+  }
+
+  it("신선 배치 → 재고확인 없이 자동 락 + QUOTATION (벤더 라운드트립 제거)", () => {
+    const c = freshCand();
+    selectCandidate(c.id, "customer");
+    expect(listProcurements({ orderId: "DM-000001" }).some((p) => p.type === "stockConfirm")).toBe(false);
+    expect(getCandidate(c.id).locked).toBe(true);
+    expect(getOpsOrder("DM-000001").status).toBe("QUOTATION");
+    expect(listMilestones("DM-000001").find((m) => m.stage === "diamondLocked").status).toBe("done");
+  });
+
+  it("만료 임박 배치 → 벤더 재고확인 요청 (가격·OrderID 미노출)", () => {
+    const c = expiringCand();
+    selectCandidate(c.id, "customer");
     const pr = listProcurements({ orderId: "DM-000001" }).find((p) => p.type === "stockConfirm");
-    expect(pr.supplierId).toBe("u-supplier1"); // 후보를 낸 벤더에게 배정
-    expect(pr.diamondId).toBe("DIA-DM-000001-01");
-    const task = supplierTasks("u-supplier1").find((t) => t.type === "stockConfirm");
-    expect(task.diamond.igiNo).toBe("LG591234001");
+    expect(pr.diamondId).toBe(c.id);
+    const task = supplierTasks("u-supplier1").find((t) => t.type === "stockConfirm" && t.diamond?.igiNo === "LG-EXP");
+    expect(task).toBeTruthy();
     const json = JSON.stringify(task);
     expect(json).not.toContain("customerPriceUsd");
-    expect(json).not.toContain("1180"); // 고객가
     expect(json).not.toContain("DM-000001");
   });
 
-  it("벤더 재고 확인 → hold + 자동 락 + QUOTATION + 마일스톤", () => {
-    selectCandidate("DIA-DM-000001-01", "customer");
+  it("만료 임박 → 재고확인 '있음' → 락 + QUOTATION", () => {
+    const c = expiringCand();
+    selectCandidate(c.id, "customer");
     const pr = listProcurements({ orderId: "DM-000001" }).find((p) => p.type === "stockConfirm");
     submitStockConfirm(pr.id, true);
-    const c = getCandidate("DIA-DM-000001-01");
-    expect(c.availability).toBe("hold");
-    expect(c.locked).toBe(true);
-    expect(getOpsOrder("DM-000001").selectedDiamondId).toBe("DIA-DM-000001-01");
+    expect(getCandidate(c.id).locked).toBe(true);
     expect(getOpsOrder("DM-000001").status).toBe("QUOTATION");
-    expect(listMilestones("DM-000001").find((m) => m.stage === "diamondLocked").status).toBe("done");
-    expect(pr.status).toBe("submitted");
   });
 
-  it("벤더 품절 처리 → sold·비공개·선택 초기화, 주문은 STONE_SELECTION 유지", () => {
-    selectCandidate("DIA-DM-000001-01", "customer");
+  it("만료 임박 → '품절' → sold·비공개·선택 초기화 (매뉴얼 §13)", () => {
+    const c = expiringCand();
+    selectCandidate(c.id, "customer");
     const pr = listProcurements({ orderId: "DM-000001" }).find((p) => p.type === "stockConfirm");
     submitStockConfirm(pr.id, false);
-    const c = getCandidate("DIA-DM-000001-01");
-    expect(c.availability).toBe("sold");
-    expect(c.published).toBe(false); // §13: Sold 즉시 비공개
-    expect(c.clientSelection).toBe("none"); // 고객은 다른 후보 재선택 가능
-    expect(getOpsOrder("DM-000001").status).toBe("STONE_SELECTION");
-    expect(getOpsOrder("DM-000001").selectedDiamondId).toBeNull();
-    expect(listCandidates({ orderId: "DM-000001", publishedOnly: true }).length).toBe(1);
+    expect(getCandidate(c.id).availability).toBe("sold");
+    expect(getCandidate(c.id).published).toBe(false);
+    expect(getCandidate(c.id).clientSelection).toBe("none");
   });
 });

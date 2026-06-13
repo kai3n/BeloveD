@@ -98,14 +98,14 @@ describe("풀 체인 — 어드민 터치포인트는 입금 확인 ②회 + 수
     const { order } = createIntake(solitaireForm);
     const supplier = getSettings().defaultSupplierId;
 
-    // 벤더: 후보 제출 (자동 공개) → 고객: 선택 → 벤더: 재고 확인 → 자동 락 + 자동 견적 발송
+    // 벤더: 후보 제출 (자동 공개) → 고객: 선택 → 신선 배치라 재고확인 없이 자동 락 + 자동 견적
     const candPr = listProcurements({ orderId: order.id }).find((p) => p.type === "diamondCandidates");
     const [cand] = submitCandidates(candPr.id, [
       { igiNo: "LG-F1", shape: "round", carat: 1.5, color: "E", clarity: "VS1", growth: "CVD", lab: "IGI", procurementCostUsd: 500, image: "/f.png" },
     ]);
     selectCandidate(cand.id, "customer");
-    const stockPr = listProcurements({ orderId: order.id }).find((p) => p.type === "stockConfirm");
-    submitStockConfirm(stockPr.id, true);
+    expect(listProcurements({ orderId: order.id }).some((p) => p.type === "stockConfirm")).toBe(false); // 신선 배치 → 재고확인 생략
+    expect(getCandidate(cand.id).locked).toBe(true);
     const quote = listQuotes(order.id)[0];
     expect(quote.status).toBe("sent"); // SPEC-000002 (RING-001/18kw) 재사용 — 어드민 손 안 거침
     expect(quote.internal.diamondCostUsd).toBe(500);

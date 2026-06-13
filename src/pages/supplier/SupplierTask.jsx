@@ -12,6 +12,22 @@ import { pickI18n, useLocale } from "../../i18n.jsx";
 
 const emptyCand = () => ({ igiNo: "", shape: "round", carat: "", color: "E", clarity: "VS1", growth: "CVD", lab: "IGI India", procurementCostUsd: "", table: "", depth: "", faceUp: "" });
 
+// 후보 행을 주문 요청 사양(stonePrefs)으로 프리필 — 벤더가 4C를 매번 재입력하지 않게
+function initialRow(prId) {
+  const base = emptyCand();
+  const pr = getProcurement(prId);
+  if (pr?.type !== "diamondCandidates") return base;
+  const order = getOpsOrder(pr.orderId);
+  const sp = order ? getIntake(order.intakeId)?.stonePrefs : null;
+  if (!sp) return base;
+  return {
+    ...base,
+    shape: sp.shape || base.shape, carat: sp.carat ? String(sp.carat) : "",
+    color: sp.color || base.color, clarity: sp.clarity || base.clarity,
+    growth: sp.growth || base.growth, lab: sp.lab || base.lab,
+  };
+}
+
 // 고객 요구를 한눈에 종합하는 제작 브리프 — 텍스트 최소화, 시각 우선 (어르신 벤더 친화적)
 function BriefChip({ label, value }) {
   if (!value) return null;
@@ -73,7 +89,7 @@ export default function SupplierTask() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const pr = getProcurement(prId);
-  const [rows, setRows] = useState([emptyCand()]);
+  const [rows, setRows] = useState(() => [initialRow(prId)]);
   const [media, setMedia] = useState([]);
   const [wl, setWl] = useState({ estWeightG: "", lossIncluded: true, laborUsd: "", meleeUsd: "", leadDays: "", assumptions: "" });
   const [qc, setQc] = useState({ actualWeightG: "" });
@@ -175,7 +191,7 @@ export default function SupplierTask() {
               </details>
             </div>
           ))}
-          <button type="button" className="button secondary small" onClick={() => setRows((rs) => [...rs, emptyCand()])}>{t.addRow}</button>
+          <button type="button" className="button secondary small" onClick={() => setRows((rs) => [...rs, initialRow(prId)])}>{t.addRow}</button>
           <p className="form-hint">{t.media}</p>
           <MediaPicker value={media} onChange={setMedia} />
           <button className="button primary" type="submit">{t.submit}</button>

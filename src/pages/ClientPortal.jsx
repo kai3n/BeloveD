@@ -46,13 +46,13 @@ function Checkpoint({ index, title, state, summary, children }) {
 }
 
 // 체크포인트 ② 디자인 — 비교 뷰 + 핀 수정요청. 자유 텍스트 입력 없음.
-function DesignCard({ cad, mineMedia, orderId, actor, revisionsLeft, feeUsd }) {
+function DesignCard({ cad, mineMedia, orderId, actor, revisionsLeft, feeUsd, defaultMeasure }) {
   const { p } = useLocale();
   const t = p.portal;
   const t2 = p.visual;
   const [revising, setRevising] = useState(false);
   const [ann, setAnn] = useState([]);
-  const [measure, setMeasure] = useState("");
+  const [measure, setMeasure] = useState(defaultMeasure || ""); // 인테이크에서 받은 사이즈로 프리필 — 재입력 불필요
   // 핀은 정지 이미지에만 찍는다 — 대표 파일이 영상이면 슬롯 중 첫 이미지를 주석 캔버스로 사용
   const pinSrc = [cad.fileUrl, ...(cad.media || []).map((m) => m.src)].find((s) => s && !s.endsWith(".mp4")) || cad.fileUrl;
 
@@ -151,6 +151,9 @@ export default function ClientPortal() {
     ? { kind: approvedRef.kind, src: approvedRef.src }
     : style ? { kind: "image", src: style.coverImage } : null;
   const showStone = intake?.productLine === "solitaire";
+  // 인테이크에서 이미 받은 치수 — CAD 승인 화면 "치수 확인"을 프리필해 재입력을 없앤다
+  const cond = intake?.conditional || {};
+  const defaultMeasure = cond.ringSize || cond.chainLength || cond.wristSize || cond.earringDetails || "";
 
   // 4페이즈 진행 요약 — 13개 마일스톤 대신 고객이 이해하는 단계로 묶는다 (order.status 기준)
   const RANK = { STYLE_SELECTION: 0, STONE_SELECTION: 1, QUOTATION: 2, CAD: 3, PRODUCTION: 4, QC: 5, BALANCE: 6, SHIPPING: 7, DELIVERED: 8, ARCHIVED: 9 };
@@ -237,7 +240,7 @@ export default function ClientPortal() {
       <Checkpoint index={2} title={p.visual.checkpoint.design} state={designState}
         summary={cad?.decision === "approved" ? `${t.cadVersion(cad.version)} ✓` : null}>
         {cad && <DesignCard cad={cad} mineMedia={mineMedia} orderId={orderId} actor={actor}
-          revisionsLeft={freeRevisionsLeft} feeUsd={designChangeFeeUsd} />}
+          revisionsLeft={freeRevisionsLeft} feeUsd={designChangeFeeUsd} defaultMeasure={defaultMeasure} />}
       </Checkpoint>
 
       {/* 체크포인트 ③ 최종 실물 컨펌 */}

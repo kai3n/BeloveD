@@ -204,6 +204,8 @@ export function seed() {
       designChangeFeeUsd: 15, cancelAfterProductionMinUsd: 140, freeMinorRevisions: 1,
       // 어드민 최소 개입 자동화: 전 주문이 기본 벤더로 자동 매칭 (스타일별 supplierId로 오버라이드 가능)
       defaultSupplierId: "u-supplier1", autoDueDays: 3, batchValidDays: 10,
+      stockConfirmWithinDays: 3, // 배치 만료가 이 일수 이내일 때만 벤더 재고확인 요청 (그 외엔 자동 락)
+      showSampleLibrary: true, // 데모용 샘플 이미지 라이브러리 노출 (실서비스에선 false)
       shipToAddress: "LUMINA LAB Receiving, 550 S Hill St #1100, Los Angeles, CA 90013",
     },
   };

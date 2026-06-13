@@ -209,7 +209,7 @@ export default function AdminOpsOrder() {
                   </td>
                   <td>
                     {c.published ? (
-                      <>{usd(c.customerPriceUsd)} <button className="chip is-active" onClick={() => unpublishCandidate(c.id)}>{t.unpublish}</button></>
+                      <>{usd(c.customerPriceUsd)}{intake?.budget && c.customerPriceUsd > intake.budget && <span style={{ color: "#e08585", marginLeft: 6 }} title={`${t.budgetLabel} $${intake.budget}`}>⚠ {t.overBudget}</span>} <button className="chip is-active" onClick={() => unpublishCandidate(c.id)}>{t.unpublish}</button></>
                     ) : (
                       <input type="number" placeholder={t.custPrice} style={{ width: 110 }}
                         onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); publishCandidate(c.id, Number(e.target.value)); } }} />
@@ -237,6 +237,7 @@ export default function AdminOpsOrder() {
         {quotes.map((q) => (
           <div key={q.id} className="feedback-note">
             <strong>{q.id}</strong> · {q.status} · {usd(q.totalUsd)} ({p.portal.deposit} {usd(q.depositUsd)} / {p.portal.balance} {usd(q.balanceUsd)})
+            {intake?.budget && q.totalUsd > intake.budget && <span style={{ color: "#e08585", marginLeft: 6 }}>⚠ {t.overBudget} (${intake.budget})</span>}
             {q.actualWeightG && ` · actual ${q.actualWeightG}g`}
             {q.status === "draft" && <button className="button secondary small" style={{ marginLeft: 10 }} onClick={() => sendQuote(q.id)}>{t.send}</button>}
           </div>
