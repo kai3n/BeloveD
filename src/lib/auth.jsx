@@ -1,30 +1,44 @@
 import { createContext, useContext, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { addUser, findUserByEmail, getUser } from "./store.js";
+import { addUser, findUserByEmail, findUserByAccessCode, getUser } from "./store.js";
 
 const SESSION_KEY = "lumina-session";
 const AuthContext = createContext(null);
-const DEMO_PASSWORD = "demo1234"; // mock: 모든 데모 계정 공통
+const DEMO_PASSWORD = "demo1234"; // mock: 이메일 로그인 데모 공통 비밀번호
+
+// 미인증 시 역할에 맞는 로그인으로 보낸다 — 벤더는 코드, 스태프(어드민·딜러)는 /staff, 고객은 /login
+export const LOGIN_FOR = { supplier: "/vendor", admin: "/staff", dealer: "/staff" };
 
 export function AuthProvider({ children }) {
   const [userId, setUserId] = useState(() => localStorage.getItem(SESSION_KEY));
   const user = userId ? getUser(userId) : null;
 
-  function login(email, password) {
-    const found = findUserByEmail(email);
-    // 에러 메시지는 코드로 던지고 UI에서 언어별로 매핑한다
-    if (!found || password !== DEMO_PASSWORD) throw new Error("badCredentials");
+  function commit(found) {
     localStorage.setItem(SESSION_KEY, found.id);
     setUserId(found.id);
     return found;
   }
 
+  // 고객·스태프(어드민·딜러) — 이메일 + 비밀번호
+  function login(email, password) {
+    const found = findUserByEmail(email);
+    if (!found || password !== DEMO_PASSWORD) throw new Error("badCredentials");
+    if (found.active === false) throw new Error("accountSuspended");
+    return commit(found);
+  }
+
+  // 벤더(공방) — 접근 코드/매직링크 (비밀번호 없음). 어르신 벤더 마찰 최소화.
+  function loginWithCode(code) {
+    const found = findUserByAccessCode(code);
+    if (!found || found.role !== "supplier") throw new Error("badCode");
+    if (found.active === false) throw new Error("accountSuspended");
+    return commit(found);
+  }
+
+  // 공개 가입 — 일반회원(고객)만. 딜러는 신청→승인, 벤더는 어드민 발급.
   function signup(name, email) {
     if (findUserByEmail(email)) throw new Error("emailExists");
-    const created = addUser({ email, name, role: "customer" });
-    localStorage.setItem(SESSION_KEY, created.id);
-    setUserId(created.id);
-    return created;
+    return commit(addUser({ email, name, role: "customer" }));
   }
 
   function logout() {
@@ -33,7 +47,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, login, loginWithCode, signup, logout }}>
       {children}
     </AuthContext.Provider>
   );
@@ -46,7 +60,7 @@ export function useAuth() {
 export function RequireRole({ role, children }) {
   const { user } = useAuth();
   const location = useLocation();
-  if (!user) return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+  if (!user) return <Navigate to={LOGIN_FOR[role] || "/login"} state={{ from: location.pathname }} replace />;
   if (role && user.role !== role) return <Navigate to="/" replace />;
   return children;
 }

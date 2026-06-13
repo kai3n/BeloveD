@@ -30,6 +30,7 @@ function isValidDB(d) {
     && Array.isArray(d.chipCatalog)
     && d.settings?.defaultSupplierId != null
     && Array.isArray(d.poolDiamonds)
+    && d.users?.some((u) => u.role === "supplier" && u.accessCode) // 벤더 접근 코드 스키마
   );
 }
 
@@ -83,12 +84,26 @@ function logEvent(refId, from, to, actorId) {
 }
 
 // ---------- users ----------
+// 벤더 접근 코드 — 비밀번호 대신 쓰는 무작위 코드 (추측 어렵게, 헷갈리는 글자 제외)
+export function genAccessCode() {
+  const chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+  const pick = (n) => Array.from({ length: n }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+  return `${pick(4)}-${pick(4)}`;
+}
 export function findUserByEmail(email) {
   return db().users.find((u) => u.email === String(email).trim().toLowerCase()) || null;
+}
+// 벤더 로그인용 — 코드로 유저 조회 (대소문자·공백 무시)
+export function findUserByAccessCode(code) {
+  const c = String(code || "").trim().toUpperCase();
+  if (!c) return null;
+  return db().users.find((u) => u.accessCode && u.accessCode.toUpperCase() === c) || null;
 }
 export function getUser(id) { return db().users.find((u) => u.id === id) || null; }
 export function addUser({ email, name, role = "customer" }) {
   const user = { id: nextId("u"), email: String(email).trim().toLowerCase(), name, role, active: true };
+  // 벤더는 비밀번호 대신 접근 코드 — 발급 즉시 생성
+  if (role === "supplier") user.accessCode = genAccessCode();
   db().users.push(user);
   persist();
   return user;

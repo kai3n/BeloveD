@@ -13,8 +13,8 @@ export function seed() {
     counter: 1100,
     users: [
       { id: "u-admin", email: "admin@demo.com", role: "admin", name: "Operations" },
-      { id: "u-supplier1", email: "supplier@demo.com", role: "supplier", name: "SUPPLIER-CN-01", active: true },
-      { id: "u-supplier2", email: "supplier2@demo.com", role: "supplier", name: "SUPPLIER-CN-02", active: true },
+      { id: "u-supplier1", email: "supplier@demo.com", role: "supplier", name: "SUPPLIER-CN-01", active: true, accessCode: "CN01-7F3K" },
+      { id: "u-supplier2", email: "supplier2@demo.com", role: "supplier", name: "SUPPLIER-CN-02", active: true, accessCode: "CN02-2B9X" },
       { id: "u-customer", email: "customer@demo.com", role: "customer", name: "Jiwon Kim" },
       { id: "u-dealer1", email: "dealer@demo.com", role: "dealer", name: "LA Diamond Atelier", active: true },
       { id: "u-dealer2", email: "dealer2@demo.com", role: "dealer", name: "Bay Area Gems", active: true },

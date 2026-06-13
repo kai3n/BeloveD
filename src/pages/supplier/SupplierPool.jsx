@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import { useAuth } from "../../lib/auth.jsx";
 import { listPoolDiamonds, savePoolDiamond, archivePoolDiamond, setPoolAvailability } from "../../lib/store.js";
 import { useDBVersion } from "../../lib/useDB.js";
@@ -31,10 +30,8 @@ export default function SupplierPool() {
   }
 
   return (
-    <div className="page">
-      <h1 className="page-title">{t.title}</h1>
-      <p className="page-sub">{t.sub}</p>
-      <p style={{ marginTop: -28, marginBottom: 24 }}><Link className="text-link" to="/supplier">← {p.supplierP.queue}</Link></p>
+    <>
+      <p className="page-sub" style={{ marginTop: 0 }}>{t.sub}</p>
 
       <div className="panel" style={{ overflowX: "auto" }}>
         <h3>{t.count(listPoolDiamonds({ supplierId: user.id }).length)}</h3>
@@ -92,6 +89,6 @@ export default function SupplierPool() {
         <MediaPicker value={media} onChange={setMedia} />
         <button className="button primary" type="submit">{t.addBtn}</button>
       </form>
-    </div>
+    </>
   );
 }

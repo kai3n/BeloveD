@@ -4,12 +4,14 @@ import NotFound from "./NotFound.jsx";
 import { RequireRole } from "./lib/auth.jsx";
 import Home from "./pages/Home.jsx";
 import Login from "./pages/Login.jsx";
+import StaffLogin from "./pages/StaffLogin.jsx";
+import VendorLogin from "./pages/VendorLogin.jsx";
 import Diamonds from "./pages/Diamonds.jsx";
 import DiamondDetail from "./pages/DiamondDetail.jsx";
 import StyleCatalog from "./pages/StyleCatalog.jsx";
 import IntakeForm from "./pages/IntakeForm.jsx";
 import ClientPortal, { TrackEntry } from "./pages/ClientPortal.jsx";
-import Account from "./pages/Account.jsx";
+import CustomerShell, { AccountOrders } from "./pages/Account.jsx";
 import { Guide4C, GuideLabDiamond } from "./pages/Guide.jsx";
 import DealerApply from "./pages/DealerApply.jsx";
 import DealerShell, { DealerDashboard } from "./pages/dealer/DealerShell.jsx";
@@ -18,6 +20,7 @@ import DealerOrders from "./pages/dealer/DealerOrders.jsx";
 import DealerRegs from "./pages/dealer/DealerRegs.jsx";
 import DealerClaims from "./pages/dealer/DealerClaims.jsx";
 import DealerPolicies from "./pages/dealer/DealerPolicies.jsx";
+import SupplierShell from "./pages/supplier/SupplierShell.jsx";
 import SupplierQueue from "./pages/supplier/SupplierQueue.jsx";
 import SupplierTask from "./pages/supplier/SupplierTask.jsx";
 import SupplierPool from "./pages/supplier/SupplierPool.jsx";
@@ -42,6 +45,8 @@ export default function App() {
       <Route element={<Layout />}>
         <Route index element={<Home />} />
         <Route path="login" element={<Login />} />
+        <Route path="staff" element={<StaffLogin />} />
+        <Route path="vendor" element={<VendorLogin />} />
         <Route path="diamonds" element={<Diamonds />} />
         <Route path="diamonds/:id" element={<DiamondDetail />} />
         <Route path="styles" element={<StyleCatalog />} />
@@ -50,7 +55,9 @@ export default function App() {
         <Route path="track/:orderId" element={<ClientPortal />} />
         <Route path="guide/lab-diamond" element={<GuideLabDiamond />} />
         <Route path="guide/4c" element={<Guide4C />} />
-        <Route path="account" element={<RequireRole role="customer"><Account /></RequireRole>} />
+        <Route path="account" element={<RequireRole role="customer"><CustomerShell /></RequireRole>}>
+          <Route index element={<AccountOrders />} />
+        </Route>
         <Route path="dealers/apply" element={<DealerApply />} />
         <Route path="dealer" element={<RequireRole role="dealer"><DealerShell /></RequireRole>}>
           <Route index element={<DealerDashboard />} />
@@ -60,8 +67,10 @@ export default function App() {
           <Route path="claims" element={<DealerClaims />} />
           <Route path="policies" element={<DealerPolicies />} />
         </Route>
-        <Route path="supplier" element={<RequireRole role="supplier"><SupplierQueue /></RequireRole>} />
-        <Route path="supplier/pool" element={<RequireRole role="supplier"><SupplierPool /></RequireRole>} />
+        <Route path="supplier" element={<RequireRole role="supplier"><SupplierShell /></RequireRole>}>
+          <Route index element={<SupplierQueue />} />
+          <Route path="pool" element={<SupplierPool />} />
+        </Route>
         <Route path="supplier/tasks/:prId" element={<RequireRole role="supplier"><SupplierTask /></RequireRole>} />
         <Route path="admin" element={<RequireRole role="admin"><Admin /></RequireRole>}>
           <Route index element={<AdminDashboard />} />

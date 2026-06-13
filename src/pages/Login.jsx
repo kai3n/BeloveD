@@ -1,15 +1,9 @@
 import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth.jsx";
 import { useLocale } from "../i18n.jsx";
 
-const DEMO_ACCOUNTS = [
-  { key: "demoCustomer", email: "customer@demo.com" },
-  { key: "demoVendor", email: "supplier@demo.com" },
-  { key: "demoDealer", email: "dealer@demo.com" },
-  { key: "demoAdmin", email: "admin@demo.com" },
-];
-
+// 일반회원(고객) 로그인·가입. 스태프(어드민·딜러)는 /staff, 벤더는 /vendor.
 export default function Login() {
   const { p } = useLocale();
   const { login, signup } = useAuth();
@@ -73,17 +67,37 @@ export default function Login() {
         </button>
       </form>
 
-      <div className="panel demo-panel">
-        <p className="section-label">{p.login.demoTitle}</p>
-        {DEMO_ACCOUNTS.map((acc) => (
-          <button
-            key={acc.email} className="button secondary"
-            onClick={() => { try { afterLogin(login(acc.email, "demo1234")); } catch (err) { setError(p.login.errors[err.message] || err.message); } }}
-          >
-            {p.login[acc.key]}
-          </button>
-        ))}
-      </div>
+      {/* 역할별 진입 안내 — 스태프/벤더는 전용 경로 */}
+      <p className="form-hint" style={{ marginTop: 18, textAlign: "center" }}>
+        <Link className="text-link" to="/staff">{p.login.staffLink}</Link>
+        {" · "}
+        <Link className="text-link" to="/vendor">{p.login.vendorLink}</Link>
+      </p>
+
+      {import.meta.env.DEV && <DemoPanel login={login} afterLogin={afterLogin} setError={setError} p={p} />}
+    </div>
+  );
+}
+
+// 데모 전용 — 실배포 빌드에선 렌더되지 않음 (import.meta.env.DEV)
+const DEMO_ACCOUNTS = [
+  { key: "demoCustomer", email: "customer@demo.com" },
+  { key: "demoVendor", email: "supplier@demo.com" },
+  { key: "demoDealer", email: "dealer@demo.com" },
+  { key: "demoAdmin", email: "admin@demo.com" },
+];
+function DemoPanel({ login, afterLogin, setError, p }) {
+  return (
+    <div className="panel demo-panel">
+      <p className="section-label">{p.login.demoTitle}</p>
+      {DEMO_ACCOUNTS.map((acc) => (
+        <button
+          key={acc.email} className="button secondary"
+          onClick={() => { try { afterLogin(login(acc.email, "demo1234")); } catch (err) { setError(p.login.errors[err.message] || err.message); } }}
+        >
+          {p.login[acc.key]}
+        </button>
+      ))}
     </div>
   );
 }
