@@ -262,8 +262,8 @@ button.text-link:hover {
 .stone-edu-visual { margin: 2px 0 12px; color: var(--silver); }
 .stone-edu-body { color: var(--muted); font-size: 12.5px; line-height: 1.65; margin: 0 0 8px; }
 .stone-edu-guide { color: var(--accent-bright); font-size: 12.5px; line-height: 1.6; margin: 0; }
-.edu-scale-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: flex-end; }
-.edu-scale-item { display: grid; justify-items: center; gap: 2px; font-size: 10px; color: var(--quiet); padding: 4px 3px; border: 1px solid transparent; }
+.edu-scale-row { display: flex; gap: 4px; flex-wrap: wrap; align-items: flex-end; }
+.edu-scale-item { display: grid; justify-items: center; gap: 2px; font-size: 10px; color: var(--quiet); padding: 3px 2px; border: 1px solid transparent; }
 .edu-scale-item.is-active { color: var(--accent-bright); border-color: var(--line); background: var(--surface-2); }
 .edu-shape-hero { display: grid; justify-items: center; gap: 4px; font-size: 12px; color: var(--muted); margin-bottom: 8px; }
 .edu-shape-row { display: flex; gap: 6px; flex-wrap: wrap; color: var(--quiet); }

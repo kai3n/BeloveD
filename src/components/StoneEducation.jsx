@@ -34,7 +34,7 @@ function ShapeGlyph({ shape, size = 22 }) {
 }
 
 // 측면 브릴리언트 실루엣 — 컬러 틴트/형광 표현용
-function DiamondGlyph({ fill, active, size = 26 }) {
+function DiamondGlyph({ fill, active, size = 22 }) {
   return (
     <svg viewBox="0 0 24 22" width={size} height={size * 0.92} aria-hidden>
       <polygon points="4,1 20,1 23,8 12,21 1,8" fill={fill}
