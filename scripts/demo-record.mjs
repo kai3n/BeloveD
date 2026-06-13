@@ -129,6 +129,15 @@ async function upload(role, dropIndex, file) {
   await wait(1100); // FileReader → 미리보기
 }
 
+// 벤더 큐로 가서 '열린' 태스크의 Open task 링크를 클릭해 진입 — PR ID 하드코딩 회피(시드 변경에 견고)
+async function vendorOpenTask(step) {
+  await go("supplier", "/supplier", step);
+  const link = right.locator('a.text-link[href*="/supplier/tasks/"]').first();
+  await tap("supplier", link); // 커서 + 클릭(클라이언트 네비)
+  await banner(right, "supplier", step); // 태스크 페이지에 배너 재주입
+  await wait(900);
+}
+
 async function main() {
   await mkdir(OUT, { recursive: true });
   const browser = await chromium.launch();
@@ -143,23 +152,28 @@ async function main() {
     await go("customer", "/", "Browsing LUMINA LAB");
     await go("supplier", "/supplier", "Vendor task queue (waiting)");
 
-    // 1. 고객: 주문 제출
+    // 1. 고객: 주문 제출 (풀에 없는 쉐입 princess → 벤더 후보 소싱 흐름 유지)
     await go("customer", "/custom/new", "Step 1 — Submit custom order");
     const styleSel = left.locator('select:has(option[value="RING-001"])');
     await point("customer", styleSel);
     await styleSel.selectOption("RING-001");
-    await wait(600);
+    await wait(400);
+    const shapeSel = left.locator('select:has(option[value="princess"])');
+    await point("customer", shapeSel);
+    await shapeSel.selectOption("princess");
+    await wait(400);
     await fill("customer", "textbox", "Ring size", "6 US");
     await fill("customer", "textbox", "Delivery country", "USA");
     await tap("customer", left.locator(".picker-samples-grid button.picker-cell").first());
     await tap("customer", left.getByRole("checkbox").first());
     await clickName("customer", "Submit request");
-    await left.getByText("DM-000004").first().waitFor();
-    await banner(left, "customer", "Order DM-000004 created");
+    // 화면에서 발급된 Order ID 캡처 (하드코딩 대신) — 이후 모든 track/admin URL에 사용
+    const ORDER = (await left.locator(".summary-card .num").first().textContent()).trim();
+    await banner(left, "customer", `Order ${ORDER} created`);
     await wait(2400);
 
     // 2. 벤더: 다이아 후보 제출 → 자동 공개
-    await go("supplier", "/supplier/tasks/PR-000006", "Step 2 — Submit diamond candidate");
+    await vendorOpenTask("Step 2 — Submit diamond candidate");
     await fill("supplier", "textbox", "IGI", "LG599000111");
     await fill("supplier", "spinbutton", "Carat", "1.5");
     await fill("supplier", "spinbutton", "Cost", "520");
@@ -167,25 +181,25 @@ async function main() {
     await clickName("supplier", "Submit", { exact: true });
 
     // 3. 고객: 스톤 선택 → 신선 배치라 재고확인 없이 자동 견적 발송 (벤더 라운드트립 제거)
-    await go("customer", "/track/DM-000004", "Step 3 — Pick the diamond → auto quote");
+    await go("customer", `/track/${ORDER}`, "Step 3 — Pick the diamond → auto quote");
     await clickName("customer", "Select this stone");
 
     // 4. 고객: 견적 수락
-    await go("customer", "/track/DM-000004", "Step 4 — Accept the quote");
+    await go("customer", `/track/${ORDER}`, "Step 4 — Accept the quote");
     await clickName("customer", "Accept quote");
 
     // 운영자 ①: 디파짓 확인 → CAD 태스크 자동 발행
-    await go("admin", "/admin/ops/DM-000004", "Touchpoint ① — Confirm deposit");
+    await go("admin", `/admin/ops/${ORDER}`, "Touchpoint ① — Confirm deposit");
     await clickName("admin", "Deposit received");
 
     // 5. 벤더: CAD V1 제출 — 드래그&드롭 파일 업로드 시연 (어르신 벤더가 폰 사진을 끌어다 놓기)
-    await go("supplier", "/supplier/tasks/PR-000008", "Step 5 — Drag & drop CAD photos");
+    await vendorOpenTask("Step 5 — Drag & drop CAD photos");
     await upload("supplier", 0, "lineup-ring.png");
     await upload("supplier", 1, "lineup-band.png");
     await clickName("supplier", "Submit", { exact: true });
 
     // 6. 고객: 핀으로 수정 요청
-    await go("customer", "/track/DM-000004", "Step 6 — Request a change (drop a pin)");
+    await go("customer", `/track/${ORDER}`, "Step 6 — Request a change (drop a pin)");
     await clickName("customer", "Request changes");
     {
       const canvas = left.locator(".pin-canvas.is-editable");
@@ -204,42 +218,42 @@ async function main() {
     await clickName("customer", "Send change request");
 
     // 7. 벤더: CAD V2 제출 (핀 동봉 확인)
-    await go("supplier", "/supplier/tasks/PR-000011", "Step 7 — Customer pins → CAD v2");
+    await vendorOpenTask("Step 7 — Customer pins → CAD v2");
     await wait(1400);
     await picks("supplier", 0, [0]);
     await picks("supplier", 1, [0]);
     await clickName("supplier", "Submit", { exact: true });
 
     // 8. 고객: 디자인 승인 → 제작 시작
-    await go("customer", "/track/DM-000004", "Step 8 — Approve design → production");
+    await go("customer", `/track/${ORDER}`, "Step 8 — Approve design → production");
     await clickName("customer", "Approve");
 
     // 9. 벤더: QC 제출 → 실중량 자동 정산
-    await go("supplier", "/supplier/tasks/PR-000014", "Step 9 — Final QC + actual weight");
+    await vendorOpenTask("Step 9 — Final QC + actual weight");
     await picks("supplier", 0, [6, 0]);
     await fill("supplier", "spinbutton", "Actual weight", "4.35");
     await clickName("supplier", "Submit", { exact: true });
 
     // 10. 고객: 최종 실물 컨펌
-    await go("customer", "/track/DM-000004", "Step 10 — Confirm the finished piece");
+    await go("customer", `/track/${ORDER}`, "Step 10 — Confirm the finished piece");
     await wait(1000);
     await clickName("customer", "Confirm");
 
     // 운영자 ②: 잔금 확인 → 배송 태스크 자동 발행
-    await go("admin", "/admin/ops/DM-000004", "Touchpoint ② — Confirm balance → ship task");
+    await go("admin", `/admin/ops/${ORDER}`, "Touchpoint ② — Confirm balance → ship task");
     await clickName("admin", "Balance received");
 
     // 11. 벤더: 운송장 제출 → SHIPPING
-    await go("supplier", "/supplier/tasks/PR-000016", "Step 11 — Submit shipment");
+    await vendorOpenTask("Step 11 — Submit shipment");
     await fill("supplier", "textbox", "Tracking number", "1Z-LUMINA-88234901");
     await clickName("supplier", "Submit", { exact: true });
 
     // 운영자 ③: 수령 확인 → 배송완료
-    await go("admin", "/admin/ops/DM-000004", "Touchpoint ③ — Mark received → delivered");
+    await go("admin", `/admin/ops/${ORDER}`, "Touchpoint ③ — Mark received → delivered");
     await clickName("admin", "delivered");
 
     // 마무리
-    await go("customer", "/track/DM-000004", "Delivered ✓");
+    await go("customer", `/track/${ORDER}`, "Delivered ✓");
     await go("supplier", "/supplier", "All tasks submitted ✓");
     await wait(3200);
 
