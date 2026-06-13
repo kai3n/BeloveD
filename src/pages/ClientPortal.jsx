@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "../lib/auth.jsx";
 import {
-  acceptQuote, confirmFinal, decideCad, listCustomerActions, portalView, respondCustomerAction, selectCandidate,
+  acceptQuote, confirmFinal, decideCad, listCustomerActions, portalView, respondCustomerAction, toggleShortlist, requestStockConfirm, lockSelectedCandidate,
 } from "../lib/store.js";
 import { useDBVersion } from "../lib/useDB.js";
 import { EmptyNote, MediaThumb, usd } from "../components/ui.jsx";
@@ -125,8 +125,10 @@ export default function ClientPortal() {
   }
   const { order, intake, style, candidates, selected, quote, milestones, cad, freeRevisionsLeft, designChangeFeeUsd, finalAction } = view;
 
-  function pick(diaId) {
-    selectCandidate(diaId, actor);
+  function shortlist(diaId) { toggleShortlist(diaId, actor); }
+  function reqStock() { requestStockConfirm(orderId, actor); }
+  function lockOne(diaId) {
+    lockSelectedCandidate(diaId, actor);
     const ca = listCustomerActions(orderId, true).find((a) => a.type === "diamondSelection");
     if (ca) respondCustomerAction(ca.id, diaId, actor);
   }
@@ -212,18 +214,30 @@ export default function ClientPortal() {
                       <p className="spec">{c.color} / {c.clarity} · {p.portal.growth[c.growth] || c.growth} · {c.lab}</p>
                       <p className="spec">{t.igi} {c.igiNo} · {t.treated}</p>
                       {c.proportions?.faceUp && <p className="spec">T{c.proportions.table} · D{c.proportions.depth} · {c.proportions.faceUp}</p>}
-                      <p className="price">{usd(c.customerPriceUsd)} · {t.availability[c.availability]}</p>
-                      {c.clientSelection === "selected" || selected?.id === c.id ? (
+                      <p className="price">{usd(c.customerPriceUsd)}</p>
+                      {selected?.id === c.id ? (
                         <p className="form-hint">{t.selected} ✓</p>
-                      ) : (
-                        !anySelected && c.availability === "available" && order.status === "STONE_SELECTION" && (
-                          <button className="button secondary small" style={{ marginTop: 8 }} onClick={() => pick(c.id)}>{t.select}</button>
-                        )
-                      )}
+                      ) : !order.selectedDiamondId && order.status === "STONE_SELECTION" ? (
+                        c.availability === "sold" ? <p className="form-hint">{t.soldOut}</p>
+                        : c.stockConfirmed ? (
+                            <div className="row-actions" style={{ marginTop: 8 }}>
+                              <span className="status-badge mst-done">{t.inStock}</span>
+                              <button className="button primary small" onClick={() => lockOne(c.id)}>{t.lockThis}</button>
+                            </div>
+                          )
+                        : c.clientSelection === "selected" ? (
+                            <button className="button secondary small is-active" style={{ marginTop: 8 }} onClick={() => shortlist(c.id)}>{t.shortlisted} ✓</button>
+                          )
+                        : <button className="button secondary small" style={{ marginTop: 8 }} onClick={() => shortlist(c.id)}>{t.shortlist}</button>
+                      ) : null}
                     </div>
                   </div>
                 ))}
               </div>
+              {!order.selectedDiamondId && order.status === "STONE_SELECTION" &&
+                candidates.some((c) => c.clientSelection === "selected" && !c.stockConfirmed) && (
+                  <button className="button primary" style={{ marginTop: 14 }} onClick={reqStock}>{t.requestStock}</button>
+              )}
             </>
           )}
         </Checkpoint>
