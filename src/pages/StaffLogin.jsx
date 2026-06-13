@@ -15,18 +15,16 @@ export default function StaffLogin() {
   const from = location.state?.from;
 
   function afterLogin(user) {
-    if (from) return navigate(from, { replace: true });
-    if (user.role === "admin") return navigate("/admin", { replace: true });
-    if (user.role === "dealer") return navigate("/dealer", { replace: true });
-    if (user.role === "supplier") return navigate("/vendor", { replace: true }); // 벤더는 코드 경로로 유도
-    navigate("/account", { replace: true });
+    if (from && (user.role === "admin" || user.role === "dealer")) return navigate(from, { replace: true });
+    navigate(user.role === "admin" ? "/admin" : "/dealer", { replace: true });
   }
 
   function handleSubmit(e) {
     e.preventDefault();
     setError("");
     try {
-      afterLogin(login(email, password));
+      // 스태프 전용 — 어드민·딜러만. 고객/벤더 계정은 거부(wrongPortal)
+      afterLogin(login(email, password, ["admin", "dealer"]));
     } catch (err) {
       setError(p.login.errors[err.message] || err.message);
     }
@@ -54,8 +52,8 @@ export default function StaffLogin() {
       {import.meta.env.DEV && (
         <div className="panel demo-panel">
           <p className="section-label">{p.login.demoTitle}</p>
-          <button className="button secondary" onClick={() => { try { afterLogin(login("admin@demo.com", "demo1234")); } catch (err) { setError(p.login.errors[err.message] || err.message); } }}>{p.login.demoAdmin}</button>
-          <button className="button secondary" onClick={() => { try { afterLogin(login("dealer@demo.com", "demo1234")); } catch (err) { setError(p.login.errors[err.message] || err.message); } }}>{p.login.demoDealer}</button>
+          <button className="button secondary" onClick={() => { try { afterLogin(login("admin@demo.com", "demo1234", ["admin", "dealer"])); } catch (err) { setError(p.login.errors[err.message] || err.message); } }}>{p.login.demoAdmin}</button>
+          <button className="button secondary" onClick={() => { try { afterLogin(login("dealer@demo.com", "demo1234", ["admin", "dealer"])); } catch (err) { setError(p.login.errors[err.message] || err.message); } }}>{p.login.demoDealer}</button>
         </div>
       )}
     </div>
