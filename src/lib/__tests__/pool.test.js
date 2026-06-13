@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { COLOR_ORDER, CLARITY_ORDER, poolStoneMatches } from "../ops.js";
-import { resetDB, listPoolDiamonds, getPoolDiamond, savePoolDiamond, archivePoolDiamond, setPoolAvailability, createIntake, listCandidates, listProcurements, matchPoolForOrder, lockCandidate } from "../store.js";
+import { resetDB, listPoolDiamonds, getPoolDiamond, savePoolDiamond, archivePoolDiamond, setPoolAvailability, createIntake, listCandidates, listProcurements, matchPoolForOrder, lockCandidate, selectCandidate, submitStockConfirm, getOpsOrder, getCandidate } from "../store.js";
 
 beforeEach(() => resetDB()); // 테스트 간 격리 — 시드만으로 매칭 카운트 결정적
 
@@ -114,5 +114,30 @@ describe("락 → 풀 sold + 형제 후보 무효화", () => {
     expect(c2after.availability).toBe("sold");
     // sold 풀 스톤은 이후 새 주문에 매칭 안 됨
     expect(matchPoolForOrder(prefs).map((s) => s.id)).not.toContain("POOL-000006");
+  });
+
+  it("이중 판매 방지: 두 주문이 같은 풀 스톤 선택 → 둘 다 재고확인 → 한쪽만 락, 다른쪽은 품절", () => {
+    const o1 = createIntake(form()).order;
+    const o2 = createIntake(form()).order;
+    const c1 = listCandidates({ orderId: o1.id }).find((c) => c.poolDiamondId === "POOL-000006");
+    const c2 = listCandidates({ orderId: o2.id }).find((c) => c.poolDiamondId === "POOL-000006");
+
+    // 두 고객이 (벤더 확인 전에) 모두 선택 → 각자 stockConfirm PR 발행
+    selectCandidate(c1.id, "cust1");
+    selectCandidate(c2.id, "cust2");
+    const pr1 = listProcurements({ orderId: o1.id }).find((p) => p.type === "stockConfirm" && p.diamondId === c1.id);
+    const pr2 = listProcurements({ orderId: o2.id }).find((p) => p.type === "stockConfirm" && p.diamondId === c2.id);
+    expect(pr1 && pr2).toBeTruthy();
+
+    // 벤더가 둘 다 '재고 있음' 확정 — 그래도 물리적 스톤은 하나뿐
+    submitStockConfirm(pr1.id, true);
+    submitStockConfirm(pr2.id, true);
+
+    // 첫 주문만 그 스톤에 락, 두 번째는 품절 처리 (selectedDiamondId가 겹치지 않음)
+    expect(getOpsOrder(o1.id).selectedDiamondId).toBe(c1.id);
+    expect(getOpsOrder(o2.id).selectedDiamondId).toBeNull();
+    expect(getCandidate(c2.id).locked).toBe(false);
+    expect(getCandidate(c2.id).availability).toBe("sold");
+    expect(pr2.result.available).toBe(false);
   });
 });
