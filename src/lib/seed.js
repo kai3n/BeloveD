@@ -33,8 +33,22 @@ export function seed() {
       { id: "d-11", shape: "heart", carat: 1.0, cut: "Very Good", color: "F", clarity: "VS1", certOrg: "IGI", certNo: "IGI-588301254", priceUsd: 1500, visible: true, media: [{ kind: "image", src: TWEEZERS }] },
       { id: "d-12", shape: "round", carat: 2.0, cut: "Excellent", color: "D", clarity: "IF", certOrg: "IGI", certNo: "IGI-588301255", priceUsd: 6450, visible: true, media: [{ kind: "image", src: TWEEZERS }, { kind: "video", src: NOIR_VIDEO }] },
     ],
+    poolDiamonds: [
+      // 기본 벤더 u-supplier1 — round/1.5/E/VS1/CVD 인테이크가 자동 매칭되도록
+      { id: "POOL-000001", supplierId: "u-supplier1", igiNo: "IGI-LG-700001", shape: "round", carat: 1.5, color: "D", clarity: "VVS1", growth: "CVD", lab: "IGI", certOrg: "IGI", reportUrl: "", proportions: {}, colorTreatment: "disclosed", media: [{ kind: "image", src: TWEEZERS }], procurementCostUsd: 640, availability: "available", archived: false, createdAt: "2026-06-01T00:00:00.000Z", updatedAt: "2026-06-01T00:00:00.000Z" },
+      { id: "POOL-000002", supplierId: "u-supplier1", igiNo: "IGI-LG-700002", shape: "round", carat: 1.6, color: "E", clarity: "VS1", growth: "CVD", lab: "IGI", certOrg: "IGI", reportUrl: "", proportions: {}, colorTreatment: "disclosed", media: [{ kind: "image", src: TWEEZERS }, { kind: "video", src: NOIR_VIDEO }], procurementCostUsd: 680, availability: "available", archived: false, createdAt: "2026-06-01T00:00:00.000Z", updatedAt: "2026-06-01T00:00:00.000Z" },
+      { id: "POOL-000003", supplierId: "u-supplier1", igiNo: "IGI-LG-700003", shape: "round", carat: 1.5, color: "E", clarity: "IF", growth: "CVD", lab: "IGI", certOrg: "IGI", reportUrl: "", proportions: {}, colorTreatment: "disclosed", media: [{ kind: "image", src: TWEEZERS }], procurementCostUsd: 720, availability: "available", archived: false, createdAt: "2026-06-01T00:00:00.000Z", updatedAt: "2026-06-01T00:00:00.000Z" },
+      // 매칭 제외 데모: 컬러 낮음(G)
+      { id: "POOL-000004", supplierId: "u-supplier1", igiNo: "IGI-LG-700004", shape: "round", carat: 1.5, color: "G", clarity: "VS1", growth: "CVD", lab: "IGI", certOrg: "IGI", reportUrl: "", proportions: {}, colorTreatment: "disclosed", media: [{ kind: "image", src: TWEEZERS }], procurementCostUsd: 520, availability: "available", archived: false, createdAt: "2026-06-01T00:00:00.000Z", updatedAt: "2026-06-01T00:00:00.000Z" },
+      { id: "POOL-000005", supplierId: "u-supplier2", igiNo: "IGI-LG-700005", shape: "round", carat: 1.55, color: "E", clarity: "VVS2", growth: "CVD", lab: "IGI", certOrg: "IGI", reportUrl: "", proportions: {}, colorTreatment: "disclosed", media: [{ kind: "image", src: TWEEZERS }], procurementCostUsd: 700, availability: "available", archived: false, createdAt: "2026-06-01T00:00:00.000Z", updatedAt: "2026-06-01T00:00:00.000Z" },
+      // 다른 셰이프 — 오벌 주문용
+      { id: "POOL-000006", supplierId: "u-supplier2", igiNo: "IGI-LG-700006", shape: "oval", carat: 1.5, color: "E", clarity: "VS1", growth: "CVD", lab: "IGI", certOrg: "IGI", reportUrl: "", proportions: {}, colorTreatment: "disclosed", media: [{ kind: "image", src: TWEEZERS }], procurementCostUsd: 660, availability: "available", archived: false, createdAt: "2026-06-01T00:00:00.000Z", updatedAt: "2026-06-01T00:00:00.000Z" },
+      // 성장 HPHT + 캐럿 초과 데모
+      { id: "POOL-000007", supplierId: "u-supplier2", igiNo: "IGI-LG-700007", shape: "emerald", carat: 2.0, color: "F", clarity: "VS1", growth: "HPHT", lab: "IGI", certOrg: "IGI", reportUrl: "", proportions: {}, colorTreatment: "disclosed", media: [{ kind: "image", src: TWEEZERS }], procurementCostUsd: 1500, availability: "available", archived: false, createdAt: "2026-06-01T00:00:00.000Z", updatedAt: "2026-06-01T00:00:00.000Z" },
+    ],
     // ---------- Operations Manual 도메인 ----------
-    opsCounter: 2,
+    // 시퀀스 카운터는 시드된 모든 6자리 seq id(DM/POOL 등)보다 커야 충돌 없음 — 풀 시드가 POOL-000007까지 쓰므로 ≥7.
+    opsCounter: 7,
     intakes: [
       { id: "IN-000001", orderId: "DM-000001", name: "Jiwon Kim", contact: "customer@demo.com", productLine: "solitaire", category: "ring",
         styleId: "RING-001", budget: 4500, metal: "18kw", conditional: { ringSize: "6 US" },
@@ -205,6 +219,7 @@ export function seed() {
       // 어드민 최소 개입 자동화: 전 주문이 기본 벤더로 자동 매칭 (스타일별 supplierId로 오버라이드 가능)
       defaultSupplierId: "u-supplier1", autoDueDays: 3, batchValidDays: 10,
       stockConfirmWithinDays: 3, // 배치 만료가 이 일수 이내일 때만 벤더 재고확인 요청 (그 외엔 자동 락)
+      poolCaratUnder: 0.05, poolCaratOver: 0.4, poolMatchLimit: 12, // 풀 자동매칭 허용 캐럿범위·후보 캡
       showSampleLibrary: true, // 데모용 샘플 이미지 라이브러리 노출 (실서비스에선 false)
       shipToAddress: "LUMINA LAB Receiving, 550 S Hill St #1100, Los Angeles, CA 90013",
     },

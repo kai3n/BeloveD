@@ -8,7 +8,7 @@ import {
   autoBrief, candidateAutoPrice, isCandidateComplete,
 } from "./ops.js";
 
-const KEY = "lumina-db-v10"; // v10: 재고확인 자동화(신선 배치)·샘플 라이브러리 토글 설정 추가
+const KEY = "lumina-db-v11"; // v11: 벤더 다이아 풀(poolDiamonds) 추가
 
 // 테스트(node) 환경 폴백
 const memoryStorage = (() => {
@@ -29,6 +29,7 @@ function isValidDB(d) {
     && d.settings?.opsDepositRate != null
     && Array.isArray(d.chipCatalog)
     && d.settings?.defaultSupplierId != null
+    && Array.isArray(d.poolDiamonds)
   );
 }
 
@@ -43,6 +44,7 @@ function db() {
     storage.removeItem("lumina-db-v7");
     storage.removeItem("lumina-db-v8");
     storage.removeItem("lumina-db-v9");
+    storage.removeItem("lumina-db-v10");
     let parsed = null;
     try {
       const raw = storage.getItem(KEY);
@@ -112,6 +114,42 @@ export function adjustDiamondPrices(percent) {
   db().diamonds.forEach((d) => {
     d.priceUsd = Math.round((d.priceUsd * (1 + percent / 100)) / 10) * 10;
   });
+  persist();
+}
+
+// ---------- vendor diamond pool ----------
+export function listPoolDiamonds({ supplierId, includeArchived = false } = {}) {
+  return db().poolDiamonds.filter((s) =>
+    (includeArchived || !s.archived) && (!supplierId || s.supplierId === supplierId));
+}
+export function getPoolDiamond(id) { return db().poolDiamonds.find((s) => s.id === id) || null; }
+export function savePoolDiamond(stone) {
+  const list = db().poolDiamonds;
+  const i = stone.id ? list.findIndex((s) => s.id === stone.id) : -1;
+  if (i >= 0) {
+    list[i] = { ...list[i], ...stone, updatedAt: now() };
+    persist();
+    return list[i];
+  }
+  const created = {
+    media: [], availability: "available", archived: false, proportions: {}, colorTreatment: "disclosed",
+    reportUrl: "", ...stone, id: nextSeqId("POOL"), createdAt: now(), updatedAt: now(),
+  };
+  list.push(created);
+  audit(stone.supplierId || "ops", "pool", created.id, "create", null, "available");
+  persist();
+  return created;
+}
+export function archivePoolDiamond(id, archived = true) {
+  const s = getPoolDiamond(id);
+  if (!s) return;
+  s.archived = archived; s.updatedAt = now();
+  persist();
+}
+export function setPoolAvailability(id, availability) {
+  const s = getPoolDiamond(id);
+  if (!s) return;
+  s.availability = availability; s.updatedAt = now();
   persist();
 }
 
