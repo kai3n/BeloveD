@@ -8,23 +8,13 @@ dist/
 
 # 데모 녹화 산출물 (영상·검증 프레임)
 demo-video/
-# 데모 검증용 루트 스크린샷
-admin-dashboard.png
-client-portal.png
-supplier-queue.png
-supplier-cad-revision.png
-vendor-brief-candidates.png
-portal-design-checkpoint.png
-portal-final-confirm.png
 
-# QA/검토용 스크린샷
-qa-*.png
-showcase-*.jpeg
-noir-*.jpeg
-3d-*.jpeg
-codex-*.jpeg
-noir-v2-white-*.png
-app-hero-*.png
-hero-cand*.png
-Trump_diamond.mp4
+# QA·데모·스크린샷 등 루트에 떨어지는 모든 미디어 (앱 에셋은 public/assets·src에만 둔다)
+/*.png
+/*.jpg
+/*.jpeg
+/*.gif
+/*.webp
+/*.mp4
+/*.mov
 .claude/
