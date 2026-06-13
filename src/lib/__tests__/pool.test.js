@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { COLOR_ORDER, CLARITY_ORDER, poolStoneMatches } from "../ops.js";
-import { resetDB, listPoolDiamonds, getPoolDiamond, savePoolDiamond, archivePoolDiamond, setPoolAvailability, createIntake, listCandidates, listProcurements, matchPoolForOrder, lockCandidate } from "../store.js";
+import { resetDB, listPoolDiamonds, getPoolDiamond, savePoolDiamond, archivePoolDiamond, setPoolAvailability, createIntake, listCandidates, listProcurements, matchPoolForOrder, lockCandidate, submitPoolCandidates, getProcurement, getOpsOrder, getCandidate, submitCandidates, toggleShortlist, requestStockConfirm, submitStockConfirm, lockSelectedCandidate } from "../store.js";
 
 beforeEach(() => resetDB()); // 테스트 간 격리 — 시드만으로 매칭 카운트 결정적
 
@@ -114,5 +114,20 @@ describe("락 → 풀 sold + 형제 후보 무효화", () => {
     expect(c2after.availability).toBe("sold");
     // sold 풀 스톤은 이후 새 주문에 매칭 안 됨
     expect(matchPoolForOrder(prefs).map((s) => s.id)).not.toContain("POOL-000006");
+  });
+});
+
+describe("submitPoolCandidates — 풀에서 폴백 후보 제출", () => {
+  it("선택한 풀 스톤이 후보로 생성(poolDiamondId·자동가·published) + pr submitted", () => {
+    const { order } = createIntake({ name: "T", contact: "t@t.com", productLine: "solitaire", category: "ring", styleId: "", metal: "18kw", conditional: { ringSize: "6" }, stonePrefs: { shape: "heart", carat: 1.5, color: "E", clarity: "VS1", growth: "CVD", lab: "IGI India", colorTreatment: "disclosed", fluorescence: "none", lwRatio: "" }, requiredDate: "", country: "USA", termsAccepted: true, referenceMedia: [] });
+    const pr = listProcurements({ orderId: order.id }).find((p) => p.type === "diamondCandidates");
+    expect(pr).toBeTruthy();
+    const poolIds = ["POOL-000001", "POOL-000002"];
+    const created = submitPoolCandidates(pr.id, poolIds);
+    expect(created.length).toBe(2);
+    expect(created.every((c) => c.poolDiamondId && c.prId === pr.id && c.supplierId === pr.supplierId)).toBe(true);
+    expect(created.some((c) => c.published && c.customerPriceUsd > 0)).toBe(true);
+    expect(getProcurement(pr.id).status).toBe("submitted");
+    expect(listCandidates({ orderId: order.id }).filter((c) => c.poolDiamondId).length).toBe(2);
   });
 });

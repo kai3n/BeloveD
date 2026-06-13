@@ -188,33 +188,50 @@ export function matchPoolForOrder(prefs) {
     .slice(0, limit);
 }
 
+// 풀 스톤 → 주문 후보 스냅샷 (autoMatchFromPool·submitPoolCandidates 공용)
+function poolStoneToCandidate(pool, orderId, seq, prId = null) {
+  const image = (pool.media || []).find((m) => m.kind === "image")?.src || "";
+  const video = (pool.media || []).find((m) => m.kind === "video")?.src || "";
+  const c = {
+    id: `DIA-${orderId}-${String(seq).padStart(2, "0")}`,
+    orderId, prId, poolDiamondId: pool.id,
+    igiNo: pool.igiNo, shape: pool.shape, carat: pool.carat, color: pool.color, clarity: pool.clarity,
+    growth: pool.growth, lab: pool.lab, proportions: pool.proportions || {}, reportUrl: pool.reportUrl || "",
+    image, video, colorTreatment: pool.colorTreatment || "disclosed", availability: "available",
+    procurementCostUsd: pool.procurementCostUsd, supplierId: pool.supplierId,
+    internalReview: null, internalNotes: "", published: false, customerPriceUsd: null,
+    clientSelection: "none", stockConfirmed: false, locked: false, createdAt: now(),
+  };
+  const bench = benchmarkFor(c.shape, c.carat);
+  if (isCandidateComplete(c) && bench) {
+    c.customerPriceUsd = candidateAutoPrice(bench.unitUsdPerCt, c.carat, db().settings.opsMultiplier);
+    c.published = true;
+    audit("auto", "diamond", c.id, "published", "false", "true");
+  }
+  return c;
+}
+
 // 매칭된 풀 스톤을 주문 후보(diamondCands)로 스냅샷 복제 — 완결+벤치마크면 자동가·공개
 function autoMatchFromPool(order, intake) {
   const matches = matchPoolForOrder(intake.stonePrefs);
   const existing = listCandidates({ orderId: order.id }).length;
-  const created = matches.map((pool, i) => {
-    const image = (pool.media || []).find((m) => m.kind === "image")?.src || "";
-    const video = (pool.media || []).find((m) => m.kind === "video")?.src || "";
-    return {
-      id: `DIA-${order.id}-${String(existing + i + 1).padStart(2, "0")}`,
-      orderId: order.id, prId: null, poolDiamondId: pool.id,
-      igiNo: pool.igiNo, shape: pool.shape, carat: pool.carat, color: pool.color, clarity: pool.clarity,
-      growth: pool.growth, lab: pool.lab, proportions: pool.proportions || {}, reportUrl: pool.reportUrl || "",
-      image, video, colorTreatment: pool.colorTreatment || "disclosed", availability: "available",
-      procurementCostUsd: pool.procurementCostUsd, supplierId: pool.supplierId,
-      internalReview: null, internalNotes: "", published: false, customerPriceUsd: null,
-      clientSelection: "none", locked: false, createdAt: now(),
-    };
-  });
+  const created = matches.map((pool, i) => poolStoneToCandidate(pool, order.id, existing + i + 1, null));
   db().diamondCands.push(...created);
-  created.forEach((c) => {
-    const bench = benchmarkFor(c.shape, c.carat);
-    if (isCandidateComplete(c) && bench) {
-      c.customerPriceUsd = candidateAutoPrice(bench.unitUsdPerCt, c.carat, db().settings.opsMultiplier);
-      c.published = true;
-      audit("auto", "diamond", c.id, "published", "false", "true");
-    }
-  });
+  return created;
+}
+
+// 벤더가 폴백 diamondCandidates 태스크에서 자기 풀 스톤을 골라 후보로 제출
+export function submitPoolCandidates(prId, poolIds) {
+  const pr = getProcurement(prId);
+  const existing = listCandidates({ orderId: pr.orderId }).length;
+  const created = (poolIds || [])
+    .map((id) => getPoolDiamond(id))
+    .filter(Boolean)
+    .map((pool, i) => poolStoneToCandidate(pool, pr.orderId, existing + i + 1, prId));
+  db().diamondCands.push(...created);
+  pr.status = "submitted";
+  audit(pr.supplierId, "procurement", prId, "candidates", null, String(created.length));
+  persist();
   return created;
 }
 
