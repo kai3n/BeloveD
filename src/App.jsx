@@ -20,6 +20,7 @@ import DealerClaims from "./pages/dealer/DealerClaims.jsx";
 import DealerPolicies from "./pages/dealer/DealerPolicies.jsx";
 import SupplierQueue from "./pages/supplier/SupplierQueue.jsx";
 import SupplierTask from "./pages/supplier/SupplierTask.jsx";
+import SupplierPool from "./pages/supplier/SupplierPool.jsx";
 import Admin, { AdminDashboard } from "./pages/admin/Admin.jsx";
 import AdminOpsOrders from "./pages/admin/AdminOpsOrders.jsx";
 import AdminOpsOrder from "./pages/admin/AdminOpsOrder.jsx";
@@ -59,6 +60,7 @@ export default function App() {
           <Route path="policies" element={<DealerPolicies />} />
         </Route>
         <Route path="supplier" element={<RequireRole role="supplier"><SupplierQueue /></RequireRole>} />
+        <Route path="supplier/pool" element={<RequireRole role="supplier"><SupplierPool /></RequireRole>} />
         <Route path="supplier/tasks/:prId" element={<RequireRole role="supplier"><SupplierTask /></RequireRole>} />
         <Route path="admin" element={<RequireRole role="admin"><Admin /></RequireRole>}>
           <Route index element={<AdminDashboard />} />

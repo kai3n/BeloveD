@@ -38,6 +38,7 @@ export default function SupplierQueue() {
     <div className="page">
       <h1 className="page-title">{t.title}</h1>
       <p className="page-sub">{t.sub(user.name)}</p>
+      <p style={{ marginTop: -28, marginBottom: 24 }}><Link className="text-link" to="/supplier/pool">{t.poolLink} →</Link></p>
 
       {jobs.length === 0 ? <EmptyNote>{t.empty}</EmptyNote> : (
         <div className="form-stack">
