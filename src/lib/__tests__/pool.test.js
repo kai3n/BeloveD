@@ -131,3 +131,56 @@ describe("submitPoolCandidates — 풀에서 폴백 후보 제출", () => {
     expect(listCandidates({ orderId: order.id }).filter((c) => c.poolDiamondId).length).toBe(2);
   });
 });
+
+describe("④ 다중선택 — 찜→일괄확인→하나 락", () => {
+  const prefs = { shape: "round", carat: 1.5, color: "E", clarity: "VS1", growth: "CVD", lab: "IGI India", colorTreatment: "disclosed", fluorescence: "none", lwRatio: "" };
+  const mk = () => createIntake({ name: "T", contact: "t@t.com", productLine: "solitaire", category: "ring", styleId: "RING-001", metal: "18kw", conditional: { ringSize: "6" }, stonePrefs: prefs, requiredDate: "", country: "USA", termsAccepted: true, referenceMedia: [] }).order;
+
+  it("여러 후보 찜(토글) → 재고확인 요청 → 찜 수만큼 stockConfirm PR", () => {
+    const order = mk();
+    const cands = listCandidates({ orderId: order.id });
+    expect(cands.length).toBeGreaterThanOrEqual(3);
+    toggleShortlist(cands[0].id, "customer");
+    toggleShortlist(cands[1].id, "customer");
+    expect(getCandidate(cands[0].id).clientSelection).toBe("selected");
+    toggleShortlist(cands[1].id, "customer"); // 토글 해제
+    expect(getCandidate(cands[1].id).clientSelection).toBe("none");
+    toggleShortlist(cands[1].id, "customer"); // 다시 찜
+    requestStockConfirm(order.id, "customer");
+    const scs = listProcurements({ orderId: order.id }).filter((p) => p.type === "stockConfirm" && p.status === "open");
+    expect(scs.length).toBe(2);
+  });
+
+  it("재고확인 '있음'은 락 안 함(stockConfirmed만), '품절'은 drop", () => {
+    const order = mk();
+    const cands = listCandidates({ orderId: order.id });
+    toggleShortlist(cands[0].id, "customer");
+    toggleShortlist(cands[1].id, "customer");
+    requestStockConfirm(order.id, "customer");
+    const prFor = (diaId) => listProcurements({ orderId: order.id }).find((p) => p.type === "stockConfirm" && p.diamondId === diaId);
+    submitStockConfirm(prFor(cands[0].id).id, true);
+    submitStockConfirm(prFor(cands[1].id).id, false);
+    expect(getCandidate(cands[0].id).stockConfirmed).toBe(true);
+    expect(getCandidate(cands[0].id).locked).toBeFalsy();
+    expect(getOpsOrder(order.id).selectedDiamondId).toBeNull();
+    expect(getCandidate(cands[1].id).availability).toBe("sold");
+    expect(getCandidate(cands[1].id).clientSelection).toBe("none");
+  });
+
+  it("확인된 후보만 락 가능, 락 시 형제 찜 초기화 + 풀 sold", () => {
+    const order = mk();
+    const cands = listCandidates({ orderId: order.id });
+    toggleShortlist(cands[0].id, "customer");
+    toggleShortlist(cands[1].id, "customer");
+    requestStockConfirm(order.id, "customer");
+    const prFor = (diaId) => listProcurements({ orderId: order.id }).find((p) => p.type === "stockConfirm" && p.diamondId === diaId);
+    expect(() => lockSelectedCandidate(cands[0].id, "customer")).toThrow(); // 아직 미확인
+    submitStockConfirm(prFor(cands[0].id).id, true);
+    submitStockConfirm(prFor(cands[1].id).id, true);
+    lockSelectedCandidate(cands[0].id, "customer");
+    expect(getCandidate(cands[0].id).locked).toBe(true);
+    expect(getOpsOrder(order.id).status).toBe("QUOTATION");
+    expect(getCandidate(cands[1].id).clientSelection).toBe("none");
+    expect(getPoolDiamond(cands[0].poolDiamondId).availability).toBe("sold");
+  });
+});

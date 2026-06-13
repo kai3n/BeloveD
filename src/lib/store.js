@@ -516,7 +516,7 @@ export function submitCandidates(prId, candidates) {
     colorTreatment: cand.colorTreatment || "disclosed", availability: "available",
     procurementCostUsd: cand.procurementCostUsd, supplierId: pr.supplierId,
     internalReview: null, internalNotes: "", published: false, customerPriceUsd: null,
-    clientSelection: "none", locked: false, createdAt: now(),
+    clientSelection: "none", stockConfirmed: false, locked: false, createdAt: now(),
   }));
   db().diamondCands.push(...created);
   pr.status = "submitted";
@@ -559,35 +559,49 @@ export function setCandidateAvailability(diaId, availability) {
   if (availability === "sold") c.published = false; // 매뉴얼 §13: Sold는 즉시 비공개
   persist();
 }
-// 고객 선택 → 후보를 제출한 벤더에게 재고 확인 태스크 자동 발행
-// (벤더 승인 시 자동 락, 품절 시 후보 제외 — submitStockConfirm)
-export function selectCandidate(diaId, actor) {
+// ④ 다중선택: 찜 토글 (PR/락 없음). 여러 후보를 동시에 찜할 수 있다.
+export function toggleShortlist(diaId, actor) {
   const c = getCandidate(diaId);
-  // 매뉴얼 §13: 무효 후보(비공개·품절·배치 만료)는 스토어 레벨에서 선택 차단
-  const pr = c.prId ? getProcurement(c.prId) : null;
-  const expired = pr?.batchValidUntil && pr.batchValidUntil < today();
-  if (!c.published || c.availability !== "available" || expired) throw new Error("notSelectable");
-  c.clientSelection = "selected";
-  audit(actor, "diamond", diaId, "clientSelection", "none", "selected");
-  // 재선택 시 이전 미완료 재고확인이 큐에 쌓이지 않도록 정리
-  listProcurements({ orderId: c.orderId }).forEach((p) => {
-    if (p.type === "stockConfirm" && p.status === "open") p.status = "closed";
-  });
-  // 배치가 충분히 신선하면(만료까지 stockConfirmWithinDays 이상) 재고확인을 건너뛰고 바로 락 —
-  // 벤더 라운드트립 하나를 제거한다. 만료 임박/배치 없음일 때만 §13 품절 방어로 벤더 확인을 요청.
-  const fresh = pr?.batchValidUntil && pr.batchValidUntil >= plusDays(db().settings.stockConfirmWithinDays);
-  if (fresh) {
-    c.availability = "hold";
-    audit("auto", "diamond", c.id, "stockConfirm", null, "autoFresh");
-    lockCandidate(c.id);
+  const order = getOpsOrder(c.orderId);
+  if (order.selectedDiamondId) return c; // 이미 락된 주문
+  if (c.clientSelection === "selected") {
+    c.clientSelection = "none";
+    audit(actor, "diamond", diaId, "clientSelection", "selected", "none");
   } else {
-    createProcurement(c.orderId, { type: "stockConfirm", supplierId: c.supplierId, dueDate: plusDays(2), brief: c.igiNo, diamondId: c.id });
+    // 매뉴얼 §13: 무효 후보(비공개·품절·배치 만료)는 찜 차단
+    const pr = c.prId ? getProcurement(c.prId) : null;
+    const expired = pr?.batchValidUntil && pr.batchValidUntil < today();
+    if (!c.published || c.availability !== "available" || expired) throw new Error("notSelectable");
+    c.clientSelection = "selected";
+    audit(actor, "diamond", diaId, "clientSelection", "none", "selected");
   }
   persist();
   return c;
 }
 
-// 벤더 재고 확인 응답: 재고 있음 → hold + 자동 락(QUOTATION), 품절 → sold·비공개·선택 초기화
+// 찜한 후보들의 벤더에게 재고확인 일괄 발행 (이미 열린 건 건너뜀)
+export function requestStockConfirm(orderId, actor) {
+  const open = new Set(listProcurements({ orderId }).filter((p) => p.type === "stockConfirm" && p.status === "open").map((p) => p.diamondId));
+  listCandidates({ orderId }).filter((c) => c.clientSelection === "selected" && !c.stockConfirmed && !open.has(c.id))
+    .forEach((c) => createProcurement(orderId, { type: "stockConfirm", supplierId: c.supplierId, dueDate: plusDays(2), brief: c.igiNo, diamondId: c.id }, actor || "customer"));
+  persist();
+}
+
+// 확인된 찜 후보 중 하나를 최종 락 (→ QUOTATION). 디파짓은 운영자 수동 확인.
+export function lockSelectedCandidate(diaId, actor) {
+  const c = getCandidate(diaId);
+  if (!(c.clientSelection === "selected" && c.stockConfirmed && c.availability === "available")) throw new Error("notLockable");
+  audit(actor, "diamond", diaId, "lock", null, "selected");
+  lockCandidate(diaId);
+  // 같은 주문의 다른 찜 후보 초기화
+  listCandidates({ orderId: c.orderId }).forEach((o) => {
+    if (o.id !== diaId && o.clientSelection === "selected") o.clientSelection = "none";
+  });
+  persist();
+  return c;
+}
+
+// 벤더 재고 확인 응답: 있음 → stockConfirmed(락은 고객이 최종 선택 시), 품절 → sold·비공개·찜 해제
 export function submitStockConfirm(prId, available) {
   const pr = getProcurement(prId);
   const c = getCandidate(pr.diamondId);
@@ -595,11 +609,11 @@ export function submitStockConfirm(prId, available) {
   pr.result = { available };
   audit(pr.supplierId, "procurement", prId, "result", null, available ? "inStock" : "soldOut");
   if (available) {
-    c.availability = "hold";
-    lockCandidate(c.id);
+    c.stockConfirmed = true; // 락은 lockSelectedCandidate에서
   } else {
     setCandidateAvailability(c.id, "sold"); // §13: 즉시 비공개 포함
     c.clientSelection = "none";
+    c.stockConfirmed = false;
     audit(pr.supplierId, "diamond", c.id, "clientSelection", "selected", "none");
   }
   persist();
