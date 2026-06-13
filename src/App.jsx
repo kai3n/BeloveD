@@ -27,6 +27,7 @@ import AdminOpsOrder from "./pages/admin/AdminOpsOrder.jsx";
 import AdminOpsStyles from "./pages/admin/AdminOpsStyles.jsx";
 import AdminBenchmark from "./pages/admin/AdminBenchmark.jsx";
 import AdminDiamonds from "./pages/admin/AdminDiamonds.jsx";
+import AdminPool from "./pages/admin/AdminPool.jsx";
 import AdminVendors from "./pages/admin/AdminVendors.jsx";
 import AdminDealers from "./pages/admin/AdminDealers.jsx";
 import AdminCatalogW from "./pages/admin/AdminCatalogW.jsx";
@@ -69,6 +70,7 @@ export default function App() {
           <Route path="styles" element={<AdminOpsStyles />} />
           <Route path="benchmark" element={<AdminBenchmark />} />
           <Route path="diamonds" element={<AdminDiamonds />} />
+          <Route path="pool" element={<AdminPool />} />
           <Route path="vendors" element={<AdminVendors />} />
           <Route path="dealers" element={<AdminDealers />} />
           <Route path="catalog" element={<AdminCatalogW />} />

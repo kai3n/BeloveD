@@ -12,6 +12,7 @@ export default function Admin() {
     { to: "/admin/styles", key: "styles", ops: true },
     { to: "/admin/benchmark", key: "benchmark", ops: true },
     { to: "/admin/diamonds", key: "diamonds" },
+    { to: "/admin/pool", key: "pool" },
     { to: "/admin/vendors", key: "vendors" },
     { to: "/admin/dealers", key: "dealers", dealer: true },
     { to: "/admin/catalog", key: "catalog", dealer: true },
