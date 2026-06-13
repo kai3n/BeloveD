@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { listOpsStyles, listStyleSpecs, saveOpsStyle, saveStyleSpec } from "../../lib/store.js";
 import { useDBVersion } from "../../lib/useDB.js";
-import { usd } from "../../components/ui.jsx";
+import { MediaPicker, usd } from "../../components/ui.jsx";
 import { pickI18n, useLocale } from "../../i18n.jsx";
 
 export default function AdminOpsStyles() {
@@ -11,14 +11,23 @@ export default function AdminOpsStyles() {
   const styles = listOpsStyles();
   const specs = listStyleSpecs();
   const [f, setF] = useState({ name: "", category: "ring", estWeightG: "", laborUsd: "", leadDays: "" });
+  const [media, setMedia] = useState([]);
+  const [editId, setEditId] = useState(null);
+  const [editMedia, setEditMedia] = useState([]);
   const [sp, setSp] = useState({ styleId: "", metal: "18kw", size: "", centerStoneSpec: "", estWeightG: "", variancePct: 6, laborUsd: "", materialsUsd: "" });
+
+  function startEdit(st) { setEditId(st.id); setEditMedia(st.media || (st.coverImage ? [{ kind: st.coverImage.endsWith(".mp4") ? "video" : "image", src: st.coverImage }] : [])); }
+  function saveEdit() {
+    saveOpsStyle({ id: editId, media: editMedia, coverImage: editMedia[0]?.src || "/assets/lab-diamond-tweezers.webp", mediaComplete: editMedia.length > 0 });
+    setEditId(null); setEditMedia([]);
+  }
 
   return (
     <>
       <div className="panel" style={{ overflowX: "auto" }}>
         <h3>{t.title} ({styles.length})</h3>
         <table className="data-table">
-          <thead><tr><th>ID</th><th>{p.admin.tpl.name}</th><th>{t.estW}</th><th>{t.labor}</th><th>{t.leadDays}</th><th>{t.available}</th><th>{t.published}</th></tr></thead>
+          <thead><tr><th>ID</th><th>{p.admin.tpl.name}</th><th>{t.estW}</th><th>{t.labor}</th><th>{t.leadDays}</th><th>{t.available}</th><th>{t.published}</th><th>{t.editMedia}</th></tr></thead>
           <tbody>
             {styles.map((st) => (
               <tr key={st.id}>
@@ -29,20 +38,34 @@ export default function AdminOpsStyles() {
                 <td>{st.leadDays}</td>
                 <td><button className={`chip ${st.availableForSale ? "is-active" : ""}`} onClick={() => saveOpsStyle({ id: st.id, availableForSale: !st.availableForSale })}>{t.available}</button></td>
                 <td><button className={`chip ${st.published ? "is-active" : ""}`} onClick={() => saveOpsStyle({ id: st.id, published: !st.published })}>{t.published}</button></td>
+                <td><button className="button small" onClick={() => startEdit(st)}>{t.editMedia} ({(st.media || []).length || (st.coverImage ? 1 : 0)})</button></td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
+      {editId && (
+        <div className="panel form-stack">
+          <h3>{t.editMedia} — {editId}</h3>
+          <MediaPicker value={editMedia} onChange={setEditMedia} />
+          <div className="row-actions">
+            <button className="button primary small" onClick={saveEdit}>{t.save}</button>
+            <button className="button small" onClick={() => setEditId(null)}>✕</button>
+          </div>
+        </div>
+      )}
+
       <form className="panel form-stack" onSubmit={(e) => {
         e.preventDefault();
         saveOpsStyle({
           name: { ko: f.name, en: f.name, zh: f.name, es: f.name }, category: f.category,
-          coverImage: "/assets/lab-diamond-tweezers.webp", metalOptions: ["18kw", "18ky"],
+          coverImage: media[0]?.src || "/assets/lab-diamond-tweezers.webp", media, mediaComplete: media.length > 0,
+          metalOptions: ["18kw", "18ky"],
           estWeightG: Number(f.estWeightG), laborUsd: Number(f.laborUsd), leadDays: Number(f.leadDays),
         });
         setF({ name: "", category: "ring", estWeightG: "", laborUsd: "", leadDays: "" });
+        setMedia([]);
       }}>
         <h3>{t.addStyle}</h3>
         <div className="filter-grid" style={{ gridTemplateColumns: "repeat(5, 1fr)" }}>
@@ -55,6 +78,8 @@ export default function AdminOpsStyles() {
           <label className="field"><span>{t.labor}</span><input type="number" value={f.laborUsd} onChange={(e) => setF({ ...f, laborUsd: e.target.value })} required /></label>
           <label className="field"><span>{t.leadDays}</span><input type="number" value={f.leadDays} onChange={(e) => setF({ ...f, leadDays: e.target.value })} required /></label>
         </div>
+        <label className="field"><span>{t.media}</span></label>
+        <MediaPicker value={media} onChange={setMedia} />
         <button className="button secondary small" type="submit">{p.common.add}</button>
       </form>
 

@@ -9,6 +9,7 @@ import VendorLogin from "./pages/VendorLogin.jsx";
 import Diamonds from "./pages/Diamonds.jsx";
 import DiamondDetail from "./pages/DiamondDetail.jsx";
 import StyleCatalog from "./pages/StyleCatalog.jsx";
+import StyleDetail from "./pages/StyleDetail.jsx";
 import IntakeForm from "./pages/IntakeForm.jsx";
 import ClientPortal, { TrackEntry } from "./pages/ClientPortal.jsx";
 import CustomerShell, { AccountOrders } from "./pages/Account.jsx";
@@ -50,6 +51,7 @@ export default function App() {
         <Route path="diamonds" element={<Diamonds />} />
         <Route path="diamonds/:id" element={<DiamondDetail />} />
         <Route path="styles" element={<StyleCatalog />} />
+        <Route path="styles/:id" element={<StyleDetail />} />
         <Route path="custom/new" element={<IntakeForm />} />
         <Route path="track" element={<TrackEntry />} />
         <Route path="track/:orderId" element={<ClientPortal />} />

@@ -31,7 +31,7 @@ export default function StyleCatalog() {
         {styles.map((st) => {
           const isVideo = st.coverImage.endsWith(".mp4");
           return (
-            <Link className="item-card" to={`/custom/new?style=${st.id}`} key={st.id}>
+            <Link className="item-card" to={`/styles/${st.id}`} key={st.id}>
               <MediaThumb media={{ kind: isVideo ? "video" : "image", src: st.coverImage }} ratio="1 / 1.05" alt={pickI18n(st.name, locale)} />
               <div className="card-body">
                 <h3>{pickI18n(st.name, locale)}</h3>

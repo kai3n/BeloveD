@@ -186,6 +186,7 @@ const en = {
       title: "Style Library", available: "Available for sale", published: "Published", specs: "Specifications",
       newSpec: "Add specification", combo: "Metal + size + center stone", variance: "Variance %", materials: "Materials ($)",
       addStyle: "Add style", leadDays: "Lead (days)", labor: "Labor ($)", estW: "Est. weight (g)",
+      media: "Photos & video (1st = cover)", editMedia: "Media", save: "Save",
     },
     bench: { title: "Diamond Benchmark (9 shapes × 7 tiers)", note: "DEF VVS-VS, CVD, post-growth treatment, IGI India — $/ct. Update price and quote date only.", quoted: "Quoted" },
     check: {
@@ -386,6 +387,7 @@ const ko = {
       title: "스타일 라이브러리", available: "판매 가능", published: "공개됨", specs: "스펙",
       newSpec: "스펙 추가", combo: "메탈 + 사이즈 + 센터스톤", variance: "허용 편차 %", materials: "부자재 ($)",
       addStyle: "스타일 추가", leadDays: "리드 (일)", labor: "공임 ($)", estW: "예상 중량 (g)",
+      media: "사진·영상 (첫 항목 = 커버)", editMedia: "미디어", save: "저장",
     },
     bench: { title: "다이아 벤치마크 (9 쉐입 × 7 티어)", note: "DEF VVS-VS · CVD · 포스트그로스 처리 · IGI India 기준 — $/ct. 단가와 견적일만 갱신하세요.", quoted: "견적일" },
     check: {
@@ -586,6 +588,7 @@ const zh = {
       title: "款式库", available: "可售", published: "已发布", specs: "规格",
       newSpec: "新增规格", combo: "金属 + 尺寸 + 主石", variance: "允许偏差 %", materials: "辅料 ($)",
       addStyle: "新增款式", leadDays: "交期（天）", labor: "工费 ($)", estW: "预估重量 (g)",
+      media: "照片·视频（第一项为封面）", editMedia: "媒体", save: "保存",
     },
     bench: { title: "钻石基准价（9 形状 × 7 档）", note: "DEF VVS-VS · CVD · 后期处理 · IGI India — $/ct。仅更新单价与报价日期。", quoted: "报价日" },
     check: {
@@ -786,6 +789,7 @@ const es = {
       title: "Biblioteca de Estilos", available: "A la venta", published: "Publicado", specs: "Especificaciones",
       newSpec: "Añadir especificación", combo: "Metal + talla + piedra central", variance: "Variación %", materials: "Materiales ($)",
       addStyle: "Añadir estilo", leadDays: "Plazo (días)", labor: "Mano de obra ($)", estW: "Peso est. (g)",
+      media: "Fotos y video (1.º = portada)", editMedia: "Medios", save: "Guardar",
     },
     bench: { title: "Benchmark de Diamantes (9 formas × 7 rangos)", note: "DEF VVS-VS · CVD · tratamiento posterior · IGI India — $/ct. Actualiza solo precio y fecha.", quoted: "Cotizado" },
     check: {
