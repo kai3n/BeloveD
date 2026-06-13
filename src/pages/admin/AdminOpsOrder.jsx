@@ -198,7 +198,7 @@ export default function AdminOpsOrder() {
             <tbody>
               {candidates.map((c) => (
                 <tr key={c.id} style={c.locked ? { background: "rgba(214,197,160,0.06)" } : undefined}>
-                  <td>{c.id}<br /><span className="form-hint">{c.igiNo}</span></td>
+                  <td style={{ whiteSpace: "nowrap" }}>{c.id}<br /><span className="form-hint">{c.igiNo}</span></td>
                   <td>{c.shape} {c.carat}ct {c.color}/{c.clarity} {c.growth}</td>
                   <td>{usd(c.procurementCostUsd)}</td>
                   <td>
@@ -209,9 +209,15 @@ export default function AdminOpsOrder() {
                   </td>
                   <td>
                     {c.published ? (
-                      <>{usd(c.customerPriceUsd)}{intake?.budget && c.customerPriceUsd > intake.budget && <span style={{ color: "#e08585", marginLeft: 6 }} title={`${t.budgetLabel} $${intake.budget}`}>⚠ {t.overBudget}</span>} <button className="chip is-active" onClick={() => unpublishCandidate(c.id)}>{t.unpublish}</button></>
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 6 }}>
+                        <span style={{ whiteSpace: "nowrap" }}>
+                          {usd(c.customerPriceUsd)}
+                          {intake?.budget && c.customerPriceUsd > intake.budget && <span style={{ color: "#e08585", marginLeft: 6 }} title={`${t.budgetLabel} $${intake.budget}`}>⚠ {t.overBudget}</span>}
+                        </span>
+                        <button className="chip is-active" onClick={() => unpublishCandidate(c.id)}>{t.unpublish}</button>
+                      </div>
                     ) : (
-                      <input type="number" placeholder={t.custPrice} style={{ width: 110 }}
+                      <input type="number" placeholder={t.pricePh} style={{ width: 132 }}
                         onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); publishCandidate(c.id, Number(e.target.value)); } }} />
                     )}
                   </td>
