@@ -105,6 +105,13 @@ export default function AdminOpsOrder() {
   const suppliers = getDB().users.filter((u) => u.role === "supplier");
   const acceptedQuote = quotes.find((q) => q.status === "accepted");
 
+  // 어드민 터치포인트는 단 3개 — 지금 필요한 하나만 카드로 띄운다 (나머지는 자동 진행)
+  const balanceDone = milestones.some((m) => m.stage === "balanceReceived" && m.status === "done");
+  const nextAction = (order.status === "QUOTATION" && acceptedQuote) ? { fn: () => markDepositReceived(order.id), label: t.markDeposit }
+    : (order.status === "BALANCE" && !balanceDone) ? { fn: () => markBalanceReceived(order.id), label: t.markBalance }
+      : order.status === "SHIPPING" ? { fn: () => markOrderDelivered(order.id), label: t.markDelivered }
+        : null;
+
   return (
     <div className="page" style={{ maxWidth: 1100 }}>
       <h1 className="page-title" style={{ fontSize: 34 }}>{order.id} <span className={`status-badge ost-${order.status}`}>{p.orderStatus[order.status]}</span></h1>
@@ -112,6 +119,14 @@ export default function AdminOpsOrder() {
         {order.customerName} · {style && <>{style.id} {pickI18n(style.name, locale)} · </>}
         {t.queryCode}: {order.queryCode} · <Link className="text-link" to={`/track/${order.id}?code=${order.queryCode}`}>{p.portal.title} ↗</Link>
       </p>
+
+      {/* 지금 할 일 — 운영자 개입은 디파짓·잔금·수령 3개뿐. 해당 단계에서만 버튼 노출 */}
+      <div className="panel" style={nextAction ? { borderColor: "rgba(214,197,160,0.6)", background: "rgba(214,197,160,0.05)" } : undefined}>
+        <p className="form-hint" style={{ margin: 0, letterSpacing: 1 }}>{t.naTitle}</p>
+        {nextAction
+          ? <button className="button primary" style={{ marginTop: 12 }} onClick={nextAction.fn}>{nextAction.label}</button>
+          : <p style={{ margin: "8px 0 0", color: "var(--muted)" }}>{t.naNone}</p>}
+      </div>
 
       {/* 상태/노트 */}
       <div className="panel form-stack">
@@ -123,13 +138,6 @@ export default function AdminOpsOrder() {
           <label className="field" style={{ flex: 1 }}><span>{t.internalNotes}</span>
             <input defaultValue={order.internalNotes} key={order.internalNotes} onBlur={(e) => updateOpsOrder(order.id, { internalNotes: e.target.value })} /></label>
         </div>
-        {/* 어드민 터치포인트 ②③: 잔금 확인 → 배송 태스크 / 수령 확인 → 완료 */}
-        {order.status === "BALANCE" && !milestones.some((m) => m.stage === "balanceReceived" && m.status === "done") && (
-          <button className="button primary small" style={{ alignSelf: "flex-start" }} onClick={() => markBalanceReceived(order.id)}>{t.markBalance}</button>
-        )}
-        {order.status === "SHIPPING" && (
-          <button className="button primary small" style={{ alignSelf: "flex-start" }} onClick={() => markOrderDelivered(order.id)}>{t.markDelivered}</button>
-        )}
         {intake && (
           <p className="form-hint">
             {t.intake}: {p.productLines[intake.productLine]} · {p.opsCategories[intake.category]} · {p.opsMetals[intake.metal]}
@@ -152,7 +160,7 @@ export default function AdminOpsOrder() {
                 <div className="card-body">
                   <p className="spec">{m.id} · {p.visual.refStatus[m.status]}</p>
                   {m.annotations?.map((a) => (
-                    <p key={a.pinId} className="form-hint">📍{a.pinId} {formatAnnotation(a, getDB().chipCatalog, locale, p.visual.parts)}</p>
+                    <p key={a.pinId} className="form-hint"><span className="pin-tag">{a.pinId}</span>{formatAnnotation(a, getDB().chipCatalog, locale, p.visual.parts)}</p>
                   ))}
                   {/* 즉시 전달 정책 — 어드민은 사후 숨김/복원만 */}
                   <div className="row-actions">
@@ -231,23 +239,32 @@ export default function AdminOpsOrder() {
             <strong>{q.id}</strong> · {q.status} · {usd(q.totalUsd)} ({p.portal.deposit} {usd(q.depositUsd)} / {p.portal.balance} {usd(q.balanceUsd)})
             {q.actualWeightG && ` · actual ${q.actualWeightG}g`}
             {q.status === "draft" && <button className="button secondary small" style={{ marginLeft: 10 }} onClick={() => sendQuote(q.id)}>{t.send}</button>}
-            {q.status === "accepted" && order.status === "QUOTATION" && (
-              <button className="button primary small" style={{ marginLeft: 10 }} onClick={() => markDepositReceived(order.id)}>{t.markDeposit}</button>
-            )}
           </div>
         ))}
-        {order.selectedDiamondId || intake?.productLine === "multi" ? <QuoteBuilder order={order} settings={settings} t={t} /> : <p className="form-hint">—</p>}
-        {acceptedQuote && (
-          <div className="row-actions">
-            <input type="number" step="0.01" placeholder={t.actualWeight} value={actualW} onChange={(e) => setActualW(e.target.value)}
-              style={{ width: 150, background: "var(--bg-2)", border: "1px solid var(--line)", color: "var(--text)", padding: "9px 10px" }} />
-            <button className="button secondary small" disabled={!actualW} onClick={() => { recordActualWeight(order.id, Number(actualW)); setActualW(""); }}>{t.reconcile}</button>
-          </div>
+        {/* 수동 견적 빌더·정산 — 자동 견적이 대부분 처리하므로 접어둔다 */}
+        {(order.selectedDiamondId || intake?.productLine === "multi" || acceptedQuote) && (
+          <details>
+            <summary style={{ cursor: "pointer", color: "var(--muted)", fontSize: 12.5, padding: "2px 0" }}>{t.advanced}</summary>
+            <div style={{ marginTop: 12 }}>
+              {order.selectedDiamondId || intake?.productLine === "multi" ? <QuoteBuilder order={order} settings={settings} t={t} /> : null}
+              {acceptedQuote && (
+                <div className="row-actions" style={{ marginTop: 12 }}>
+                  <input type="number" step="0.01" placeholder={t.actualWeight} value={actualW} onChange={(e) => setActualW(e.target.value)}
+                    style={{ width: 150, background: "var(--bg-2)", border: "1px solid var(--line)", color: "var(--text)", padding: "9px 10px" }} />
+                  <button className="button secondary small" disabled={!actualW} onClick={() => { recordActualWeight(order.id, Number(actualW)); setActualW(""); }}>{t.reconcile}</button>
+                </div>
+              )}
+            </div>
+          </details>
         )}
       </div>
 
+      {/* 고급 — 마일스톤·CAD 이력·고객 액션·감사 로그 (평소엔 접어둔다) */}
+      <details style={{ marginTop: 18 }}>
+        <summary style={{ cursor: "pointer", padding: "12px 2px", color: "var(--muted)", fontWeight: 600, letterSpacing: 1 }}>{t.advanced}</summary>
+
       {/* 마일스톤 보드 */}
-      <div className="panel" style={{ overflowX: "auto" }}>
+      <div className="panel" style={{ overflowX: "auto", marginTop: 14 }}>
         <h3>{t.msTitle}</h3>
         <table className="data-table">
           <tbody>
@@ -287,7 +304,7 @@ export default function AdminOpsOrder() {
               V{c.version} · {c.decision ? p.portal.cadDecided[c.decision] : p.msStatus.waitingClient}
               {c.feedback.length > 0 && ` · ${c.feedback.join(" / ")}`}
               {c.annotations?.length > 0 && c.annotations.map((a) => (
-                <span key={a.pinId}> · 📍{a.pinId} {formatAnnotation(a, getDB().chipCatalog, locale, p.visual.parts)}</span>
+                <span key={a.pinId}> · <span className="pin-tag">{a.pinId}</span>{formatAnnotation(a, getDB().chipCatalog, locale, p.visual.parts)}</span>
               ))}
               {c.feeAppliedUsd > 0 && <span> · fee {usd(c.feeAppliedUsd)}</span>}
               {c.confirmedMeasurements && ` · ${c.confirmedMeasurements}`}
@@ -309,6 +326,7 @@ export default function AdminOpsOrder() {
           <p key={a.id} className="form-hint">{a.at.slice(5, 16)} · {a.actor} · {a.field}: {String(a.before ?? "∅")} → {String(a.after ?? "∅")}</p>
         ))}
       </div>
+      </details>
     </div>
   );
 }

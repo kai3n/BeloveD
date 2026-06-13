@@ -131,6 +131,7 @@ export default function IntakeForm() {
         {solitaire && (
           <>
             <h3 style={{ margin: "10px 0 0" }}>{t.stoneTitle}</h3>
+            {/* 기본 선호 — 대부분 고객이 아는 항목만 */}
             <div className="filter-grid" style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
               <label className="field"><span>{t.shape}</span>
                 <select value={form.stonePrefs.shape} onFocus={() => setEduField("shape")} onChange={(e) => setS({ shape: e.target.value })}>
@@ -143,11 +144,17 @@ export default function IntakeForm() {
                 <select value={form.stonePrefs.clarity} onFocus={() => setEduField("clarity")} onChange={(e) => setS({ clarity: e.target.value })}>{["IF", "VVS1", "VVS2", "VS1", "VS2"].map((c) => <option key={c}>{c}</option>)}</select></label>
               <label className="field"><span>{t.growth}</span>
                 <select value={form.stonePrefs.growth} onFocus={() => setEduField("growth")} onChange={(e) => setS({ growth: e.target.value })}><option>CVD</option><option>HPHT</option></select></label>
-              <label className="field"><span>{t.lab}</span><input value={form.stonePrefs.lab} onFocus={() => setEduField("lab")} onChange={(e) => setS({ lab: e.target.value })} /></label>
-              <label className="field"><span>{t.fluorescence}</span>
-                <select value={form.stonePrefs.fluorescence} onFocus={() => setEduField("fluorescence")} onChange={(e) => setS({ fluorescence: e.target.value })}><option value="none">None</option><option value="faint">Faint</option><option value="medium">Medium</option></select></label>
-              <label className="field"><span>{t.lwRatio}</span><input value={form.stonePrefs.lwRatio} onFocus={() => setEduField("lwRatio")} onChange={(e) => setS({ lwRatio: e.target.value })} placeholder="1.0" /></label>
             </div>
+            {/* 고급 선호 — 모르면 비워둬도 됨 (후보는 공방이 소싱) */}
+            <details className="more-prefs">
+              <summary style={{ cursor: "pointer", color: "var(--muted)", fontSize: 13, padding: "4px 0" }}>{t.morePrefs}</summary>
+              <div className="filter-grid" style={{ gridTemplateColumns: "1fr 1fr 1fr", marginTop: 12 }}>
+                <label className="field"><span>{t.lab}</span><input value={form.stonePrefs.lab} onFocus={() => setEduField("lab")} onChange={(e) => setS({ lab: e.target.value })} /></label>
+                <label className="field"><span>{t.fluorescence}</span>
+                  <select value={form.stonePrefs.fluorescence} onFocus={() => setEduField("fluorescence")} onChange={(e) => setS({ fluorescence: e.target.value })}><option value="none">None</option><option value="faint">Faint</option><option value="medium">Medium</option></select></label>
+                <label className="field"><span>{t.lwRatio}</span><input value={form.stonePrefs.lwRatio} onFocus={() => setEduField("lwRatio")} onChange={(e) => setS({ lwRatio: e.target.value })} placeholder="1.0" /></label>
+              </div>
+            </details>
             {bigStone && <p className="warn-note">{t.bigStoneNote}</p>}
             <div className="stone-edu-inline">
               <StoneEduPanel field={eduField} prefs={form.stonePrefs} />

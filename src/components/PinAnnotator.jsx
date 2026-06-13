@@ -43,12 +43,12 @@ export default function PinAnnotator({ src, annotations, onChange, readOnly = fa
       {annotations.map((a) => {
         const chip = catalog.find((c) => c.key === a.chipKey);
         if (readOnly || active !== a.pinId) {
-          return <p key={a.pinId} className="form-hint">📍{a.pinId} · {formatAnnotation(a, catalog, locale, t.parts)}</p>;
+          return <p key={a.pinId} className="form-hint"><span className="pin-tag">{a.pinId}</span>{formatAnnotation(a, catalog, locale, t.parts)}</p>;
         }
         return (
           <div key={a.pinId} className="pin-editor form-stack">
             <div className="row-actions">
-              <strong>📍{a.pinId}</strong>
+              <strong><span className="pin-tag">{a.pinId}</span></strong>
               <select value={a.part} onChange={(e) => update(a.pinId, { part: e.target.value, chipKey: "", value: null })}>
                 {CHIP_PARTS.map((pt) => <option key={pt} value={pt}>{t.parts[pt]}</option>)}
               </select>

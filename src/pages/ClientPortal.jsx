@@ -123,7 +123,7 @@ export default function ClientPortal() {
   if (!view) {
     return <div className="page"><EmptyNote>{t.notFound}</EmptyNote></div>;
   }
-  const { order, intake, style, candidates, selected, quote, milestones, cad, actions, freeRevisionsLeft, designChangeFeeUsd, finalAction } = view;
+  const { order, intake, style, candidates, selected, quote, milestones, cad, freeRevisionsLeft, designChangeFeeUsd, finalAction } = view;
 
   function pick(diaId) {
     selectCandidate(diaId, actor);
@@ -152,6 +152,22 @@ export default function ClientPortal() {
     : style ? { kind: "image", src: style.coverImage } : null;
   const showStone = intake?.productLine === "solitaire";
 
+  // 4페이즈 진행 요약 — 13개 마일스톤 대신 고객이 이해하는 단계로 묶는다 (order.status 기준)
+  const RANK = { STYLE_SELECTION: 0, STONE_SELECTION: 1, QUOTATION: 2, CAD: 3, PRODUCTION: 4, QC: 5, BALANCE: 6, SHIPPING: 7, DELIVERED: 8, ARCHIVED: 9 };
+  const r = RANK[order.status] ?? 0;
+  const phaseDefs = [
+    { key: "stone", done: r >= 2, active: r === 1, stages: ["diamondLocked"] },
+    { key: "design", done: r >= 4, active: r === 2 || r === 3, stages: ["depositReceived", "cadIssued", "cadApproved"] },
+    { key: "crafting", done: r >= 6, active: r === 4 || r === 5, stages: ["productionStarted", "settingPolishing", "finalQcVideo", "igiInscriptionVerified", "actualMetalReconciled"] },
+    { key: "delivery", done: r >= 8, active: r === 6 || r === 7, stages: ["balanceReceived", "sentDomesticWarehouse", "oceanShipment", "deliveredArchived"] },
+  ];
+  // 각 페이즈의 최신 공개 마일스톤 메모(운송장 번호 등)를 노트로 노출
+  const phaseNote = (stages) => {
+    const ms = milestones.filter((m) => stages.includes(m.stage) && (m.clientUpdate || m.clientAction));
+    const last = ms[ms.length - 1];
+    return last ? [last.clientUpdate, last.clientAction].filter(Boolean).join(" — ") : "";
+  };
+
   return (
     <div className="page" style={{ maxWidth: 980 }}>
       <h1 className="page-title">{order.id}</h1>
@@ -160,17 +176,6 @@ export default function ClientPortal() {
         {order.requiredDate && <>{t.requiredDate}: {order.requiredDate} · </>}
         <span className={`status-badge ost-${order.status}`}>{p.orderStatus[order.status]}</span>
       </p>
-
-      {actions.length > 0 && (
-        <div className="panel pay-panel">
-          <h3>{t.actionsTitle}</h3>
-          {actions.map((a) => (
-            <p key={a.id} className="form-hint" style={{ fontSize: 13.5 }}>
-              · {t.todo?.[a.type] || a.prompt || a.type}{a.dueDate && ` — ${a.dueDate}`}
-            </p>
-          ))}
-        </div>
-      )}
 
       {/* 체크포인트 ① 스톤 (published 후보만) */}
       {showStone && (
@@ -250,21 +255,23 @@ export default function ClientPortal() {
         )}
       </Checkpoint>
 
-      {/* 마일스톤 타임라인 */}
-      {milestones.length > 0 && (
-        <div className="panel">
-          <h3>{t.progressTitle}</h3>
-          <table className="data-table"><tbody>
-            {milestones.map((m) => (
-              <tr key={m.id}>
-                <th>{p.msStages[m.stage]}</th>
-                <td><span className={`status-badge mst-${m.status}`}>{p.msStatus[m.status]}</span></td>
-                <td>{m.clientUpdate}{m.clientAction && <span className="form-hint"> — {m.clientAction}</span>}</td>
+      {/* 진행 상황 — 4페이즈 요약 (스톤→디자인→제작→배송) */}
+      <div className="panel">
+        <h3>{t.progressTitle}</h3>
+        <table className="data-table"><tbody>
+          {phaseDefs.map((ph) => {
+            const status = ph.done ? "done" : ph.active ? "inProgress" : "pending";
+            const note = phaseNote(ph.stages);
+            return (
+              <tr key={ph.key}>
+                <th>{t.phases[ph.key]}</th>
+                <td><span className={`status-badge mst-${status}`}>{p.msStatus[status]}</span></td>
+                <td>{note}</td>
               </tr>
-            ))}
-          </tbody></table>
-        </div>
-      )}
+            );
+          })}
+        </tbody></table>
+      </div>
     </div>
   );
 }

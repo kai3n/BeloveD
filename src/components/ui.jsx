@@ -119,7 +119,10 @@ export function MediaPicker({ value, onChange }) {
         onDrop={handleDrop}
       >
         <input type="file" accept="image/*,video/*" multiple onChange={handleFile} hidden />
-        <span className="drop-icon" aria-hidden="true">⬆</span>
+        <svg className="drop-icon" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+          <path d="M12 16V4M12 4l-5 5M12 4l5 5" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M5 20h14" strokeLinecap="round" />
+        </svg>
         <span className="drop-title">{p.picker.dropHint}</span>
         <span className="form-hint">{p.picker.dropSub}</span>
       </label>

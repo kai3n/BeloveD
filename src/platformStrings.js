@@ -88,7 +88,7 @@ const en = {
     title: "Vendor Portal", sub: (name) => `${name} — only your assigned orders are shown. Customers stay anonymous.`,
     tabs: { new: "Awaiting response", waiting: "Customer reviewing", production: "Production & QC", done: "Done" },
     empty: "No orders in this state.", order: "Order", design: "Design", elapsed: "Elapsed",
-    hours: (h) => `${h}h`, slaWarn: " ⚠ SLA exceeded", work: "Open",
+    hours: (h) => `${h}h`, slaWarn: " SLA exceeded", work: "Open",
     notAssigned: "This order is not assigned to you.",
     specTitle: "Order specification", diamondRow: "Diamond", recommend: "Stone recommendation requested",
     metalRow: "Metal", sizeRow: "Size", engravingRow: "Engraving", budgetRow: "Budget", notesRow: "Requests",
@@ -112,7 +112,7 @@ const en = {
     menu: { dashboard: "Dashboard", diamonds: "Diamonds", templates: "Templates", orders: "Orders", vendors: "Suppliers", settings: "Settings" },
     dash: {
       active: "Active orders", unassigned: "Unassigned", sla: "SLA 48h+ overdue", inventory: "Stones in inventory",
-      slaWarn: (codes) => `⚠ Vendor unresponsive over 48h: ${codes} — reassign in Orders.`,
+      slaWarn: (codes) => `Vendor unresponsive over 48h: ${codes} — reassign in Orders.`,
       depositWait: (codes) => `Awaiting deposit: ${codes}`, noOrders: "No paid orders yet.",
     },
     dia: {
@@ -254,7 +254,7 @@ const ko = {
     title: "벤더 포털", sub: (name) => `${name} — 배정된 주문만 표시됩니다. 고객 정보는 익명 처리됩니다.`,
     tabs: { new: "응답 대기", waiting: "고객 검토중", production: "제작·검수", done: "완료" },
     empty: "해당 상태의 주문이 없습니다.", order: "주문", design: "디자인", elapsed: "경과",
-    hours: (h) => `${h}시간`, slaWarn: " ⚠ SLA 초과", work: "작업하기",
+    hours: (h) => `${h}시간`, slaWarn: " SLA 초과", work: "작업하기",
     notAssigned: "배정된 주문이 아닙니다.",
     specTitle: "주문 사양", diamondRow: "다이아몬드", recommend: "스톤 추천 요청",
     metalRow: "메탈", sizeRow: "사이즈", engravingRow: "각인", budgetRow: "예산", notesRow: "요청사항",
@@ -278,7 +278,7 @@ const ko = {
     menu: { dashboard: "대시보드", diamonds: "다이아몬드", templates: "템플릿", orders: "주문 감독", vendors: "서플라이어", settings: "설정" },
     dash: {
       active: "진행중 주문", unassigned: "벤더 미배정", sla: "SLA 48h 초과", inventory: "인벤토리 스톤",
-      slaWarn: (codes) => `⚠ 벤더 무응답 48시간 초과: ${codes} — 주문 감독에서 재배정하세요.`,
+      slaWarn: (codes) => `벤더 무응답 48시간 초과: ${codes} — 주문 감독에서 재배정하세요.`,
       depositWait: (codes) => `디파짓 대기: ${codes}`, noOrders: "아직 결제된 주문이 없습니다.",
     },
     dia: {
@@ -420,7 +420,7 @@ const zh = {
     title: "供应商门户", sub: (name) => `${name} — 仅显示分配给您的订单。顾客信息匿名处理。`,
     tabs: { new: "待响应", waiting: "顾客审阅中", production: "制作·质检", done: "已完成" },
     empty: "该状态下没有订单。", order: "订单", design: "设计", elapsed: "已用时",
-    hours: (h) => `${h}小时`, slaWarn: " ⚠ 超出 SLA", work: "处理",
+    hours: (h) => `${h}小时`, slaWarn: " 超出 SLA", work: "处理",
     notAssigned: "该订单未分配给您。",
     specTitle: "订单规格", diamondRow: "钻石", recommend: "已请求推荐钻石",
     metalRow: "金属", sizeRow: "尺寸", engravingRow: "刻字", budgetRow: "预算", notesRow: "需求说明",
@@ -444,7 +444,7 @@ const zh = {
     menu: { dashboard: "仪表盘", diamonds: "钻石", templates: "模板", orders: "订单监管", vendors: "供应商", settings: "设置" },
     dash: {
       active: "进行中订单", unassigned: "未分配", sla: "SLA 超 48h", inventory: "库存钻石",
-      slaWarn: (codes) => `⚠ 供应商超 48 小时未响应：${codes} — 请在订单监管中重新分配。`,
+      slaWarn: (codes) => `供应商超 48 小时未响应：${codes} — 请在订单监管中重新分配。`,
       depositWait: (codes) => `等待定金：${codes}`, noOrders: "尚无已付款订单。",
     },
     dia: {
@@ -586,7 +586,7 @@ const es = {
     title: "Portal del taller", sub: (name) => `${name} — solo se muestran tus pedidos asignados. Los clientes permanecen anónimos.`,
     tabs: { new: "Pendiente de respuesta", waiting: "Cliente revisando", production: "Producción y QC", done: "Finalizados" },
     empty: "No hay pedidos en este estado.", order: "Pedido", design: "Diseño", elapsed: "Transcurrido",
-    hours: (h) => `${h}h`, slaWarn: " ⚠ SLA excedido", work: "Abrir",
+    hours: (h) => `${h}h`, slaWarn: " SLA excedido", work: "Abrir",
     notAssigned: "Este pedido no está asignado a ti.",
     specTitle: "Especificación del pedido", diamondRow: "Diamante", recommend: "Recomendación de piedra solicitada",
     metalRow: "Metal", sizeRow: "Talla", engravingRow: "Grabado", budgetRow: "Presupuesto", notesRow: "Solicitudes",
@@ -610,7 +610,7 @@ const es = {
     menu: { dashboard: "Panel", diamonds: "Diamantes", templates: "Plantillas", orders: "Pedidos", vendors: "Proveedores", settings: "Ajustes" },
     dash: {
       active: "Pedidos activos", unassigned: "Sin asignar", sla: "SLA +48h", inventory: "Piedras en inventario",
-      slaWarn: (codes) => `⚠ Taller sin responder más de 48h: ${codes} — reasigna en Pedidos.`,
+      slaWarn: (codes) => `Taller sin responder más de 48h: ${codes} — reasigna en Pedidos.`,
       depositWait: (codes) => `Esperando depósito: ${codes}`, noOrders: "Aún no hay pedidos pagados.",
     },
     dia: {

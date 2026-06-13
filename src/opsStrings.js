@@ -65,7 +65,7 @@ const en = {
     style: "Selected style (from the catalog)", noStyle: "Not decided yet", budget: "Budget ($, optional)", metal: "Metal",
     ringSize: "Ring size (written confirmation required)", chainStyle: "Chain style", chainLength: "Chain length",
     clasp: "Clasp", wristSize: "Wrist size / inner diameter", earringDetails: "Pair matching · post or clip · L/R orientation",
-    stoneTitle: "Center stone preferences (solitaire)",
+    stoneTitle: "Center stone preferences (solitaire)", morePrefs: "More preferences (optional)",
     shape: "Shape", carat: "Carat", color: "Color", clarity: "Clarity", growth: "Growth method", lab: "Laboratory",
     colorTreatment: "Color-treatment preference", fluorescence: "Fluorescence", lwRatio: "Length-to-width",
     multiTitle: "Multi-stone specification",
@@ -105,6 +105,7 @@ const en = {
     progressTitle: "Progress", actionsTitle: "Waiting on you", logisticsTitle: "Logistics",
     igi: "IGI", growth: { CVD: "CVD", HPHT: "HPHT" }, treated: "Color treatment disclosed",
     todo: { diamondSelection: "Choose your center diamond", quoteAcceptance: "Review and accept your quote", cadReview: "Review the CAD design", finalConfirmation: "Confirm the finished piece" },
+    phases: { stone: "Stone selected", design: "Design approved", crafting: "Crafting", delivery: "Delivery" },
   },
   supplierP: {
     title: "Supplier Portal", sub: (name) => `${name} — assigned tasks only. Customer identity and selling prices are never shown.`,
@@ -157,6 +158,7 @@ const en = {
       msTitle: "Milestones", publishClient: "Publish", cadTitle: "CAD reviews", sendCad: "Issue CAD version",
       auditTitle: "Audit log", actionsTitle: "Customer actions", statusSet: "Set status",
       markBalance: "Balance received → ship task", markDelivered: "Received — mark delivered",
+      naTitle: "Your next step", naNone: "Nothing to confirm right now — the order is moving automatically.", advanced: "Full detail & manual controls",
       hideRef: "Hide from vendor", showRef: "Restore",
     },
     styles: {
@@ -242,7 +244,7 @@ const ko = {
     style: "선택한 스타일 (카탈로그에서)", noStyle: "아직 미정", budget: "예산 ($, 선택)", metal: "메탈",
     ringSize: "링 사이즈 (서면 확인 필수)", chainStyle: "체인 스타일", chainLength: "체인 길이",
     clasp: "클라스프", wristSize: "손목 둘레 / 내경", earringDetails: "페어 매칭 · 포스트/클립 · 좌우 구분",
-    stoneTitle: "센터스톤 선호 (솔리테어)",
+    stoneTitle: "센터스톤 선호 (솔리테어)", morePrefs: "추가 선호 (선택)",
     shape: "쉐입", carat: "캐럿", color: "컬러", clarity: "클래리티", growth: "성장 방식", lab: "감정 기관",
     colorTreatment: "컬러 트리트먼트 선호", fluorescence: "형광", lwRatio: "가로세로 비율",
     multiTitle: "멀티스톤 사양",
@@ -282,6 +284,7 @@ const ko = {
     progressTitle: "진행 상황", actionsTitle: "고객 확인 필요", logisticsTitle: "물류",
     igi: "IGI", growth: { CVD: "CVD", HPHT: "HPHT" }, treated: "컬러 트리트먼트 공개",
     todo: { diamondSelection: "센터 다이아몬드 선택", quoteAcceptance: "견적 확인 후 수락", cadReview: "CAD 디자인 검토", finalConfirmation: "완성품 최종 확인" },
+    phases: { stone: "스톤 확정", design: "디자인 승인", crafting: "제작", delivery: "배송" },
   },
   supplierP: {
     title: "서플라이어 포털", sub: (name) => `${name} — 배정된 태스크만 표시됩니다. 고객 신원과 판매가는 절대 노출되지 않습니다.`,
@@ -334,6 +337,7 @@ const ko = {
       msTitle: "마일스톤", publishClient: "고객 공개", cadTitle: "CAD 리뷰", sendCad: "CAD 버전 발행",
       auditTitle: "감사 로그", actionsTitle: "고객 액션", statusSet: "상태 변경",
       markBalance: "잔금 수령 → 배송 태스크", markDelivered: "수령 완료 — 배송 처리",
+      naTitle: "지금 할 일", naNone: "지금 확인할 것이 없습니다 — 주문이 자동으로 진행 중입니다.", advanced: "전체 상세 · 수동 제어",
       hideRef: "벤더에서 숨김", showRef: "복원",
     },
     styles: {
@@ -419,7 +423,7 @@ const zh = {
     style: "已选款式（来自目录）", noStyle: "尚未决定", budget: "预算（$，可选）", metal: "金属",
     ringSize: "戒指尺寸（需书面确认）", chainStyle: "链条款式", chainLength: "链长",
     clasp: "搭扣", wristSize: "腕围 / 内径", earringDetails: "成对匹配 · 耳针/耳夹 · 左右",
-    stoneTitle: "主石偏好（单钻）",
+    stoneTitle: "主石偏好（单钻）", morePrefs: "更多偏好（可选）",
     shape: "形状", carat: "克拉", color: "颜色", clarity: "净度", growth: "生长方式", lab: "鉴定机构",
     colorTreatment: "色彩处理偏好", fluorescence: "荧光", lwRatio: "长宽比",
     multiTitle: "群镶规格",
@@ -459,6 +463,7 @@ const zh = {
     progressTitle: "进度", actionsTitle: "等待您确认", logisticsTitle: "物流",
     igi: "IGI", growth: { CVD: "CVD", HPHT: "HPHT" }, treated: "色彩处理已公开",
     todo: { diamondSelection: "挑选主石", quoteAcceptance: "查看并接受报价", cadReview: "查看 CAD 设计", finalConfirmation: "确认成品" },
+    phases: { stone: "选石完成", design: "设计确认", crafting: "制作", delivery: "配送" },
   },
   supplierP: {
     title: "供应商门户", sub: (name) => `${name} — 仅显示分配的任务。绝不显示客户身份与销售价格。`,
@@ -511,6 +516,7 @@ const zh = {
       msTitle: "里程碑", publishClient: "对客户可见", cadTitle: "CAD 审核", sendCad: "发布 CAD 版本",
       auditTitle: "审计日志", actionsTitle: "客户任务", statusSet: "设置状态",
       markBalance: "已收尾款 → 发货任务", markDelivered: "已收货 — 标记送达",
+      naTitle: "下一步", naNone: "目前无需确认 — 订单正在自动推进。", advanced: "完整详情与手动控制",
       hideRef: "对供应商隐藏", showRef: "恢复",
     },
     styles: {
@@ -596,7 +602,7 @@ const es = {
     style: "Estilo elegido (del catálogo)", noStyle: "Aún sin decidir", budget: "Presupuesto ($, opcional)", metal: "Metal",
     ringSize: "Talla de anillo (confirmación escrita requerida)", chainStyle: "Estilo de cadena", chainLength: "Largo de cadena",
     clasp: "Broche", wristSize: "Muñeca / diámetro interno", earringDetails: "Par a juego · poste o clip · izquierda/derecha",
-    stoneTitle: "Preferencias de piedra central (solitario)",
+    stoneTitle: "Preferencias de piedra central (solitario)", morePrefs: "Más preferencias (opcional)",
     shape: "Forma", carat: "Quilates", color: "Color", clarity: "Pureza", growth: "Método de crecimiento", lab: "Laboratorio",
     colorTreatment: "Preferencia de tratamiento de color", fluorescence: "Fluorescencia", lwRatio: "Relación largo-ancho",
     multiTitle: "Especificación multipiedra",
@@ -636,6 +642,7 @@ const es = {
     progressTitle: "Progreso", actionsTitle: "Esperándote", logisticsTitle: "Logística",
     igi: "IGI", growth: { CVD: "CVD", HPHT: "HPHT" }, treated: "Tratamiento de color divulgado",
     todo: { diamondSelection: "Elige tu diamante central", quoteAcceptance: "Revisa y acepta tu cotización", cadReview: "Revisa el diseño CAD", finalConfirmation: "Confirma la pieza terminada" },
+    phases: { stone: "Piedra elegida", design: "Diseño aprobado", crafting: "Fabricación", delivery: "Entrega" },
   },
   supplierP: {
     title: "Portal del Proveedor", sub: (name) => `${name} — solo tareas asignadas. Nunca se muestran identidad del cliente ni precios de venta.`,
@@ -688,6 +695,7 @@ const es = {
       msTitle: "Hitos", publishClient: "Visible al cliente", cadTitle: "Revisiones CAD", sendCad: "Emitir versión CAD",
       auditTitle: "Registro de auditoría", actionsTitle: "Acciones del cliente", statusSet: "Cambiar estado",
       markBalance: "Saldo recibido → tarea de envío", markDelivered: "Recibido — marcar entregado",
+      naTitle: "Tu siguiente paso", naNone: "Nada que confirmar ahora — el pedido avanza automáticamente.", advanced: "Detalle completo y controles manuales",
       hideRef: "Ocultar al proveedor", showRef: "Restaurar",
     },
     styles: {

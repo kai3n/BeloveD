@@ -46,7 +46,7 @@ export default function DealerCatalog() {
   return (
     <>
       <p className="form-hint" style={{ marginBottom: 18 }}>{p.ftc}</p>
-      {!profile.resaleCertNo && <p className="warn-note" style={{ marginBottom: 18 }}>⚠ {o.certBlocked}</p>}
+      {!profile.resaleCertNo && <p className="warn-note" style={{ marginBottom: 18 }}>{o.certBlocked}</p>}
 
       <div className="card-grid cols-3">
         {items.map((item) => {

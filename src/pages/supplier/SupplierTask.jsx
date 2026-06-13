@@ -47,7 +47,7 @@ function OrderBrief({ view, t, p, locale }) {
 
       {view.references.length > 0 && (
         <div className="form-stack">
-          <p className="label">💚 {t.refLikes}</p>
+          <p className="brief-section-label">{t.refLikes}</p>
           <div className="card-grid cols-2">
             {view.references.map((r) => <PinAnnotator key={r.id} src={r.src} annotations={r.annotations} readOnly />)}
           </div>
@@ -56,7 +56,7 @@ function OrderBrief({ view, t, p, locale }) {
 
       {view.revision && (
         <div className="form-stack brief-revision">
-          <p className="label">⚠ {t.changeThis} — CAD V{view.revision.version}</p>
+          <p className="brief-section-label revision">{t.changeThis} — CAD V{view.revision.version}</p>
           <PinAnnotator src={view.revision.fileUrl} annotations={view.revision.annotations} readOnly />
         </div>
       )}
@@ -145,21 +145,33 @@ export default function SupplierTask() {
         <form className="panel form-stack" onSubmit={sendCandidates}>
           <h3>{t.candTitle}</h3>
           {rows.map((r, i) => (
-            <div key={i} className="filter-grid" style={{ gridTemplateColumns: "repeat(5, 1fr)", borderBottom: "1px solid var(--line)", paddingBottom: 12 }}>
-              <label className="field"><span>{t.igiNo}</span><input value={r.igiNo} onChange={(e) => setRow(i, { igiNo: e.target.value })} /></label>
-              <label className="field"><span>{p.intake.shape}</span>
-                <select value={r.shape} onChange={(e) => setRow(i, { shape: e.target.value })}>{BENCHMARK_SHAPES.map((sh) => <option key={sh} value={sh}>{sh}</option>)}</select></label>
-              <label className="field"><span>{p.intake.carat}</span><input type="number" step="0.01" value={r.carat} onChange={(e) => setRow(i, { carat: e.target.value })} /></label>
-              <label className="field"><span>{p.intake.color}</span>
-                <select value={r.color} onChange={(e) => setRow(i, { color: e.target.value })}>{["D", "E", "F"].map((c) => <option key={c}>{c}</option>)}</select></label>
-              <label className="field"><span>{p.intake.clarity}</span>
-                <select value={r.clarity} onChange={(e) => setRow(i, { clarity: e.target.value })}>{["VVS1", "VVS2", "VS1", "VS2"].map((c) => <option key={c}>{c}</option>)}</select></label>
-              <label className="field"><span>{p.intake.growth}</span>
-                <select value={r.growth} onChange={(e) => setRow(i, { growth: e.target.value })}><option>CVD</option><option>HPHT</option></select></label>
-              <label className="field"><span>{p.intake.lab}</span><input value={r.lab} onChange={(e) => setRow(i, { lab: e.target.value })} /></label>
-              <label className="field"><span>{t.costUsd}</span><input type="number" value={r.procurementCostUsd} onChange={(e) => setRow(i, { procurementCostUsd: e.target.value })} /></label>
-              <label className="field"><span>Table %</span><input type="number" step="0.1" value={r.table} onChange={(e) => setRow(i, { table: e.target.value })} /></label>
-              <label className="field"><span>Depth %</span><input type="number" step="0.1" value={r.depth} onChange={(e) => setRow(i, { depth: e.target.value })} /></label>
+            <div key={i} style={{ borderBottom: "1px solid var(--line)", paddingBottom: 14, marginBottom: 4 }}>
+              {/* 필수: IGI·캐럿·원가 */}
+              <div className="filter-grid" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
+                <label className="field"><span>{t.igiNo}</span><input value={r.igiNo} onChange={(e) => setRow(i, { igiNo: e.target.value })} /></label>
+                <label className="field"><span>{p.intake.carat}</span><input type="number" step="0.01" value={r.carat} onChange={(e) => setRow(i, { carat: e.target.value })} /></label>
+                <label className="field"><span>{t.costUsd}</span><input type="number" value={r.procurementCostUsd} onChange={(e) => setRow(i, { procurementCostUsd: e.target.value })} /></label>
+              </div>
+              {/* 4C */}
+              <div className="filter-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)", marginTop: 10 }}>
+                <label className="field"><span>{p.intake.shape}</span>
+                  <select value={r.shape} onChange={(e) => setRow(i, { shape: e.target.value })}>{BENCHMARK_SHAPES.map((sh) => <option key={sh} value={sh}>{sh}</option>)}</select></label>
+                <label className="field"><span>{p.intake.color}</span>
+                  <select value={r.color} onChange={(e) => setRow(i, { color: e.target.value })}>{["D", "E", "F"].map((c) => <option key={c}>{c}</option>)}</select></label>
+                <label className="field"><span>{p.intake.clarity}</span>
+                  <select value={r.clarity} onChange={(e) => setRow(i, { clarity: e.target.value })}>{["VVS1", "VVS2", "VS1", "VS2"].map((c) => <option key={c}>{c}</option>)}</select></label>
+                <label className="field"><span>{p.intake.growth}</span>
+                  <select value={r.growth} onChange={(e) => setRow(i, { growth: e.target.value })}><option>CVD</option><option>HPHT</option></select></label>
+              </div>
+              {/* 선택: 감정소·비율 */}
+              <details style={{ marginTop: 10 }}>
+                <summary style={{ cursor: "pointer", color: "var(--muted)", fontSize: 12.5, padding: "2px 0" }}>{t.proportions}</summary>
+                <div className="filter-grid" style={{ gridTemplateColumns: "repeat(3, 1fr)", marginTop: 8 }}>
+                  <label className="field"><span>{p.intake.lab}</span><input value={r.lab} onChange={(e) => setRow(i, { lab: e.target.value })} /></label>
+                  <label className="field"><span>Table %</span><input type="number" step="0.1" value={r.table} onChange={(e) => setRow(i, { table: e.target.value })} /></label>
+                  <label className="field"><span>Depth %</span><input type="number" step="0.1" value={r.depth} onChange={(e) => setRow(i, { depth: e.target.value })} /></label>
+                </div>
+              </details>
             </div>
           ))}
           <button type="button" className="button secondary small" onClick={() => setRows((rs) => [...rs, emptyCand()])}>{t.addRow}</button>
@@ -191,7 +203,7 @@ export default function SupplierTask() {
         }}>
           <h3>{t.cadTitle}</h3>
           <p className="form-hint">{t.cadFile}</p>
-          <div className="filter-grid" style={{ gridTemplateColumns: "1fr 1fr 1fr", alignItems: "start" }}>
+          <div className="cad-slots">
             {CAD_SLOTS.map((s) => (
               <div key={s} className="form-stack">
                 <p className="label">{p.visual.slots[s]}</p>

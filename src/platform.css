@@ -21,7 +21,7 @@
   padding: 28px;
 }
 .panel + .panel { margin-top: 18px; }
-.panel h3 { margin: 0 0 16px; font-weight: 600; font-size: 16px; }
+.panel h3 { margin: 0 0 16px; font-family: var(--serif); font-weight: 500; font-size: 21px; letter-spacing: 0.01em; }
 
 .form-stack { display: grid; gap: 16px; }
 .field { display: grid; gap: 8px; font-size: 13px; color: var(--muted); }
@@ -144,11 +144,22 @@
 .pay-panel { border-color: rgba(214, 197, 160, 0.5); }
 
 /* 미디어 피커 */
-.picker-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
-.picker-cell { background: none; border: 1px solid var(--line); padding: 0 0 6px; cursor: pointer; font-size: 11px; color: var(--quiet); display: grid; gap: 5px; position: relative; }
-.picker-cell.is-selected { border-color: var(--accent); color: var(--text); }
-.picker-cell .remove-media { position: absolute; top: 4px; right: 4px; padding: 2px 7px; }
-.picker-samples-grid { opacity: 0.78; }
+.picker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 8px; }
+.picker-cell { background: none; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; padding: 0 0 6px; cursor: pointer; font-size: 11px; color: var(--quiet); display: grid; gap: 5px; position: relative; transition: border-color 160ms ease; }
+.picker-cell .media-thumb { border-radius: 7px 7px 0 0; }
+.picker-cell > span { text-align: center; padding: 0 4px; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; }
+.picker-cell:hover { border-color: var(--line-strong); }
+.picker-cell.is-selected { border-color: var(--accent); color: var(--text); box-shadow: 0 0 0 1px var(--accent); }
+.picker-cell:focus-visible { outline: none; border-color: var(--accent); }
+.picker-previews { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); }
+.picker-cell .remove-media {
+  position: absolute; top: 5px; right: 5px; width: 22px; height: 22px; padding: 0; line-height: 1;
+  border-radius: 50%; background: rgba(8,8,10,0.72); border: 1px solid rgba(255,255,255,0.25); color: #fff;
+  display: flex; align-items: center; justify-content: center; font-size: 12px;
+}
+.picker-samples-grid { gap: 8px; }
+/* 같은 주문 작업을 묶는 CAD 슬롯 — 좁아지면 자동 세로 적층 */
+.cad-slots { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; align-items: start; }
 
 /* 드래그&드롭 업로드 — 어르신 벤더 친화적으로 크게 */
 .drop-zone {
@@ -194,7 +205,6 @@
   .card-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .card-grid.cols-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .picker-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .detail-layout { grid-template-columns: 1fr; }
   .admin-shell { grid-template-columns: 1fr; }
   .admin-side { position: static; display: flex; flex-wrap: wrap; }
@@ -259,10 +269,22 @@ button.text-link:hover {
 .pin-canvas.is-editable { cursor: crosshair; }
 .pin-dot {
   position: absolute; transform: translate(-50%, -50%); width: 22px; height: 22px; border-radius: 50%;
-  background: #b3402f; color: #fff; border: 2px solid #fff; font-size: 11px; font-weight: 700;
+  background: var(--accent, #d6c5a0); color: #15120c; border: 1.5px solid rgba(255,255,255,0.9); font-size: 11px; font-weight: 700;
   cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.5);
 }
-.pin-dot.is-active { background: var(--accent, #d6c5a0); color: #111; }
+.pin-dot.is-active { background: #fff; color: #15120c; }
+/* 핀 번호 태그 (이모지 대신) — 골드 외곽선 칩 */
+.pin-tag {
+  display: inline-flex; align-items: center; justify-content: center; min-width: 17px; height: 17px;
+  padding: 0 4px; margin-right: 6px; border-radius: 50%; border: 1px solid var(--accent);
+  color: var(--accent-bright, #d6c5a0); font-size: 10.5px; font-weight: 600; vertical-align: middle;
+}
+/* 브리프 섹션 라벨 — 세리프, 골드 악센트 (이모지 없이 고급스럽게) */
+.brief-section-label {
+  font-family: var(--serif); font-size: 16px; font-weight: 500; color: var(--text);
+  margin: 0; padding-left: 12px; border-left: 2px solid var(--accent); line-height: 1.3;
+}
 .pin-editor { border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
 .checkpoint.upcoming { opacity: 0.55; }
 .checkpoint.done > .proposal-head h3 { color: var(--accent, #d6c5a0); }
@@ -295,13 +317,14 @@ button.text-link:hover {
 .nav-badge {
   position: absolute; top: -2px; right: -4px;
   min-width: 16px; height: 16px; line-height: 16px; padding: 0 4px;
-  border-radius: 999px; background: #b3463f; color: #fff;
-  font-size: 10px; font-weight: 600; text-align: center;
+  border-radius: 999px; background: var(--accent); color: #15120c;
+  font-size: 10px; font-weight: 700; text-align: center;
 }
+.brief-section-label.revision { border-left-color: #e8c07a; color: #e8c07a; }
 
 /* 벤더 제작 브리프 — 고객 요구 시각 종합 (어르신 친화: 큰 라벨·여백) */
 .brief-card { border-left: 3px solid var(--accent); }
-.brief-title { font-size: 22px; margin: 0; }
+.brief-title { font-family: var(--serif); font-weight: 500; font-size: 28px; letter-spacing: 0.01em; margin: 0; }
 .brief-hero { display: grid; grid-template-columns: 120px 1fr; gap: 16px; align-items: start; }
 .brief-cover { width: 120px; }
 .brief-cover .media-thumb { border-radius: 10px; }

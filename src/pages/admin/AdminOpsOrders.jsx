@@ -16,7 +16,7 @@ export default function AdminOpsOrders() {
       {(check.waitingClient.length > 0 || check.dueSoon.length > 0) && (
         <p className="warn-note" style={{ marginBottom: 14 }}>
           {check.waitingClient.length > 0 && <>⏳ {p.opsA.check.waiting}: {[...new Set(check.waitingClient)].join(", ")} </>}
-          {check.dueSoon.length > 0 && <>· ⚠ {p.opsA.check.dueSoon}: {check.dueSoon.join(", ")}</>}
+          {check.dueSoon.length > 0 && <>· {p.opsA.check.dueSoon}: {check.dueSoon.join(", ")}</>}
         </p>
       )}
       <div className="panel" style={{ overflowX: "auto" }}>
