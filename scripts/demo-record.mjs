@@ -1,7 +1,10 @@
-// 전 과정(주문→벤더→고객→운영자) 자동 클릭·녹화 — 좌(고객)/우(공방·운영) 분할, 영어, 느린 속도.
-// 커서·클릭 하이라이트 주입 (헤드리스 크로미움엔 실제 커서가 없으므로 가짜 커서+리플+요소 하이라이트).
+// 전 과정(주문→풀 매칭→재고확인→락→견적→CAD→QC→배송완료) 자동 클릭·녹화.
+// 좌(고객·녹색)/우(공방·파랑 / 운영·주황) 2탭 분할, 영어, 느린 속도, 가짜 커서·하이라이트.
 // 사용법: dev 서버(http://localhost:5173) 띄운 상태에서  node scripts/demo-record.mjs
-// 결과: demo-video/demo-en.mp4 (좌우 합성). 좌=CUSTOMER(녹색), 우=WORKSHOP(파랑)/OPERATIONS(주황).
+// 결과: demo-video/demo-en.mp4 (좌우 hstack 합성)
+//
+// 한 컨텍스트의 두 탭이 localStorage DB를 공유한다(AuthProvider는 전체 로드 시에만 세션을 읽음).
+// 매 goto 직전 세션을 해당 역할로 세팅 → 순차 동작이라 충돌 없음. Order ID·PR은 DB에서 동적 캡처.
 
 import { chromium } from "playwright";
 import { mkdir } from "node:fs/promises";
@@ -11,7 +14,7 @@ const BASE = "http://localhost:5173";
 const OUT = "demo-video";
 const PANE = { width: 900, height: 820 };
 const LANG = "en";
-const SLOW = 1.9; // 전체 속도 배수 (↑ 더 느리게)
+const SLOW = 1.5;
 const ASSET = (name) => new URL(`../public/assets/${name}`, import.meta.url).pathname;
 
 const USERS = { customer: "u-customer", supplier: "u-supplier1", admin: "u-admin" };
@@ -25,7 +28,6 @@ let left, right;
 const wait = (ms) => new Promise((r) => setTimeout(r, ms * SLOW));
 const paneOf = (role) => (role === "customer" ? left : right);
 
-// 커서·하이라이트·리플 유틸 (페이지 컨텍스트에 정의)
 const CURSOR_INIT = () => {
   function ensure() {
     if (document.getElementById("demo-cursor")) return document.getElementById("demo-cursor");
@@ -79,7 +81,6 @@ async function go(role, path, step) {
   await wait(1200);
 }
 
-// 커서를 요소로 이동 + 박스 하이라이트
 async function point(role, locator) {
   const pane = paneOf(role);
   await locator.waitFor({ state: "visible" });
@@ -89,53 +90,44 @@ async function point(role, locator) {
   const cx = box.x + box.width / 2, cy = box.y + box.height / 2;
   await pane.evaluate(({ x, y, bx, by, w, h }) => { window.__cursorMove(x, y); window.__highlight(bx, by, w, h); },
     { x: cx, y: cy, bx: box.x, by: box.y, w: box.width, h: box.height });
-  await wait(650);
+  await wait(600);
   return { cx, cy };
 }
-
-// 커서 이동 → 리플 → 클릭
 async function tap(role, locator) {
   const pane = paneOf(role);
   const p = await point(role, locator);
   if (p) await pane.evaluate(({ x, y }) => window.__cursorClick(x, y), { x: p.cx, y: p.cy });
-  await wait(220);
+  await wait(200);
   await locator.click();
-  await wait(1100);
+  await wait(1000);
 }
-
 async function clickName(role, name, opts = {}) {
   await tap(role, paneOf(role).getByRole("button", { name, ...opts }).first());
 }
-
 async function fill(role, roleType, name, val) {
   const loc = paneOf(role).getByRole(roleType, { name }).first();
-  const p = await point(role, loc);
-  const pane = paneOf(role);
-  if (p) await pane.evaluate(({ x, y }) => window.__cursorClick(x, y), { x: p.cx, y: p.cy });
+  await point(role, loc);
   await loc.fill(val);
-  await wait(650);
+  await wait(500);
 }
-
 async function picks(role, gridIndex, cells = [0]) {
   const grid = paneOf(role).locator(".picker-samples-grid").nth(gridIndex);
   for (const i of cells) await tap(role, grid.locator("button.picker-cell").nth(i));
 }
-
-// 드래그&드롭 업로드 시연 — 드롭존으로 커서 이동 후 실제 파일을 숨은 input에 넣는다
 async function upload(role, dropIndex, file) {
   const pane = paneOf(role);
   await point(role, pane.locator(".drop-zone").nth(dropIndex));
   await pane.locator(".drop-zone input[type=file]").nth(dropIndex).setInputFiles(ASSET(file));
-  await wait(1100); // FileReader → 미리보기
+  await wait(1000);
 }
-
-// 벤더 큐로 가서 '열린' 태스크의 Open task 링크를 클릭해 진입 — PR ID 하드코딩 회피(시드 변경에 견고)
-async function vendorOpenTask(step) {
-  await go("supplier", "/supplier", step);
-  const link = right.locator('a.text-link[href*="/supplier/tasks/"]').first();
-  await tap("supplier", link); // 커서 + 클릭(클라이언트 네비)
-  await banner(right, "supplier", step); // 태스크 페이지에 배너 재주입
-  await wait(900);
+// 공급자 큐에서 특정 타입의 열린 PR id를 DB에서 찾는다 (하드코딩 없이 동적)
+async function openPrId(type) {
+  return right.evaluate((t) => {
+    const key = Object.keys(localStorage).find((k) => k.startsWith("lumina-db-"));
+    const db = JSON.parse(localStorage.getItem(key));
+    const pr = db.procurementReqs.filter((p) => p.type === t && p.status === "open").sort((a, b) => b.id.localeCompare(a.id))[0];
+    return pr ? pr.id : null;
+  }, type);
 }
 
 async function main() {
@@ -144,120 +136,102 @@ async function main() {
   const context = await browser.newContext({ viewport: PANE, recordVideo: { dir: OUT, size: PANE } });
   await context.addInitScript((lang) => localStorage.setItem("lumina-locale", lang), LANG);
   await context.addInitScript(CURSOR_INIT);
-
   left = await context.newPage();
   right = await context.newPage();
 
+  let orderId = "DM-000009", code = "";
   try {
     await go("customer", "/", "Browsing LUMINA LAB");
     await go("supplier", "/supplier", "Vendor task queue (waiting)");
 
-    // 1. 고객: 주문 제출 (풀에 없는 쉐입 princess → 벤더 후보 소싱 흐름 유지)
-    await go("customer", "/custom/new", "Step 1 — Submit custom order");
-    const styleSel = left.locator('select:has(option[value="RING-001"])');
-    await point("customer", styleSel);
-    await styleSel.selectOption("RING-001");
+    // 1. 고객: 3단계 위저드로 주문
+    await go("customer", "/custom/new", "Step 1 — New custom order");
+    await left.locator('select:has(option[value="RING-001"])').selectOption("RING-001");
     await wait(400);
-    const shapeSel = left.locator('select:has(option[value="princess"])');
-    await point("customer", shapeSel);
-    await shapeSel.selectOption("princess");
-    await wait(400);
-    await fill("customer", "textbox", "Ring size", "6 US");
     await fill("customer", "textbox", "Delivery country", "USA");
-    await tap("customer", left.locator(".picker-samples-grid button.picker-cell").first());
+    await fill("customer", "textbox", "Ring size", "6 US");
+    await clickName("customer", "Next");               // → center stone
+    await wait(400);
+    await clickName("customer", "Next");               // → references
+    await tap("customer", left.locator(".picker-samples-grid button.picker-cell").nth(1)); // 레퍼런스 1장
     await tap("customer", left.getByRole("checkbox").first());
     await clickName("customer", "Submit request");
-    // 화면에서 발급된 Order ID 캡처 (하드코딩 대신) — 이후 모든 track/admin URL에 사용
-    const ORDER = (await left.locator(".summary-card .num").first().textContent()).trim();
-    await banner(left, "customer", `Order ${ORDER} created`);
-    await wait(2400);
+    await left.getByText(/DM-\d{6}/).first().waitFor();
+    // 생성된 Order ID·코드 캡처
+    const captured = await left.evaluate(() => {
+      const key = Object.keys(localStorage).find((k) => k.startsWith("lumina-db-"));
+      const db = JSON.parse(localStorage.getItem(key));
+      const o = db.opsOrders[db.opsOrders.length - 1];
+      return { id: o.id, code: o.queryCode };
+    });
+    orderId = captured.id; code = captured.code;
+    await banner(left, "customer", `Order ${orderId} created`);
+    await wait(2000);
 
-    // 2. 벤더: 다이아 후보 제출 → 자동 공개
-    await vendorOpenTask("Step 2 — Submit diamond candidate");
-    await fill("supplier", "textbox", "IGI", "LG599000111");
-    await fill("supplier", "spinbutton", "Carat", "1.5");
-    await fill("supplier", "spinbutton", "Cost", "520");
-    await picks("supplier", 0, [0]);
-    await clickName("supplier", "Submit", { exact: true });
+    // 2. 고객: 풀 자동매칭 후보에서 찜 → 재고확인 요청
+    await go("customer", `/track/${orderId}?code=${code}`, "Step 2 — Auto-matched stones · shortlist");
+    await clickName("customer", "Shortlist");
+    await clickName("customer", "Request stock check");
 
-    // 3. 고객: 스톤 선택 → 신선 배치라 재고확인 없이 자동 견적 발송 (벤더 라운드트립 제거)
-    await go("customer", `/track/${ORDER}`, "Step 3 — Pick the diamond → auto quote");
-    await clickName("customer", "Select this stone");
+    // 3. 벤더: 매직링크 로그인 → 재고확인
+    await go("supplier", "/supplier", "Step 3 — Workshop magic-link sign-in");
+    const scPr = await openPrId("stockConfirm");
+    await go("supplier", `/supplier/tasks/${scPr}`, "Step 3 — Confirm stock");
+    await clickName("supplier", "In stock");
 
-    // 4. 고객: 견적 수락
-    await go("customer", `/track/${ORDER}`, "Step 4 — Accept the quote");
+    // 4. 고객: 스톤 락 → 자동 견적 → 수락
+    await go("customer", `/track/${orderId}?code=${code}`, "Step 4 — Lock the stone (auto quote)");
+    await clickName("customer", "Choose this one");
+    await go("customer", `/track/${orderId}?code=${code}`, "Step 4 — Accept the quote");
     await clickName("customer", "Accept quote");
 
-    // 운영자 ①: 디파짓 확인 → CAD 태스크 자동 발행
-    await go("admin", `/admin/ops/${ORDER}`, "Touchpoint ① — Confirm deposit");
+    // 5. 운영자 ①: 디파짓 확인 → CAD 태스크 자동 발행
+    await go("admin", `/admin/ops/${orderId}`, "Touchpoint ① — Confirm deposit");
     await clickName("admin", "Deposit received");
 
-    // 5. 벤더: CAD V1 제출 — 드래그&드롭 파일 업로드 시연 (어르신 벤더가 폰 사진을 끌어다 놓기)
-    await vendorOpenTask("Step 5 — Drag & drop CAD photos");
+    // 6. 벤더: CAD 드래그&드롭 업로드
+    const cadPr = await openPrId("cad");
+    await go("supplier", `/supplier/tasks/${cadPr}`, "Step 6 — Drag & drop CAD photos");
     await upload("supplier", 0, "lineup-ring.png");
     await upload("supplier", 1, "lineup-band.png");
     await clickName("supplier", "Submit", { exact: true });
 
-    // 6. 고객: 핀으로 수정 요청
-    await go("customer", `/track/${ORDER}`, "Step 6 — Request a change (drop a pin)");
-    await clickName("customer", "Request changes");
-    {
-      const canvas = left.locator(".pin-canvas.is-editable");
-      await canvas.waitFor({ state: "visible" });
-      await canvas.scrollIntoViewIfNeeded();
-      const box = await canvas.boundingBox();
-      const x = box.x + 180, y = box.y + 150;
-      await left.evaluate(({ x, y }) => window.__cursorMove(x, y), { x, y });
-      await wait(750);
-      await left.evaluate(({ x, y }) => window.__cursorClick(x, y), { x, y });
-      await wait(220);
-      await canvas.click({ position: { x: 180, y: 150 } });
-      await wait(800);
-    }
-    await tap("customer", left.locator(".pin-editor button.chip").filter({ hasNotText: "✕" }).first());
-    await clickName("customer", "Send change request");
-
-    // 7. 벤더: CAD V2 제출 (핀 동봉 확인)
-    await vendorOpenTask("Step 7 — Customer pins → CAD v2");
-    await wait(1400);
-    await picks("supplier", 0, [0]);
-    await picks("supplier", 1, [0]);
-    await clickName("supplier", "Submit", { exact: true });
-
-    // 8. 고객: 디자인 승인 → 제작 시작
-    await go("customer", `/track/${ORDER}`, "Step 8 — Approve design → production");
+    // 7. 고객: 디자인 승인 → 제작 시작 + QC 태스크 자동 발행
+    await go("customer", `/track/${orderId}?code=${code}`, "Step 7 — Approve the design");
     await clickName("customer", "Approve");
 
-    // 9. 벤더: QC 제출 → 실중량 자동 정산
-    await vendorOpenTask("Step 9 — Final QC + actual weight");
-    await picks("supplier", 0, [6, 0]);
+    // 8. 벤더: 최종 QC 제출 → 실중량 자동 정산
+    const qcPr = await openPrId("qc");
+    await go("supplier", `/supplier/tasks/${qcPr}`, "Step 8 — Final QC + actual weight");
+    await picks("supplier", 0, [6, 0]); // 영상 + 인증서
     await fill("supplier", "spinbutton", "Actual weight", "4.35");
     await clickName("supplier", "Submit", { exact: true });
 
-    // 10. 고객: 최종 실물 컨펌
-    await go("customer", `/track/${ORDER}`, "Step 10 — Confirm the finished piece");
-    await wait(1000);
+    // 9. 고객: 완성품 최종 컨펌
+    await go("customer", `/track/${orderId}?code=${code}`, "Step 9 — Confirm the finished piece");
+    await wait(800);
     await clickName("customer", "Confirm");
 
-    // 운영자 ②: 잔금 확인 → 배송 태스크 자동 발행
-    await go("admin", `/admin/ops/${ORDER}`, "Touchpoint ② — Confirm balance → ship task");
+    // 10. 운영자 ②: 잔금 확인 → 배송 태스크 자동 발행
+    await go("admin", `/admin/ops/${orderId}`, "Touchpoint ② — Confirm balance → ship task");
     await clickName("admin", "Balance received");
 
     // 11. 벤더: 운송장 제출 → SHIPPING
-    await vendorOpenTask("Step 11 — Submit shipment");
+    const shipPr = await openPrId("ship");
+    await go("supplier", `/supplier/tasks/${shipPr}`, "Step 11 — Submit shipment");
     await fill("supplier", "textbox", "Tracking number", "1Z-LUMINA-88234901");
     await clickName("supplier", "Submit", { exact: true });
 
-    // 운영자 ③: 수령 확인 → 배송완료
-    await go("admin", `/admin/ops/${ORDER}`, "Touchpoint ③ — Mark received → delivered");
+    // 12. 운영자 ③: 수령 확인 → 배송완료
+    await go("admin", `/admin/ops/${orderId}`, "Touchpoint ③ — Mark received → delivered");
     await clickName("admin", "delivered");
 
-    // 마무리
-    await go("customer", `/track/${ORDER}`, "Delivered ✓");
+    // 마무리: 양쪽 최종 상태
+    await go("customer", `/track/${orderId}?code=${code}`, "Delivered ✓");
     await go("supplier", "/supplier", "All tasks submitted ✓");
-    await wait(3200);
+    await wait(3000);
 
-    console.log("✅ 전 과정 완료");
+    console.log("✅ 전 과정 완료:", orderId);
   } catch (err) {
     console.error("⚠️ 중단:", err.message.split("\n")[0]);
     try { await left.screenshot({ path: `${OUT}/err-left.png` }); } catch {}
