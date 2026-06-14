@@ -29,7 +29,8 @@ export default function Login() {
     e.preventDefault();
     setError("");
     try {
-      afterLogin(mode === "login" ? login(email, password) : signup(name, email));
+      // 고객 전용 진입 — 스태프/벤더 계정은 전용 경로로 안내
+      afterLogin(mode === "login" ? login(email, password, ["customer"]) : signup(name, email));
     } catch (err) {
       setError(p.login.errors[err.message] || err.message);
     }
@@ -79,25 +80,17 @@ export default function Login() {
   );
 }
 
-// 데모 전용 — 실배포 빌드에선 렌더되지 않음 (import.meta.env.DEV)
-const DEMO_ACCOUNTS = [
-  { key: "demoCustomer", email: "customer@demo.com" },
-  { key: "demoVendor", email: "supplier@demo.com" },
-  { key: "demoDealer", email: "dealer@demo.com" },
-  { key: "demoAdmin", email: "admin@demo.com" },
-];
+// 데모 전용 — 실배포 빌드에선 렌더되지 않음 (import.meta.env.DEV). 고객 진입이라 고객 계정만.
 function DemoPanel({ login, afterLogin, setError, p }) {
   return (
     <div className="panel demo-panel">
       <p className="section-label">{p.login.demoTitle}</p>
-      {DEMO_ACCOUNTS.map((acc) => (
-        <button
-          key={acc.email} className="button secondary"
-          onClick={() => { try { afterLogin(login(acc.email, "demo1234")); } catch (err) { setError(p.login.errors[err.message] || err.message); } }}
-        >
-          {p.login[acc.key]}
-        </button>
-      ))}
+      <button
+        className="button secondary"
+        onClick={() => { try { afterLogin(login("customer@demo.com", "demo1234", ["customer"])); } catch (err) { setError(p.login.errors[err.message] || err.message); } }}
+      >
+        {p.login.demoCustomer}
+      </button>
     </div>
   );
 }

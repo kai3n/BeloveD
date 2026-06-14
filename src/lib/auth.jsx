@@ -19,11 +19,12 @@ export function AuthProvider({ children }) {
     return found;
   }
 
-  // 고객·스태프(어드민·딜러) — 이메일 + 비밀번호
-  function login(email, password) {
+  // 이메일 + 비밀번호. allow=허용 역할 목록 — 진입 경로에 맞지 않는 역할은 거부(엉뚱한 포털 로그인 차단)
+  function login(email, password, allow = null) {
     const found = findUserByEmail(email);
     if (!found || password !== DEMO_PASSWORD) throw new Error("badCredentials");
     if (found.active === false) throw new Error("accountSuspended");
+    if (allow && !allow.includes(found.role)) throw new Error("wrongPortal");
     return commit(found);
   }
 

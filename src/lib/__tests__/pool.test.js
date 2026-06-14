@@ -115,6 +115,34 @@ describe("락 → 풀 sold + 형제 후보 무효화", () => {
     // sold 풀 스톤은 이후 새 주문에 매칭 안 됨
     expect(matchPoolForOrder(prefs).map((s) => s.id)).not.toContain("POOL-000006");
   });
+
+  it("이중 판매 방지: 두 주문이 같은 풀 스톤 찜 → 둘 다 재고확인 → 한쪽 확정 락 시 다른쪽 무효화", () => {
+    const o1 = createIntake(form()).order;
+    const o2 = createIntake(form()).order;
+    const c1 = listCandidates({ orderId: o1.id }).find((c) => c.poolDiamondId === "POOL-000006");
+    const c2 = listCandidates({ orderId: o2.id }).find((c) => c.poolDiamondId === "POOL-000006");
+
+    // 두 고객이 각자 찜 → 재고확인 요청
+    toggleShortlist(c1.id, "cust1"); requestStockConfirm(o1.id, "cust1");
+    toggleShortlist(c2.id, "cust2"); requestStockConfirm(o2.id, "cust2");
+    const pr1 = listProcurements({ orderId: o1.id }).find((p) => p.type === "stockConfirm" && p.diamondId === c1.id);
+    const pr2 = listProcurements({ orderId: o2.id }).find((p) => p.type === "stockConfirm" && p.diamondId === c2.id);
+    expect(pr1 && pr2).toBeTruthy();
+
+    // 벤더가 둘 다 '재고 있음' 확정 — 그래도 물리적 스톤은 하나뿐
+    submitStockConfirm(pr1.id, true);
+    submitStockConfirm(pr2.id, true);
+
+    // o1 먼저 확정 락 → 풀 sold + c2 무효화
+    lockSelectedCandidate(c1.id, "cust1");
+    expect(getOpsOrder(o1.id).selectedDiamondId).toBe(c1.id);
+    expect(getCandidate(c2.id).availability).toBe("sold");
+    expect(getCandidate(c2.id).published).toBe(false);
+
+    // o2는 이제 그 스톤을 락할 수 없음
+    expect(() => lockSelectedCandidate(c2.id, "cust2")).toThrow();
+    expect(getOpsOrder(o2.id).selectedDiamondId).toBeNull();
+  });
 });
 
 describe("submitPoolCandidates — 풀에서 폴백 후보 제출", () => {

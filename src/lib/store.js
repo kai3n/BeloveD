@@ -606,10 +606,14 @@ export function submitStockConfirm(prId, available) {
   const pr = getProcurement(prId);
   const c = getCandidate(pr.diamondId);
   pr.status = "submitted";
-  pr.result = { available };
-  audit(pr.supplierId, "procurement", prId, "result", null, available ? "inStock" : "soldOut");
-  if (available) {
-    c.stockConfirmed = true; // 락은 lockSelectedCandidate에서
+  // 이중 판매 방지: 같은 풀 스톤을 다른 주문이 이미 확정했으면 '재고 있음'이라도 이 주문엔 품절 처리
+  const pool = c.poolDiamondId ? getPoolDiamond(c.poolDiamondId) : null;
+  const takenByOther = pool && pool.availability === "sold" && !c.locked;
+  const effective = available && !takenByOther;
+  pr.result = { available: effective, ...(takenByOther ? { takenByOther: true } : {}) };
+  audit(pr.supplierId, "procurement", prId, "result", null, effective ? "inStock" : (takenByOther ? "takenByOther" : "soldOut"));
+  if (effective) {
+    c.stockConfirmed = true; // 락은 lockSelectedCandidate에서 (고객 최종 선택)
   } else {
     setCandidateAvailability(c.id, "sold"); // §13: 즉시 비공개 포함
     c.clientSelection = "none";
@@ -621,6 +625,15 @@ export function submitStockConfirm(prId, available) {
 }
 export function lockCandidate(diaId) {
   const c = getCandidate(diaId);
+  // 이중 판매 방어: 풀 스톤을 다른 주문이 이미 가져갔으면 락하지 않는다
+  if (c.poolDiamondId && !c.locked) {
+    const taken = getPoolDiamond(c.poolDiamondId);
+    if (taken && taken.availability === "sold") {
+      setCandidateAvailability(c.id, "sold");
+      c.clientSelection = "none";
+      return null;
+    }
+  }
   c.locked = true;
   // 풀 스톤 소진 + 같은 스톤을 가리키는 다른 주문 후보 무효화 (이중 판매 방지)
   if (c.poolDiamondId) {
