@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { SlidersHorizontal } from "lucide-react";
 import { listDiamonds } from "../lib/store.js";
 import { useDBVersion } from "../lib/useDB.js";
 import { MediaThumb, usd } from "../components/ui.jsx";
@@ -15,15 +16,17 @@ const SORT_FNS = {
   "price-desc": (a, b) => b.priceUsd - a.priceUsd,
   "carat-desc": (a, b) => b.carat - a.carat,
 };
+const FILTER_LABELS = { en: "Filters", ko: "필터", zh: "筛选", es: "Filtros" };
 
 const initialFilters = { shape: null, caratMin: "", caratMax: "", priceMax: "", cut: "", color: "", clarity: "", cert: "" };
 
 export default function Diamonds() {
   const dbVersion = useDBVersion();
-  const { p } = useLocale();
+  const { locale, p } = useLocale();
   const [params] = useSearchParams();
   const [filters, setFilters] = useState({ ...initialFilters, shape: params.get("shape") || null });
   const [sort, setSort] = useState("price-asc");
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const set = (patch) => setFilters((f) => ({ ...f, ...patch }));
 
   const results = useMemo(() => {
@@ -47,58 +50,66 @@ export default function Diamonds() {
   ];
 
   return (
-    <div className="page">
-      <h1 className="page-title">{p.diamonds.title}</h1>
-      <p className="page-sub">{p.diamonds.sub}</p>
+    <div className="page diamonds-page">
+      <div className="diamonds-page-head">
+        <h1 className="page-title">{p.diamonds.title}</h1>
+        <p className="page-sub">{p.diamonds.sub}</p>
+      </div>
 
-      <div className="panel form-stack">
+      <div className="panel form-stack diamond-filter-panel">
         <div className="chip-row" role="group">
           {SHAPES.map((s) => (
             <button key={s} className={`chip ${filters.shape === s ? "is-active" : ""}`}
               onClick={() => set({ shape: filters.shape === s ? null : s })}>{p.shapes[s]}</button>
           ))}
         </div>
-        <div className="filter-grid">
-          <label className="field"><span>{p.diamonds.caratMin}</span>
-            <input type="number" step="0.1" value={filters.caratMin} onChange={(e) => set({ caratMin: e.target.value })} /></label>
-          <label className="field"><span>{p.diamonds.caratMax}</span>
-            <input type="number" step="0.1" value={filters.caratMax} onChange={(e) => set({ caratMax: e.target.value })} /></label>
-          <label className="field"><span>{p.diamonds.maxPrice}</span>
-            <input type="number" step="100" value={filters.priceMax} onChange={(e) => set({ priceMax: e.target.value })} /></label>
-          <label className="field"><span>{p.diamonds.cut}</span>
-            <select value={filters.cut} onChange={(e) => set({ cut: e.target.value })}>
-              <option value="">{p.common.all}</option>{CUTS.map((c) => <option key={c}>{c}</option>)}
-            </select></label>
-          <label className="field"><span>{p.diamonds.color}</span>
-            <select value={filters.color} onChange={(e) => set({ color: e.target.value })}>
-              <option value="">{p.common.all}</option>{COLORS.map((c) => <option key={c}>{c}</option>)}
-            </select></label>
-          <label className="field"><span>{p.diamonds.clarity}</span>
-            <select value={filters.clarity} onChange={(e) => set({ clarity: e.target.value })}>
-              <option value="">{p.common.all}</option>{CLARITIES.map((c) => <option key={c}>{c}</option>)}
-            </select></label>
-          <label className="field"><span>{p.diamonds.cert}</span>
-            <select value={filters.cert} onChange={(e) => set({ cert: e.target.value })}>
-              <option value="">{p.common.all}</option>{CERTS.map((c) => <option key={c}>{c}</option>)}
-            </select></label>
-          <label className="field"><span>{p.diamonds.sort}</span>
-            <select value={sort} onChange={(e) => setSort(e.target.value)}>
-              {sortOptions.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
-            </select></label>
+        <button className="diamond-filter-toggle" type="button" onClick={() => setFiltersOpen((open) => !open)}>
+          <SlidersHorizontal size={15} strokeWidth={1.8} />
+          {FILTER_LABELS[locale] ?? FILTER_LABELS.en}
+        </button>
+        <div className={`diamond-advanced-filters ${filtersOpen ? "is-open" : ""}`}>
+          <div className="filter-grid">
+            <label className="field"><span>{p.diamonds.caratMin}</span>
+              <input type="number" step="0.1" value={filters.caratMin} onChange={(e) => set({ caratMin: e.target.value })} /></label>
+            <label className="field"><span>{p.diamonds.caratMax}</span>
+              <input type="number" step="0.1" value={filters.caratMax} onChange={(e) => set({ caratMax: e.target.value })} /></label>
+            <label className="field"><span>{p.diamonds.maxPrice}</span>
+              <input type="number" step="100" value={filters.priceMax} onChange={(e) => set({ priceMax: e.target.value })} /></label>
+            <label className="field"><span>{p.diamonds.cut}</span>
+              <select value={filters.cut} onChange={(e) => set({ cut: e.target.value })}>
+                <option value="">{p.common.all}</option>{CUTS.map((c) => <option key={c}>{c}</option>)}
+              </select></label>
+            <label className="field"><span>{p.diamonds.color}</span>
+              <select value={filters.color} onChange={(e) => set({ color: e.target.value })}>
+                <option value="">{p.common.all}</option>{COLORS.map((c) => <option key={c}>{c}</option>)}
+              </select></label>
+            <label className="field"><span>{p.diamonds.clarity}</span>
+              <select value={filters.clarity} onChange={(e) => set({ clarity: e.target.value })}>
+                <option value="">{p.common.all}</option>{CLARITIES.map((c) => <option key={c}>{c}</option>)}
+              </select></label>
+            <label className="field"><span>{p.diamonds.cert}</span>
+              <select value={filters.cert} onChange={(e) => set({ cert: e.target.value })}>
+                <option value="">{p.common.all}</option>{CERTS.map((c) => <option key={c}>{c}</option>)}
+              </select></label>
+            <label className="field"><span>{p.diamonds.sort}</span>
+              <select value={sort} onChange={(e) => setSort(e.target.value)}>
+                {sortOptions.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
+              </select></label>
+          </div>
+          <button className="text-link" onClick={() => setFilters(initialFilters)}>{p.diamonds.reset}</button>
         </div>
-        <button className="text-link" onClick={() => setFilters(initialFilters)}>{p.diamonds.reset}</button>
       </div>
 
       <p className="page-sub" style={{ margin: "26px 0 18px" }}>{p.diamonds.count(results.length)}</p>
       {results.length === 0 ? (
         <p className="empty-note">{p.diamonds.empty}</p>
       ) : (
-        <div className="card-grid">
+        <div className="diamond-list-grid">
           {results.map((d) => (
-            <Link className="item-card" to={`/diamonds/${d.id}`} key={d.id}>
-              <MediaThumb media={d.media[0]} alt={`${p.shapes[d.shape]} ${d.carat}ct`} />
+            <Link className="diamond-list-card" to={`/diamonds/${d.id}`} key={d.id}>
+              <MediaThumb media={d.media[0]} ratio="1.18 / 1" alt={`${p.shapes[d.shape]} ${d.carat}ct`} />
               <div className="card-body">
-                <h3>{p.shapes[d.shape]} {d.carat.toFixed(1)}ct</h3>
+                <h3>{p.shapes[d.shape]} {d.carat.toFixed(2)}ct</h3>
                 <p className="spec">{d.cut} · {d.color} · {d.clarity} · {d.certOrg}</p>
                 <p className="price">{usd(d.priceUsd)}</p>
               </div>

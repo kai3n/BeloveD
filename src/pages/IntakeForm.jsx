@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../lib/auth.jsx";
 import { CHAIN_LENGTHS, OPS_CATEGORIES, OPS_METALS, PRODUCT_LINES, BENCHMARK_SHAPES } from "../lib/ops.js";
@@ -10,6 +10,17 @@ import PinAnnotator from "../components/PinAnnotator.jsx";
 import StoneEduPanel from "../components/StoneEducation.jsx";
 import RingSizeHelp from "../components/RingSizeHelp.jsx";
 
+const DRAFT_KEY = "lumina-intake-draft";
+
+function readDraft() {
+  if (typeof window === "undefined") return null;
+  try {
+    return JSON.parse(window.localStorage.getItem(DRAFT_KEY) || "null");
+  } catch {
+    return null;
+  }
+}
+
 export default function IntakeForm() {
   useDBVersion();
   const { p, locale } = useLocale();
@@ -20,8 +31,9 @@ export default function IntakeForm() {
   const styles = listOpsStyles({ publishedOnly: true });
   // 쇼케이스 다이아에서 진입 시 스톤 선호 프리필
   const refDiamond = params.get("diamond") ? getDiamond(params.get("diamond")) : null;
+  const draft = readDraft();
 
-  const [form, setForm] = useState({
+  const baseForm = {
     name: user?.name || "", contact: user?.email || "", productLine: "solitaire", category: "ring",
     styleId: params.get("style") || "", budget: "", metal: "18kw",
     conditional: {},
@@ -32,17 +44,36 @@ export default function IntakeForm() {
     },
     multiSpec: { meleeSpec: "", overallDims: "", arrangement: "", standard: "" },
     requiredDate: "", country: "", termsAccepted: false,
+  };
+  const [form, setForm] = useState(() => {
+    if (!draft?.form) return baseForm;
+    return {
+      ...baseForm,
+      ...draft.form,
+      styleId: params.get("style") || draft.form.styleId || baseForm.styleId,
+      conditional: { ...baseForm.conditional, ...draft.form.conditional },
+      stonePrefs: { ...baseForm.stonePrefs, ...draft.form.stonePrefs },
+      multiSpec: { ...baseForm.multiSpec, ...draft.form.multiSpec },
+    };
   });
   const [done, setDone] = useState(null);
-  const [refs, setRefs] = useState([]); // [{kind, src, annotations[]}]
+  const [refs, setRefs] = useState(() => draft?.refs || []); // [{kind, src, annotations[]}]
   const [annotIdx, setAnnotIdx] = useState(0);
   const [eduField, setEduField] = useState("shape"); // 교육 패널이 따라가는 포커스 필드
-  const [step, setStep] = useState(0); // 위저드 단계 0:제품 1:센터스톤 2:레퍼런스
+  const [step, setStep] = useState(0); // 0:제품 1:센터스톤 2:레퍼런스 3:리뷰
   const [stepError, setStepError] = useState(false);
+  const wizardSteps = [...t.wizardSteps, t.reviewStep];
   const setF = (patch) => setForm((f) => ({ ...f, ...patch }));
   const setC = (patch) => setForm((f) => ({ ...f, conditional: { ...f.conditional, ...patch } }));
   const setS = (patch) => setForm((f) => ({ ...f, stonePrefs: { ...f.stonePrefs, ...patch } }));
   const setM = (patch) => setForm((f) => ({ ...f, multiSpec: { ...f.multiSpec, ...patch } }));
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      window.localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, refs, savedAt: new Date().toISOString() }));
+    }, 450);
+    return () => window.clearTimeout(timer);
+  }, [form, refs]);
 
   function submit(e) {
     e.preventDefault();
@@ -54,6 +85,7 @@ export default function IntakeForm() {
       referenceMedia: refs,
     };
     const { order } = createIntake(payload, user?.id || null);
+    window.localStorage.removeItem(DRAFT_KEY);
     setDone(order);
   }
 
@@ -71,6 +103,9 @@ export default function IntakeForm() {
     if (s === 1 && form.productLine === "multi") {
       return Boolean(form.multiSpec.meleeSpec.trim() && form.multiSpec.overallDims.trim());
     }
+    if (s === 2) {
+      return Boolean(form.name.trim() && form.contact.trim() && form.termsAccepted);
+    }
     return true; // 솔리테어 센터스톤은 기본값이 채워져 있음
   }
   function goNext() {
@@ -87,7 +122,7 @@ export default function IntakeForm() {
             <div className="summary-card"><div className="num" style={{ fontSize: 24 }}>{done.queryCode}</div><div className="lbl">{t.codeLbl}</div></div>
           </div>
           <p className="form-hint">{t.doneNote}</p>
-          <button className="button primary" onClick={() => navigate(`/track/${done.id}?code=${done.queryCode}`)}>{t.goPortal}</button>
+          <button className="button primary" onClick={() => navigate(`/orders/${done.id}?code=${done.queryCode}`)}>{t.goPortal}</button>
         </div>
       </div>
     );
@@ -107,11 +142,13 @@ export default function IntakeForm() {
       <p className="page-sub">{t.sub}</p>
 
       <ol className="stepper">
-        {t.wizardSteps.map((label, i) => (
+        {wizardSteps.map((label, i) => (
           <li key={label} className={i === step ? "current" : i < step ? "done" : ""}><span className="dot" />{label}</li>
         ))}
       </ol>
-      <p className="form-hint" style={{ textAlign: "right", margin: "8px 0 -8px" }}>{t.requiredNote}</p>
+      <p className="form-hint" style={{ textAlign: "right", margin: "8px 0 -8px" }}>
+        {t.requiredNote} · {t.savedNote}
+      </p>
 
       <div className={`intake-layout ${sidePanel ? "has-edu" : ""}`}>
       <form className="panel form-stack" onSubmit={submit}>
@@ -188,7 +225,9 @@ export default function IntakeForm() {
               <div className="filter-grid" style={{ gridTemplateColumns: "1fr 1fr 1fr", marginTop: 12 }}>
                 <label className="field"><span>{t.lab}</span><input value={form.stonePrefs.lab} onFocus={() => setEduField("lab")} onChange={(e) => setS({ lab: e.target.value })} /></label>
                 <label className="field"><span>{t.fluorescence}</span>
-                  <select value={form.stonePrefs.fluorescence} onFocus={() => setEduField("fluorescence")} onChange={(e) => setS({ fluorescence: e.target.value })}><option value="none">None</option><option value="faint">Faint</option><option value="medium">Medium</option></select></label>
+                  <select value={form.stonePrefs.fluorescence} onFocus={() => setEduField("fluorescence")} onChange={(e) => setS({ fluorescence: e.target.value })}>
+                    {["none", "faint", "medium"].map((key) => <option key={key} value={key}>{t.fluorescenceLevels[key]}</option>)}
+                  </select></label>
                 <label className="field"><span>{t.lwRatio}</span><input value={form.stonePrefs.lwRatio} onFocus={() => setEduField("lwRatio")} onChange={(e) => setS({ lwRatio: e.target.value })} placeholder="1.0" /></label>
               </div>
             </details>
@@ -247,11 +286,34 @@ export default function IntakeForm() {
           </>
         )}
 
+        {step === 3 && (
+          <>
+            <h3 style={{ margin: "0" }}>{t.reviewTitle}</h3>
+            <div className="review-grid">
+              <div className="summary-card"><div className="lbl">{t.reviewCategory}</div><div className="num">{p.opsCategories[form.category]}</div></div>
+              <div className="summary-card"><div className="lbl">{t.reviewStyle}</div><div className="num">{form.styleId || t.openBrief}</div></div>
+              <div className="summary-card"><div className="lbl">{t.reviewMetal}</div><div className="num">{p.opsMetals[form.metal]}</div></div>
+              <div className="summary-card"><div className="lbl">{t.reviewBudget}</div><div className="num">{form.budget ? `$${Number(form.budget).toLocaleString()}` : t.flexible}</div></div>
+            </div>
+            <div className="panel" style={{ background: "var(--bg-2)" }}>
+              <p className="form-hint" style={{ margin: 0 }}>
+                {form.productLine === "solitaire"
+                  ? `${p.shapes[form.stonePrefs.shape] || form.stonePrefs.shape} · ${form.stonePrefs.carat}ct · ${form.stonePrefs.color} · ${form.stonePrefs.clarity}`
+                  : `${form.multiSpec.meleeSpec} · ${form.multiSpec.overallDims}`}
+              </p>
+              <p className="form-hint" style={{ margin: "8px 0 0" }}>
+                {t.referenceSummary(refs.length, form.country || t.countryNotSet, form.requiredDate || t.noRequiredDate)}
+              </p>
+            </div>
+            <p className="form-hint">{t.reviewNote}</p>
+          </>
+        )}
+
         {/* ── 위저드 네비게이션 ── */}
-        {stepError && <p className="form-error">{p.common?.required || "필수 항목을 입력하세요."}</p>}
+        {stepError && <p className="form-error">{t.requiredError}</p>}
         <div className="wizard-nav">
           {step > 0 ? <button type="button" className="button secondary" onClick={() => setStep((s) => s - 1)}>{t.back}</button> : <span />}
-          {step < 2
+          {step < 3
             ? <button type="button" className="button primary" onClick={goNext}>{t.next}</button>
             : <button className="button primary" type="submit" disabled={!form.termsAccepted}>{t.submit}</button>}
         </div>
@@ -265,7 +327,7 @@ export default function IntakeForm() {
         <aside className="stone-edu-aside"><RingSizeHelp /></aside>
       )}
       </div>
-      <p style={{ marginTop: 16 }}><Link className="text-link" to="/styles">{p.styleCat.title} →</Link></p>
+      <p style={{ marginTop: 16 }}><Link className="text-link" to="/designs">{t.backToDesigns} →</Link></p>
     </div>
   );
 }

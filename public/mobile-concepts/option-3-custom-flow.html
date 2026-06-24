@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>BeloveD After Hero Concept 03</title>
+    <link rel="stylesheet" href="/mobile-concepts/after-hero.css" />
+  </head>
+  <body>
+    <main class="phone">
+      <section class="demo-hero" aria-label="Current BeloveD hero">
+        <video autoplay muted loop playsinline poster="/assets/diamond-hero-white-poster.webp">
+          <source src="/assets/diamond-hero-white.mp4" type="video/mp4" />
+        </video>
+        <div class="hero-top">
+          <button class="hero-icon" aria-label="Open menu"><span></span></button>
+          <div class="brand">BeloveD</div>
+          <button class="hero-icon hero-bag" aria-label="Open bag">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M6.5 8.5h11l.9 11H5.6l.9-11Z" />
+              <path d="M9 8.5V7a3 3 0 0 1 6 0v1.5" />
+            </svg>
+          </button>
+        </div>
+        <div class="hero-copy">
+          <h1>PERFECTION,<br /><em>grown.</em></h1>
+          <p>Lab-grown brilliance, cut to desire.</p>
+          <div class="hero-actions">
+            <a href="#after">Start custom order</a>
+            <a class="secondary" href="#after">Explore designs</a>
+          </div>
+        </div>
+        <a class="scroll-cue" href="#after">Scroll for mobile UI <span>↓</span></a>
+      </section>
+
+      <section class="after flow-bg" id="after" aria-label="After hero custom flow concept">
+        <div class="after-head">
+          <div>
+            <p class="after-label">Concept 03</p>
+            <h1>What are you creating?</h1>
+            <p class="after-note">One choice starts the custom flow.</p>
+          </div>
+        </div>
+
+        <div class="choices">
+          <button class="choice is-selected" type="button">
+            <img src="/assets/lineup-ring.png" alt="Ring" />
+            <span><strong>Ring</strong><span>Engagement, band, halo</span></span>
+            <b>→</b>
+          </button>
+          <button class="choice" type="button">
+            <img src="/assets/lineup-studs.png" alt="Earrings" />
+            <span><strong>Earrings</strong><span>Studs, drop, bezel</span></span>
+            <b>→</b>
+          </button>
+          <button class="choice" type="button">
+            <img src="/assets/lineup-bracelet.png" alt="Bracelet" />
+            <span><strong>Bracelet</strong><span>Tennis, bangle, station</span></span>
+            <b>→</b>
+          </button>
+          <button class="choice" type="button">
+            <img src="/assets/lineup-pendant.png" alt="Necklace" />
+            <span><strong>Necklace</strong><span>Pendant, floating stone</span></span>
+            <b>→</b>
+          </button>
+        </div>
+
+        <div class="mini-upload">
+          <div aria-hidden="true">+</div>
+          <div>
+            <strong>Add inspiration</strong>
+            <span>Photo, sketch, or reference link</span>
+          </div>
+          <a href="#">Add</a>
+        </div>
+
+        <button class="primary-action" type="button">Continue to stone shape</button>
+
+        <div class="steps" aria-label="Progress">
+          <i></i>
+          <i></i>
+          <i></i>
+          <i></i>
+        </div>
+      </section>
+    </main>
+    <script>
+      document.querySelectorAll(".choice").forEach((button) => {
+        button.addEventListener("click", () => {
+          document.querySelectorAll(".choice").forEach((item) => item.classList.remove("is-selected"));
+          button.classList.add("is-selected");
+        });
+      });
+    </script>
+  </body>
+</html>

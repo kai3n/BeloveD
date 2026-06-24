@@ -3,7 +3,7 @@
 const en = {
   ftc: "Laboratory-Grown Diamonds. All stones are lab-created and ship with an IGI (or equivalent) certificate.",
   dealerApply: {
-    title: "Authorized Dealer Program", sub: "Buy at wholesale, sell under the LUMINA LAB brand. Tier pricing is based purely on purchase volume — no recruiting, no buy-ins.",
+    title: "Authorized Dealer Program", sub: "Buy at wholesale, sell under the BeloveD brand. Tier pricing is based purely on purchase volume — no recruiting, no buy-ins.",
     bizName: "Business name", contactName: "Contact name", email: "Email", city: "City / State",
     permitNo: "Seller's permit no.", resaleCertNo: "Resale certificate no. (required before first order)",
     expected: "Expected quarterly volume ($)", submit: "Apply",
@@ -97,7 +97,7 @@ const en = {
 const ko = {
   ftc: "Laboratory-Grown Diamonds — 전 스톤 랩그로운이며 IGI(급) 인증서가 동봉됩니다.",
   dealerApply: {
-    title: "공인 딜러 프로그램", sub: "도매가로 매입해 LUMINA LAB 브랜드로 판매하세요. 티어는 순수 구매량 기준 — 모집 보상도, 바이인도 없습니다.",
+    title: "공인 딜러 프로그램", sub: "도매가로 매입해 BeloveD 브랜드로 판매하세요. 티어는 순수 구매량 기준 — 모집 보상도, 바이인도 없습니다.",
     bizName: "사업자명", contactName: "담당자", email: "이메일", city: "도시 / 주",
     permitNo: "Seller's permit 번호", resaleCertNo: "Resale certificate 번호 (첫 주문 전 필수)",
     expected: "예상 분기 매입액 ($)", submit: "지원하기",
@@ -191,7 +191,7 @@ const ko = {
 const zh = {
   ftc: "Laboratory-Grown Diamonds — 全部为实验室培育钻石，随附 IGI（或同级）证书。",
   dealerApply: {
-    title: "授权经销商计划", sub: "以批发价采购，以 LUMINA LAB 品牌销售。等级完全基于采购量 — 无拉人奖励、无入会费。",
+    title: "授权经销商计划", sub: "以批发价采购，以 BeloveD 品牌销售。等级完全基于采购量 — 无拉人奖励、无入会费。",
     bizName: "公司名称", contactName: "联系人", email: "邮箱", city: "城市 / 州",
     permitNo: "Seller's permit 编号", resaleCertNo: "Resale certificate 编号（首单前必须）",
     expected: "预计季度采购额 ($)", submit: "申请",
@@ -285,7 +285,7 @@ const zh = {
 const es = {
   ftc: "Laboratory-Grown Diamonds — todas las piedras son cultivadas en laboratorio e incluyen certificado IGI (o equivalente).",
   dealerApply: {
-    title: "Programa de Distribuidores Autorizados", sub: "Compra al por mayor y vende bajo la marca LUMINA LAB. El nivel se basa solo en volumen de compra — sin reclutamiento ni cuotas de entrada.",
+    title: "Programa de Distribuidores Autorizados", sub: "Compra al por mayor y vende bajo la marca BeloveD. El nivel se basa solo en volumen de compra — sin reclutamiento ni cuotas de entrada.",
     bizName: "Nombre del negocio", contactName: "Contacto", email: "Correo", city: "Ciudad / Estado",
     permitNo: "N.º de seller's permit", resaleCertNo: "N.º de resale certificate (requerido antes del primer pedido)",
     expected: "Volumen trimestral esperado ($)", submit: "Aplicar",

@@ -2,7 +2,7 @@
 // 데이터는 키(shape/metal/stage/status)로 저장되고 여기서 언어별 라벨로 매핑된다.
 
 const en = {
-  nav: { diamonds: "Diamonds", gallery: "Design Gallery", custom: "Custom Order", guide: "Guide", login: "Sign in", logout: "Sign out", account: "My Page", vendorPortal: "Vendor Portal", admin: "Admin" },
+  nav: { diamonds: "Diamonds", designs: "Designs", gallery: "Design Gallery", process: "Process", custom: "Custom Order", startCustom: "Start Custom", guide: "Guide", login: "Sign in", logout: "Sign out", account: "My Page", vendorPortal: "Vendor Portal", admin: "Admin" },
   common: {
     next: "Next", prev: "Back", submit: "Submit", cancel: "Cancel", add: "Add", all: "All",
     view: "View", none: "—", notFound: "Page not found.", date: "Date", status: "Status",
@@ -45,7 +45,7 @@ const en = {
     orderCta: "Custom order with this diamond", back: "Back to list",
   },
   templates: {
-    title: "Design Gallery", sub: "Sample designs by LUMINA LAB. Pick one and make it yours.",
+    title: "Design Gallery", sub: "Sample designs by BeloveD. Pick one and make it yours.",
     fromPrice: (p) => `Setting from ${p}`, quote: "Quote on request",
   },
   wizard: {
@@ -166,7 +166,7 @@ const en = {
       title: "What is a lab-grown diamond?",
       p1: "A lab-grown diamond is a real diamond — physically, chemically and optically identical to a mined one. The only difference is where it was born: a laboratory instead of the ground.",
       h1: "Identical to mined", p2: "Same hardness (Mohs 10), refractive index and dispersion. Even gemologists cannot tell them apart without specialized equipment.",
-      h2: "IGI · GIA certified", p3: "Every LUMINA LAB stone ships with an IGI or GIA certificate you can verify by its number.",
+      h2: "IGI · GIA certified", p3: "Every BeloveD stone ships with an IGI or GIA certificate you can verify by its number.",
       h3: "Honest pricing", p4: "Without mining and distribution premiums, you get a bigger, cleaner stone for the same budget — at about half the price.",
       cta: "Browse diamonds", next: "Next: The 4C guide →",
     },
@@ -183,7 +183,7 @@ const en = {
 };
 
 const ko = {
-  nav: { diamonds: "다이아몬드", gallery: "디자인 갤러리", custom: "주문제작", guide: "가이드", login: "로그인", logout: "로그아웃", account: "마이페이지", vendorPortal: "벤더 포털", admin: "어드민" },
+  nav: { diamonds: "다이아몬드", designs: "디자인", gallery: "디자인 갤러리", process: "과정", custom: "주문제작", startCustom: "주문제작 시작", guide: "가이드", login: "로그인", logout: "로그아웃", account: "마이페이지", vendorPortal: "벤더 포털", admin: "어드민" },
   common: {
     next: "다음", prev: "이전", submit: "제출", cancel: "취소", add: "등록", all: "전체",
     view: "상세 보기", none: "—", notFound: "페이지를 찾을 수 없습니다.", date: "날짜", status: "상태",
@@ -226,7 +226,7 @@ const ko = {
     orderCta: "이 다이아몬드로 주문제작", back: "목록으로",
   },
   templates: {
-    title: "디자인 갤러리", sub: "LUMINA LAB이 준비한 샘플 디자인. 원하는 디자인을 골라 나만의 주얼리로 주문제작하세요.",
+    title: "디자인 갤러리", sub: "BeloveD이 준비한 샘플 디자인. 원하는 디자인을 골라 나만의 주얼리로 주문제작하세요.",
     fromPrice: (p) => `세팅 ${p}~`, quote: "견적 문의",
   },
   wizard: {
@@ -347,7 +347,7 @@ const ko = {
       title: "랩그로운 다이아몬드란?",
       p1: "랩그로운 다이아몬드는 천연 다이아몬드와 물리적·화학적·광학적으로 100% 동일한 진짜 다이아몬드입니다. 유일한 차이는 탄생지 — 땅속 대신 실험실에서 성장합니다.",
       h1: "천연과 동일한 물성", p2: "경도(모스 10), 굴절률, 분산도 모두 동일합니다. 보석 감정사도 전용 장비 없이는 구분할 수 없습니다.",
-      h2: "IGI·GIA 인증", p3: "LUMINA LAB의 모든 스톤은 IGI 또는 GIA 인증서가 함께 제공되며, 인증번호로 진위를 직접 조회할 수 있습니다.",
+      h2: "IGI·GIA 인증", p3: "BeloveD의 모든 스톤은 IGI 또는 GIA 인증서가 함께 제공되며, 인증번호로 진위를 직접 조회할 수 있습니다.",
       h3: "정직한 가격", p4: "채굴·유통 프리미엄이 없어 동급 천연 대비 절반 수준의 가격으로, 같은 예산에 더 크고 더 깨끗한 스톤을 선택할 수 있습니다.",
       cta: "다이아몬드 둘러보기", next: "다음: 4C 가이드 →",
     },
@@ -364,7 +364,7 @@ const ko = {
 };
 
 const zh = {
-  nav: { diamonds: "钻石", gallery: "设计画廊", custom: "定制订单", guide: "指南", login: "登录", logout: "退出", account: "我的页面", vendorPortal: "供应商门户", admin: "管理后台" },
+  nav: { diamonds: "钻石", designs: "设计", gallery: "设计画廊", process: "流程", custom: "定制订单", startCustom: "开始定制", guide: "指南", login: "登录", logout: "退出", account: "我的页面", vendorPortal: "供应商门户", admin: "管理后台" },
   common: {
     next: "下一步", prev: "上一步", submit: "提交", cancel: "取消", add: "添加", all: "全部",
     view: "查看详情", none: "—", notFound: "找不到页面。", date: "日期", status: "状态",
@@ -407,7 +407,7 @@ const zh = {
     orderCta: "用这颗钻石定制", back: "返回列表",
   },
   templates: {
-    title: "设计画廊", sub: "LUMINA LAB 准备的样品设计。选择心仪的设计，定制专属于你的珠宝。",
+    title: "设计画廊", sub: "BeloveD 准备的样品设计。选择心仪的设计，定制专属于你的珠宝。",
     fromPrice: (p) => `镶嵌 ${p} 起`, quote: "询价",
   },
   wizard: {
@@ -528,7 +528,7 @@ const zh = {
       title: "什么是培育钻石？",
       p1: "培育钻石在物理、化学和光学性质上与天然钻石 100% 相同，是真正的钻石。唯一的区别是诞生地 — 在实验室中成长，而非地下。",
       h1: "与天然同质", p2: "硬度（莫氏 10）、折射率、色散完全相同。即便是宝石鉴定师，没有专业设备也无法区分。",
-      h2: "IGI·GIA 认证", p3: "LUMINA LAB 的每颗钻石都附带 IGI 或 GIA 证书，可凭编号查询真伪。",
+      h2: "IGI·GIA 认证", p3: "BeloveD 的每颗钻石都附带 IGI 或 GIA 证书，可凭编号查询真伪。",
       h3: "诚实定价", p4: "没有开采与流通溢价，同等预算可以选择更大、更纯净的钻石 — 价格约为天然钻石的一半。",
       cta: "浏览钻石", next: "下一篇：4C 指南 →",
     },
@@ -545,7 +545,7 @@ const zh = {
 };
 
 const es = {
-  nav: { diamonds: "Diamantes", gallery: "Galería de diseños", custom: "Pedido a medida", guide: "Guía", login: "Iniciar sesión", logout: "Salir", account: "Mi página", vendorPortal: "Portal del taller", admin: "Admin" },
+  nav: { diamonds: "Diamantes", designs: "Diseños", gallery: "Galería de diseños", process: "Proceso", custom: "Pedido a medida", startCustom: "Crear pedido", guide: "Guía", login: "Iniciar sesión", logout: "Salir", account: "Mi página", vendorPortal: "Portal del taller", admin: "Admin" },
   common: {
     next: "Siguiente", prev: "Atrás", submit: "Enviar", cancel: "Cancelar", add: "Añadir", all: "Todo",
     view: "Ver detalle", none: "—", notFound: "Página no encontrada.", date: "Fecha", status: "Estado",
@@ -588,7 +588,7 @@ const es = {
     orderCta: "Pedido a medida con este diamante", back: "Volver a la lista",
   },
   templates: {
-    title: "Galería de diseños", sub: "Diseños de muestra de LUMINA LAB. Elige uno y hazlo tuyo.",
+    title: "Galería de diseños", sub: "Diseños de muestra de BeloveD. Elige uno y hazlo tuyo.",
     fromPrice: (p) => `Engaste desde ${p}`, quote: "Cotización a pedido",
   },
   wizard: {
@@ -709,7 +709,7 @@ const es = {
       title: "¿Qué es un diamante de laboratorio?",
       p1: "Un diamante de laboratorio es un diamante real — física, química y ópticamente idéntico al extraído de una mina. La única diferencia es su lugar de nacimiento: un laboratorio en vez del subsuelo.",
       h1: "Idéntico al natural", p2: "Misma dureza (Mohs 10), índice de refracción y dispersión. Ni un gemólogo puede distinguirlos sin equipo especializado.",
-      h2: "Certificado IGI · GIA", p3: "Cada piedra de LUMINA LAB incluye un certificado IGI o GIA verificable por su número.",
+      h2: "Certificado IGI · GIA", p3: "Cada piedra de BeloveD incluye un certificado IGI o GIA verificable por su número.",
       h3: "Precio honesto", p4: "Sin primas de minería ni distribución: una piedra más grande y limpia por el mismo presupuesto — a la mitad de precio.",
       cta: "Ver diamantes", next: "Siguiente: Guía de las 4C →",
     },
@@ -726,4 +726,3 @@ const es = {
 };
 
 export const platformStrings = { en, ko, zh, es };
-

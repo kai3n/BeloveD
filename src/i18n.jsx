@@ -19,7 +19,7 @@ export function LocaleProvider({ children }) {
   // 저장값이 손상돼도 앱이 죽지 않도록 검증 후 폴백
   const [locale, setLocaleRaw] = useState(() => {
     const stored = localStorage.getItem("lumina-locale");
-    return VALID_LOCALES.includes(stored) ? stored : "ko";
+    return VALID_LOCALES.includes(stored) ? stored : "en";
   });
   const setLocale = (code) => { if (VALID_LOCALES.includes(code)) setLocaleRaw(code); };
   const t = { ...translations[locale], platform: { ...platformStrings[locale], ...dealerStrings[locale], ...opsStrings[locale] } };

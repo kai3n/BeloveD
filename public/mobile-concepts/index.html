@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>BeloveD Mobile Concepts</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap");
+
+      :root {
+        color-scheme: dark;
+        --bg: #050506;
+        --ink: #f8f5ef;
+        --muted: rgba(248, 245, 239, 0.64);
+        --line: rgba(223, 199, 147, 0.22);
+        --gold: #d8bd7b;
+        --panel: rgba(255, 255, 255, 0.055);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background:
+          radial-gradient(circle at 50% -20%, rgba(216, 189, 123, 0.18), transparent 34rem),
+          var(--bg);
+        color: var(--ink);
+        font-family: Inter, system-ui, sans-serif;
+      }
+
+      main {
+        width: min(100%, 980px);
+        margin: 0 auto;
+        padding: 54px 22px;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-family: "Cormorant Garamond", "Bodoni 72", Didot, serif;
+        font-size: clamp(42px, 9vw, 82px);
+        line-height: 0.9;
+        font-weight: 600;
+      }
+
+      p {
+        max-width: 560px;
+        margin: 0 0 28px;
+        color: var(--muted);
+        line-height: 1.65;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      a {
+        min-height: 210px;
+        padding: 22px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        color: inherit;
+        text-decoration: none;
+        border: 1px solid var(--line);
+        background: var(--panel);
+      }
+
+      a:hover {
+        border-color: rgba(216, 189, 123, 0.58);
+        background: rgba(216, 189, 123, 0.08);
+      }
+
+      span {
+        color: var(--gold);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      h2 {
+        margin: 0;
+        font-family: "Cormorant Garamond", "Bodoni 72", Didot, serif;
+        font-size: 36px;
+        line-height: 0.95;
+        font-weight: 600;
+      }
+
+      small {
+        margin-top: 16px;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      @media (max-width: 760px) {
+        main {
+          padding: 34px 18px;
+        }
+
+        .grid {
+          grid-template-columns: 1fr;
+        }
+
+        a {
+          min-height: 170px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Mobile after-hero concepts</h1>
+      <p>
+        Three compact mobile UI directions for the section immediately after the BeloveD hero.
+        Each page is a standalone HTML prototype.
+      </p>
+      <section class="grid" aria-label="Mobile concept links">
+        <a href="/mobile-concepts/option-1-category-dock.html">
+          <span>Option 01</span>
+          <h2>Luxe Category Dock</h2>
+          <small>Four category choices, no heavy explanation.</small>
+        </a>
+        <a href="/mobile-concepts/option-2-curated-picks.html">
+          <span>Option 02</span>
+          <h2>Curated 3 Picks</h2>
+          <small>Three strong products, editorial and shoppable.</small>
+        </a>
+        <a href="/mobile-concepts/option-3-custom-flow.html">
+          <span>Option 03</span>
+          <h2>One-Tap Custom Flow</h2>
+          <small>A mobile-first intake flow for custom orders.</small>
+        </a>
+      </section>
+    </main>
+  </body>
+</html>

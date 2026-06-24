@@ -6,8 +6,8 @@ const SESSION_KEY = "lumina-session";
 const AuthContext = createContext(null);
 const DEMO_PASSWORD = "demo1234"; // mock: 이메일 로그인 데모 공통 비밀번호
 
-// 미인증 시 역할에 맞는 로그인으로 보낸다 — 벤더는 코드, 스태프(어드민·딜러)는 /staff, 고객은 /login
-export const LOGIN_FOR = { supplier: "/vendor", admin: "/staff", dealer: "/staff" };
+// 미인증 시 역할에 맞는 로그인으로 보낸다 — 벤더는 코드, 스태프(어드민·딜러)는 /staff, 고객은 /sign-in
+export const LOGIN_FOR = { customer: "/sign-in", supplier: "/vendor", admin: "/staff", dealer: "/staff" };
 
 export function AuthProvider({ children }) {
   const [userId, setUserId] = useState(() => localStorage.getItem(SESSION_KEY));
@@ -61,7 +61,7 @@ export function useAuth() {
 export function RequireRole({ role, children }) {
   const { user } = useAuth();
   const location = useLocation();
-  if (!user) return <Navigate to={LOGIN_FOR[role] || "/login"} state={{ from: location.pathname }} replace />;
+  if (!user) return <Navigate to={LOGIN_FOR[role] || "/sign-in"} state={{ from: location.pathname }} replace />;
   if (role && user.role !== role) return <Navigate to="/" replace />;
   return children;
 }

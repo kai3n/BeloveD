@@ -1,13 +1,11 @@
 import { lazy, Suspense } from "react";
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import Layout from "./Layout.jsx";
 import NotFound from "./NotFound.jsx";
 import { RequireRole } from "./lib/auth.jsx";
 // 공개 스토어프론트 — 모든 방문자가 즉시 보는 화면은 eager 로드
 import Home from "./pages/Home.jsx";
 import Login from "./pages/Login.jsx";
-import Diamonds from "./pages/Diamonds.jsx";
-import DiamondDetail from "./pages/DiamondDetail.jsx";
 import StyleCatalog from "./pages/StyleCatalog.jsx";
 import StyleDetail from "./pages/StyleDetail.jsx";
 import IntakeForm from "./pages/IntakeForm.jsx";
@@ -20,6 +18,11 @@ const VendorLogin = lazy(() => import("./pages/VendorLogin.jsx"));
 const named = (p, key) => lazy(() => p().then((m) => ({ default: m[key] })));
 const CustomerShell = lazy(() => import("./pages/Account.jsx"));
 const AccountOrders = named(() => import("./pages/Account.jsx"), "AccountOrders");
+const Diamonds = lazy(() => import("./pages/Diamonds.jsx"));
+const DiamondDetail = lazy(() => import("./pages/DiamondDetail.jsx"));
+const Process = lazy(() => import("./pages/Process.jsx"));
+const InfoPage = lazy(() => import("./pages/Info.jsx"));
+const GuideHub = named(() => import("./pages/Guide.jsx"), "GuideHub");
 const GuideLabDiamond = named(() => import("./pages/Guide.jsx"), "GuideLabDiamond");
 const Guide4C = named(() => import("./pages/Guide.jsx"), "Guide4C");
 const DealerShell = lazy(() => import("./pages/dealer/DealerShell.jsx"));
@@ -56,17 +59,29 @@ export default function App() {
         <Route element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="login" element={<Login />} />
+          <Route path="sign-in" element={<Login />} />
           <Route path="staff" element={<StaffLogin />} />
           <Route path="vendor" element={<VendorLogin />} />
           <Route path="diamonds" element={<Diamonds />} />
           <Route path="diamonds/:id" element={<DiamondDetail />} />
-          <Route path="styles" element={<StyleCatalog />} />
+          <Route path="designs" element={<StyleCatalog />} />
+          <Route path="designs/:id" element={<StyleDetail />} />
+          <Route path="styles" element={<Navigate to="/designs" replace />} />
           <Route path="styles/:id" element={<StyleDetail />} />
+          <Route path="process" element={<Process />} />
           <Route path="custom/new" element={<IntakeForm />} />
           <Route path="track" element={<TrackEntry />} />
           <Route path="track/:orderId" element={<ClientPortal />} />
+          <Route path="orders/:orderId" element={<ClientPortal />} />
+          <Route path="guide" element={<GuideHub />} />
           <Route path="guide/lab-diamond" element={<GuideLabDiamond />} />
           <Route path="guide/4c" element={<Guide4C />} />
+          <Route path="about" element={<InfoPage page="about" />} />
+          <Route path="returns" element={<InfoPage page="returns" />} />
+          <Route path="warranty" element={<InfoPage page="warranty" />} />
+          <Route path="shipping" element={<InfoPage page="shipping" />} />
+          <Route path="contact" element={<InfoPage page="contact" />} />
+          <Route path="faq" element={<InfoPage page="faq" />} />
           <Route path="account" element={<RequireRole role="customer"><CustomerShell /></RequireRole>}>
             <Route index element={<AccountOrders />} />
           </Route>

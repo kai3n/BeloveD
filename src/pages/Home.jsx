@@ -2,20 +2,206 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
-  ChevronDown,
-  Diamond,
-  Heart,
-  Leaf,
   Pause,
   Play,
-  ShieldCheck,
-  Sparkles,
 } from "lucide-react";
-import { useLocale, pickI18n } from "../i18n.jsx";
-import { withBase } from "../components/ui.jsx";
+import { useLocale } from "../i18n.jsx";
+import { MediaThumb, usd, withBase } from "../components/ui.jsx";
+import { useDBVersion } from "../lib/useDB.js";
+import { listDiamonds } from "../lib/store.js";
+import { DESIGN_CATEGORIES } from "../lib/designSlots.js";
 
-const collectionImages = ["shot-ring", "shot-necklace", "shot-earrings"];
-const productImages = ["product-ring", "product-band", "product-pendant", "product-studs", "product-bracelet"];
+const collectionImageClass = {
+  ring: "shot-ring",
+  earrings: "shot-earrings",
+  bangle: "shot-bracelet",
+  necklace: "shot-necklace",
+};
+
+const collectionCopy = {
+  en: {
+    label: "THE ATELIER",
+    title: ["The atelier", "of you."],
+    body: "Choose a silhouette. We compose the stone, the metal, and every detail around you.",
+    viewAll: "Explore all",
+    shopLabel: (name) => `Shop ${name.toLowerCase()}`,
+    items: {
+      ring: { label: "Rings", short: "ring", body: "Engagement rings and signature settings." },
+      earrings: { label: "Earrings", short: "earrings", body: "Studs, drops, and daily diamonds." },
+      bangle: { label: "Bracelets", short: "bracelet", body: "Tennis bracelets and refined wrist pieces." },
+      necklace: { label: "Necklaces", short: "necklace", body: "Pendants and clean diamond necklaces." },
+    },
+  },
+  ko: {
+    label: "아틀리에",
+    title: ["당신만의", "아틀리에."],
+    body: "실루엣을 고르면, 스톤·메탈·디테일을 당신에게 맞춰 완성합니다.",
+    viewAll: "전체 둘러보기",
+    shopLabel: (name) => `${name} 보기`,
+    items: {
+      ring: { label: "링", short: "링", body: "프로포즈 링과 시그니처 세팅." },
+      earrings: { label: "이어링", short: "이어링", body: "스터드, 드롭, 데일리 다이아몬드." },
+      bangle: { label: "브레이슬릿", short: "브레이슬릿", body: "테니스 브레이슬릿과 정제된 손목 피스." },
+      necklace: { label: "네크리스", short: "네크리스", body: "펜던트와 클린한 다이아몬드 네크리스." },
+    },
+  },
+  zh: {
+    label: "工坊",
+    title: ["你的专属", "工坊。"],
+    body: "先选轮廓，钻石、金属与每一处细节，皆为你而成。",
+    viewAll: "浏览全部",
+    shopLabel: (name) => `查看${name}`,
+    items: {
+      ring: { label: "戒指", short: "戒指", body: "订婚戒指与经典主石镶嵌。" },
+      earrings: { label: "耳环", short: "耳环", body: "耳钉、垂坠款与日常钻饰。" },
+      bangle: { label: "手链", short: "手链", body: "网球手链与精致腕间钻饰。" },
+      necklace: { label: "项链", short: "项链", body: "吊坠与简洁钻石项链。" },
+    },
+  },
+  es: {
+    label: "EL ATELIER",
+    title: ["Tu atelier", "a medida."],
+    body: "Elige la silueta. Componemos la piedra, el metal y cada detalle a tu medida.",
+    viewAll: "Explorar todo",
+    shopLabel: (name) => `Ver ${name.toLowerCase()}`,
+    items: {
+      ring: { label: "Anillos", short: "anillo", body: "Anillos de compromiso y monturas signature." },
+      earrings: { label: "Aretes", short: "aretes", body: "Studs, caídas y diamantes diarios." },
+      bangle: { label: "Pulseras", short: "pulsera", body: "Pulseras tenis y piezas refinadas de muñeca." },
+      necklace: { label: "Collares", short: "collar", body: "Colgantes y collares de diamante limpios." },
+    },
+  },
+};
+
+const diamondPreviewCopy = {
+  en: {
+    label: "SELECT YOUR DIAMOND",
+    title: ["Choose", "the stone."],
+    body: "Grown, not mined. Each stone IGI or GIA certified — and ready to set.",
+    view: "View all diamonds",
+    cert: "certified",
+    select: "Select",
+    spec: (d) => `${d.color} color · ${d.clarity} clarity · ${d.cut}`,
+  },
+  ko: {
+    label: "다이아몬드 선택",
+    title: ["스톤을", "고르세요."],
+    body: "캐낸 것이 아니라, 길러낸 빛. 모든 스톤 IGI·GIA 인증, 바로 세팅 가능.",
+    view: "전체 다이아몬드 보기",
+    cert: "인증",
+    select: "선택",
+    spec: (d) => `${d.color} 컬러 · ${d.clarity} 클래리티 · ${d.cut} 컷`,
+  },
+  zh: {
+    label: "选择钻石",
+    title: ["先选", "主石。"],
+    body: "培育而非开采。每颗皆 IGI 或 GIA 认证，随时可镶。",
+    view: "查看全部钻石",
+    cert: "认证",
+    select: "选择",
+    spec: (d) => `${d.color} 色 · ${d.clarity} 净度 · ${d.cut} 切工`,
+  },
+  es: {
+    label: "ELIGE TU DIAMANTE",
+    title: ["Elige", "la piedra."],
+    body: "Cultivado, no extraído. Cada piedra con certificado IGI o GIA — lista para engastar.",
+    view: "Ver diamantes",
+    cert: "certificado",
+    select: "Elegir",
+    spec: (d) => `${d.color} color · ${d.clarity} claridad · ${d.cut}`,
+  },
+};
+
+const quoteBoardCopy = {
+  en: {
+    label: "PRICE CHECK",
+    stoneTitle: ["Choose the stone.", "See the spread."],
+    boardTitle: ["Retail markup,", "made visible."],
+    body: "Comparable 1ct lab-grown diamond ranges, shown against BeloveD direct custom quotes.",
+    belovedSpec: "Comparable 1.00ct / VS+ / Ideal",
+    browse: "Browse diamonds",
+    custom: "Start custom order",
+    stonePanelAria: "BeloveD diamond pricing reference",
+    chipsAria: "Comparison stone specification",
+    listAria: "Lab diamond price range comparison",
+    chips: ["1.00ct", "VS+", "Ideal", "IGI / GIA"],
+    savingsPill: "BeloveD starts at $320",
+    saveBadge: "Lowest range",
+    saveLine: "Up to $560 less than Blue Nile",
+    note: "Example loose-stone ranges. Final quote depends on live inventory, certificate, setting, and metal.",
+    stats: [
+      { value: "$320+", label: "Entry loose-stone quote" },
+      { value: "1.00ct", label: "Comparable lab-grown example" },
+      { value: "VS+", label: "Clean everyday clarity target" },
+    ],
+  },
+  ko: {
+    label: "가격 비교",
+    stoneTitle: ["스톤을 고르고", "차이를 보세요."],
+    boardTitle: ["리테일 마크업을", "눈에 보이게."],
+    body: "1캐럿 랩다이아몬드 기준 비교 범위를 BeloveD 직접 견적과 나란히 보여드립니다.",
+    belovedSpec: "동급 1.00ct / VS+ / Ideal",
+    browse: "다이아몬드 보기",
+    custom: "주문제작 시작",
+    stonePanelAria: "BeloveD 다이아몬드 가격 비교",
+    chipsAria: "비교 스톤 사양",
+    listAria: "랩다이아몬드 가격 범위 비교",
+    chips: ["1.00ct", "VS+", "Ideal", "IGI / GIA"],
+    savingsPill: "BeloveD는 $320부터",
+    saveBadge: "가장 낮은 범위",
+    saveLine: "Blue Nile 대비 최대 $560 낮게",
+    note: "루스 스톤 예시 범위입니다. 최종 견적은 실시간 재고, 인증서, 세팅, 메탈에 따라 달라집니다.",
+    stats: [
+      { value: "$320+", label: "루스 스톤 시작 견적" },
+      { value: "1.00ct", label: "비교 기준 랩다이아" },
+      { value: "VS+", label: "데일리로 깨끗한 등급" },
+    ],
+  },
+  zh: {
+    label: "价格对比",
+    stoneTitle: ["先选主石", "再看差价。"],
+    boardTitle: ["零售溢价", "一眼看清。"],
+    body: "以 1 克拉培育钻石为例，对比 BeloveD 直接定制报价与常见零售区间。",
+    belovedSpec: "同级 1.00ct / VS+ / Ideal",
+    browse: "查看钻石",
+    custom: "开始定制",
+    stonePanelAria: "BeloveD 钻石价格参考",
+    chipsAria: "对比钻石规格",
+    listAria: "培育钻石价格区间对比",
+    chips: ["1.00ct", "VS+", "Ideal", "IGI / GIA"],
+    savingsPill: "BeloveD $320 起",
+    saveBadge: "更低区间",
+    saveLine: "比 Blue Nile 最高低 $560",
+    note: "裸石价格为示例区间。最终报价取决于实时库存、证书、镶嵌和金属。",
+    stats: [
+      { value: "$320+", label: "裸石起始报价" },
+      { value: "1.00ct", label: "培育钻石对比规格" },
+      { value: "VS+", label: "日常佩戴净度目标" },
+    ],
+  },
+  es: {
+    label: "COMPARA PRECIO",
+    stoneTitle: ["Elige la piedra.", "Mira la diferencia."],
+    boardTitle: ["El margen retail,", "a la vista."],
+    body: "Rangos comparables de diamantes lab-grown de 1 ct frente a una cotización directa BeloveD.",
+    belovedSpec: "Equivalente 1.00ct / VS+ / Ideal",
+    browse: "Ver diamantes",
+    custom: "Crear pedido",
+    stonePanelAria: "Referencia de precio de diamantes BeloveD",
+    chipsAria: "Especificación de piedra comparable",
+    listAria: "Comparación de rangos de precio lab-grown",
+    chips: ["1.00ct", "VS+", "Ideal", "IGI / GIA"],
+    savingsPill: "BeloveD desde $320",
+    saveBadge: "Rango más bajo",
+    saveLine: "Hasta $560 menos que Blue Nile",
+    note: "Rangos de piedra suelta como ejemplo. La cotización final depende de inventario, certificado, montura y metal.",
+    stats: [
+      { value: "$320+", label: "Cotización inicial" },
+      { value: "1.00ct", label: "Ejemplo comparable" },
+      { value: "VS+", label: "Claridad limpia diaria" },
+    ],
+  },
+};
 
 function renderLines(lines) {
   return lines.map((line, index) => (
@@ -26,21 +212,7 @@ function renderLines(lines) {
   ));
 }
 
-function getLocalizedCollections(t) {
-  return t.collections.items.map((item, index) => ({
-    ...item,
-    imageClass: collectionImages[index],
-  }));
-}
-
-function getLocalizedProducts(t) {
-  return t.products.items.map((item, index) => ({
-    ...item,
-    imageClass: productImages[index],
-  }));
-}
-
-function Hero({ t }) {
+function Hero({ t, p }) {
   const [playing, setPlaying] = useState(true);
   const videoRef = useRef(null);
 
@@ -58,9 +230,14 @@ function Hero({ t }) {
     }
   }, [playing]);
 
+  const specs = (t.hero.sub2 || "")
+    .split("·")
+    .map((part) => part.trim())
+    .filter(Boolean);
+
   return (
-    <section className={`hero ${playing ? "is-playing" : "is-paused"}`} id="top">
-      <div className="hero-media" aria-hidden="true">
+    <section className={`hero-noir ${playing ? "is-playing" : "is-paused"}`} id="top">
+      <div className="hero-noir-media" aria-hidden="true">
         <video
           ref={videoRef}
           autoPlay
@@ -73,70 +250,140 @@ function Hero({ t }) {
           <source src={withBase("/assets/diamond-hero-white.mp4")} type="video/mp4" />
         </video>
       </div>
-      <span className="spark sparkle-one" aria-hidden="true" />
-      <span className="spark sparkle-two" aria-hidden="true" />
-      <span className="spark sparkle-three" aria-hidden="true" />
 
-      <div className="hero-copy-top">
-        <p className="hero-kicker">{t.hero.kicker}</p>
+      <div className="hero-noir-frame" aria-hidden="true">
+        <i /><i /><i /><i />
+      </div>
+      <span className="hero-noir-vlabel" aria-hidden="true">Est. 2026</span>
+
+      <div className="hero-noir-mid">
+        <p className="hero-noir-kicker">{t.hero.kicker}</p>
         <h1>
-          PERFECTION,
-          <br />
-          <em>grown.</em>
+          <span className="l1">{t.hero.title[0]}</span>
+          <span className="l2">
+            <em>{t.hero.title[1]}</em>
+          </span>
         </h1>
+        <span className="hero-noir-rule" aria-hidden="true" />
+        <p className="hero-noir-lede">{t.hero.sub}</p>
       </div>
 
-      <div className="hero-copy-bottom">
-        <p className="hero-sub">{t.hero.sub}</p>
-        <p className="hero-sub2">{t.hero.sub2}</p>
-        <div className="hero-ctas">
-          <Link className="button primary" to="/diamonds">
-            {t.hero.primaryCta}
-            <ArrowRight size={18} strokeWidth={1.7} />
+      <div className="hero-noir-foot">
+        {specs.length > 0 && (
+          <div className="hero-noir-spec">
+            {specs.map((spec) => (
+              <span key={spec}>{spec}</span>
+            ))}
+          </div>
+        )}
+        <div className="hero-noir-ctas">
+          <Link className="noir-btn" to="/custom/new">
+            {t.hero.cta ?? p.nav.startCustom}
+            <ArrowRight size={15} strokeWidth={1.6} />
           </Link>
-          <Link className="button secondary" to="/custom/new">
-            {t.hero.secondaryCta}
+          <Link className="noir-link" to="/designs">
+            {t.collections.link}
           </Link>
         </div>
       </div>
 
       <button
-        className="control-button hero-pause"
+        className="control-button hero-noir-pause"
         aria-label={playing ? t.aria.pauseHero : t.aria.playHero}
         onClick={() => setPlaying((current) => !current)}
       >
-        {playing ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />}
+        {playing ? <Pause size={15} fill="currentColor" /> : <Play size={15} fill="currentColor" />}
       </button>
-
-      <a className="scroll-cue" href="#collections">
-        {t.hero.scroll}
-        <ChevronDown size={18} strokeWidth={1.6} />
-      </a>
     </section>
   );
 }
 
-function Collections({ t }) {
-  const collections = getLocalizedCollections(t);
+const ROMAN = ["I", "II", "III", "IV", "V", "VI"];
+
+function Collections({ locale }) {
+  const copy = collectionCopy[locale] ?? collectionCopy.en;
 
   return (
-    <section className="section collections" id="collections">
-      <div className="section-copy">
-        <p className="section-label">{t.collections.label}</p>
-        <h2>{renderLines(t.collections.title)}</h2>
-        <p>{t.collections.body}</p>
-        <Link className="text-link" to="/styles">
-          {t.collections.link}
-          <ArrowRight size={18} strokeWidth={1.6} />
+    <section className="coll-noir" id="collections">
+      <div className="coll-noir-head">
+        <span className="coll-noir-eyebrow">{copy.label}</span>
+        <h2>{renderLines(copy.title)}</h2>
+        <p className="coll-noir-sub">{copy.body}</p>
+      </div>
+
+      <div className="coll-noir-gallery">
+        {DESIGN_CATEGORIES.map((category, index) => {
+          const item = copy.items[category.key] ?? collectionCopy.en.items[category.key];
+          return (
+            <Link
+              className="coll-noir-piece"
+              key={category.key}
+              to={`/designs?category=${category.key}`}
+              aria-label={item.label}
+            >
+              <span className={`coll-noir-ph ${collectionImageClass[category.key]}`} aria-hidden="true" />
+              <span className="coll-noir-num" aria-hidden="true">{ROMAN[index] ?? index + 1}</span>
+              <span className="coll-noir-meta">
+                <span className="coll-noir-name">{item.label}</span>
+                <span className="coll-noir-cap">{item.body}</span>
+                <span className="coll-noir-discover">
+                  {copy.shopLabel(item.short)}
+                  <ArrowRight size={14} strokeWidth={1.8} />
+                </span>
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function DiamondSelection({ locale, p }) {
+  const copy = diamondPreviewCopy[locale] ?? diamondPreviewCopy.en;
+  const diamonds = [...listDiamonds()].sort((a, b) => a.priceUsd - b.priceUsd).slice(0, 4);
+
+  return (
+    <section className="stone-noir" id="diamonds">
+      <div className="stone-noir-head">
+        <span className="noir-eyebrow">{copy.label}</span>
+        <h2>{renderLines(copy.title)}</h2>
+        <p className="noir-sub">{copy.body}</p>
+        <Link className="noir-link" to="/diamonds">
+          {copy.view}
+          <ArrowRight size={14} strokeWidth={1.7} />
         </Link>
       </div>
 
-      <div className="collection-grid">
-        {collections.map((collection) => (
-          <article className="collection-tile" key={collection.name}>
-            <div className={`lineup-crop ${collection.imageClass}`} role="img" aria-label={`${collection.name} collection jewelry`} />
-            <h3>{collection.name}</h3>
-            <p>{collection.copy}</p>
+      <div className="stone-noir-grid">
+        {diamonds.map((diamond) => (
+          <article className="stone-noir-card" key={diamond.id}>
+            <Link
+              className="stone-noir-media"
+              to={`/diamonds/${diamond.id}`}
+              aria-label={`${p.shapes[diamond.shape]} ${diamond.carat.toFixed(2)}ct`}
+            >
+              <MediaThumb
+                media={diamond.media[0]}
+                ratio="1.18 / 1"
+                alt={`${p.shapes[diamond.shape]} ${diamond.carat.toFixed(2)}ct`}
+              />
+            </Link>
+            <div className="stone-noir-body">
+              <div className="stone-noir-meta">
+                <span>{diamond.certOrg} {copy.cert}</span>
+                <span>{diamond.cut}</span>
+              </div>
+              <h3 className="stone-noir-name">{p.shapes[diamond.shape]} {diamond.carat.toFixed(2)}ct</h3>
+              <p className="stone-noir-spec">{copy.spec(diamond)}</p>
+              <div className="stone-noir-foot">
+                <strong>{usd(diamond.priceUsd)}</strong>
+                <Link className="stone-noir-select" to={`/custom/new?diamond=${diamond.id}`}>
+                  {copy.select}
+                  <ArrowRight size={14} strokeWidth={1.7} />
+                </Link>
+              </div>
+            </div>
           </article>
         ))}
       </div>
@@ -144,133 +391,144 @@ function Collections({ t }) {
   );
 }
 
-function ProductCard({ product, t }) {
-  const [favorite, setFavorite] = useState(false);
+function HomeCore({ locale }) {
+  const copy = quoteBoardCopy[locale] ?? quoteBoardCopy.en;
+  const comparisons = [
+    {
+      seller: "Blue Nile",
+      range: "$650-$950",
+      spec: "1.00ct D-F / VS1-VS2 / Ideal",
+      cert: "GIA / IGI",
+      width: "100%",
+    },
+    {
+      seller: "Brilliant Earth",
+      range: "$520-$820",
+      spec: "1.00ct F-G / VS1-VS2 / Ideal",
+      cert: "IGI / GIA",
+      width: "82%",
+    },
+    {
+      seller: "BeloveD",
+      range: "$320-$390",
+      spec: copy.belovedSpec,
+      cert: "IGI / GIA",
+      width: "41%",
+    },
+  ];
 
   return (
-    <article className="product-card">
-      <button
-        className={`favorite ${favorite ? "is-active" : ""}`}
-        aria-label={t.aria.wishlist(product.name)}
-        onClick={() => setFavorite((current) => !current)}
-      >
-        <Heart size={18} strokeWidth={1.5} fill={favorite ? "currentColor" : "none"} />
-      </button>
-      <div className={`product-image ${product.imageClass}`} role="img" aria-label={product.name} />
-      <h3>{product.name}</h3>
-      <p>{product.price}</p>
-      <Link to="/styles">{t.products.detail}</Link>
-    </article>
-  );
-}
+    <section className="spread-noir" id="beloved-way">
+      <div className="spread-noir-head">
+        <span className="noir-eyebrow">{copy.label}</span>
+        <h2>{renderLines(copy.boardTitle)}</h2>
+        <p className="noir-sub">{copy.body}</p>
+        <span className="spread-noir-pill">{copy.savingsPill}</span>
+      </div>
 
-const SHAPE_KEYS = ["round", "oval", "princess", "emerald", "pear", "marquise", "cushion", "radiant", "asscher", "heart"];
+      <div className="spread-noir-chips" aria-label={copy.chipsAria}>
+        {copy.chips.map((chip) => <span key={chip}>{chip}</span>)}
+      </div>
 
-function ShopByShape() {
-  const { p } = useLocale();
-  return (
-    <section className="section shape-strip" aria-label={p.diamonds.byShape}>
-      <p className="section-label">{p.diamonds.byShape}</p>
-      <div className="shape-row">
-        {SHAPE_KEYS.map((s) => (
-          <Link className="shape-pill" to={`/diamonds?shape=${s}`} key={s}>
-            <span className="shape-glyph" aria-hidden="true">◆</span>
-            {p.shapes[s]}
-          </Link>
+      <div className="spread-noir-bars" role="list" aria-label={copy.listAria}>
+        {comparisons.map(({ seller, range, spec, cert, width }) => {
+          const isBeloved = seller === "BeloveD";
+          return (
+            <article className={`spread-noir-row ${isBeloved ? "is-beloved" : ""}`} role="listitem" key={seller}>
+              <div className="spread-noir-rowtop">
+                <div className="spread-noir-brand">
+                  <strong>{seller}</strong>
+                  {isBeloved ? <em>{copy.saveBadge}</em> : null}
+                </div>
+                <span className="spread-noir-range">{range}</span>
+              </div>
+              <div className="spread-noir-track" aria-hidden="true">
+                <span className="spread-noir-fill" style={{ "--bar-width": width }} />
+              </div>
+              <div className="spread-noir-rowfoot">
+                <p>{spec} · {cert}</p>
+                {isBeloved ? <strong>{copy.saveLine}</strong> : null}
+              </div>
+            </article>
+          );
+        })}
+      </div>
+
+      <div className="spread-noir-stats">
+        {copy.stats.map((stat) => (
+          <div className="spread-noir-stat" key={stat.value}>
+            <strong>{stat.value}</strong>
+            <span>{stat.label}</span>
+          </div>
         ))}
       </div>
-    </section>
-  );
-}
 
-function Products({ t }) {
-  const products = getLocalizedProducts(t);
-
-  return (
-    <section className="section products" id="products">
-      <div className="section-heading">
-        <div>
-          <p className="section-label">{t.products.label}</p>
-          <h2>{t.products.title}</h2>
-        </div>
-        <Link className="text-link" to="/diamonds">
-          {t.products.viewAll}
-          <ArrowRight size={18} strokeWidth={1.6} />
+      <p className="spread-noir-note">{copy.note}</p>
+      <div className="spread-noir-actions">
+        <Link className="noir-btn" to="/diamonds">
+          {copy.browse}
+          <ArrowRight size={15} strokeWidth={1.6} />
         </Link>
-      </div>
-
-      <div className="product-row">
-        {products.map((product) => (
-          <ProductCard product={product} t={t} key={product.name} />
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function Quality({ t }) {
-  const pointIcons = [Diamond, Leaf, ShieldCheck, Sparkles];
-  const points = t.quality.points.map((point, index) => ({
-    ...point,
-    icon: pointIcons[index],
-  }));
-
-  return (
-    <section className="quality" id="lab-diamond">
-      <div className="quality-image">
-        <img src={withBase("/assets/lab-diamond-tweezers.webp")} alt={t.aria.looseDiamondAlt} loading="lazy" decoding="async" />
-      </div>
-      <div className="quality-copy">
-        <p className="section-label">{t.quality.label}</p>
-        <h2>{renderLines(t.quality.title)}</h2>
-        <p>{t.quality.body}</p>
-        <div className="quality-points">
-          {points.map(({ icon: Icon, title, copy }) => (
-            <div className="quality-point" key={title}>
-              <Icon size={26} strokeWidth={1.35} />
-              <strong>{title}</strong>
-              <span>{copy}</span>
-            </div>
-          ))}
-        </div>
-        <Link className="button secondary wide" to="/guide/lab-diamond">
-          {t.quality.cta}
-          <ArrowRight size={18} strokeWidth={1.6} />
+        <Link className="noir-link" to="/custom/new">
+          {copy.custom}
         </Link>
       </div>
     </section>
   );
 }
 
-function Concierge({ t }) {
+const dockCopy = {
+  en: { title: "Design yours", note: "No payment until you accept the quote" },
+  ko: { title: "당신의 디자인", note: "견적 수락 전까지 결제 없음" },
+  zh: { title: "为你定制", note: "接受报价前无需付款" },
+  es: { title: "Diseña la tuya", note: "Sin pago hasta aceptar la cotización" },
+};
+
+function MobileDock({ locale, p }) {
+  const copy = dockCopy[locale] ?? dockCopy.en;
+  const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setShow(window.scrollY > window.innerHeight * 0.72);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
-    <section className="concierge" id="concierge">
-      <div className="concierge-copy">
-        <h2>{renderLines(t.concierge.title)}</h2>
-        <p>{t.concierge.body}</p>
-        <Link className="button primary" to="/custom/new">
-          {t.concierge.cta}
-          <ArrowRight size={18} strokeWidth={1.7} />
-        </Link>
-      </div>
-      <div className="concierge-visual" aria-hidden="true">
-        <img src={withBase("/assets/lab-diamond-tweezers.webp")} alt="" loading="lazy" decoding="async" />
-      </div>
-    </section>
+    <Link className={`noir-dock ${show ? "show" : ""}`} to="/custom/new" aria-hidden={!show}>
+      <span className="noir-dock-lab">
+        <b>{copy.title}</b>
+        <span>{copy.note}</span>
+      </span>
+      <span className="noir-dock-go">
+        {p.nav.startCustom}
+        <ArrowRight size={14} strokeWidth={1.6} />
+      </span>
+    </Link>
   );
 }
 
 export default function Home() {
-  const { t } = useLocale();
+  useDBVersion();
+  const { locale, t, p } = useLocale();
 
   return (
     <>
-      <Hero t={t} />
-      <Collections t={t} />
-      <ShopByShape />
-      <Products t={t} />
-      <Quality t={t} />
-      <Concierge t={t} />
+      {/* day 모드 아이보리 갤러리 — 제품컷 검은 배경을 휘도→알파로 키잉해 아이보리 위에 띄움 */}
+      <svg width="0" height="0" aria-hidden="true" focusable="false" style={{ position: "absolute" }}>
+        <filter id="keyBlack" colorInterpolationFilters="sRGB">
+          <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0.299 0.587 0.114 0 0" />
+          <feComponentTransfer>
+            <feFuncA type="gamma" amplitude="1" exponent="1.7" offset="0" />
+          </feComponentTransfer>
+        </filter>
+      </svg>
+      <Hero t={t} p={p} />
+      <Collections locale={locale} />
+      <DiamondSelection locale={locale} p={p} />
+      <HomeCore locale={locale} />
+      <MobileDock locale={locale} p={p} />
     </>
   );
 }

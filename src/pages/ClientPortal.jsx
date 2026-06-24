@@ -19,7 +19,7 @@ export function TrackEntry() {
   return (
     <div className="page page-narrow">
       <h1 className="page-title">{t.guestTitle}</h1>
-      <form className="panel form-stack" onSubmit={(e) => { e.preventDefault(); navigate(`/track/${orderId.trim().toUpperCase()}?code=${code.trim().toUpperCase()}`); }}>
+      <form className="panel form-stack" onSubmit={(e) => { e.preventDefault(); navigate(`/orders/${orderId.trim().toUpperCase()}?code=${code.trim().toUpperCase()}`); }}>
         <label className="field"><span>{t.orderId}</span><input value={orderId} onChange={(e) => setOrderId(e.target.value)} placeholder="DM-000001" required /></label>
         <label className="field"><span>{t.code}</span><input value={code} onChange={(e) => setCode(e.target.value)} placeholder="XXXX-XXXX" required /></label>
         <button className="button primary" type="submit">{t.open}</button>
@@ -123,7 +123,7 @@ export default function ClientPortal() {
   if (!view) {
     return <div className="page"><EmptyNote>{t.notFound}</EmptyNote></div>;
   }
-  const { order, intake, style, candidates, selected, quote, milestones, cad, freeRevisionsLeft, designChangeFeeUsd, finalAction } = view;
+  const { order, intake, style, candidates, selected, quote, milestones, cad, freeRevisionsLeft, designChangeFeeUsd, finalAction, actions } = view;
 
   function shortlist(diaId) { toggleShortlist(diaId, actor); }
   function reqStock() { requestStockConfirm(orderId, actor); }
@@ -179,15 +179,27 @@ export default function ClientPortal() {
   const nextMsg = (order.status === "QUOTATION" && quote?.status === "accepted") ? t.nextDeposit
     : (order.status === "CAD" && cad && !cad.decision) ? t.nextCadReview
       : t.nextStep?.[order.status] || "";
+  const activeAction = actions?.[0] || null;
+  const waitingOn = activeAction ? "You" : ["PRODUCTION", "QC", "SHIPPING"].includes(order.status) ? "Atelier" : "BeloveD";
 
   return (
     <div className="page" style={{ maxWidth: 980 }}>
-      <h1 className="page-title">{order.id}</h1>
-      <p className="page-sub">
-        {style && <>{style.id} — {pickI18n(style.name, locale)} · </>}
-        {order.requiredDate && <>{t.requiredDate}: {order.requiredDate} · </>}
-        <span className={`status-badge ost-${order.status}`}>{t.statusLabel?.[order.status] || p.orderStatus[order.status]}</span>
-      </p>
+      <section className="workspace-hero">
+        <div>
+          <p className="section-label">ORDER WORKSPACE</p>
+          <h1 className="page-title">{order.id}</h1>
+          <p className="page-sub">
+            {style && <>{style.id} — {pickI18n(style.name, locale)} · </>}
+            {order.requiredDate && <>{t.requiredDate}: {order.requiredDate} · </>}
+            <span className={`status-badge ost-${order.status}`}>{t.statusLabel?.[order.status] || p.orderStatus[order.status]}</span>
+          </p>
+        </div>
+        <div className="workspace-status-grid">
+          <div><span>Waiting on</span><strong>{waitingOn}</strong></div>
+          <div><span>Next action</span><strong>{activeAction?.prompt || nextMsg || "Review updates"}</strong></div>
+          <div><span>Due</span><strong>{activeAction?.dueDate || order.requiredDate || "TBD"}</strong></div>
+        </div>
+      </section>
 
       {/* 고객용 다음 단계 안내 — "이제 뭘 기다리지?"를 없앤다 */}
       {nextMsg && (

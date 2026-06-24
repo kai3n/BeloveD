@@ -9,6 +9,8 @@ const lineup = (name) => ({ kind: "image", src: `/assets/lineup-${name}.png` });
 
 // shape/metal/배송단계는 키로 저장하고 언어별 라벨은 translations.js에서 매핑한다.
 export function seed() {
+  // 데모 날짜는 현재 기준 상대값 — 고정 날짜가 지나 배치가 만료되며 후보가 unpublish되는 것 방지
+  const daysFromNow = (n) => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
   return {
     counter: 1100,
     users: [
@@ -109,7 +111,7 @@ export function seed() {
     chipCatalog: defaultChipCatalog(),
     procurementReqs: [
       { id: "PR-000001", orderId: "DM-000001", type: "diamondCandidates", supplierId: "u-supplier1",
-        dueDate: "2026-06-14", batchValidUntil: "2026-06-22", brief: "1.4-1.6ct round, D-F, VS1+, CVD, IGI. 10-20 candidates.",
+        dueDate: "2026-06-14", batchValidUntil: daysFromNow(5), brief: "1.4-1.6ct round, D-F, VS1+, CVD, IGI. 10-20 candidates.",
         metal: null, measurements: null, status: "submitted", result: null, createdAt: "2026-06-09T09:00:00.000Z" },
       { id: "PR-000002", orderId: "DM-000002", type: "cad", supplierId: "u-supplier1",
         dueDate: "2026-06-13", batchValidUntil: null, brief: "NECK-001 18KY 18in standard center — 3D CAD",
@@ -171,11 +173,11 @@ export function seed() {
     // 완제품 도매 SKU — 이미지는 lineup-*.png, MSRP는 소매 권장가
     catalogItems: [
       { id: "c-ring", category: "ring", image: "/assets/lineup-ring.png", msrpUsd: 1690, stoneWholesaleT1: 750, stoneWholesaleT2: 850, metalGrams: 4.2, laborUsd: 55, resizable: true, visible: true,
-        name: { ko: "루미나 솔리테어 링 1.0ct", en: "Lumina Solitaire Ring 1.0ct", zh: "Lumina 单钻戒 1.0ct", es: "Anillo solitario Lumina 1.0ct" } },
+        name: { ko: "BeloveD 솔리테어 링 1.0ct", en: "BeloveD Solitaire Ring 1.0ct", zh: "BeloveD 单钻戒 1.0ct", es: "Anillo solitario BeloveD 1.0ct" } },
       { id: "c-band", category: "ring", image: "/assets/lineup-band.png", msrpUsd: 1290, stoneWholesaleT1: 580, stoneWholesaleT2: 650, metalGrams: 3.8, laborUsd: 65, resizable: false, visible: true,
         name: { ko: "이터니티 다이아 밴드", en: "Eternity Band Ring", zh: "Eternity 排钻戒圈", es: "Anillo Eternity Band" } },
       { id: "c-pendant", category: "necklace", image: "/assets/lineup-pendant.png", msrpUsd: 990, stoneWholesaleT1: 420, stoneWholesaleT2: 480, metalGrams: 3.0, laborUsd: 45, resizable: true, visible: true,
-        name: { ko: "루미나 펜던트 1.0ct", en: "Lumina Pendant 1.0ct", zh: "Lumina 吊坠 1.0ct", es: "Colgante Lumina 1.0ct" } },
+        name: { ko: "BeloveD 펜던트 1.0ct", en: "BeloveD Pendant 1.0ct", zh: "BeloveD 吊坠 1.0ct", es: "Colgante BeloveD 1.0ct" } },
       { id: "c-studs", category: "earring", image: "/assets/lineup-studs.png", msrpUsd: 840, stoneWholesaleT1: 360, stoneWholesaleT2: 410, metalGrams: 2.4, laborUsd: 40, resizable: true, visible: true,
         name: { ko: "클래식 스터드 이어링 1.0ct", en: "Classic Stud Earrings 1.0ct", zh: "经典钻石耳钉 1.0ct", es: "Aretes clásicos 1.0ct" } },
       { id: "c-bracelet", category: "bracelet", image: "/assets/lineup-bracelet.png", msrpUsd: 1990, stoneWholesaleT1: 950, stoneWholesaleT2: 1080, metalGrams: 9.6, laborUsd: 95, resizable: true, visible: true,
@@ -221,7 +223,7 @@ export function seed() {
       stockConfirmWithinDays: 3, // 배치 만료가 이 일수 이내일 때만 벤더 재고확인 요청 (그 외엔 자동 락)
       poolCaratUnder: 0.05, poolCaratOver: 0.4, poolMatchLimit: 12, // 풀 자동매칭 허용 캐럿범위·후보 캡
       showSampleLibrary: true, // 데모용 샘플 이미지 라이브러리 노출 (실서비스에선 false)
-      shipToAddress: "LUMINA LAB Receiving, 550 S Hill St #1100, Los Angeles, CA 90013",
+      shipToAddress: "BeloveD Receiving, 550 S Hill St #1100, Los Angeles, CA 90013",
     },
   };
 }

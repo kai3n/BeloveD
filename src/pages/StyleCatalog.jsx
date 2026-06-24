@@ -1,50 +1,78 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { listOpsStyles } from "../lib/store.js";
 import { useDBVersion } from "../lib/useDB.js";
 import { MediaThumb } from "../components/ui.jsx";
 import { pickI18n, useLocale } from "../i18n.jsx";
+import { DESIGN_CATEGORIES, categoryMeta, designCategoryCards } from "../lib/designSlots.js";
 
-const CATS = ["all", "ring", "necklace", "earrings", "bangle"];
+const CATS = ["all", "ring", "earrings", "bangle", "necklace"];
+const catLabel = (p, c) => (c === "all" ? p.common.all : categoryMeta(c)?.label || p.opsCategories[c]);
 
 export default function StyleCatalog() {
   useDBVersion();
   const { p, locale } = useLocale();
-  const t = p.styleCat;
-  const [cat, setCat] = useState("all");
-  const styles = listOpsStyles({ publishedOnly: true }).filter((st) => cat === "all" || st.category === cat);
+  const [params, setParams] = useSearchParams();
+  const requestedCat = params.get("category");
+  const [cat, setCat] = useState(CATS.includes(requestedCat) ? requestedCat : "all");
+  const styles = listOpsStyles({ publishedOnly: true });
+  const visibleCategories = cat === "all" ? DESIGN_CATEGORIES : [categoryMeta(cat)].filter(Boolean);
+
+  function chooseCategory(nextCat) {
+    setCat(nextCat);
+    setParams(nextCat === "all" ? {} : { category: nextCat });
+  }
 
   return (
-    <div className="page">
-      <h1 className="page-title">{t.title}</h1>
-      <p className="page-sub">{t.sub}<br /><span className="form-hint">{p.ftc}</span></p>
+    <div className="page designs-page">
+      <section className="designs-page-head">
+        <p className="section-label">CUSTOM DESIGNS</p>
+        <h1 className="page-title">Choose a starting point.</h1>
+        <p className="page-sub">Pick a silhouette first. Stone, metal, and details are customized after.</p>
+      </section>
 
-      <div className="chip-row" style={{ marginBottom: 30 }}>
+      <div className="chip-row design-category-tabs" aria-label="Design categories">
         {CATS.map((c) => (
-          <button key={c} className={`chip ${cat === c ? "is-active" : ""}`} onClick={() => setCat(c)}>
-            {c === "all" ? p.common.all : p.opsCategories[c]}
+          <button key={c} className={`chip ${cat === c ? "is-active" : ""}`} onClick={() => chooseCategory(c)}>
+            {catLabel(p, c)}
           </button>
         ))}
       </div>
 
-      <div className="card-grid cols-3">
-        {styles.map((st) => {
-          const isVideo = st.coverImage.endsWith(".mp4");
-          return (
-            <Link className="item-card" to={`/styles/${st.id}`} key={st.id}>
-              <MediaThumb media={{ kind: isVideo ? "video" : "image", src: st.coverImage }} ratio="1 / 1.05" alt={pickI18n(st.name, locale)} />
-              <div className="card-body">
-                <h3>{pickI18n(st.name, locale)}</h3>
-                <p className="spec">
-                  {st.id} · {p.opsCategories[st.category]}
-                  {!st.mediaComplete && <> · <span className="warn-note">{t.awaitingMedia}</span></>}
-                </p>
-                <p className="spec">{t.weight(st.estWeightG)} · {t.lead(st.leadDays)}</p>
-                <p className="price">{t.start} →</p>
-              </div>
-            </Link>
-          );
-        })}
+      <div className="catalog-category-stack">
+        {visibleCategories.map((category) => (
+          <section className={`catalog-category ${cat !== "all" ? "is-focused" : ""}`} key={category.key}>
+            <div className="category-block-head">
+              <h2>{category.label}</h2>
+              <p>{category.target} starter designs. Customize stone, metal, and finish.</p>
+            </div>
+            <div className="design-shop-grid">
+              {designCategoryCards(styles, category, locale, pickI18n).map((card) => {
+                const ctaHref = card.ctaHref || `/custom/new?category=${category.key}&design=${encodeURIComponent(card.title)}`;
+
+                return (
+                  <article className={`design-shop-card ${card.state === "slot" ? "is-slot" : ""}`} key={card.id}>
+                    {card.href ? (
+                      <Link to={card.href} className="design-shop-media">
+                        <MediaThumb media={card.media} ratio="1.15 / 1" alt={card.title} />
+                      </Link>
+                    ) : (
+                      <div className="design-shop-media">
+                        <MediaThumb media={card.media} ratio="1.15 / 1" alt={card.title} />
+                      </div>
+                    )}
+                    <div className="design-shop-body">
+                      <span>{category.shortLabel}</span>
+                      <h3>{card.title}</h3>
+                      <p>{card.price}</p>
+                      <Link to={ctaHref}>Customize</Link>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+        ))}
       </div>
     </div>
   );
