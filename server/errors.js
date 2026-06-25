@@ -1,0 +1,18 @@
+export class ApiError extends Error {
+  constructor(code, status = 400, message = code) {
+    super(message);
+    this.code = code;
+    this.status = status;
+  }
+}
+
+// Stable, customer-facing error codes (HLD §12.4)
+export const ERROR_CODES = [
+  "EMAIL_REQUIRED", "MAGIC_LINK_INVALID", "INVALID_CREDENTIALS",
+  "CUSTOMER_AUTH_REQUIRED", "ADMIN_AUTH_REQUIRED", "ORDER_ACCESS_DENIED",
+  "ACTION_STALE", "ACTION_EXPIRED", "ARTIFACT_SUPERSEDED",
+  "DIAMOND_SOLD", "DIAMOND_BATCH_EXPIRED", "PAYMENT_PENDING",
+  "PAYMENT_ALREADY_COMPLETED", "UPLOAD_SESSION_EXPIRED", "MEDIA_PROCESSING",
+  "RATE_LIMITED", "IDEMPOTENCY_KEY_REQUIRED", "IDEMPOTENCY_KEY_REUSED",
+  "INVALID_JSON", "NOT_FOUND", "INTERNAL_ERROR",
+];
