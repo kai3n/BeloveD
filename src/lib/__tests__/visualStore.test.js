@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   resetDB, listChips, saveChip,
-  createIntake, getIntake, reviewReferenceMedia, supplierTasks, createProcurement,
+  createIntake, getIntake, reviewReferenceMedia, createProcurement,
   addCadVersion, decideCad, freeRevisionsLeft, portalView, getSettings,
   submitCadForPr, listCadReviews,
   submitQcForPr, confirmFinal, getOpsOrder, listCustomerActions, updateOpsOrder,
@@ -43,33 +43,6 @@ describe("visual store — 레퍼런스 미디어와 벤더 브리프", () => {
     expect(saved[0].annotations.length).toBe(1);
   });
 
-  it("벤더 태스크에는 승인 레퍼런스만 — hidden/고객명 미노출", () => {
-    // 시드: IN-000001에 approved 1 + hidden 1
-    createProcurement("DM-000001", { type: "cad", supplierId: "u-supplier2", dueDate: "2026-06-25", brief: "ring cad" });
-    const tasks = supplierTasks("u-supplier2");
-    const json = JSON.stringify(tasks);
-    expect(json).toContain("lineup-band.png");          // approved
-    expect(json).not.toContain("lineup-pendant.png");   // hidden (모니터링 숨김)
-    expect(json).not.toContain("Jiwon Kim");            // 고객명 (시드)
-    expect(json).not.toContain("DM-000001");
-  });
-
-  it("검수 승인/반려가 벤더 노출을 토글한다", () => {
-    reviewReferenceMedia("IN-000001", "REF-000002", "approved");
-    createProcurement("DM-000001", { type: "cad", supplierId: "u-supplier2", dueDate: "2026-06-25", brief: "x" });
-    expect(JSON.stringify(supplierTasks("u-supplier2"))).toContain("lineup-pendant.png");
-  });
-
-  it("minorRevision 주석이 다음 CAD 태스크의 revision 브리프로 전달된다", () => {
-    const r1 = addCadVersion("DM-000001", { fileUrl: "/cad-v1.png", supplierId: "u-supplier2" });
-    decideCad(r1.id, { decision: "minorRevision", annotations: [
-      { pinId: 1, x: 30, y: 60, part: "band", chipKey: "thinner", value: 1.6 },
-    ] }, "customer");
-    createProcurement("DM-000001", { type: "cad", supplierId: "u-supplier2", dueDate: "2026-06-26", brief: "v2" });
-    const task = supplierTasks("u-supplier2").find((x) => x.brief === "v2");
-    expect(task.revision.fileUrl).toBe("/cad-v1.png");
-    expect(task.revision.annotations[0].chipKey).toBe("thinner");
-  });
 });
 
 describe("visual store — 구조화 피드백과 수정 한도", () => {
@@ -160,19 +133,6 @@ describe("visual store — 스톤 선택: 신선 배치 자동 / 만료임박 �
     expect(getCandidate(c.id).locked).toBe(true);
     expect(getOpsOrder("DM-000001").status).toBe("QUOTATION");
     expect(listMilestones("DM-000001").find((m) => m.stage === "diamondLocked").status).toBe("done");
-  });
-
-  it("만료 임박 배치 → 벤더 재고확인 요청 (가격·OrderID 미노출)", () => {
-    const c = expiringCand();
-    toggleShortlist(c.id, "customer");
-    requestStockConfirm("DM-000001", "customer");
-    const pr = listProcurements({ orderId: "DM-000001" }).find((p) => p.type === "stockConfirm");
-    expect(pr.diamondId).toBe(c.id);
-    const task = supplierTasks("u-supplier1").find((t) => t.type === "stockConfirm" && t.diamond?.igiNo === "LG-EXP");
-    expect(task).toBeTruthy();
-    const json = JSON.stringify(task);
-    expect(json).not.toContain("customerPriceUsd");
-    expect(json).not.toContain("DM-000001");
   });
 
   it("만료 임박 → 재고확인 '있음' → 확정 락 + QUOTATION", () => {

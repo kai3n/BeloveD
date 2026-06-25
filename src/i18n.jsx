@@ -1,7 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { localeOptions, translations } from "./translations.js";
 import { platformStrings } from "./platformStrings.js";
-import { dealerStrings } from "./dealerStrings.js";
 import { opsStrings } from "./opsStrings.js";
 
 const LocaleContext = createContext(null);
@@ -22,7 +21,7 @@ export function LocaleProvider({ children }) {
     return VALID_LOCALES.includes(stored) ? stored : "en";
   });
   const setLocale = (code) => { if (VALID_LOCALES.includes(code)) setLocaleRaw(code); };
-  const t = { ...translations[locale], platform: { ...platformStrings[locale], ...dealerStrings[locale], ...opsStrings[locale] } };
+  const t = { ...translations[locale], platform: { ...platformStrings[locale], ...opsStrings[locale] } };
 
   useEffect(() => {
     localStorage.setItem("lumina-locale", locale);

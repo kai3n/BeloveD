@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
-  resetDB, createIntake, getOpsOrder, createProcurement, supplierTasks, submitCandidates,
+  resetDB, createIntake, getOpsOrder, createProcurement, submitCandidates,
   reviewCandidate, publishCandidate, toggleShortlist, requestStockConfirm, submitStockConfirm, lockSelectedCandidate, lockCandidate, createQuote, sendQuote,
   acceptQuote, markDepositReceived, addCadVersion, decideCad, listMilestones, recordActualWeight,
   portalView, listCadReviews, dailyChecklist, setCandidateAvailability, listCandidates, listProcurements,
@@ -18,24 +18,6 @@ describe("ops store — 매뉴얼 풀 플로우", () => {
     expect(o2.status).toBe("QUOTATION"); // 멀티스톤 + 스펙 완성
     const { order: o3 } = createIntake({ name: "T3", contact: "c", productLine: "solitaire", category: "ring", styleId: "", metal: "18kw", conditional: {}, termsAccepted: true });
     expect(o3.status).toBe("STYLE_SELECTION");
-  });
-
-  it("서플라이어 태스크 뷰에 고객명·Order ID 미노출", () => {
-    const tasks = supplierTasks("u-supplier1");
-    expect(tasks.length).toBeGreaterThan(0);
-    const json = JSON.stringify(tasks);
-    expect(json).not.toContain("김지원");
-    expect(json).not.toContain("DM-000001");
-    expect(json).toContain("PR-000001");
-  });
-
-  it("벤더 태스크: 같은 주문은 같은 jobCode, 다른 주문은 다름 (Order ID 미노출)", () => {
-    const tasks = supplierTasks("u-supplier1");
-    const t1 = tasks.find((x) => x.id === "PR-000001"); // DM-000001
-    const t2 = tasks.find((x) => x.id === "PR-000002"); // DM-000002
-    expect(t1.jobCode).toMatch(/^JOB-[A-Z0-9]{4}$/);
-    expect(t1.jobCode).not.toBe(t2.jobCode);
-    expect(JSON.stringify(tasks)).not.toContain("DM-000001"); // 코드만, 주문번호 미노출
   });
 
   it("찜 → 재고확인 요청 → 같은 후보 재요청 시 중복 PR 안 생김", () => {

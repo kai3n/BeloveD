@@ -6,7 +6,7 @@ import {
   listCandidates, listCadReviews, listCustomerActions, listMilestones, listProcurements, listQuotes,
   lockCandidate, markBalanceReceived, markDepositReceived, markOrderDelivered, publishCandidate,
   recordActualWeight, reviewCandidate, sendQuote,
-  setCandidateAvailability, unpublishCandidate, updateOpsOrder, upsertMilestone, listDealers, getSettings,
+  setCandidateAvailability, unpublishCandidate, updateOpsOrder, upsertMilestone, getSettings,
   getDB, reviewReferenceMedia,
 } from "../../lib/store.js";
 import { formatAnnotation } from "../../lib/chips.js";

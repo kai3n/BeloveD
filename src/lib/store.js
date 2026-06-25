@@ -1,7 +1,6 @@
 import { seed } from "./seed.js";
 import { maskContacts } from "./masking.js";
 import { validateAnnotation } from "./chips.js";
-import { assertClaimTransition, computeTier, salvageCredit, unitWholesale, metalQuote } from "./dealer.js";
 import {
   MILESTONE_STAGES, publicDiamondView, customerOrderView, supplierTaskView,
   quoteCompute, reconcileDelta, randomQueryCode, tierForCarat,
@@ -108,12 +107,6 @@ export function addUser({ email, name, role = "customer" }) {
   persist();
   return user;
 }
-export function listVendors() { return db().users.filter((u) => u.role === "supplier"); }
-export function setVendorActive(id, active) {
-  const v = getUser(id);
-  if (v) { v.active = active; persist(); }
-}
-
 // ---------- diamonds ----------
 export function listDiamonds({ includeHidden = false } = {}) {
   return db().diamonds.filter((d) => includeHidden || d.visible);
@@ -141,44 +134,11 @@ export function adjustDiamondPrices(percent) {
   persist();
 }
 
-// ---------- vendor diamond pool ----------
-export function listPoolDiamonds({ supplierId, includeArchived = false } = {}) {
-  return db().poolDiamonds.filter((s) =>
-    (includeArchived || !s.archived) && (!supplierId || s.supplierId === supplierId));
-}
-export function getPoolDiamond(id) { return db().poolDiamonds.find((s) => s.id === id) || null; }
-export function savePoolDiamond(stone) {
-  const list = db().poolDiamonds;
-  const i = stone.id ? list.findIndex((s) => s.id === stone.id) : -1;
-  if (i >= 0) {
-    list[i] = { ...list[i], ...stone, updatedAt: now() };
-    persist();
-    return list[i];
-  }
-  const created = {
-    media: [], availability: "available", archived: false, proportions: {}, colorTreatment: "disclosed",
-    reportUrl: "", ...stone, id: nextSeqId("POOL"), createdAt: now(), updatedAt: now(),
-  };
-  list.push(created);
-  audit(stone.supplierId || "ops", "pool", created.id, "create", null, "available");
-  persist();
-  return created;
-}
-export function archivePoolDiamond(id, archived = true) {
-  const s = getPoolDiamond(id);
-  if (!s) return;
-  s.archived = archived; s.updatedAt = now();
-  persist();
-}
-export function setPoolAvailability(id, availability) {
-  const s = getPoolDiamond(id);
-  if (!s) return;
-  s.availability = availability; s.updatedAt = now();
-  persist();
-}
+// ---------- vendor diamond pool (internal helpers — no exported surface) ----------
+function getPoolDiamond(id) { return db().poolDiamonds.find((s) => s.id === id) || null; }
 
 // 고객 선호(prefs)에 맞는 available 풀 스톤 — 활성 벤더만, 캐럿 근접→원가 순, 캡 적용
-export function matchPoolForOrder(prefs) {
+function matchPoolForOrder(prefs) {
   if (!prefs) return [];
   const s = db().settings;
   const opts = { caratUnder: s.poolCaratUnder ?? 0.05, caratOver: s.poolCaratOver ?? 0.4 };
@@ -228,20 +188,6 @@ function autoMatchFromPool(order, intake) {
   return created;
 }
 
-// 벤더가 폴백 diamondCandidates 태스크에서 자기 풀 스톤을 골라 후보로 제출
-export function submitPoolCandidates(prId, poolIds) {
-  const pr = getProcurement(prId);
-  const existing = listCandidates({ orderId: pr.orderId }).length;
-  const created = (poolIds || [])
-    .map((id) => getPoolDiamond(id))
-    .filter(Boolean)
-    .map((pool, i) => poolStoneToCandidate(pool, pr.orderId, existing + i + 1, prId));
-  db().diamondCands.push(...created);
-  pr.status = "submitted";
-  audit(pr.supplierId, "procurement", prId, "candidates", null, String(created.length));
-  persist();
-  return created;
-}
 
 // ---------- operations manual: intake & orders ----------
 function audit(actor, entity, entityId, field, before, after) {
@@ -1009,165 +955,6 @@ export function pendingCount(user) {
   }
   return 0;
 }
-
-// ---------- dealer network (diamond_qc.pdf) ----------
-export function listApplications() { return [...db().dealerApplications].sort((a, b) => b.createdAt.localeCompare(a.createdAt)); }
-export function submitApplication(form) {
-  const app = { id: nextId("app"), ...form, status: "pending", createdAt: now() };
-  db().dealerApplications.push(app);
-  persist();
-  return app;
-}
-export function approveApplication(appId) {
-  const app = db().dealerApplications.find((a) => a.id === appId);
-  app.status = "approved";
-  const user = { id: nextId("u"), email: app.email.toLowerCase(), name: app.bizName, role: "dealer", active: true };
-  db().users.push(user);
-  db().dealerProfiles.push({
-    userId: user.id, tier: 2, city: app.city, permitNo: app.permitNo,
-    resaleCertNo: app.resaleCertNo || "", active: true, tierOverride: null,
-  });
-  persist();
-  return user;
-}
-export function rejectApplication(appId) {
-  const app = db().dealerApplications.find((a) => a.id === appId);
-  app.status = "rejected";
-  persist();
-}
-
-export function getDealerProfile(userId) { return db().dealerProfiles.find((p) => p.userId === userId) || null; }
-export function listDealers() {
-  return db().users.filter((u) => u.role === "dealer").map((u) => ({ user: u, profile: getDealerProfile(u.id) }));
-}
-export function updateDealerProfile(userId, patch) {
-  const p = getDealerProfile(userId);
-  if (p) { Object.assign(p, patch); persist(); }
-}
-// 티어는 주문 이력에서 산정 (오버라이드 > 볼륨)
-export function dealerTierInfo(userId, nowDate = new Date()) {
-  const profile = getDealerProfile(userId);
-  const orders = db().wholesaleOrders.filter((o) => o.dealerId === userId);
-  const r = computeTier(orders, profile, db().settings, nowDate);
-  if (r.tier !== profile.tier && !r.override) { profile.tier = r.tier; persist(); }
-  return { ...r, profile };
-}
-
-export function listCatalog({ includeHidden = false } = {}) {
-  return db().catalogItems.filter((c) => includeHidden || c.visible);
-}
-export function getCatalogItem(id) { return db().catalogItems.find((c) => c.id === id) || null; }
-export function saveCatalogItem(item) {
-  const list = db().catalogItems;
-  const i = list.findIndex((c) => c.id === item.id);
-  if (i >= 0) list[i] = { ...list[i], ...item };
-  else list.push({ visible: true, resizable: true, ...item, id: nextId("c") });
-  persist();
-}
-
-export function listWholesaleOrders(filter = {}) {
-  let os = [...db().wholesaleOrders];
-  if (filter.dealerId) os = os.filter((o) => o.dealerId === filter.dealerId);
-  return os.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-}
-export function createWholesaleOrder(dealerId, lines, shipTo) {
-  const profile = getDealerProfile(dealerId);
-  if (!profile?.resaleCertNo) throw new Error("resaleCertRequired"); // 첫 주문 전 resale cert 필수
-  const settings = db().settings;
-  const { tier } = dealerTierInfo(dealerId);
-  const items = lines.filter((l) => l.qty > 0).map((l) => {
-    const item = getCatalogItem(l.itemId);
-    const metalUsd = metalQuote(item, settings.goldSpotPerGram, settings.goldPurity);
-    const stoneUsd = tier === 1 ? item.stoneWholesaleT1 : item.stoneWholesaleT2;
-    return { itemId: item.id, qty: l.qty, stoneUsd, metalUsd, unitUsd: stoneUsd + metalUsd };
-  });
-  if (items.length === 0) throw new Error("emptyOrder");
-  const order = {
-    id: nextId("wo"), dealerId, items, shipTo,
-    goldSpotAtOrder: settings.goldSpotPerGram, // 주문 시점 견적 고정
-    status: "PLACED", qcPhotos: [], trackingNo: null,
-    totalUsd: items.reduce((sum, it) => sum + it.unitUsd * it.qty, 0), createdAt: now(),
-  };
-  db().wholesaleOrders.push(order);
-  persist();
-  return order;
-}
-const WHOLESALE_FLOW = { PLACED: ["QC_PASSED", "CANCELLED"], QC_PASSED: ["SHIPPED"], SHIPPED: ["DELIVERED"], DELIVERED: [], CANCELLED: [] };
-export function transitionWholesale(orderId, to, extra = {}) {
-  const o = db().wholesaleOrders.find((x) => x.id === orderId);
-  if (!WHOLESALE_FLOW[o.status].includes(to)) throw new Error(`Invalid wholesale transition ${o.status} -> ${to}`);
-  if (to === "QC_PASSED" && !(extra.qcPhotos?.length)) throw new Error("qcPhotosRequired"); // 개체별 QC 사진 필수
-  if (extra.qcPhotos) o.qcPhotos = extra.qcPhotos;
-  if (extra.trackingNo !== undefined) o.trackingNo = extra.trackingNo;
-  o.status = to;
-  persist();
-  return o;
-}
-
-export function listWarrantyRegs(filter = {}) {
-  let rs = [...db().warrantyRegs];
-  if (filter.dealerId) rs = rs.filter((r) => r.dealerId === filter.dealerId);
-  return rs.sort((a, b) => b.soldAt.localeCompare(a.soldAt));
-}
-export function registerWarranty(dealerId, { itemId, orderId, buyerName, buyerContact, soldAt }) {
-  const until = new Date(soldAt);
-  until.setMonth(until.getMonth() + db().settings.warrantyMonths);
-  const reg = {
-    id: nextId("wr"), dealerId, itemId, orderId: orderId || null,
-    buyerName, buyerContact, soldAt, warrantyUntil: until.toISOString().slice(0, 10),
-  };
-  db().warrantyRegs.push(reg);
-  persist();
-  return reg;
-}
-
-export function listClaims(filter = {}) {
-  let cs = [...db().claims];
-  if (filter.dealerId) cs = cs.filter((c) => c.dealerId === filter.dealerId);
-  return cs.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-}
-export function getClaim(id) { return db().claims.find((c) => c.id === id) || null; }
-export function submitClaim(dealerId, { regId, defectType, desc, photos }) {
-  const claim = {
-    id: nextId("cl"), dealerId, regId, defectType,
-    desc: maskContacts(desc || ""), photos: photos || [],
-    status: "SUBMITTED", adminNote: "", salvage: null, createdAt: now(),
-  };
-  db().claims.push(claim);
-  persist();
-  return claim;
-}
-export function adjudicateClaim(claimId, decision, note) {
-  const c = getClaim(claimId);
-  if (decision === "approve") {
-    assertClaimTransition(c.status, "APPROVED");
-    c.status = "AWAITING_RETURN"; // 승인 = 교체 확정, 불량품 반환 대기 (선불 라벨)
-  } else {
-    assertClaimTransition(c.status, "DENIED");
-    c.status = "DENIED";
-  }
-  c.adminNote = note || "";
-  persist();
-  return c;
-}
-export function receiveClaimReturn(claimId, { goldGrams, stoneToPool }) {
-  const c = getClaim(claimId);
-  assertClaimTransition(c.status, "RETURN_RECEIVED");
-  c.status = "RETURN_RECEIVED";
-  const creditUsd = salvageCredit(goldGrams, db().settings.goldSpotPerGram);
-  c.salvage = { goldGrams, stoneToPool, creditUsd };
-  db().salvageLedger.push({ id: nextId("sv"), claimId, goldGrams, stoneToPool, creditUsd, at: now() });
-  persist();
-  return c;
-}
-export function markClaimReplaced(claimId) {
-  const c = getClaim(claimId);
-  assertClaimTransition(c.status, "REPLACED");
-  c.status = "REPLACED";
-  persist();
-  return c;
-}
-export function listSalvage() { return [...db().salvageLedger]; }
 
 // ---------- visual comm layer: chip catalog ----------
 export function listChips({ part } = {}) {

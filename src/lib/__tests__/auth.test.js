@@ -1,14 +1,9 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { resetDB, addUser, findUserByEmail, findUserByAccessCode, genAccessCode, listVendors } from "../store.js";
+import { resetDB, addUser, findUserByEmail, findUserByAccessCode, genAccessCode } from "../store.js";
 
 beforeEach(() => resetDB());
 
 describe("역할별 인증 — 벤더 접근 코드", () => {
-  it("시드 벤더는 접근 코드를 가진다", () => {
-    const v = listVendors().find((u) => u.id === "u-supplier1");
-    expect(v.accessCode).toBe("CN01-7F3K");
-  });
-
   it("접근 코드로 벤더를 조회 (대소문자·공백 무시), 비벤더/오타는 null", () => {
     expect(findUserByAccessCode("cn01-7f3k")?.id).toBe("u-supplier1");
     expect(findUserByAccessCode("  CN01-7F3K  ")?.id).toBe("u-supplier1");

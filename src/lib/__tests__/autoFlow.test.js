@@ -4,7 +4,7 @@ import {
   toggleShortlist, requestStockConfirm, lockSelectedCandidate, submitStockConfirm, markDepositReceived, acceptQuote,
   submitCadForPr, decideCad, listCadReviews, submitQcForPr, confirmFinal,
   markBalanceReceived, submitShipment, markOrderDelivered, listMilestones,
-  submitWeightLabor, mediaFeed, hideMedia, supplierTasks, dailyChecklist,
+  submitWeightLabor, mediaFeed, hideMedia, dailyChecklist,
   getSettings, portalView, listStyleSpecs, getProcurement, getCandidate,
   createProcurement, pendingCount,
 } from "../store.js";
@@ -81,17 +81,6 @@ describe("자동 공개 — 벤치마크 자동가", () => {
     expect(() => toggleShortlist(held.id, "customer")).toThrow("notSelectable");
   });
 
-  it("배치 만료 시 태스크 종료 + 미판매 후보 자동 비공개 (매뉴얼 §6.2)", () => {
-    const pr = createProcurement("DM-000001", { type: "diamondCandidates", supplierId: "u-supplier1", dueDate: "2020-01-01", batchValidUntil: "2020-01-10", brief: "expired" });
-    const [c] = submitCandidates(pr.id, [
-      { igiNo: "LG-X1", shape: "round", carat: 1.5, color: "E", clarity: "VS1", growth: "CVD", lab: "IGI", procurementCostUsd: 500, image: "/x.png" },
-    ]);
-    expect(c.published).toBe(true);
-    supplierTasks("u-supplier1"); // 진입 시 lazy 스윕
-    expect(getProcurement(pr.id).status).toBe("closed");
-    expect(getCandidate(c.id).published).toBe(false);
-    expect(() => toggleShortlist(c.id, "customer")).toThrow("notSelectable");
-  });
 });
 
 describe("풀 체인 — 어드민 터치포인트는 입금 확인 ②회 + 수령 ①회뿐", () => {
@@ -129,8 +118,6 @@ describe("풀 체인 — 어드민 터치포인트는 입금 확인 ②회 + 수
     const cadPr2 = listProcurements({ orderId: order.id }).filter((p) => p.type === "cad").find((p) => p.status === "open");
     expect(cadPr2).toBeTruthy();
     expect(cadPr2.brief).toContain("minor revision");
-    const task = supplierTasks(supplier).find((x) => x.id === cadPr2.id);
-    expect(task.revision.annotations[0].chipKey).toBe("thinner"); // 핀이 벤더 브리프로
 
     // 벤더: V2 제출 → 고객: 승인 → PRODUCTION + QC 태스크 자동 발행
     submitCadForPr(cadPr2.id, "/cad-v2.png");
@@ -167,37 +154,11 @@ describe("풀 체인 — 어드민 터치포인트는 입금 확인 ②회 + 수
 });
 
 describe("모니터링 — 미디어 피드와 숨김", () => {
-  it("피드에 레퍼런스·CAD가 모이고, 레퍼런스 숨김은 벤더 브리프에서 제외된다", () => {
-    const feed = mediaFeed();
-    expect(feed.some((m) => m.feedKind === "reference" && m.id === "REF-000001")).toBe(true);
-    expect(feed.some((m) => m.feedKind === "cad" && m.id === "CADR-000001")).toBe(true);
-    createProcurement("DM-000001", { type: "cad", supplierId: "u-supplier2", dueDate: "2026-06-25", brief: "x" });
-    expect(JSON.stringify(supplierTasks("u-supplier2"))).toContain("lineup-band.png");
-    hideMedia("reference", "REF-000001", "IN-000001");
-    expect(JSON.stringify(supplierTasks("u-supplier2"))).not.toContain("lineup-band.png");
-  });
-
   it("CAD 숨김 → 포털에서 제외 + 미결정 버전이면 벤더 태스크 재오픈", () => {
     expect(portalView("DM-000002", { queryCode: "H3WT-8RVK" }).cad).toBeTruthy();
     hideMedia("cad", "CADR-000001");
     expect(portalView("DM-000002", { queryCode: "H3WT-8RVK" }).cad).toBeNull();
     expect(getProcurement("PR-000002").status).toBe("open"); // 벤더 재제출 유도
-  });
-
-  it("CAD 대표 파일이 영상이어도 핀은 이미지 캔버스에 — 벤더도 같은 이미지로 본다", () => {
-    const pr = createProcurement("DM-000002", { type: "cad", supplierId: "u-supplier1", dueDate: "d", brief: "" });
-    submitCadForPr(pr.id, [
-      { slot: "render360", kind: "video", src: "/r360.mp4" },
-      { slot: "side", kind: "image", src: "/side.png" },
-    ]);
-    const r = listCadReviews("DM-000002")[0];
-    decideCad(r.id, {
-      decision: "minorRevision", annotatedSrc: "/side.png",
-      annotations: [{ pinId: 1, x: 30, y: 60, part: "band", chipKey: "thinner", value: 1.4 }],
-    }, "customer");
-    const task = supplierTasks("u-supplier1").find((x) => x.type === "cad" && x.status === "open");
-    expect(task.revision.fileUrl).toBe("/side.png"); // 영상이 아닌, 핀이 찍힌 이미지
-    expect(task.revision.annotations[0].chipKey).toBe("thinner");
   });
 
   it("역할별 배지 카운트 — 벤더는 열린 태스크 수", () => {

@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { quarterKey } from "../../lib/dealer.js";
 import {
   adjudicateClaim, getCatalogItem, getUser, listClaims, listSalvage,
   listWarrantyRegs, markClaimReplaced, receiveClaimReturn,
