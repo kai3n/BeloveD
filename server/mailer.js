@@ -4,7 +4,10 @@ const sink = [];
 export async function sendMagicLink(email, link) {
   const msg = { type: "magic_link", to: email, link, at: new Date().toISOString() };
   sink.push(msg);
-  if (process.env.NODE_ENV !== "test") console.log(`[mailer] magic link → ${email}: ${link}`);
+  // Only surface the live token in dev — never in production (logs/aggregation)
+  // or test (M1).
+  const env = process.env.NODE_ENV;
+  if (env !== "production" && env !== "test") console.log(`[mailer] magic link → ${email}: ${link}`);
   return msg;
 }
 

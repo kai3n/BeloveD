@@ -30,3 +30,11 @@ export async function revokeSession(id) {
   if (!id) return;
   await query("update sessions set revoked_at=now() where id=$1", [id]);
 }
+
+// Revoke every live session belonging to a principal (e.g. on password change).
+export async function revokeAllForPrincipal(type, id) {
+  await query(
+    "update sessions set revoked_at=now() where principal_type=$1 and principal_id=$2 and revoked_at is null",
+    [type, id],
+  );
+}

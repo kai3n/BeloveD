@@ -4,6 +4,7 @@ import { createMagicLink, verifyMagicLink, loginWithPassword, ensureCustomer, se
 import { drainMail } from "../mailer.js";
 import { withTransaction, query } from "../db.js";
 import { hashPassword } from "../passwords.js";
+import { getSession } from "../session.js";
 import { ApiError } from "../errors.js";
 
 beforeEach(async () => { await truncateAuth(); drainMail(); });
@@ -34,5 +35,24 @@ describe("password login", () => {
     const c = await withTransaction((cx) => ensureCustomer(cx, "c@b.com"));
     await setCustomerPassword(c.id, "customerpass");
     expect((await loginWithPassword("c@b.com", "customerpass")).principalType).toBe("customer");
+  });
+
+  // I3 — unknown email still returns INVALID_CREDENTIALS (dummy verify path)
+  it("rejects an unknown email with INVALID_CREDENTIALS", async () => {
+    await expect(loginWithPassword("nobody@nowhere.com", "whatever"))
+      .rejects.toMatchObject({ code: "INVALID_CREDENTIALS" });
+  });
+});
+
+// M4 — set-password revokes the customer's other sessions
+describe("session hardening", () => {
+  it("revokes a previously issued session when the customer sets a password", async () => {
+    const c = await withTransaction((cx) => ensureCustomer(cx, "rev@b.com"));
+    await setCustomerPassword(c.id, "firstpass1");
+    const { session } = await loginWithPassword("rev@b.com", "firstpass1");
+    expect((await getSession(session.id)).principal_type).toBe("customer");
+    // Setting (changing) the password should revoke the existing session.
+    await setCustomerPassword(c.id, "secondpass2");
+    expect(await getSession(session.id)).toBeNull();
   });
 });

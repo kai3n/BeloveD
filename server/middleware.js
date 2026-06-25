@@ -7,7 +7,9 @@ export const COOKIE_ADMIN = "bd_admin";
 export function setSessionCookie(res, name, session) {
   res.cookie(name, session.id, {
     httpOnly: true,
-    sameSite: "lax",
+    // Admin sessions have no cross-site navigation need → strict; customer
+    // sessions stay lax so the magic-link callback navigation still attaches.
+    sameSite: name === COOKIE_ADMIN ? "strict" : "lax",
     secure: process.env.NODE_ENV === "production",
     expires: session.expiresAt,
     path: "/",
@@ -39,4 +41,20 @@ export function requireCustomer(req, _res, next) {
 export function requireAdmin(req, _res, next) {
   if (req.principal?.type === "admin") return next();
   next(new ApiError("ADMIN_AUTH_REQUIRED", 401));
+}
+
+const STATE_CHANGING = new Set(["POST", "PATCH", "PUT", "DELETE"]);
+
+// Lightweight CSRF defense for cookie-authed state-changing requests (I5):
+// when PUBLIC_ORIGIN is configured and the request carries an Origin header
+// that does not match it, reject. Requests with no Origin header (native
+// clients, the test suite) or when PUBLIC_ORIGIN is unset are allowed through.
+export function requireSameOrigin(req, _res, next) {
+  if (!STATE_CHANGING.has(req.method)) return next();
+  const allowed = process.env.PUBLIC_ORIGIN;
+  if (!allowed) return next();
+  const origin = req.get("origin");
+  if (!origin) return next();
+  if (origin !== allowed) return next(new ApiError("ORIGIN_NOT_ALLOWED", 403));
+  next();
 }

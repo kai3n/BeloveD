@@ -4,7 +4,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { existsSync } from "node:fs";
 import { ApiError } from "./errors.js";
-import { attachPrincipal } from "./middleware.js";
+import { attachPrincipal, requireSameOrigin } from "./middleware.js";
 import { query } from "./db.js";
 import { authRouter } from "./authRoutes.js";
 
@@ -12,9 +12,15 @@ const distDir = join(dirname(fileURLToPath(import.meta.url)), "..", "dist");
 
 export function createApp() {
   const app = express();
+  // Trust exactly one proxy hop in prod so req.ip reflects the client for
+  // rate limiting. PUBLIC_ORIGIN stays authoritative for link building, so a
+  // spoofed X-Forwarded-Host cannot poison magic links (M5).
+  if (process.env.NODE_ENV === "production") app.set("trust proxy", 1);
   app.use(express.json({ limit: "1mb" }));
   app.use(cookieParser());
   app.use(attachPrincipal);
+  // CSRF/Origin check for cookie-authed state-changing /v1 requests (I5).
+  app.use("/v1", requireSameOrigin);
 
   app.get("/v1/health", async (_req, res, next) => {
     try {

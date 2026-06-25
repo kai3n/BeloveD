@@ -8,6 +8,11 @@ export function pool() {
       max: Number(process.env.PG_POOL_MAX || 10),
       idleTimeoutMillis: Number(process.env.PG_IDLE_TIMEOUT_MS || 30000),
       connectionTimeoutMillis: Number(process.env.PG_CONNECT_TIMEOUT_MS || 5000),
+      // Enforce TLS to Postgres in production (PII + password hashes in transit).
+      // PGSSL=disable opts out (e.g. trusted local socket); dev defaults off (M6).
+      ssl: process.env.PGSSL === "disable"
+        ? false
+        : (process.env.NODE_ENV === "production" ? { rejectUnauthorized: true } : false),
     });
   }
   return _pool;

@@ -2,11 +2,17 @@ import { randomBytes } from "node:crypto";
 import { query, withTransaction } from "./db.js";
 import { ApiError } from "./errors.js";
 import { nextCode } from "./codes.js";
-import { hashToken, issueSession } from "./session.js";
+import { hashToken, issueSession, revokeAllForPrincipal } from "./session.js";
 import { hashPassword, verifyPassword } from "./passwords.js";
 import { sendMagicLink } from "./mailer.js";
 
 const MAGIC_TTL_MS = 1000 * 60 * 15; // 15 minutes
+const ADMIN_TTL_MS = 1000 * 60 * 60 * 12; // 12 hours — admin sessions are short-lived
+
+// Constant precomputed scrypt hash used to equalize timing when no user row
+// matches (I3) — verifying against it costs the same as a real wrong-password
+// check, so an unknown email cannot be distinguished by response latency.
+const DUMMY_HASH = hashPassword(randomBytes(32).toString("hex"));
 
 function normalizeEmail(email) {
   return String(email || "").trim().toLowerCase();
@@ -59,12 +65,15 @@ export async function loginWithPassword(email, password) {
   const normalized = normalizeEmail(email);
   const admin = await query("select * from admin_users where email=$1 and active=true", [normalized]);
   if (admin.rows[0] && verifyPassword(password, admin.rows[0].password_hash)) {
-    return { principalType: "admin", session: await issueSession("admin", admin.rows[0].id) };
+    return { principalType: "admin", session: await issueSession("admin", admin.rows[0].id, ADMIN_TTL_MS) };
   }
   const cust = await query("select * from customers where email=$1", [normalized]);
   if (cust.rows[0]?.password_hash && verifyPassword(password, cust.rows[0].password_hash)) {
     return { principalType: "customer", session: await issueSession("customer", cust.rows[0].id) };
   }
+  // No matching row: still run one verify against a constant dummy hash so the
+  // response time for an unknown email matches a wrong-password attempt (I3).
+  verifyPassword(password, DUMMY_HASH);
   throw new ApiError("INVALID_CREDENTIALS", 401);
 }
 
@@ -72,4 +81,7 @@ export async function setCustomerPassword(customerId, password) {
   if (!password || String(password).length < 8) throw new ApiError("INVALID_CREDENTIALS", 400, "password too short");
   await query("update customers set password_hash=$1, updated_at=now() where id=$2",
     [hashPassword(password), customerId]);
+  // Revoke the customer's other sessions so a stolen cookie can't survive a
+  // password (re)set (M4).
+  await revokeAllForPrincipal("customer", customerId);
 }
