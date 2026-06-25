@@ -1,0 +1,76 @@
+// 인테이크 리뷰용 예상 견적 — 확정 견적 이전의 '예비 추정'.
+// 워크숍 가격 공식(quoteCompute)을 그대로 쓰되, 스톤이 확정 전이라 ±범위로 제시.
+// 경쟁사(Blue Nile / Brilliant Earth)는 BeloveD 추정에 고정 배수를 적용해 비교 표시.
+import { benchmarkFor, getSettings, listStyleSpecs } from "./store.js";
+import { quoteCompute } from "./ops.js";
+
+// 컬러/클래리티에 따른 소폭 보정 — 등급이 높을수록 비싸진다(표시용 추정).
+const COLOR_FACTOR = { D: 1.12, E: 1.06, F: 1.0, G: 0.95, H: 0.9 };
+const CLARITY_FACTOR = { IF: 1.12, VVS1: 1.08, VVS2: 1.05, VS1: 1.0, VS2: 0.96, SI1: 0.9 };
+// 스펙이 없을 때의 카테고리별 기본 세팅 중량(g)/공임(USD)
+const DEFAULT_WEIGHT_G = { ring: 4.2, necklace: 3.0, bangle: 9.0, earrings: 3.4 };
+const DEFAULT_LABOR_USD = { ring: 320, necklace: 260, bangle: 520, earrings: 300 };
+
+// 경쟁사 배수 — 동일 사양 기준 일반적인 리테일 격차(표시용 가정).
+const COMPETITORS = [
+  { name: "Blue Nile", lo: 1.95, hi: 2.05 },
+  { name: "Brilliant Earth", lo: 1.62, hi: 1.72 },
+];
+
+const round10 = (n) => Math.round(n / 10) * 10;
+
+export function estimateQuoteRange(form) {
+  const s = getSettings() || {};
+  const metalRefUsdPerG = s.metalRefUsdPerG?.[form.metal] ?? 85;
+  const multiplier = s.opsMultiplier ?? 1.8;
+  const lossRatePct = s.defaultLossRatePct ?? 8;
+  const depositRate = s.opsDepositRate ?? 0.5;
+
+  // 세팅 중량/공임: 선택 스타일의 승인 스펙 우선, 없으면 카테고리 기본값
+  const spec = form.styleId
+    ? (listStyleSpecs(form.styleId) || []).find((sp) => sp.metal === form.metal)
+    : null;
+  const estWeightG = spec?.estWeightG ?? DEFAULT_WEIGHT_G[form.category] ?? 4.0;
+  const nonMetalUsd = (spec ? (spec.laborUsd || 0) + (spec.materialsUsd || 0) : 0)
+    || DEFAULT_LABOR_USD[form.category] || 300;
+
+  // 스톤 단가
+  const solitaire = form.productLine === "solitaire";
+  let benchmarkUsdPerCt;
+  let carat;
+  if (solitaire) {
+    carat = Number(form.stonePrefs?.carat) || 1.0;
+    const bench = benchmarkFor(form.stonePrefs?.shape || "round", carat);
+    const unit = bench?.unitUsdPerCt ?? 400;
+    benchmarkUsdPerCt = unit
+      * (COLOR_FACTOR[form.stonePrefs?.color] ?? 1.0)
+      * (CLARITY_FACTOR[form.stonePrefs?.clarity] ?? 1.0);
+  } else {
+    // 멀티스톤: 멜레 총합을 약 1ct 상당으로 가정하고 멜레 할인 적용
+    carat = 1.0;
+    benchmarkUsdPerCt = (benchmarkFor("round", 1.0)?.unitUsdPerCt ?? 320) * 0.8;
+  }
+
+  const { totalUsd } = quoteCompute({
+    carat, benchmarkUsdPerCt, multiplier,
+    estWeightG, metalRefUsdPerG, lossRatePct, nonMetalUsd, depositRate,
+  });
+
+  const low = round10(totalUsd * 0.92);
+  const high = round10(totalUsd * 1.1);
+
+  const competitors = COMPETITORS.map((c) => ({
+    name: c.name,
+    low: round10(low * c.lo),
+    high: round10(high * c.hi),
+  }));
+  const top = competitors.reduce((a, b) => (b.high > a.high ? b : a));
+
+  return {
+    solitaire,
+    beloved: { low, high },
+    competitors,
+    topName: top.name,
+    savingsTop: top.high - low, // "Up to $X less than <top>"
+  };
+}

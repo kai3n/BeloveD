@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth.jsx";
 import { useLocale } from "../i18n.jsx";
 
-// 일반회원(고객) 로그인·가입. 스태프(어드민·딜러)는 /staff, 벤더는 /vendor.
+// Customer Web login/signup. Admin access uses /staff; vendor/dealer access lives in separate apps.
 export default function Login() {
   const { p } = useLocale();
   const { login, signup } = useAuth();
@@ -19,9 +20,6 @@ export default function Login() {
 
   function afterLogin(user) {
     if (from) return navigate(from, { replace: true });
-    if (user.role === "supplier") return navigate("/supplier", { replace: true });
-    if (user.role === "dealer") return navigate("/dealer", { replace: true });
-    if (user.role === "admin") return navigate("/admin", { replace: true });
     navigate("/account", { replace: true });
   }
 
@@ -67,12 +65,8 @@ export default function Login() {
           {mode === "login" ? p.login.toSignup : p.login.toLogin}
         </button>
       </form>
-
-      {/* 역할별 진입 안내 — 스태프/벤더는 전용 경로 */}
       <p className="form-hint" style={{ marginTop: 18, textAlign: "center" }}>
         <Link className="text-link" to="/staff">{p.login.staffLink}</Link>
-        {" · "}
-        <Link className="text-link" to="/vendor">{p.login.vendorLink}</Link>
       </p>
 
       {import.meta.env.DEV && <DemoPanel login={login} afterLogin={afterLogin} setError={setError} p={p} />}

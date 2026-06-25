@@ -126,6 +126,14 @@ export function saveDiamond(diamond) {
   else list.push({ media: [{ kind: "image", src: "/assets/lab-diamond-tweezers.webp" }], visible: true, ...diamond, id: nextId("d") });
   persist();
 }
+export function deleteDiamond(id) {
+  const list = db().diamonds;
+  const i = list.findIndex((d) => d.id === id);
+  if (i >= 0) {
+    list.splice(i, 1);
+    persist();
+  }
+}
 export function adjustDiamondPrices(percent) {
   db().diamonds.forEach((d) => {
     d.priceUsd = Math.round((d.priceUsd * (1 + percent / 100)) / 10) * 10;
@@ -664,13 +672,28 @@ export function getOpsStyle(id) { return db().opsStyles.find((st) => st.id === i
 export function saveOpsStyle(style) {
   const list = db().opsStyles;
   const i = list.findIndex((st) => st.id === style.id);
-  if (i >= 0) list[i] = { ...list[i], ...style };
-  else {
+  if (i >= 0) {
+    list[i] = { ...list[i], ...style };
+    persist();
+    return list[i];
+  }
+  const created = (() => {
     const prefix = { ring: "RING", necklace: "NECK", earrings: "EARR", bangle: "BRAC" }[style.category] || "STYL";
     const count = list.filter((st) => st.category === style.category).length + 1;
-    list.push({ published: false, availableForSale: false, mediaComplete: false, ...style, id: `${prefix}-${String(count).padStart(3, "0")}` });
-  }
+    return { published: false, availableForSale: false, mediaComplete: false, ...style, id: `${prefix}-${String(count).padStart(3, "0")}` };
+  })();
+  list.push(created);
   persist();
+  return created;
+}
+export function deleteOpsStyle(id) {
+  const list = db().opsStyles;
+  const i = list.findIndex((st) => st.id === id);
+  if (i >= 0) {
+    list.splice(i, 1);
+    db().styleSpecs = db().styleSpecs.filter((sp) => sp.styleId !== id);
+    persist();
+  }
 }
 export function listStyleSpecs(styleId) {
   return db().styleSpecs.filter((sp) => !styleId || sp.styleId === styleId);
@@ -680,6 +703,10 @@ export function saveStyleSpec(spec) {
   const i = list.findIndex((sp) => sp.id === spec.id);
   if (i >= 0) list[i] = { ...list[i], ...spec };
   else list.push({ status: "approved", ...spec, id: nextSeqId("SPEC") });
+  persist();
+}
+export function deleteStyleSpec(id) {
+  db().styleSpecs = db().styleSpecs.filter((sp) => sp.id !== id);
   persist();
 }
 

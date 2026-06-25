@@ -6,9 +6,8 @@ import {
   Play,
 } from "lucide-react";
 import { useLocale } from "../i18n.jsx";
-import { MediaThumb, usd, withBase } from "../components/ui.jsx";
+import { withBase } from "../components/ui.jsx";
 import { useDBVersion } from "../lib/useDB.js";
-import { listDiamonds } from "../lib/store.js";
 import { DESIGN_CATEGORIES } from "../lib/designSlots.js";
 
 const collectionImageClass = {
@@ -73,45 +72,6 @@ const collectionCopy = {
   },
 };
 
-const diamondPreviewCopy = {
-  en: {
-    label: "SELECT YOUR DIAMOND",
-    title: ["Choose", "the stone."],
-    body: "Grown, not mined. Each stone IGI or GIA certified — and ready to set.",
-    view: "View all diamonds",
-    cert: "certified",
-    select: "Select",
-    spec: (d) => `${d.color} color · ${d.clarity} clarity · ${d.cut}`,
-  },
-  ko: {
-    label: "다이아몬드 선택",
-    title: ["스톤을", "고르세요."],
-    body: "캐낸 것이 아니라, 길러낸 빛. 모든 스톤 IGI·GIA 인증, 바로 세팅 가능.",
-    view: "전체 다이아몬드 보기",
-    cert: "인증",
-    select: "선택",
-    spec: (d) => `${d.color} 컬러 · ${d.clarity} 클래리티 · ${d.cut} 컷`,
-  },
-  zh: {
-    label: "选择钻石",
-    title: ["先选", "主石。"],
-    body: "培育而非开采。每颗皆 IGI 或 GIA 认证，随时可镶。",
-    view: "查看全部钻石",
-    cert: "认证",
-    select: "选择",
-    spec: (d) => `${d.color} 色 · ${d.clarity} 净度 · ${d.cut} 切工`,
-  },
-  es: {
-    label: "ELIGE TU DIAMANTE",
-    title: ["Elige", "la piedra."],
-    body: "Cultivado, no extraído. Cada piedra con certificado IGI o GIA — lista para engastar.",
-    view: "Ver diamantes",
-    cert: "certificado",
-    select: "Elegir",
-    spec: (d) => `${d.color} color · ${d.clarity} claridad · ${d.cut}`,
-  },
-};
-
 const quoteBoardCopy = {
   en: {
     label: "PRICE CHECK",
@@ -119,7 +79,7 @@ const quoteBoardCopy = {
     boardTitle: ["Retail markup,", "made visible."],
     body: "Comparable 1ct lab-grown diamond ranges, shown against BeloveD direct custom quotes.",
     belovedSpec: "Comparable 1.00ct / VS+ / Ideal",
-    browse: "Browse diamonds",
+    browse: "Start a request",
     custom: "Start custom order",
     stonePanelAria: "BeloveD diamond pricing reference",
     chipsAria: "Comparison stone specification",
@@ -141,7 +101,7 @@ const quoteBoardCopy = {
     boardTitle: ["리테일 마크업을", "눈에 보이게."],
     body: "1캐럿 랩다이아몬드 기준 비교 범위를 BeloveD 직접 견적과 나란히 보여드립니다.",
     belovedSpec: "동급 1.00ct / VS+ / Ideal",
-    browse: "다이아몬드 보기",
+    browse: "요청 시작하기",
     custom: "주문제작 시작",
     stonePanelAria: "BeloveD 다이아몬드 가격 비교",
     chipsAria: "비교 스톤 사양",
@@ -163,7 +123,7 @@ const quoteBoardCopy = {
     boardTitle: ["零售溢价", "一眼看清。"],
     body: "以 1 克拉培育钻石为例，对比 BeloveD 直接定制报价与常见零售区间。",
     belovedSpec: "同级 1.00ct / VS+ / Ideal",
-    browse: "查看钻石",
+    browse: "开始需求",
     custom: "开始定制",
     stonePanelAria: "BeloveD 钻石价格参考",
     chipsAria: "对比钻石规格",
@@ -185,7 +145,7 @@ const quoteBoardCopy = {
     boardTitle: ["El margen retail,", "a la vista."],
     body: "Rangos comparables de diamantes lab-grown de 1 ct frente a una cotización directa BeloveD.",
     belovedSpec: "Equivalente 1.00ct / VS+ / Ideal",
-    browse: "Ver diamantes",
+    browse: "Iniciar solicitud",
     custom: "Crear pedido",
     stonePanelAria: "Referencia de precio de diamantes BeloveD",
     chipsAria: "Especificación de piedra comparable",
@@ -339,58 +299,6 @@ function Collections({ locale }) {
   );
 }
 
-function DiamondSelection({ locale, p }) {
-  const copy = diamondPreviewCopy[locale] ?? diamondPreviewCopy.en;
-  const diamonds = [...listDiamonds()].sort((a, b) => a.priceUsd - b.priceUsd).slice(0, 4);
-
-  return (
-    <section className="stone-noir" id="diamonds">
-      <div className="stone-noir-head">
-        <span className="noir-eyebrow">{copy.label}</span>
-        <h2>{renderLines(copy.title)}</h2>
-        <p className="noir-sub">{copy.body}</p>
-        <Link className="noir-link" to="/diamonds">
-          {copy.view}
-          <ArrowRight size={14} strokeWidth={1.7} />
-        </Link>
-      </div>
-
-      <div className="stone-noir-grid">
-        {diamonds.map((diamond) => (
-          <article className="stone-noir-card" key={diamond.id}>
-            <Link
-              className="stone-noir-media"
-              to={`/diamonds/${diamond.id}`}
-              aria-label={`${p.shapes[diamond.shape]} ${diamond.carat.toFixed(2)}ct`}
-            >
-              <MediaThumb
-                media={diamond.media[0]}
-                ratio="1.18 / 1"
-                alt={`${p.shapes[diamond.shape]} ${diamond.carat.toFixed(2)}ct`}
-              />
-            </Link>
-            <div className="stone-noir-body">
-              <div className="stone-noir-meta">
-                <span>{diamond.certOrg} {copy.cert}</span>
-                <span>{diamond.cut}</span>
-              </div>
-              <h3 className="stone-noir-name">{p.shapes[diamond.shape]} {diamond.carat.toFixed(2)}ct</h3>
-              <p className="stone-noir-spec">{copy.spec(diamond)}</p>
-              <div className="stone-noir-foot">
-                <strong>{usd(diamond.priceUsd)}</strong>
-                <Link className="stone-noir-select" to={`/custom/new?diamond=${diamond.id}`}>
-                  {copy.select}
-                  <ArrowRight size={14} strokeWidth={1.7} />
-                </Link>
-              </div>
-            </div>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 function HomeCore({ locale }) {
   const copy = quoteBoardCopy[locale] ?? quoteBoardCopy.en;
   const comparisons = [
@@ -465,7 +373,7 @@ function HomeCore({ locale }) {
 
       <p className="spread-noir-note">{copy.note}</p>
       <div className="spread-noir-actions">
-        <Link className="noir-btn" to="/diamonds">
+        <Link className="noir-btn" to="/custom/new">
           {copy.browse}
           <ArrowRight size={15} strokeWidth={1.6} />
         </Link>
@@ -526,7 +434,6 @@ export default function Home() {
       </svg>
       <Hero t={t} p={p} />
       <Collections locale={locale} />
-      <DiamondSelection locale={locale} p={p} />
       <HomeCore locale={locale} />
       <MobileDock locale={locale} p={p} />
     </>

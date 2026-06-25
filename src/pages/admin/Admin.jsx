@@ -7,28 +7,21 @@ import { useLocale } from "../../i18n.jsx";
 export default function Admin() {
   const { p } = useLocale();
   const menu = [
-    { to: "/admin", key: "checklist", ops: true, end: true },
-    { to: "/admin/ops", key: "orders", ops: true },
-    { to: "/admin/styles", key: "styles", ops: true },
-    { to: "/admin/benchmark", key: "benchmark", ops: true },
+    { to: "/admin", key: "dashboard", end: true },
+    { to: "/admin/orders", key: "orders", ops: true },
+    { to: "/admin/designs", key: "styles", ops: true },
     { to: "/admin/diamonds", key: "diamonds" },
-    { to: "/admin/pool", key: "pool" },
-    { to: "/admin/vendors", key: "vendors" },
-    { to: "/admin/dealers", key: "dealers", dealer: true },
-    { to: "/admin/catalog", key: "catalog", dealer: true },
-    { to: "/admin/wholesale", key: "wholesale", dealer: true },
-    { to: "/admin/claims", key: "claims", dealer: true },
-    { to: "/admin/warranty", key: "warranty", dealer: true },
+    { to: "/admin/benchmark", key: "benchmark", ops: true },
     { to: "/admin/settings", key: "settings" },
   ];
   return (
-    <div className="page">
+    <div className="page admin-page">
       <h1 className="page-title">{p.admin.title}</h1>
       <div className="admin-shell">
         <nav className="admin-side">
           {menu.map((m) => (
             <NavLink key={m.to} to={m.to} end={m.end}>
-              {m.ops ? p.opsA.menu[m.key] : m.dealer ? p.adminDealer.menu[m.key] : p.admin.menu[m.key]}
+              {m.ops ? p.opsA.menu[m.key] : p.admin.menu[m.key]}
             </NavLink>
           ))}
         </nav>
@@ -78,7 +71,7 @@ export function AdminDashboard() {
           <p key={label} className="warn-note" style={{ margin: "6px 0" }}>· {label}: {list.join(", ")}</p>
         ))}
       </div>
-      {/* 벤더↔고객 시각자료 사후 모니터링 — 사전 승인 게이트 대신 */}
+      {/* 고객에게 보일 시각자료 사후 모니터링 — 사전 승인 게이트 대신 */}
       <div className="panel" style={{ marginTop: 18 }}>
         <h3>{tm.title}</h3>
         <div className="card-grid cols-3">

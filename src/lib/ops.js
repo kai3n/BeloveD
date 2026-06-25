@@ -16,6 +16,10 @@ export const MILESTONE_STATUSES = ["pending", "inProgress", "waitingClient", "bl
 
 export const OPS_METALS = ["14ky", "18ky", "14kr", "18kr", "18kw", "pt"];
 export const CHAIN_LENGTHS = ["16in", "18in", "20in"]; // 단일 선택 — 자유 입력 금지
+export const CHAIN_STYLE_OPTIONS = ["cable", "box", "wheat", "rope", "singapore", "figaro", "rolo", "paperclip"];
+export const CLASP_OPTIONS = ["lobster", "springRing", "boxSafety", "hiddenSafety", "toggle", "adjustableSlider"];
+export const EARRING_PAIRING_OPTIONS = ["matchedPush", "matchedScrew", "matchedSecureLock", "matchedLever", "clipOnPair", "singleLeftRight"];
+export const BRACELET_WRIST_OPTIONS = ["5.5in", "6in", "6.5in", "7in", "7.5in", "8in", "8.5in"];
 export const PRODUCT_LINES = ["solitaire", "multi"];
 export const OPS_CATEGORIES = ["ring", "necklace", "earrings", "bangle"];
 export const PR_TYPES = ["diamondCandidates", "weightLabor", "stockConfirm", "cad", "qc", "ship"];

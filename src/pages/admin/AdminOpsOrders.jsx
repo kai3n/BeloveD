@@ -34,7 +34,7 @@ export default function AdminOpsOrders() {
                   <td>{o.requiredDate || "—"}</td>
                   <td>{listCustomerActions(o.id, true).length}</td>
                   <td>{o.queryCode}</td>
-                  <td><Link className="text-link" to={`/admin/ops/${o.id}`}>{t.detail}</Link></td>
+                  <td><Link className="text-link" to={`/admin/orders/${o.id}`}>{t.detail}</Link></td>
                 </tr>
               ))}
             </tbody>

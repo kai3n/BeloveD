@@ -6,6 +6,6 @@ export default defineConfig({
   plugins: [react()],
   base: process.env.GITHUB_PAGES ? "/lumina-lab/" : "/",
   test: {
-    exclude: ["**/node_modules/**", "**/.claude/**", "**/dist/**"],
+    exclude: ["**/node_modules/**", "**/.claude/**", "**/dist/**", "**/server/**"],
   },
 });

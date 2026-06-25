@@ -1,16 +1,57 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Eye, X } from "lucide-react";
 import { useAuth } from "../lib/auth.jsx";
-import { CHAIN_LENGTHS, OPS_CATEGORIES, OPS_METALS, PRODUCT_LINES, BENCHMARK_SHAPES } from "../lib/ops.js";
+import {
+  BENCHMARK_SHAPES,
+  BRACELET_WRIST_OPTIONS,
+  CHAIN_LENGTHS,
+  CHAIN_STYLE_OPTIONS,
+  CLASP_OPTIONS,
+  EARRING_PAIRING_OPTIONS,
+  OPS_CATEGORIES,
+  OPS_METALS,
+  PRODUCT_LINES,
+} from "../lib/ops.js";
 import { createIntake, getDiamond, listOpsStyles } from "../lib/store.js";
 import { useDBVersion } from "../lib/useDB.js";
 import { pickI18n, useLocale } from "../i18n.jsx";
-import { MediaPicker } from "../components/ui.jsx";
+import { LuxuryDatePicker, LuxurySelect, MediaPicker, MediaThumb } from "../components/ui.jsx";
 import PinAnnotator from "../components/PinAnnotator.jsx";
 import StoneEduPanel from "../components/StoneEducation.jsx";
-import RingSizeHelp from "../components/RingSizeHelp.jsx";
+import CategoryGuide from "../components/CategoryGuide.jsx";
+import QuoteCompare from "../components/QuoteCompare.jsx";
 
 const DRAFT_KEY = "lumina-intake-draft";
+const RING_SIZE_OPTIONS = Array.from({ length: 21 }, (_, i) => String(3 + i * 0.5).replace(/\.0$/, ""));
+
+function categoryDefaults(category) {
+  if (category === "ring") return { ringSize: "" };
+  if (category === "necklace") return { chainStyle: "", chainLength: "18in", clasp: "" };
+  if (category === "bangle") return { wristSize: "" };
+  if (category === "earrings") return { earringDetails: "" };
+  return {};
+}
+
+function styleMedia(style) {
+  if (!style) return null;
+  if (Array.isArray(style.media) && style.media.length > 0) return style.media[0];
+  if (style.coverImage) return { kind: style.coverImage.endsWith(".mp4") ? "video" : "image", src: style.coverImage };
+  return null;
+}
+
+function intakeOption(options, labels = {}, descriptions = {}) {
+  return options.map((value) => ({
+    value,
+    label: descriptions[value] ? `${labels[value] || value} · ${descriptions[value]}` : labels[value] || value,
+  }));
+}
+
+function chainLengthLabel(value) {
+  if (value === "16in") return "16 in / 40 cm";
+  if (value === "18in") return "18 in / 45 cm";
+  return "20 in / 50 cm";
+}
 
 function readDraft() {
   if (typeof window === "undefined") return null;
@@ -29,28 +70,31 @@ export default function IntakeForm() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const styles = listOpsStyles({ publishedOnly: true });
+  const styleParam = params.get("style") || "";
+  const styleFromParam = styles.find((st) => st.id === styleParam);
   // 쇼케이스 다이아에서 진입 시 스톤 선호 프리필
   const refDiamond = params.get("diamond") ? getDiamond(params.get("diamond")) : null;
   const draft = readDraft();
 
   const baseForm = {
-    name: user?.name || "", contact: user?.email || "", productLine: "solitaire", category: "ring",
-    styleId: params.get("style") || "", budget: "", metal: "18kw",
-    conditional: {},
+    name: user?.name || "", contact: user?.email || "", productLine: "solitaire", category: styleFromParam?.category || "ring",
+    styleId: styleParam, metal: "18kw",
+    conditional: categoryDefaults(styleFromParam?.category || "ring"),
     stonePrefs: {
       shape: refDiamond?.shape || "round", carat: String(refDiamond?.carat || "1.5"),
       color: refDiamond?.color || "E", clarity: refDiamond?.clarity || "VS1",
       growth: "CVD", lab: "IGI India", colorTreatment: "disclosed", fluorescence: "none", lwRatio: "",
     },
     multiSpec: { meleeSpec: "", overallDims: "", arrangement: "", standard: "" },
-    requiredDate: "", country: "", termsAccepted: false,
+    requiredDate: "", termsAccepted: false,
   };
   const [form, setForm] = useState(() => {
     if (!draft?.form) return baseForm;
     return {
       ...baseForm,
       ...draft.form,
-      styleId: params.get("style") || draft.form.styleId || baseForm.styleId,
+      category: styleFromParam?.category || draft.form.category || baseForm.category,
+      styleId: styleParam || draft.form.styleId || baseForm.styleId,
       conditional: { ...baseForm.conditional, ...draft.form.conditional },
       stonePrefs: { ...baseForm.stonePrefs, ...draft.form.stonePrefs },
       multiSpec: { ...baseForm.multiSpec, ...draft.form.multiSpec },
@@ -62,11 +106,27 @@ export default function IntakeForm() {
   const [eduField, setEduField] = useState("shape"); // 교육 패널이 따라가는 포커스 필드
   const [step, setStep] = useState(0); // 0:제품 1:센터스톤 2:레퍼런스 3:리뷰
   const [stepError, setStepError] = useState(false);
+  const [stylePreviewOpen, setStylePreviewOpen] = useState(false);
   const wizardSteps = [...t.wizardSteps, t.reviewStep];
   const setF = (patch) => setForm((f) => ({ ...f, ...patch }));
   const setC = (patch) => setForm((f) => ({ ...f, conditional: { ...f.conditional, ...patch } }));
   const setS = (patch) => setForm((f) => ({ ...f, stonePrefs: { ...f.stonePrefs, ...patch } }));
   const setM = (patch) => setForm((f) => ({ ...f, multiSpec: { ...f.multiSpec, ...patch } }));
+  const stylesForCategory = styles.filter((st) => st.category === form.category);
+  const selectedStyle = styles.find((st) => st.id === form.styleId) || null;
+  const selectedStyleThumb = styleMedia(selectedStyle);
+  const selectedStyleName = selectedStyle ? pickI18n(selectedStyle.name, locale) : "";
+  const ringSizeValue = RING_SIZE_OPTIONS.includes(form.conditional.ringSize || "") ? form.conditional.ringSize : "";
+  const chainStyleValue = CHAIN_STYLE_OPTIONS.includes(form.conditional.chainStyle || "") ? form.conditional.chainStyle : "";
+  const claspValue = CLASP_OPTIONS.includes(form.conditional.clasp || "") ? form.conditional.clasp : "";
+  const earringDetailsValue = EARRING_PAIRING_OPTIONS.includes(form.conditional.earringDetails || "") ? form.conditional.earringDetails : "";
+  const wristSizeValue = BRACELET_WRIST_OPTIONS.includes(form.conditional.wristSize || "") ? form.conditional.wristSize : "";
+  const optionLabels = t.optionLabels || {};
+  const optionDescriptions = t.optionDescriptions || {};
+  const chainStyleOptions = intakeOption(CHAIN_STYLE_OPTIONS, optionLabels.chainStyles, optionDescriptions.chainStyles);
+  const claspOptions = intakeOption(CLASP_OPTIONS, optionLabels.clasps, optionDescriptions.clasps);
+  const earringOptions = intakeOption(EARRING_PAIRING_OPTIONS, optionLabels.earringPairing, optionDescriptions.earringPairing);
+  const wristOptions = intakeOption(BRACELET_WRIST_OPTIONS, optionLabels.braceletWrist, optionDescriptions.braceletWrist);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -75,11 +135,60 @@ export default function IntakeForm() {
     return () => window.clearTimeout(timer);
   }, [form, refs]);
 
+  useEffect(() => {
+    if (stylesForCategory.length === 0) {
+      if (form.styleId) setF({ styleId: "" });
+      return;
+    }
+    if (!stylesForCategory.some((st) => st.id === form.styleId)) {
+      setF({ styleId: stylesForCategory[0].id });
+    }
+  }, [form.category, form.styleId, stylesForCategory]);
+
+  useEffect(() => {
+    if (form.category === "ring" && form.conditional.ringSize && !RING_SIZE_OPTIONS.includes(form.conditional.ringSize)) {
+      setC({ ringSize: "" });
+    }
+  }, [form.category, form.conditional.ringSize]);
+
+  useEffect(() => {
+    if (form.category === "necklace") {
+      const patch = {};
+      if (form.conditional.chainStyle && !CHAIN_STYLE_OPTIONS.includes(form.conditional.chainStyle)) patch.chainStyle = "";
+      if (form.conditional.clasp && !CLASP_OPTIONS.includes(form.conditional.clasp)) patch.clasp = "";
+      if (Object.keys(patch).length > 0) setC(patch);
+    }
+    if (form.category === "earrings" && form.conditional.earringDetails && !EARRING_PAIRING_OPTIONS.includes(form.conditional.earringDetails)) {
+      setC({ earringDetails: "" });
+    }
+    if (form.category === "bangle" && form.conditional.wristSize && !BRACELET_WRIST_OPTIONS.includes(form.conditional.wristSize)) {
+      setC({ wristSize: "" });
+    }
+  }, [form.category, form.conditional.chainStyle, form.conditional.clasp, form.conditional.earringDetails, form.conditional.wristSize]);
+
+  useEffect(() => {
+    if (!stylePreviewOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKeyDown = (event) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+    };
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown, true);
+    };
+  }, [stylePreviewOpen]);
+
   function submit(e) {
     e.preventDefault();
+    // 마지막(리뷰) 단계가 아니면 제출하지 않는다. 단계 0의 텍스트형 입력이 하나뿐일 때
+    // 브라우저가 Enter로 폼을 암묵적 제출해 위저드(리뷰 포함)를 건너뛰는 것을 방어 — Enter는 "다음"으로 동작.
+    if (step < 3) { goNext(); return; }
     const payload = {
       ...form,
-      budget: Number(form.budget) || null,
       stonePrefs: form.productLine === "solitaire" ? { ...form.stonePrefs, carat: Number(form.stonePrefs.carat) || null } : null,
       multiSpec: form.productLine === "multi" ? form.multiSpec : null,
       referenceMedia: refs,
@@ -92,12 +201,12 @@ export default function IntakeForm() {
   // 단계 진행 전 현재 단계 필수값 검증 (HTML required는 단계 이동을 막지 못함)
   function validateStep(s) {
     if (s === 0) {
-      if (!form.country.trim()) return false;
       const c = form.category;
-      if (c === "ring" && !(form.conditional.ringSize || "").trim()) return false;
-      if (c === "necklace" && !(form.conditional.chainStyle || "").trim()) return false;
-      if (c === "bangle" && !(form.conditional.wristSize || "").trim()) return false;
-      if (c === "earrings" && !(form.conditional.earringDetails || "").trim()) return false;
+      if (c === "ring" && !RING_SIZE_OPTIONS.includes(form.conditional.ringSize || "")) return false;
+      if (c === "necklace" && !CHAIN_STYLE_OPTIONS.includes(form.conditional.chainStyle || "")) return false;
+      if (c === "necklace" && !CLASP_OPTIONS.includes(form.conditional.clasp || "")) return false;
+      if (c === "bangle" && !BRACELET_WRIST_OPTIONS.includes(form.conditional.wristSize || "")) return false;
+      if (c === "earrings" && !EARRING_PAIRING_OPTIONS.includes(form.conditional.earringDetails || "")) return false;
       return true;
     }
     if (s === 1 && form.productLine === "multi") {
@@ -133,8 +242,8 @@ export default function IntakeForm() {
   const bigStone = solitaire && Number(form.stonePrefs.carat) >= 2;
 
   const showEdu = solitaire && step === 1; // 센터스톤 단계: 교육 사이드패널
-  const showRingHelp = cat === "ring" && step === 0; // 제품 단계 + 링: 사이즈 도움말
-  const sidePanel = showEdu ? "stone" : showRingHelp ? "ring" : null;
+  const showGuide = step === 0; // 제품 단계: 카테고리별 사이즈/디자인 가이드
+  const sidePanel = showEdu ? "stone" : showGuide ? "guide" : null;
 
   return (
     <div className="page page-narrow" style={{ maxWidth: sidePanel ? 1020 : 680 }}>
@@ -146,7 +255,7 @@ export default function IntakeForm() {
           <li key={label} className={i === step ? "current" : i < step ? "done" : ""}><span className="dot" />{label}</li>
         ))}
       </ol>
-      <p className="form-hint" style={{ textAlign: "right", margin: "8px 0 -8px" }}>
+      <p className="form-hint intake-meta-note">
         {t.requiredNote} · {t.savedNote}
       </p>
 
@@ -156,50 +265,144 @@ export default function IntakeForm() {
         {/* ── Step 1: 제품 ── */}
         {step === 0 && (
           <>
-            <div className="filter-grid" style={{ gridTemplateColumns: "1fr 1fr" }}>
-              <label className="field"><span>{t.productLine}</span>
-                <select value={form.productLine} onChange={(e) => setF({ productLine: e.target.value })}>
-                  {PRODUCT_LINES.map((pl) => <option key={pl} value={pl}>{p.productLines[pl]}</option>)}
-                </select></label>
+            <div className="filter-grid intake-product-grid">
               <label className="field"><span>{t.category}</span>
-                <select value={form.category} onChange={(e) => setF({ category: e.target.value, conditional: {} })}>
-                  {OPS_CATEGORIES.map((c) => <option key={c} value={c}>{p.opsCategories[c]}</option>)}
-                </select></label>
-              <label className="field"><span>{t.style}</span>
-                <select value={form.styleId} onChange={(e) => setF({ styleId: e.target.value })}>
-                  <option value="">{t.noStyle}</option>
-                  {styles.map((st) => <option key={st.id} value={st.id}>{st.id} — {pickI18n(st.name, locale)}</option>)}
-                </select></label>
+                <LuxurySelect
+                  value={form.category}
+                  ariaLabel={t.category}
+                  options={OPS_CATEGORIES.map((c) => ({ value: c, label: p.opsCategories[c] }))}
+                  onChange={(value) => setF({ category: value, conditional: categoryDefaults(value), styleId: "" })}
+                />
+              </label>
+              <label className="field design-select-field"><span>{t.style}</span>
+                <LuxurySelect
+                  value={form.styleId}
+                  ariaLabel={t.style}
+                  placeholder={t.noStyle}
+                  className="style-select-control"
+                  options={stylesForCategory.length === 0
+                    ? [{ value: "", label: t.noStyle, disabled: true }]
+                    : stylesForCategory.map((st) => ({ value: st.id, label: pickI18n(st.name, locale) }))}
+                  onChange={(value) => setF({ styleId: value })}
+                />
+              </label>
+              <label className="field"><span>{t.productLine}</span>
+                <LuxurySelect
+                  value={form.productLine}
+                  ariaLabel={t.productLine}
+                  options={PRODUCT_LINES.map((pl) => ({ value: pl, label: p.productLines[pl] }))}
+                  onChange={(value) => setF({ productLine: value })}
+                />
+              </label>
               <label className="field"><span>{t.metal}</span>
-                <select value={form.metal} onChange={(e) => setF({ metal: e.target.value })}>
-                  {Object.keys(OPS_METALS ? p.opsMetals : {}).map((m) => <option key={m} value={m}>{p.opsMetals[m]}</option>)}
-                </select></label>
-              <label className="field"><span>{t.budget}</span><input type="number" step="100" value={form.budget} onChange={(e) => setF({ budget: e.target.value })} /></label>
-              <label className="field"><span>{t.requiredDate}</span><input type="date" value={form.requiredDate} onChange={(e) => setF({ requiredDate: e.target.value })} /></label>
-              <label className="field"><span>{t.country} <span className="req">*</span></span><input value={form.country} onChange={(e) => setF({ country: e.target.value })} required /></label>
-            </div>
-            {cat === "ring" && (
-              <>
-                <label className="field"><span>{t.ringSize} <span className="req">*</span></span><input value={form.conditional.ringSize || ""} onChange={(e) => setC({ ringSize: e.target.value })} required /></label>
-                <div className="stone-edu-inline"><RingSizeHelp /></div>
-              </>
-            )}
-            {cat === "necklace" && (
-              <div className="filter-grid" style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
-                <label className="field"><span>{t.chainStyle} <span className="req">*</span></span><input value={form.conditional.chainStyle || ""} onChange={(e) => setC({ chainStyle: e.target.value })} required /></label>
+                <LuxurySelect
+                  value={form.metal}
+                  ariaLabel={t.metal}
+                  options={Object.keys(OPS_METALS ? p.opsMetals : {}).map((m) => ({ value: m, label: p.opsMetals[m] }))}
+                  onChange={(value) => setF({ metal: value })}
+                />
+              </label>
+              {cat === "ring" && (
+                <label className="field"><span>{t.ringSize} <span className="req">*</span></span>
+                  <LuxurySelect
+                    value={ringSizeValue}
+                    ariaLabel={t.ringSize}
+                    placeholder={t.ringSizeSelect}
+                    options={RING_SIZE_OPTIONS.map((size) => ({ value: size, label: `US ${size}` }))}
+                    onChange={(value) => setC({ ringSize: value })}
+                  />
+                </label>
+              )}
+              {cat === "bangle" && (
+                <label className="field"><span>{t.wristSize} <span className="req">*</span></span>
+                  <LuxurySelect
+                    value={wristSizeValue}
+                    ariaLabel={t.wristSize}
+                    placeholder={t.wristSizeSelect}
+                    options={wristOptions}
+                    onChange={(value) => setC({ wristSize: value })}
+                  />
+                </label>
+              )}
+              {cat === "earrings" && (
+                <label className="field"><span>{t.earringDetails} <span className="req">*</span></span>
+                  <LuxurySelect
+                    value={earringDetailsValue}
+                    ariaLabel={t.earringDetails}
+                    placeholder={t.earringDetailsSelect}
+                    options={earringOptions}
+                    onChange={(value) => setC({ earringDetails: value })}
+                  />
+                </label>
+              )}
+              {cat === "necklace" && (
+                <label className="field"><span>{t.chainStyle} <span className="req">*</span></span>
+                  <LuxurySelect
+                    value={chainStyleValue}
+                    ariaLabel={t.chainStyle}
+                    placeholder={t.chainStyleSelect}
+                    options={chainStyleOptions}
+                    onChange={(value) => setC({ chainStyle: value })}
+                  />
+                </label>
+              )}
+              <label className="field"><span>{t.requiredDate}</span>
+                <LuxuryDatePicker
+                  value={form.requiredDate}
+                  ariaLabel={t.requiredDate}
+                  onChange={(value) => setF({ requiredDate: value })}
+                />
+              </label>
+              {cat === "necklace" && (
                 <label className="field"><span>{t.chainLength}</span>
-                  <select value={form.conditional.chainLength || "18in"} onChange={(e) => setC({ chainLength: e.target.value })}>
-                    {CHAIN_LENGTHS.map((l) => <option key={l} value={l}>{l === "16in" ? "16 in / 40 cm" : l === "18in" ? "18 in / 45 cm" : "20 in / 50 cm"}</option>)}
-                  </select></label>
-                <label className="field"><span>{t.clasp}</span><input value={form.conditional.clasp || ""} onChange={(e) => setC({ clasp: e.target.value })} /></label>
+                  <LuxurySelect
+                    value={form.conditional.chainLength || "18in"}
+                    ariaLabel={t.chainLength}
+                    options={CHAIN_LENGTHS.map((l) => ({ value: l, label: chainLengthLabel(l) }))}
+                    onChange={(value) => setC({ chainLength: value })}
+                  />
+                </label>
+              )}
+              {cat === "necklace" && (
+                <label className="field"><span>{t.clasp} <span className="req">*</span></span>
+                  <LuxurySelect
+                    value={claspValue}
+                    ariaLabel={t.clasp}
+                    placeholder={t.claspSelect}
+                    options={claspOptions}
+                    onChange={(value) => setC({ clasp: value })}
+                  />
+                </label>
+              )}
+            </div>
+            {selectedStyle && (
+              <div className="selected-design-row">
+                <button
+                  type="button"
+                  className="selected-design-thumb"
+                  aria-label={`${t.preview} ${selectedStyleName}`}
+                  disabled={!selectedStyleThumb}
+                  onClick={() => selectedStyleThumb && setStylePreviewOpen(true)}
+                >
+                  {selectedStyleThumb ? <MediaThumb media={selectedStyleThumb} alt="" /> : <span />}
+                </button>
+                <div className="selected-design-copy">
+                  <span>{t.selectedDesign}</span>
+                  <strong>{selectedStyleName}</strong>
+                </div>
+                {selectedStyleThumb && (
+                  <button
+                    type="button"
+                    className="selected-design-preview"
+                    onClick={() => setStylePreviewOpen(true)}
+                  >
+                    <Eye size={15} strokeWidth={2} aria-hidden="true" />
+                    {t.preview}
+                  </button>
+                )}
               </div>
             )}
-            {cat === "bangle" && (
-              <label className="field"><span>{t.wristSize} <span className="req">*</span></span><input value={form.conditional.wristSize || ""} onChange={(e) => setC({ wristSize: e.target.value })} required /></label>
-            )}
-            {cat === "earrings" && (
-              <label className="field"><span>{t.earringDetails} <span className="req">*</span></span><input value={form.conditional.earringDetails || ""} onChange={(e) => setC({ earringDetails: e.target.value })} required /></label>
-            )}
+            <div className="stone-edu-inline"><CategoryGuide category={cat} /></div>
           </>
         )}
 
@@ -209,25 +412,56 @@ export default function IntakeForm() {
             <h3 style={{ margin: "0" }}>{t.stoneTitle}</h3>
             <div className="filter-grid" style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
               <label className="field"><span>{t.shape}</span>
-                <select value={form.stonePrefs.shape} onFocus={() => setEduField("shape")} onChange={(e) => setS({ shape: e.target.value })}>
-                  {BENCHMARK_SHAPES.map((sh) => <option key={sh} value={sh}>{p.shapes[sh] || sh}</option>)}
-                </select></label>
+                <LuxurySelect
+                  value={form.stonePrefs.shape}
+                  ariaLabel={t.shape}
+                  options={BENCHMARK_SHAPES.map((sh) => ({ value: sh, label: p.shapes[sh] || sh }))}
+                  onFocus={() => setEduField("shape")}
+                  onChange={(value) => setS({ shape: value })}
+                />
+              </label>
               <label className="field"><span>{t.carat}</span><input type="number" step="0.1" value={form.stonePrefs.carat} onFocus={() => setEduField("carat")} onChange={(e) => setS({ carat: e.target.value })} /></label>
               <label className="field"><span>{t.color}</span>
-                <select value={form.stonePrefs.color} onFocus={() => setEduField("color")} onChange={(e) => setS({ color: e.target.value })}>{["D", "E", "F", "G"].map((c) => <option key={c}>{c}</option>)}</select></label>
+                <LuxurySelect
+                  value={form.stonePrefs.color}
+                  ariaLabel={t.color}
+                  options={["D", "E", "F", "G"].map((c) => ({ value: c, label: c }))}
+                  onFocus={() => setEduField("color")}
+                  onChange={(value) => setS({ color: value })}
+                />
+              </label>
               <label className="field"><span>{t.clarity}</span>
-                <select value={form.stonePrefs.clarity} onFocus={() => setEduField("clarity")} onChange={(e) => setS({ clarity: e.target.value })}>{["IF", "VVS1", "VVS2", "VS1", "VS2"].map((c) => <option key={c}>{c}</option>)}</select></label>
+                <LuxurySelect
+                  value={form.stonePrefs.clarity}
+                  ariaLabel={t.clarity}
+                  options={["IF", "VVS1", "VVS2", "VS1", "VS2"].map((c) => ({ value: c, label: c }))}
+                  onFocus={() => setEduField("clarity")}
+                  onChange={(value) => setS({ clarity: value })}
+                />
+              </label>
               <label className="field"><span>{t.growth}</span>
-                <select value={form.stonePrefs.growth} onFocus={() => setEduField("growth")} onChange={(e) => setS({ growth: e.target.value })}><option>CVD</option><option>HPHT</option></select></label>
+                <LuxurySelect
+                  value={form.stonePrefs.growth}
+                  ariaLabel={t.growth}
+                  options={["CVD", "HPHT"].map((g) => ({ value: g, label: g }))}
+                  onFocus={() => setEduField("growth")}
+                  onChange={(value) => setS({ growth: value })}
+                />
+              </label>
             </div>
             <details className="more-prefs">
               <summary style={{ cursor: "pointer", color: "var(--muted)", fontSize: 13, padding: "4px 0" }}>{t.morePrefs}</summary>
               <div className="filter-grid" style={{ gridTemplateColumns: "1fr 1fr 1fr", marginTop: 12 }}>
                 <label className="field"><span>{t.lab}</span><input value={form.stonePrefs.lab} onFocus={() => setEduField("lab")} onChange={(e) => setS({ lab: e.target.value })} /></label>
                 <label className="field"><span>{t.fluorescence}</span>
-                  <select value={form.stonePrefs.fluorescence} onFocus={() => setEduField("fluorescence")} onChange={(e) => setS({ fluorescence: e.target.value })}>
-                    {["none", "faint", "medium"].map((key) => <option key={key} value={key}>{t.fluorescenceLevels[key]}</option>)}
-                  </select></label>
+                  <LuxurySelect
+                    value={form.stonePrefs.fluorescence}
+                    ariaLabel={t.fluorescence}
+                    options={["none", "faint", "medium"].map((key) => ({ value: key, label: t.fluorescenceLevels[key] }))}
+                    onFocus={() => setEduField("fluorescence")}
+                    onChange={(value) => setS({ fluorescence: value })}
+                  />
+                </label>
                 <label className="field"><span>{t.lwRatio}</span><input value={form.stonePrefs.lwRatio} onFocus={() => setEduField("lwRatio")} onChange={(e) => setS({ lwRatio: e.target.value })} placeholder="1.0" /></label>
               </div>
             </details>
@@ -293,8 +527,8 @@ export default function IntakeForm() {
               <div className="summary-card"><div className="lbl">{t.reviewCategory}</div><div className="num">{p.opsCategories[form.category]}</div></div>
               <div className="summary-card"><div className="lbl">{t.reviewStyle}</div><div className="num">{form.styleId || t.openBrief}</div></div>
               <div className="summary-card"><div className="lbl">{t.reviewMetal}</div><div className="num">{p.opsMetals[form.metal]}</div></div>
-              <div className="summary-card"><div className="lbl">{t.reviewBudget}</div><div className="num">{form.budget ? `$${Number(form.budget).toLocaleString()}` : t.flexible}</div></div>
             </div>
+            <QuoteCompare form={form} />
             <div className="panel" style={{ background: "var(--bg-2)" }}>
               <p className="form-hint" style={{ margin: 0 }}>
                 {form.productLine === "solitaire"
@@ -302,7 +536,7 @@ export default function IntakeForm() {
                   : `${form.multiSpec.meleeSpec} · ${form.multiSpec.overallDims}`}
               </p>
               <p className="form-hint" style={{ margin: "8px 0 0" }}>
-                {t.referenceSummary(refs.length, form.country || t.countryNotSet, form.requiredDate || t.noRequiredDate)}
+                {t.referenceSummary(refs.length, form.requiredDate || t.noRequiredDate)}
               </p>
             </div>
             <p className="form-hint">{t.reviewNote}</p>
@@ -318,13 +552,37 @@ export default function IntakeForm() {
             : <button className="button primary" type="submit" disabled={!form.termsAccepted}>{t.submit}</button>}
         </div>
       </form>
+      {stylePreviewOpen && selectedStyle && selectedStyleThumb && (
+        <div
+          className="selected-style-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-label={selectedStyleName}
+          onClick={() => setStylePreviewOpen(false)}
+        >
+          <div className="selected-style-modal-card" onClick={(event) => event.stopPropagation()}>
+            <div className="selected-style-modal-head">
+              <div>
+                <span>{t.selectedDesign}</span>
+                <h2>{selectedStyleName}</h2>
+              </div>
+              <button type="button" aria-label={t.closePreview} onClick={() => setStylePreviewOpen(false)}>
+                <X size={22} strokeWidth={2} aria-hidden="true" />
+              </button>
+            </div>
+            <div className="selected-style-modal-media">
+              <MediaThumb media={selectedStyleThumb} alt={selectedStyleName} eager />
+            </div>
+          </div>
+        </div>
+      )}
       {sidePanel === "stone" && (
         <aside className="stone-edu-aside">
           <StoneEduPanel field={eduField} prefs={form.stonePrefs} />
         </aside>
       )}
-      {sidePanel === "ring" && (
-        <aside className="stone-edu-aside"><RingSizeHelp /></aside>
+      {sidePanel === "guide" && (
+        <aside className="stone-edu-aside"><CategoryGuide category={cat} /></aside>
       )}
       </div>
       <p style={{ marginTop: 16 }}><Link className="text-link" to="/designs">{t.backToDesigns} →</Link></p>

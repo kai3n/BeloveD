@@ -24,14 +24,6 @@ export default function AdminSettings() {
         <p className="form-hint">{p.admin.settings.applyNote}</p>
       </div>
       <div className="panel form-stack" style={{ maxWidth: 480 }}>
-        <h3>{p.adminDealer.settings.tierThreshold}</h3>
-        <label className="field"><span>{p.adminDealer.settings.tierThreshold}</span>
-          <input
-            type="number" step="1000" defaultValue={settings.tierThresholdUsd} key={settings.tierThresholdUsd}
-            onBlur={(e) => updateSettings({ tierThresholdUsd: Number(e.target.value) })}
-          /></label>
-      </div>
-      <div className="panel form-stack" style={{ maxWidth: 480 }}>
         <h3>{p.opsA.orders.metalRef}</h3>
         <div className="filter-grid" style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
           {Object.entries(settings.metalRefUsdPerG).map(([metal, price]) => (

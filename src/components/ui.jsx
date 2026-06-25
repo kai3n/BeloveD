@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { useLocale } from "../i18n.jsx";
 import { getSettings } from "../lib/store.js";
 
@@ -57,6 +58,266 @@ export function Stepper({ steps, currentIndex }) {
 
 export function EmptyNote({ children }) {
   return <p className="empty-note">{children}</p>;
+}
+
+function pad2(value) {
+  return String(value).padStart(2, "0");
+}
+
+function toDateValue(date) {
+  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+}
+
+function parseDateValue(value) {
+  if (!value) return null;
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return null;
+  const [, year, month, day] = match;
+  const date = new Date(Number(year), Number(month) - 1, Number(day));
+  if (Number.isNaN(date.getTime())) return null;
+  return date;
+}
+
+function formatDisplayDate(value) {
+  const date = parseDateValue(value);
+  if (!date) return "";
+  return `${pad2(date.getMonth() + 1)}/${pad2(date.getDate())}/${date.getFullYear()}`;
+}
+
+function calendarCopy(locale) {
+  const copy = {
+    en: { clear: "Clear", today: "Today", previous: "Previous month", next: "Next month" },
+    ko: { clear: "지우기", today: "오늘", previous: "이전 달", next: "다음 달" },
+    zh: { clear: "清除", today: "今天", previous: "上个月", next: "下个月" },
+    es: { clear: "Borrar", today: "Hoy", previous: "Mes anterior", next: "Mes siguiente" },
+  };
+  return copy[locale] || copy.en;
+}
+
+function calendarCells(monthDate) {
+  const year = monthDate.getFullYear();
+  const month = monthDate.getMonth();
+  const firstDay = new Date(year, month, 1).getDay();
+  const firstCell = new Date(year, month, 1 - firstDay);
+  return Array.from({ length: 42 }, (_, index) => {
+    const date = new Date(firstCell);
+    date.setDate(firstCell.getDate() + index);
+    return {
+      date,
+      inMonth: date.getMonth() === month,
+      value: toDateValue(date),
+    };
+  });
+}
+
+export function LuxurySelect({
+  value,
+  onChange,
+  options,
+  placeholder = "",
+  ariaLabel,
+  onFocus,
+  disabled = false,
+  className = "",
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const selected = options.find((option) => String(option.value) === String(value));
+  const label = selected?.label || placeholder;
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event) => {
+      if (ref.current && !ref.current.contains(event.target)) setOpen(false);
+    };
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") {
+        event.stopPropagation();
+        setOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  function choose(option) {
+    if (option.disabled) return;
+    onChange(option.value);
+    setOpen(false);
+  }
+
+  function handleTriggerKeyDown(event) {
+    if (event.key === "ArrowDown" || event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      setOpen(true);
+      onFocus?.();
+    }
+  }
+
+  return (
+    <div className={`lux-select ${open ? "is-open" : ""} ${className}`} ref={ref}>
+      <button
+        type="button"
+        className="lux-select-trigger"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={ariaLabel || placeholder}
+        disabled={disabled}
+        onFocus={onFocus}
+        onClick={() => {
+          if (disabled) return;
+          onFocus?.();
+          setOpen((current) => !current);
+        }}
+        onKeyDown={handleTriggerKeyDown}
+      >
+        <span className={selected ? "lux-select-value" : "lux-select-value is-placeholder"}>{label}</span>
+        <ChevronDown className="lux-select-caret" size={16} strokeWidth={2} aria-hidden="true" />
+      </button>
+      <ul className="lux-select-list" role="listbox" aria-label={ariaLabel || placeholder}>
+        {options.map((option) => {
+          const active = String(option.value) === String(value);
+          return (
+            <li key={option.value || option.label} role="option" aria-selected={active}>
+              <button
+                type="button"
+                className={active ? "is-active" : ""}
+                disabled={option.disabled}
+                onClick={() => choose(option)}
+              >
+                {option.label}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+export function LuxuryDatePicker({
+  value,
+  onChange,
+  placeholder = "mm/dd/yyyy",
+  ariaLabel,
+}) {
+  const { locale } = useLocale();
+  const [open, setOpen] = useState(false);
+  const [dropUp, setDropUp] = useState(false);
+  const [calendarMaxHeight, setCalendarMaxHeight] = useState(null);
+  const selectedDate = parseDateValue(value);
+  const [viewMonth, setViewMonth] = useState(() => selectedDate || new Date());
+  const ref = useRef(null);
+  const copy = calendarCopy(locale);
+  const today = new Date();
+  const todayValue = toDateValue(today);
+  const selectedValue = selectedDate ? toDateValue(selectedDate) : "";
+  const monthLabel = new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" }).format(viewMonth);
+  const weekdayLabels = Array.from({ length: 7 }, (_, index) => (
+    new Intl.DateTimeFormat(locale, { weekday: "narrow" }).format(new Date(2026, 5, 21 + index))
+  ));
+
+  useEffect(() => {
+    if (selectedDate) setViewMonth(selectedDate);
+  }, [value]);
+
+  useEffect(() => {
+    if (!open || !ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    const calendarHeight = 408;
+    const viewportGap = 16;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const shouldDropUp = spaceBelow < calendarHeight && spaceAbove > spaceBelow;
+    const available = (shouldDropUp ? spaceAbove : spaceBelow) - viewportGap;
+    setDropUp(shouldDropUp);
+    setCalendarMaxHeight(Math.max(300, Math.min(calendarHeight, available)));
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event) => {
+      if (ref.current && !ref.current.contains(event.target)) setOpen(false);
+    };
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") {
+        event.stopPropagation();
+        setOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  function shiftMonth(delta) {
+    setViewMonth((current) => new Date(current.getFullYear(), current.getMonth() + delta, 1));
+  }
+
+  function selectDate(nextValue) {
+    onChange(nextValue);
+    setOpen(false);
+  }
+
+  return (
+    <div className={`lux-date ${open ? "is-open" : ""} ${dropUp ? "drops-up" : ""}`} ref={ref}>
+      <button
+        type="button"
+        className="lux-date-trigger"
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        aria-label={ariaLabel || placeholder}
+        onClick={() => setOpen((current) => !current)}
+      >
+        <span className={value ? "lux-date-value" : "lux-date-value is-placeholder"}>{formatDisplayDate(value) || placeholder}</span>
+        <CalendarDays className="lux-date-icon" size={18} strokeWidth={2} aria-hidden="true" />
+      </button>
+      <div
+        className="lux-calendar"
+        role="dialog"
+        aria-label={ariaLabel || placeholder}
+        style={calendarMaxHeight ? { "--lux-calendar-max-height": `${calendarMaxHeight}px` } : undefined}
+      >
+        <div className="lux-calendar-head">
+          <strong>{monthLabel}</strong>
+          <div className="lux-calendar-nav">
+            <button type="button" aria-label={copy.previous} onClick={() => shiftMonth(-1)}>
+              <ChevronLeft size={17} strokeWidth={2} aria-hidden="true" />
+            </button>
+            <button type="button" aria-label={copy.next} onClick={() => shiftMonth(1)}>
+              <ChevronRight size={17} strokeWidth={2} aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+        <div className="lux-calendar-grid lux-calendar-weekdays">
+          {weekdayLabels.map((day, index) => <span key={`${day}-${index}`}>{day}</span>)}
+        </div>
+        <div className="lux-calendar-grid">
+          {calendarCells(viewMonth).map((cell) => (
+            <button
+              type="button"
+              key={cell.value}
+              className={`lux-calendar-day ${cell.inMonth ? "" : "is-muted"} ${cell.value === todayValue ? "is-today" : ""} ${cell.value === selectedValue ? "is-selected" : ""}`}
+              onClick={() => selectDate(cell.value)}
+            >
+              {cell.date.getDate()}
+            </button>
+          ))}
+        </div>
+        <div className="lux-calendar-actions">
+          <button type="button" onClick={() => { onChange(""); setOpen(false); }}>{copy.clear}</button>
+          <button type="button" onClick={() => selectDate(todayValue)}>{copy.today}</button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // 샘플 라이브러리(영구 저장) + 파일 업로드(dataURL, 데모용 2MB 제한)

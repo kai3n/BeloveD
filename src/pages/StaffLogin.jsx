@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth.jsx";
 import { useLocale } from "../i18n.jsx";
 
-// 스태프 로그인 — 어드민·딜러 (이메일+비밀번호, 가입 없음). 딜러 계정은 신청→승인으로만 발급.
+// 스태프 로그인 — 현재 앱에서는 admin만 허용한다. Vendor/dealer 포털은 별도 앱에서 다룬다.
 export default function StaffLogin() {
   const { p } = useLocale();
   const { login } = useAuth();
@@ -15,16 +15,16 @@ export default function StaffLogin() {
   const from = location.state?.from;
 
   function afterLogin(user) {
-    if (from && (user.role === "admin" || user.role === "dealer")) return navigate(from, { replace: true });
-    navigate(user.role === "admin" ? "/admin" : "/dealer", { replace: true });
+    if (from && user.role === "admin") return navigate(from, { replace: true });
+    navigate("/admin", { replace: true });
   }
 
   function handleSubmit(e) {
     e.preventDefault();
     setError("");
     try {
-      // 스태프 전용 — 어드민·딜러만. 고객/벤더 계정은 거부(wrongPortal)
-      afterLogin(login(email, password, ["admin", "dealer"]));
+      // 스태프 전용 — admin만. 고객/벤더/딜러 계정은 거부(wrongPortal)
+      afterLogin(login(email, password, ["admin"]));
     } catch (err) {
       setError(p.login.errors[err.message] || err.message);
     }
@@ -44,16 +44,13 @@ export default function StaffLogin() {
       </form>
 
       <p className="form-hint" style={{ marginTop: 18, textAlign: "center" }}>
-        {p.login.dealerApplyHint} <Link className="text-link" to="/dealers/apply">{p.login.dealerApplyLink}</Link>
-        {" · "}
         <Link className="text-link" to="/login">{p.login.customerLink}</Link>
       </p>
 
       {import.meta.env.DEV && (
         <div className="panel demo-panel">
           <p className="section-label">{p.login.demoTitle}</p>
-          <button className="button secondary" onClick={() => { try { afterLogin(login("admin@demo.com", "demo1234", ["admin", "dealer"])); } catch (err) { setError(p.login.errors[err.message] || err.message); } }}>{p.login.demoAdmin}</button>
-          <button className="button secondary" onClick={() => { try { afterLogin(login("dealer@demo.com", "demo1234", ["admin", "dealer"])); } catch (err) { setError(p.login.errors[err.message] || err.message); } }}>{p.login.demoDealer}</button>
+          <button className="button secondary" onClick={() => { try { afterLogin(login("admin@demo.com", "demo1234", ["admin"])); } catch (err) { setError(p.login.errors[err.message] || err.message); } }}>{p.login.demoAdmin}</button>
         </div>
       )}
     </div>

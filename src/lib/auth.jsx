@@ -6,8 +6,8 @@ const SESSION_KEY = "lumina-session";
 const AuthContext = createContext(null);
 const DEMO_PASSWORD = "demo1234"; // mock: 이메일 로그인 데모 공통 비밀번호
 
-// 미인증 시 역할에 맞는 로그인으로 보낸다 — 벤더는 코드, 스태프(어드민·딜러)는 /staff, 고객은 /sign-in
-export const LOGIN_FOR = { customer: "/sign-in", supplier: "/vendor", admin: "/staff", dealer: "/staff" };
+// Customer Web scope with an admin-only back office. Vendor/dealer portals live elsewhere.
+export const LOGIN_FOR = { customer: "/sign-in", admin: "/staff" };
 
 export function AuthProvider({ children }) {
   const [userId, setUserId] = useState(() => localStorage.getItem(SESSION_KEY));

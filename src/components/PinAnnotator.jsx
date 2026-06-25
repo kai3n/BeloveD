@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useLocale } from "../i18n.jsx";
 import { getDB, listChips } from "../lib/store.js";
 import { CHIP_PARTS, formatAnnotation } from "../lib/chips.js";
-import { withBase } from "./ui.jsx";
+import { LuxurySelect, withBase } from "./ui.jsx";
 
 // 핀+칩 주석 — 의도 입력과 수정 요청이 같은 문법을 쓴다.
 // 자유 텍스트 입력 없음: part/chipKey/value(mm)만. mp4에는 핀을 찍지 않는다(이미지 전용).
@@ -49,9 +49,14 @@ export default function PinAnnotator({ src, annotations, onChange, readOnly = fa
           <div key={a.pinId} className="pin-editor form-stack">
             <div className="row-actions">
               <strong><span className="pin-tag">{a.pinId}</span></strong>
-              <select value={a.part} onChange={(e) => update(a.pinId, { part: e.target.value, chipKey: "", value: null })}>
-                {CHIP_PARTS.map((pt) => <option key={pt} value={pt}>{t.parts[pt]}</option>)}
-              </select>
+              <div className="pin-part-select">
+                <LuxurySelect
+                  value={a.part}
+                  ariaLabel={t.pinHint}
+                  options={CHIP_PARTS.map((pt) => ({ value: pt, label: t.parts[pt] }))}
+                  onChange={(value) => update(a.pinId, { part: value, chipKey: "", value: null })}
+                />
+              </div>
               <button type="button" className="chip" onClick={() => remove(a.pinId)}>✕ {t.removePin}</button>
             </div>
             <div className="row-actions" style={{ flexWrap: "wrap" }}>

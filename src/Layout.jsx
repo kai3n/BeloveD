@@ -11,8 +11,6 @@ import { useTheme } from "./theme.jsx";
 
 function roleHome(user) {
   if (!user) return "/sign-in";
-  if (user.role === "supplier") return "/supplier";
-  if (user.role === "dealer") return "/dealer";
   if (user.role === "admin") return "/admin";
   return "/account";
 }
@@ -94,7 +92,6 @@ export function Header() {
 
   const navItems = [
     { to: "/designs", label: p.nav.designs },
-    { to: "/diamonds", label: p.nav.diamonds },
     { to: "/process", label: p.nav.process },
     { to: "/guide", label: p.nav.guide },
     { to: "/custom/new", label: p.nav.startCustom },
@@ -145,7 +142,7 @@ export function Header() {
           <NavLink to={item.to} key={item.to} onClick={() => setOpen(false)}>{item.label}</NavLink>
         ))}
         <NavLink to={roleHome(user)} onClick={() => setOpen(false)}>
-          {user ? (user.role === "supplier" ? p.supplierP.title : user.role === "dealer" ? p.dealer.title : user.role === "admin" ? p.nav.admin : p.nav.account) : p.nav.login}
+          {user?.role === "admin" ? p.nav.admin : user ? p.nav.account : p.nav.login}
         </NavLink>
         <div className="mobile-panel-actions">
           <LanguageMenu locale={locale} setLocale={setLocale} label={t.aria.language} up />
@@ -172,7 +169,6 @@ export function Footer() {
       title: g.shop,
       links: [
         { to: "/designs", label: p.nav.designs },
-        { to: "/diamonds", label: p.nav.diamonds },
         { to: "/custom/new", label: p.nav.startCustom },
       ],
     },
@@ -246,6 +242,11 @@ function EscapeBack() {
   useEffect(() => {
     function onKey(e) {
       if (e.key !== "Escape") return;
+      if (pathname === "/custom/new") {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
       const el = document.activeElement;
       if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable)) {
         el.blur();

@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { adjustDiamondPrices, listDiamonds, saveDiamond } from "../../lib/store.js";
+import { adjustDiamondPrices, deleteDiamond, listDiamonds, saveDiamond } from "../../lib/store.js";
 import { useDBVersion } from "../../lib/useDB.js";
-import { MediaPicker, usd } from "../../components/ui.jsx";
+import { MediaPicker, MediaThumb, usd } from "../../components/ui.jsx";
 import { useLocale } from "../../i18n.jsx";
 
 const SHAPES = ["round", "oval", "princess", "emerald", "pear", "marquise", "cushion", "radiant", "asscher", "heart"];
@@ -15,6 +15,7 @@ export default function AdminDiamonds() {
   const [bulk, setBulk] = useState("");
   const [form, setForm] = useState(emptyForm);
   const [formMedia, setFormMedia] = useState([]);
+  const [editingMedia, setEditingMedia] = useState(null);
   const setF = (patch) => setForm((f) => ({ ...f, ...patch }));
 
   function addDiamond(e) {
@@ -26,6 +27,12 @@ export default function AdminDiamonds() {
       ...(formMedia.length ? { media: formMedia } : {}),
     });
     setForm(emptyForm); setFormMedia([]);
+  }
+
+  function removeDiamond(diamond) {
+    if (!confirm(`Delete ${diamond.certOrg} ${diamond.certNo}?`)) return;
+    deleteDiamond(diamond.id);
+    if (editingMedia?.id === diamond.id) setEditingMedia(null);
   }
 
   return (
@@ -45,10 +52,15 @@ export default function AdminDiamonds() {
       <div className="panel" style={{ overflowX: "auto" }}>
         <h3>{p.admin.dia.invTitle} ({diamonds.length})</h3>
         <table className="data-table">
-          <thead><tr><th>{p.admin.dia.stone}</th><th>{p.admin.dia.fourC}</th><th>{p.admin.dia.cert}</th><th>{p.admin.dia.priceCol}</th><th>{p.admin.dia.visibleCol}</th></tr></thead>
+          <thead><tr><th>Media</th><th>{p.admin.dia.stone}</th><th>{p.admin.dia.fourC}</th><th>{p.admin.dia.cert}</th><th>{p.admin.dia.priceCol}</th><th>{p.admin.dia.visibleCol}</th><th /></tr></thead>
           <tbody>
             {diamonds.map((d) => (
               <tr key={d.id}>
+                <td style={{ width: 78 }}>
+                  <div className="admin-media-mini">
+                    <MediaThumb media={(d.media || [])[0] || { kind: "image", src: "/assets/lab-diamond-tweezers.webp" }} alt={`${d.certOrg} ${d.certNo}`} />
+                  </div>
+                </td>
                 <td>{p.shapes[d.shape]} {d.carat.toFixed(1)}ct</td>
                 <td>{d.cut} · {d.color} · {d.clarity}</td>
                 <td>{d.certOrg} {d.certNo}</td>
@@ -64,11 +76,37 @@ export default function AdminDiamonds() {
                     {d.visible ? p.admin.dia.pub : p.admin.dia.priv}
                   </button>
                 </td>
+                <td>
+                  <div className="row-actions">
+                    <button className="button small" type="button" onClick={() => setEditingMedia({ id: d.id, media: d.media || [] })}>Media</button>
+                    <button className="button danger small" type="button" onClick={() => removeDiamond(d)}>{p.common.delete}</button>
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {editingMedia && (
+        <div className="panel form-stack">
+          <h3>Media — {editingMedia.id}</h3>
+          <MediaPicker value={editingMedia.media} onChange={(media) => setEditingMedia({ ...editingMedia, media })} />
+          <div className="row-actions">
+            <button
+              className="button primary small"
+              type="button"
+              onClick={() => {
+                saveDiamond({ id: editingMedia.id, media: editingMedia.media });
+                setEditingMedia(null);
+              }}
+            >
+              {p.opsA.styles.save}
+            </button>
+            <button className="button small" type="button" onClick={() => setEditingMedia(null)}>{p.common.cancel}</button>
+          </div>
+        </div>
+      )}
 
       <form className="panel form-stack" onSubmit={addDiamond}>
         <h3>{p.admin.dia.newTitle}</h3>
