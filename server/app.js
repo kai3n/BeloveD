@@ -1,0 +1,47 @@
+import express from "express";
+import cookieParser from "cookie-parser";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import { existsSync } from "node:fs";
+import { ApiError } from "./errors.js";
+import { attachPrincipal } from "./middleware.js";
+import { query } from "./db.js";
+import { authRouter } from "./authRoutes.js";
+
+const distDir = join(dirname(fileURLToPath(import.meta.url)), "..", "dist");
+
+export function createApp() {
+  const app = express();
+  app.use(express.json({ limit: "1mb" }));
+  app.use(cookieParser());
+  app.use(attachPrincipal);
+
+  app.get("/v1/health", async (_req, res, next) => {
+    try {
+      const db = await query("select now() as now");
+      res.json({ ok: true, databaseTime: db.rows[0].now });
+    } catch (e) { next(e); }
+  });
+
+  app.use("/v1/auth", authRouter());
+
+  // Any unmatched /v1 route returns the JSON error contract (never the SPA).
+  app.use("/v1", (_req, _res, next) => next(new ApiError("NOT_FOUND", 404)));
+
+  // Serve built SPA (prod). In dev, Vite serves the SPA and proxies /v1 here.
+  if (existsSync(distDir)) {
+    app.use(express.static(distDir));
+    app.get(/^(?!\/v1\/).*/, (_req, res) => res.sendFile(join(distDir, "index.html")));
+  }
+
+  // JSON error contract
+  app.use((err, _req, res, _next) => {
+    if (err instanceof ApiError) {
+      return res.status(err.status).json({ error: { code: err.code, message: err.message } });
+    }
+    console.error(err);
+    res.status(500).json({ error: { code: "INTERNAL_ERROR" } });
+  });
+
+  return app;
+}
