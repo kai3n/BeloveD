@@ -816,6 +816,9 @@ export function createApp() {
 
   app.use("/v1/auth", authRouter());
 
+  // Any unmatched /v1 route returns the JSON error contract (never the SPA).
+  app.use("/v1", (_req, _res, next) => next(new ApiError("NOT_FOUND", 404)));
+
   // Serve built SPA (prod). In dev, Vite serves the SPA and proxies /v1 here.
   if (existsSync(distDir)) {
     app.use(express.static(distDir));
@@ -872,8 +875,8 @@ describe("app skeleton", () => {
   });
   it("unknown /v1 route returns the JSON error contract", async () => {
     const res = await request(app).get("/v1/does-not-exist");
-    // No SPA in test (no dist), so this falls through to 404 from express default; assert it is not a 500
-    expect([404, 200]).toContain(res.status);
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe("NOT_FOUND");
   });
 });
 ```
