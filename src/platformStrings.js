@@ -109,7 +109,15 @@ const en = {
     hint: (n) => `${n} selected`,
     dropHint: "Drag photos or videos here", dropSub: "or tap to choose from your phone",
     sampleToggle: "Or pick a sample",
+    limitHint: (n, max) => `${n}/${max} attached · tap to choose from your phone`,
+    maxError: (max) => `You can attach up to ${max} photos or videos.`,
+    attachedLabel: "Attached files", photoLabel: "Photo", videoLabel: "Video", removeLabel: "Remove",
     fileLabel: "Upload file", fileError: (mb) => `File too large — keep it under ${mb}MB.`, typeError: "Only photos and videos are supported.",
+    optimizing: "Optimizing media...",
+    optimizedLabel: "Optimized",
+    optimizedNotice: (n) => `${n} image${n > 1 ? "s" : ""} compressed for upload.`,
+    videoNotice: "Video attached as an optimized preview file.",
+    optimizeError: "We could not optimize that file. Try a different photo or video.",
     labels: { sol: "Solitaire", band: "Band", pendant: "Pendant", studs: "Studs", bracelet: "Bracelet", loose: "Loose stone", video: "Stone video" },
   },
   admin: {
@@ -162,6 +170,16 @@ const en = {
     },
   },
   guide: {
+    hub: {
+      kicker: "Diamond guide",
+      title: "Choose with confidence.",
+      sub: "Short, practical notes for lab-grown diamond quality, stone preferences, and custom production decisions.",
+      cards: {
+        lab: { kicker: "Lab-grown", title: "Same fire. Smarter origin.", body: "How lab-grown diamonds compare and what disclosures matter." },
+        fourc: { kicker: "4C", title: "Cut, color, clarity, carat.", body: "The practical way to prioritize visible brilliance." },
+        custom: { kicker: "Custom", title: "From brief to final QC.", body: "What happens after you start a custom order." },
+      },
+    },
     lab: {
       title: "What is a lab-grown diamond?",
       p1: "A lab-grown diamond is a real diamond — physically, chemically and optically identical to a mined one. The only difference is where it was born: a laboratory instead of the ground.",
@@ -290,7 +308,15 @@ const ko = {
     hint: (n) => `${n}개 선택됨`,
     dropHint: "사진·영상을 여기로 끌어다 놓으세요", dropSub: "또는 눌러서 휴대폰에서 선택",
     sampleToggle: "또는 샘플에서 선택",
+    limitHint: (n, max) => `${n}/${max}개 첨부됨 · 눌러서 휴대폰에서 선택`,
+    maxError: (max) => `사진 또는 영상은 최대 ${max}개까지 첨부할 수 있습니다.`,
+    attachedLabel: "첨부 파일", photoLabel: "사진", videoLabel: "영상", removeLabel: "삭제",
     fileLabel: "파일 업로드", fileError: (mb) => `파일이 너무 큽니다 — ${mb}MB 이하로 올려주세요.`, typeError: "사진과 영상만 올릴 수 있습니다.",
+    optimizing: "미디어 최적화 중...",
+    optimizedLabel: "최적화됨",
+    optimizedNotice: (n) => `이미지 ${n}개를 업로드용으로 압축했습니다.`,
+    videoNotice: "영상은 앱이 느려지지 않도록 가벼운 미리보기 파일로 첨부했습니다.",
+    optimizeError: "파일을 최적화하지 못했습니다. 다른 사진이나 영상을 올려주세요.",
     labels: { sol: "솔리테어", band: "밴드", pendant: "펜던트", studs: "스터드", bracelet: "브레이슬릿", loose: "루스 스톤", video: "스톤 영상" },
   },
   admin: {
@@ -343,6 +369,16 @@ const ko = {
     },
   },
   guide: {
+    hub: {
+      kicker: "다이아몬드 가이드",
+      title: "확신을 가지고 선택하세요.",
+      sub: "랩그로운 다이아몬드 품질, 스톤 선택, 주문제작 결정에 필요한 핵심 가이드입니다.",
+      cards: {
+        lab: { kicker: "랩그로운", title: "같은 광채, 더 합리적인 시작.", body: "랩그로운 다이아몬드의 차이와 꼭 확인해야 할 정보를 정리했습니다." },
+        fourc: { kicker: "4C", title: "컷, 컬러, 클래리티, 캐럿.", body: "눈에 보이는 아름다움을 기준으로 우선순위를 잡는 방법입니다." },
+        custom: { kicker: "주문제작", title: "상담부터 최종 QC까지.", body: "주문제작을 시작한 뒤 어떤 과정으로 진행되는지 안내합니다." },
+      },
+    },
     lab: {
       title: "랩그로운 다이아몬드란?",
       p1: "랩그로운 다이아몬드는 천연 다이아몬드와 물리적·화학적·광학적으로 100% 동일한 진짜 다이아몬드입니다. 유일한 차이는 탄생지 — 땅속 대신 실험실에서 성장합니다.",
@@ -471,7 +507,15 @@ const zh = {
     hint: (n) => `已选 ${n} 个`,
     dropHint: "把照片或视频拖到这里", dropSub: "或点击从手机选择",
     sampleToggle: "或从样例中选择",
+    limitHint: (n, max) => `已上传 ${n}/${max} 个 · 点击从手机选择`,
+    maxError: (max) => `最多可上传 ${max} 张照片或视频。`,
+    attachedLabel: "已上传文件", photoLabel: "照片", videoLabel: "视频", removeLabel: "删除",
     fileLabel: "上传文件", fileError: (mb) => `文件太大 — 请控制在 ${mb}MB 以内。`, typeError: "仅支持照片和视频。",
+    optimizing: "正在优化媒体...",
+    optimizedLabel: "已优化",
+    optimizedNotice: (n) => `已压缩 ${n} 张图片用于上传。`,
+    videoNotice: "视频已作为轻量预览文件添加，避免页面变慢。",
+    optimizeError: "无法优化该文件。请尝试其他照片或视频。",
     labels: { sol: "单钻戒", band: "戒圈", pendant: "吊坠", studs: "耳钉", bracelet: "手链", loose: "裸石", video: "钻石视频" },
   },
   admin: {
@@ -524,6 +568,16 @@ const zh = {
     },
   },
   guide: {
+    hub: {
+      kicker: "钻石指南",
+      title: "更有把握地选择。",
+      sub: "关于培育钻石品质、选石偏好与定制制作决策的简明指南。",
+      cards: {
+        lab: { kicker: "培育钻石", title: "同样火彩，更聪明的来源。", body: "了解培育钻石的差异，以及哪些披露信息需要关注。" },
+        fourc: { kicker: "4C", title: "切工、颜色、净度、克拉。", body: "用实用方式判断哪些因素最影响肉眼美感。" },
+        custom: { kicker: "定制", title: "从需求到最终质检。", body: "开始定制订单后，每一步会发生什么。" },
+      },
+    },
     lab: {
       title: "什么是培育钻石？",
       p1: "培育钻石在物理、化学和光学性质上与天然钻石 100% 相同，是真正的钻石。唯一的区别是诞生地 — 在实验室中成长，而非地下。",
@@ -652,7 +706,15 @@ const es = {
     hint: (n) => `${n} seleccionados`,
     dropHint: "Arrastra fotos o videos aquí", dropSub: "o toca para elegir desde tu teléfono",
     sampleToggle: "O elige una muestra",
+    limitHint: (n, max) => `${n}/${max} adjuntos · toca para elegir desde tu teléfono`,
+    maxError: (max) => `Puedes adjuntar hasta ${max} fotos o videos.`,
+    attachedLabel: "Archivos adjuntos", photoLabel: "Foto", videoLabel: "Video", removeLabel: "Eliminar",
     fileLabel: "Subir archivo", fileError: (mb) => `Archivo muy grande — menos de ${mb}MB.`, typeError: "Solo se admiten fotos y videos.",
+    optimizing: "Optimizando archivos...",
+    optimizedLabel: "Optimizado",
+    optimizedNotice: (n) => `${n} imagen${n > 1 ? "es" : ""} comprimida${n > 1 ? "s" : ""} para subir.`,
+    videoNotice: "Video añadido como archivo de vista previa optimizado.",
+    optimizeError: "No se pudo optimizar ese archivo. Prueba otra foto o video.",
     labels: { sol: "Solitario", band: "Aro", pendant: "Colgante", studs: "Aretes", bracelet: "Pulsera", loose: "Piedra suelta", video: "Video de piedra" },
   },
   admin: {
@@ -705,6 +767,16 @@ const es = {
     },
   },
   guide: {
+    hub: {
+      kicker: "Guía de diamantes",
+      title: "Elige con confianza.",
+      sub: "Notas breves y prácticas sobre calidad, preferencias de piedra y decisiones de producción a medida.",
+      cards: {
+        lab: { kicker: "Laboratorio", title: "Mismo fuego. Origen más inteligente.", body: "Cómo se comparan los diamantes de laboratorio y qué detalles importan." },
+        fourc: { kicker: "4C", title: "Talla, color, pureza, quilates.", body: "Una forma práctica de priorizar el brillo visible." },
+        custom: { kicker: "A medida", title: "Del brief al QC final.", body: "Qué ocurre después de iniciar un pedido a medida." },
+      },
+    },
     lab: {
       title: "¿Qué es un diamante de laboratorio?",
       p1: "Un diamante de laboratorio es un diamante real — física, química y ópticamente idéntico al extraído de una mina. La única diferencia es su lugar de nacimiento: un laboratorio en vez del subsuelo.",

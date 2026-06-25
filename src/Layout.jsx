@@ -11,7 +11,7 @@ import { useTheme } from "./theme.jsx";
 
 function roleHome(user) {
   if (!user) return "/sign-in";
-  if (user.role === "admin") return "/admin";
+  if (user.role === "admin") return "/admin/orders";
   return "/account";
 }
 

@@ -2,33 +2,33 @@ import { Link } from "react-router-dom";
 import { useLocale } from "../i18n.jsx";
 
 export function GuideHub() {
+  const { p } = useLocale();
+  const g = p.guide.hub;
   return (
     <div className="page guide-hub">
-      <p className="section-label">DIAMOND GUIDE</p>
-      <h1 className="page-title">Choose with confidence.</h1>
-      <p className="page-sub">
-        Short, practical notes for lab-grown diamond quality, stone preferences, and custom production decisions.
-      </p>
+      <p className="section-label">{g.kicker}</p>
+      <h1 className="page-title">{g.title}</h1>
+      <p className="page-sub">{g.sub}</p>
       <div className="card-grid cols-3">
         <Link className="item-card guide-card" to="/guide/lab-diamond">
           <div className="card-body">
-            <p className="section-label">LAB-GROWN</p>
-            <h3>Same fire. Smarter origin.</h3>
-            <p className="spec">How lab-grown diamonds compare and what disclosures matter.</p>
+            <p className="section-label">{g.cards.lab.kicker}</p>
+            <h3>{g.cards.lab.title}</h3>
+            <p className="spec">{g.cards.lab.body}</p>
           </div>
         </Link>
         <Link className="item-card guide-card" to="/guide/4c">
           <div className="card-body">
-            <p className="section-label">4C</p>
-            <h3>Cut, color, clarity, carat.</h3>
-            <p className="spec">The practical way to prioritize visible brilliance.</p>
+            <p className="section-label">{g.cards.fourc.kicker}</p>
+            <h3>{g.cards.fourc.title}</h3>
+            <p className="spec">{g.cards.fourc.body}</p>
           </div>
         </Link>
         <Link className="item-card guide-card" to="/process">
           <div className="card-body">
-            <p className="section-label">CUSTOM</p>
-            <h3>From brief to final QC.</h3>
-            <p className="spec">What happens after you start a custom order.</p>
+            <p className="section-label">{g.cards.custom.kicker}</p>
+            <h3>{g.cards.custom.title}</h3>
+            <p className="spec">{g.cards.custom.body}</p>
           </div>
         </Link>
       </div>

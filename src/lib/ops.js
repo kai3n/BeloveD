@@ -62,7 +62,7 @@ export function reconcileDelta(estWeightG, actualWeightG, metalRefUsdPerG, lossR
 const DIAMOND_PUBLIC_FIELDS = [
   "id", "orderId", "igiNo", "shape", "carat", "color", "clarity", "growth", "lab",
   "proportions", "reportUrl", "image", "video", "colorTreatment", "availability",
-  "customerPriceUsd", "clientSelection", "stockConfirmed", "published",
+  "customerPriceUsd", "clientSelection", "stockConfirmed", "published", "media", "clientNote",
 ];
 export function publicDiamondView(cand) {
   const out = {};

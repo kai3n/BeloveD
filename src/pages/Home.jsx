@@ -258,8 +258,6 @@ function Hero({ t, p }) {
   );
 }
 
-const ROMAN = ["I", "II", "III", "IV", "V", "VI"];
-
 function Collections({ locale }) {
   const copy = collectionCopy[locale] ?? collectionCopy.en;
 
@@ -272,7 +270,7 @@ function Collections({ locale }) {
       </div>
 
       <div className="coll-noir-gallery">
-        {DESIGN_CATEGORIES.map((category, index) => {
+        {DESIGN_CATEGORIES.map((category) => {
           const item = copy.items[category.key] ?? collectionCopy.en.items[category.key];
           return (
             <Link
@@ -282,7 +280,6 @@ function Collections({ locale }) {
               aria-label={item.label}
             >
               <span className={`coll-noir-ph ${collectionImageClass[category.key]}`} aria-hidden="true" />
-              <span className="coll-noir-num" aria-hidden="true">{ROMAN[index] ?? index + 1}</span>
               <span className="coll-noir-meta">
                 <span className="coll-noir-name">{item.label}</span>
                 <span className="coll-noir-cap">{item.body}</span>

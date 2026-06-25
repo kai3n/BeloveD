@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Eye } from "lucide-react";
 import { useLocale } from "../i18n.jsx";
 import { getSettings } from "../lib/store.js";
 
@@ -150,6 +150,13 @@ export function LuxurySelect({
     setOpen(false);
   }
 
+  function preview(option, event) {
+    event.preventDefault();
+    event.stopPropagation();
+    option.onPreview?.();
+    setOpen(false);
+  }
+
   function handleTriggerKeyDown(event) {
     if (event.key === "ArrowDown" || event.key === "Enter" || event.key === " ") {
       event.preventDefault();
@@ -181,16 +188,36 @@ export function LuxurySelect({
       <ul className="lux-select-list" role="listbox" aria-label={ariaLabel || placeholder}>
         {options.map((option) => {
           const active = String(option.value) === String(value);
+          const hasRichContent = option.media || option.onPreview;
           return (
             <li key={option.value || option.label} role="option" aria-selected={active}>
-              <button
-                type="button"
-                className={active ? "is-active" : ""}
-                disabled={option.disabled}
-                onClick={() => choose(option)}
-              >
-                {option.label}
-              </button>
+              <div className={`lux-select-option-row ${hasRichContent ? "has-rich-content" : ""}`}>
+                <button
+                  type="button"
+                  className={`lux-select-option-button ${active ? "is-active" : ""}`}
+                  disabled={option.disabled}
+                  onClick={() => choose(option)}
+                >
+                  {option.media && (
+                    <span className="lux-select-option-thumb" aria-hidden="true">
+                      <MediaThumb media={option.media} alt="" />
+                    </span>
+                  )}
+                  <span className="lux-select-option-text">{option.label}</span>
+                </button>
+                {option.onPreview && (
+                  <button
+                    type="button"
+                    className="lux-select-preview-button"
+                    aria-label={`${option.previewLabel || "Preview"} ${option.label}`}
+                    title={`${option.previewLabel || "Preview"} ${option.label}`}
+                    onClick={(event) => preview(option, event)}
+                  >
+                    <Eye size={16} strokeWidth={2} aria-hidden="true" />
+                    <span>{option.previewLabel || "Preview"}</span>
+                  </button>
+                )}
+              </div>
             </li>
           );
         })}
@@ -320,7 +347,8 @@ export function LuxuryDatePicker({
   );
 }
 
-// 샘플 라이브러리(영구 저장) + 파일 업로드(dataURL, 데모용 2MB 제한)
+// 샘플 라이브러리(영구 저장) + 파일 업로드. 이미지는 브라우저에서 리사이즈/압축하고,
+// 영상은 base64로 localStorage를 터뜨리지 않도록 blob URL preview로 다룬다.
 const SAMPLE_LIBRARY = [
   { kind: "image", src: "/assets/lineup-ring.png", labelKey: "sol" },
   { kind: "image", src: "/assets/lineup-band.png", labelKey: "band" },
@@ -331,40 +359,184 @@ const SAMPLE_LIBRARY = [
   { kind: "video", src: "/assets/diamond-noir-white.mp4", labelKey: "video" },
 ];
 
-// 영상은 dataURL이 localStorage를 넘치게 하므로 데모에선 이미지보다 한도를 키우되 제한 유지
-const MAX_IMAGE_MB = 4;
-const MAX_VIDEO_MB = 12;
+const IMAGE_MAX_DIMENSION = 1600;
+const IMAGE_TARGET_BYTES = 650 * 1024;
+const IMAGE_MIN_QUALITY = 0.58;
+const IMAGE_START_QUALITY = 0.86;
+const MAX_VIDEO_MB = 50;
 
-export function MediaPicker({ value, onChange }) {
+function mediaKindFromFile(file) {
+  const name = file.name || "";
+  if (file.type.startsWith("video/") || /\.(mp4|webm|mov|m4v)$/i.test(name)) return "video";
+  if (file.type.startsWith("image/") || /\.(jpe?g|png|webp|gif|heic|heif)$/i.test(name)) return "image";
+  return null;
+}
+
+function formatFileSize(bytes) {
+  if (!bytes) return "";
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(bytes > 10 * 1024 * 1024 ? 0 : 1)} MB`;
+}
+
+function readBlobAsDataURL(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error || new Error("fileReadFailed"));
+    reader.readAsDataURL(blob);
+  });
+}
+
+function canvasToBlob(canvas, type, quality) {
+  return new Promise((resolve) => canvas.toBlob(resolve, type, quality));
+}
+
+function loadImageFromFile(file) {
+  if (typeof createImageBitmap === "function") {
+    return createImageBitmap(file).then((bitmap) => ({
+      width: bitmap.width,
+      height: bitmap.height,
+      draw: (ctx, width, height) => ctx.drawImage(bitmap, 0, 0, width, height),
+      close: () => bitmap.close?.(),
+    }));
+  }
+
+  return readBlobAsDataURL(file).then((src) => new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve({
+      width: img.naturalWidth || img.width,
+      height: img.naturalHeight || img.height,
+      draw: (ctx, width, height) => ctx.drawImage(img, 0, 0, width, height),
+      close: () => {},
+    });
+    img.onerror = reject;
+    img.src = src;
+  }));
+}
+
+async function optimizeImageFile(file) {
+  const image = await loadImageFromFile(file);
+  const originalWidth = image.width;
+  const originalHeight = image.height;
+  const canvas = document.createElement("canvas");
+  let maxDimension = IMAGE_MAX_DIMENSION;
+  let width = originalWidth;
+  let height = originalHeight;
+  let blob = null;
+
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const scale = Math.min(1, maxDimension / Math.max(originalWidth, originalHeight));
+    width = Math.max(1, Math.round(originalWidth * scale));
+    height = Math.max(1, Math.round(originalHeight * scale));
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d", { alpha: false });
+    ctx.fillStyle = "#050505";
+    ctx.fillRect(0, 0, width, height);
+    image.draw(ctx, width, height);
+
+    let quality = IMAGE_START_QUALITY;
+    blob = await canvasToBlob(canvas, "image/jpeg", quality);
+    while (blob && blob.size > IMAGE_TARGET_BYTES && quality > IMAGE_MIN_QUALITY) {
+      quality = Math.max(IMAGE_MIN_QUALITY, quality - 0.08);
+      blob = await canvasToBlob(canvas, "image/jpeg", quality);
+    }
+    if (!blob || blob.size <= IMAGE_TARGET_BYTES || maxDimension <= 900) break;
+    maxDimension = Math.max(900, Math.round(maxDimension * 0.82));
+  }
+  image.close();
+  if (!blob) throw new Error("imageOptimizeFailed");
+  const src = await readBlobAsDataURL(blob);
+  return {
+    kind: "image",
+    src,
+    name: file.name || "reference.jpg",
+    size: blob.size,
+    originalSize: file.size,
+    width,
+    height,
+    optimized: blob.size < file.size || width !== originalWidth || height !== originalHeight,
+  };
+}
+
+function optimizeVideoFile(file) {
+  const limit = MAX_VIDEO_MB * 1024 * 1024;
+  if (file.size > limit) throw new Error("videoTooLarge");
+  return {
+    kind: "video",
+    src: URL.createObjectURL(file),
+    name: file.name || "reference-video",
+    size: file.size,
+    originalSize: file.size,
+    optimized: true,
+    transient: true,
+  };
+}
+
+export function MediaPicker({ value, onChange, maxItems = Infinity, showSamples = true, previewMode = "thumb" }) {
   const { p } = useLocale();
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [busy, setBusy] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const inputRef = useRef(null);
+  const hasLimit = Number.isFinite(maxItems);
+  const remainingSlots = hasLimit ? Math.max(0, maxItems - value.length) : Infinity;
 
   function toggleSample(item) {
+    if (!showSamples) return;
     const exists = value.some((m) => m.src === item.src && m.pos === item.pos);
     const media = { kind: item.kind, src: item.src, ...(item.pos ? { pos: item.pos } : {}) };
+    if (!exists && value.length >= maxItems) {
+      setError(p.picker.maxError(maxItems));
+      return;
+    }
     onChange(exists ? value.filter((m) => !(m.src === item.src && m.pos === item.pos)) : [...value, media]);
   }
-  // 이미지·영상 모두 허용 — 어르신 벤더가 폰에서 찍은 파일을 그대로 끌어다 놓을 수 있게.
-  // onChange는 배열만 받으므로(슬롯/인테이크 콜러), 전부 읽어 한 번에 추가한다.
-  function addFiles(fileList) {
+  async function prepareFile(file) {
+    const kind = mediaKindFromFile(file);
+    if (!kind) throw new Error("unsupportedType");
+    if (kind === "video") return optimizeVideoFile(file);
+    return optimizeImageFile(file);
+  }
+
+  // 이미지·영상 모두 허용. 이미지는 작게 압축하고, 영상은 가벼운 preview URL로 처리한다.
+  async function addFiles(fileList) {
     const files = Array.from(fileList || []);
     if (files.length === 0) return;
-    const readers = files.map((file) => new Promise((resolve) => {
-      const isVideo = file.type.startsWith("video/");
-      const isImage = file.type.startsWith("image/");
-      if (!isVideo && !isImage) { setError(p.picker.typeError); return resolve(null); }
-      const limit = (isVideo ? MAX_VIDEO_MB : MAX_IMAGE_MB) * 1024 * 1024;
-      if (file.size > limit) { setError(p.picker.fileError(isVideo ? MAX_VIDEO_MB : MAX_IMAGE_MB)); return resolve(null); }
-      const reader = new FileReader();
-      reader.onload = () => resolve({ kind: isVideo ? "video" : "image", src: reader.result });
-      reader.onerror = () => resolve(null);
-      reader.readAsDataURL(file);
-    }));
-    Promise.all(readers).then((items) => {
-      const added = items.filter(Boolean);
-      if (added.length) { setError(""); onChange([...value, ...added]); }
-    });
+    if (remainingSlots <= 0) {
+      setError(p.picker.maxError(maxItems));
+      return;
+    }
+    const selected = files.slice(0, remainingSlots);
+    setBusy(true);
+    setError("");
+    setNotice(p.picker.optimizing || "");
+    try {
+      const results = await Promise.allSettled(selected.map(prepareFile));
+      const added = results
+        .filter((result) => result.status === "fulfilled")
+        .map((result) => result.value);
+      const failed = results.find((result) => result.status === "rejected")?.reason;
+      if (files.length > remainingSlots) setError(p.picker.maxError(maxItems));
+      else if (failed?.message === "videoTooLarge") setError(p.picker.fileError(MAX_VIDEO_MB));
+      else if (failed?.message === "unsupportedType") setError(p.picker.typeError);
+      else if (failed) setError(p.picker.optimizeError || p.picker.typeError);
+      if (added.length) {
+        onChange([...value, ...added]);
+        const compressed = added.filter((item) => item.kind === "image" && item.optimized).length;
+        const videoCount = added.filter((item) => item.kind === "video").length;
+        setNotice(
+          compressed > 0
+            ? p.picker.optimizedNotice(compressed)
+            : videoCount > 0
+              ? p.picker.videoNotice
+              : "",
+        );
+      }
+    } finally {
+      setBusy(false);
+    }
   }
   function handleFile(e) { addFiles(e.target.files); e.target.value = ""; }
   function handleDrop(e) {
@@ -376,32 +548,69 @@ export function MediaPicker({ value, onChange }) {
   return (
     <div className="form-stack">
       {/* 큰 드래그&드롭 영역 (히어로) — 클릭하면 파일 선택창. 어르신 벤더가 폰 사진/영상을 끌어다 놓기 */}
-      <label
+      <input
+        ref={inputRef}
+        className="visually-hidden-file-input"
+        type="file"
+        accept="image/*,video/*"
+        multiple
+        onChange={handleFile}
+      />
+      <button
+        type="button"
         className={`drop-zone ${dragOver ? "is-over" : ""}`}
+        aria-busy={busy}
+        onClick={() => inputRef.current?.click()}
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
         onDrop={handleDrop}
       >
-        <input type="file" accept="image/*,video/*" multiple onChange={handleFile} hidden />
         <svg className="drop-icon" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
           <path d="M12 16V4M12 4l-5 5M12 4l5 5" strokeLinecap="round" strokeLinejoin="round" />
           <path d="M5 20h14" strokeLinecap="round" />
         </svg>
-        <span className="drop-title">{p.picker.dropHint}</span>
-        <span className="form-hint">{p.picker.dropSub}</span>
-      </label>
+        <span className="drop-title">{busy ? p.picker.optimizing : p.picker.dropHint}</span>
+        <span className="form-hint">
+          {hasLimit ? p.picker.limitHint(value.length, maxItems) : p.picker.dropSub}
+        </span>
+      </button>
       {value.length > 0 && (
-        <div className="picker-grid picker-previews">
-          {value.map((m, i) => (
-            <div key={i} className="picker-cell is-selected">
-              <MediaThumb media={m} alt="" />
-              <button type="button" className="chip remove-media" onClick={() => onChange(value.filter((_, j) => j !== i))}>✕</button>
-            </div>
-          ))}
-        </div>
+        previewMode === "list" ? (
+          <div className="picker-list" aria-label={p.picker.attachedLabel || p.picker.hint(value.length)}>
+            {value.map((m, i) => {
+              const kindLabel = m.kind === "video" ? p.picker.videoLabel || "Video" : p.picker.photoLabel || "Photo";
+              const sizeLabel = formatFileSize(m.size);
+              return (
+                <div key={i} className="picker-list-item">
+                  <div className="picker-file-meta">
+                    <span className="picker-file-kind">{kindLabel}</span>
+                    <strong>{m.name || `${kindLabel} ${i + 1}`}</strong>
+                    {(sizeLabel || m.optimized) && (
+                      <span className="picker-file-size">
+                        {[sizeLabel, m.optimized ? p.picker.optimizedLabel : ""].filter(Boolean).join(" · ")}
+                      </span>
+                    )}
+                  </div>
+                  <button type="button" className="picker-remove-button" onClick={() => onChange(value.filter((_, j) => j !== i))}>
+                    {p.picker.removeLabel || "Remove"}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="picker-grid picker-previews">
+            {value.map((m, i) => (
+              <div key={i} className="picker-cell is-selected">
+                <MediaThumb media={m} alt="" />
+                <button type="button" className="chip remove-media" onClick={() => onChange(value.filter((_, j) => j !== i))}>✕</button>
+              </div>
+            ))}
+          </div>
+        )
       )}
       {/* 보조: 데모용 샘플 라이브러리 — 실서비스에선 settings.showSampleLibrary=false로 숨김 (드롭존이 기본) */}
-      {getSettings().showSampleLibrary !== false && (
+      {showSamples && getSettings().showSampleLibrary !== false && (
         <>
           <p className="form-hint">{p.picker.sampleToggle}</p>
           <div className="picker-grid picker-samples-grid">
@@ -417,6 +626,7 @@ export function MediaPicker({ value, onChange }) {
           </div>
         </>
       )}
+      {notice && !error && <p className="form-hint">{notice}</p>}
       {error && <p className="form-error">{error}</p>}
     </div>
   );

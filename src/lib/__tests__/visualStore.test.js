@@ -6,6 +6,7 @@ import {
   submitCadForPr, listCadReviews,
   submitQcForPr, confirmFinal, getOpsOrder, listCustomerActions, updateOpsOrder,
   toggleShortlist, requestStockConfirm, lockSelectedCandidate, submitStockConfirm, getCandidate, listProcurements, listMilestones, listCandidates, submitCandidates,
+  createProxyDiamondCandidate, publishFinalMedia, listOrderMessages, sendOrderMessage,
 } from "../store.js";
 
 const dstr = (days) => new Date(Date.now() + days * 86400000).toISOString().slice(0, 10);
@@ -106,6 +107,84 @@ describe("visual store — 최종 실물 컨펌", () => {
     expect(closed.respondedAt).toBeTruthy(); // 컨펌 증거 (타임스탬프)
     const v = portalView("DM-000002", { queryCode: "H3WT-8RVK" });
     expect(v.finalAction).toBeNull(); // 컨펌 후 open 액션 없음
+  });
+});
+
+describe("visual store — 운영자 프록시 업로드", () => {
+  it("운영자가 올린 다이아 후보는 고객 포털에 미디어와 고객용 노트로 공개된다", () => {
+    const c = createProxyDiamondCandidate("DM-000001", {
+      shape: "oval", carat: 1.23, color: "E", clarity: "VS1", growth: "CVD", lab: "IGI",
+      igiNo: "LG-PROXY-1", customerPriceUsd: 390, procurementCostUsd: 240,
+      clientNote: "Vendor sent a clean oval option.",
+      media: [{ kind: "image", src: "/proxy-stone.png" }, { kind: "video", src: "/proxy-stone.mp4" }],
+    });
+    expect(c.published).toBe(true);
+    expect(c.stockConfirmed).toBe(true);
+    const view = portalView("DM-000001", { queryCode: "QX7K-M9P2" });
+    const publicCandidate = view.candidates.find((x) => x.id === c.id);
+    expect(publicCandidate.media.length).toBe(2);
+    expect(publicCandidate.clientNote).toContain("clean oval");
+    expect(JSON.stringify(publicCandidate)).not.toContain("procurementCostUsd");
+    expect(view.actions.some((a) => a.type === "diamondSelection")).toBe(true);
+  });
+
+  it("운영자가 올린 디자인과 완성품 미디어는 고객 승인 액션에 보존된다", () => {
+    const cad = addCadVersion("DM-000002", {
+      media: [{ kind: "image", src: "/cad-front.png" }, { kind: "video", src: "/cad-spin.mp4" }],
+      note: "Review the prong height before production.",
+      supplierId: "ops-proxy",
+    });
+    expect(cad.clientNote).toContain("prong height");
+    let view = portalView("DM-000002", { queryCode: "H3WT-8RVK" });
+    expect(view.cad.media.length).toBe(2);
+    expect(view.cad.clientNote).toContain("prong height");
+
+    publishFinalMedia("DM-000002", {
+      media: [{ kind: "image", src: "/finished-front.png" }, { kind: "video", src: "/finished-sparkle.mp4" }],
+      note: "Final QC from the atelier.",
+      cert: "IGI inscription matched",
+    });
+    const action = listCustomerActions("DM-000002", true).find((a) => a.type === "finalConfirmation");
+    expect(action.media.length).toBe(2);
+    expect(action.note).toContain("Final QC");
+    view = portalView("DM-000002", { queryCode: "H3WT-8RVK" });
+    expect(view.finalAction.media.length).toBe(2);
+    expect(view.finalAction.note).toContain("Final QC");
+  });
+});
+
+describe("visual store — 주문 상담 채팅", () => {
+  it("고객 메시지와 운영자 답변이 주문 포털에 보존된다", () => {
+    const m1 = sendOrderMessage("DM-000001", {
+      body: "Can I compare two stones?",
+      actorRole: "customer",
+      actorId: "guest",
+      channel: "web",
+    });
+    const m2 = sendOrderMessage("DM-000001", {
+      body: "Yes, we will keep both options in this workspace.",
+      actorRole: "ops",
+      actorId: "u-admin",
+      channel: "web",
+    });
+    const messages = listOrderMessages("DM-000001");
+    expect(messages.map((m) => m.id)).toEqual(expect.arrayContaining([m1.id, m2.id]));
+
+    const view = portalView("DM-000001", { queryCode: "QX7K-M9P2" });
+    expect(view.messages.map((m) => m.body)).toEqual(expect.arrayContaining([m1.body, m2.body]));
+  });
+
+  it("외부 채널 출처를 보존해 나중에 인스타/커뮤니티 어댑터와 연결할 수 있다", () => {
+    sendOrderMessage("DM-000001", {
+      body: "DM from Instagram",
+      actorRole: "customer",
+      channel: "instagram",
+      externalThreadId: "ig-123",
+    });
+
+    const [message] = listOrderMessages("DM-000001", { channel: "instagram" });
+    expect(message.channel).toBe("instagram");
+    expect(message.externalThreadId).toBe("ig-123");
   });
 });
 

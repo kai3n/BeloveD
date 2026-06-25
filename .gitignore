@@ -5,6 +5,7 @@ dist/
 .playwright-mcp/
 .env
 .env.*
+!.env.example
 
 # 데모 녹화 산출물 (영상·검증 프레임)
 demo-video/

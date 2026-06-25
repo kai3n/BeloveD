@@ -69,6 +69,68 @@ function persistQuiet() {
 const now = () => new Date().toISOString();
 const today = () => now().slice(0, 10);
 const plusDays = (n) => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
+const MAX_ORDER_MEDIA = 5;
+export const ORDER_MESSAGE_CHANNELS = ["web", "instagram", "threads", "usCommunity", "cnCommunity"];
+
+function mediaKindFromSrc(src) {
+  const s = String(src || "");
+  return s.startsWith("data:video/") || /\.(mp4|webm|mov)(\?|#|$)/i.test(s) ? "video" : "image";
+}
+
+function normalizeOrderMedia(media = []) {
+  return (Array.isArray(media) ? media : [])
+    .filter((m) => m?.src)
+    .slice(0, MAX_ORDER_MEDIA)
+    .map((m) => ({
+      kind: m.kind || mediaKindFromSrc(m.src),
+      src: m.src,
+      ...(m.slot ? { slot: m.slot } : {}),
+      ...(m.label ? { label: maskContacts(m.label) } : {}),
+      ...(m.name ? { name: maskContacts(m.name) } : {}),
+      ...(m.size ? { size: m.size } : {}),
+      ...(m.originalSize ? { originalSize: m.originalSize } : {}),
+      ...(m.width ? { width: m.width } : {}),
+      ...(m.height ? { height: m.height } : {}),
+      ...(m.optimized ? { optimized: true } : {}),
+      ...(m.transient ? { transient: true } : {}),
+    }));
+}
+
+function normalizeMessageChannel(channel) {
+  return ORDER_MESSAGE_CHANNELS.includes(channel) ? channel : "web";
+}
+
+function normalizeActorRole(role) {
+  return ["customer", "ops", "system"].includes(role) ? role : "customer";
+}
+
+function ensureMessagingCollections() {
+  const d = db();
+  let changed = false;
+  if (!Array.isArray(d.conversations)) {
+    d.conversations = [];
+    changed = true;
+  }
+  if (!Array.isArray(d.conversationMessages)) {
+    d.conversationMessages = [];
+    changed = true;
+  }
+  if (changed) persistQuiet();
+}
+
+function publicConversationMessage(m) {
+  return {
+    id: m.id,
+    orderId: m.orderId,
+    conversationId: m.conversationId,
+    channel: m.channel,
+    actorRole: m.actorRole,
+    body: m.body,
+    attachments: m.attachments || [],
+    sourceLabel: m.sourceLabel || "",
+    createdAt: m.createdAt,
+  };
+}
 
 export function subscribe(fn) { listeners.add(fn); return () => listeners.delete(fn); }
 export function getDB() { return db(); }
@@ -158,14 +220,15 @@ function matchPoolForOrder(prefs) {
 
 // 풀 스톤 → 주문 후보 스냅샷 (autoMatchFromPool·submitPoolCandidates 공용)
 function poolStoneToCandidate(pool, orderId, seq, prId = null) {
-  const image = (pool.media || []).find((m) => m.kind === "image")?.src || "";
-  const video = (pool.media || []).find((m) => m.kind === "video")?.src || "";
+  const media = normalizeOrderMedia(pool.media || []);
+  const image = media.find((m) => m.kind === "image")?.src || "";
+  const video = media.find((m) => m.kind === "video")?.src || "";
   const c = {
     id: `DIA-${orderId}-${String(seq).padStart(2, "0")}`,
     orderId, prId, poolDiamondId: pool.id,
     igiNo: pool.igiNo, shape: pool.shape, carat: pool.carat, color: pool.color, clarity: pool.clarity,
     growth: pool.growth, lab: pool.lab, proportions: pool.proportions || {}, reportUrl: pool.reportUrl || "",
-    image, video, colorTreatment: pool.colorTreatment || "disclosed", availability: "available",
+    image, video, media, clientNote: "", colorTreatment: pool.colorTreatment || "disclosed", availability: "available",
     procurementCostUsd: pool.procurementCostUsd, supplierId: pool.supplierId,
     internalReview: null, internalNotes: "", published: false, customerPriceUsd: null,
     clientSelection: "none", stockConfirmed: false, locked: false, createdAt: now(),
@@ -195,6 +258,87 @@ function audit(actor, entity, entityId, field, before, after) {
 }
 export function listAudit(entityId) { return db().auditLog.filter((a) => a.entityId === entityId); }
 
+export function listOrderConversations(orderId) {
+  ensureMessagingCollections();
+  return db().conversations
+    .filter((c) => c.orderId === orderId)
+    .sort((a, b) => (b.updatedAt || "").localeCompare(a.updatedAt || ""));
+}
+
+function getOrCreateOrderConversation(orderId, { channel = "web", externalThreadId = "", sourceLabel = "" } = {}) {
+  ensureMessagingCollections();
+  const order = getOpsOrder(orderId);
+  if (!order) return null;
+  const normalizedChannel = normalizeMessageChannel(channel);
+  const externalId = String(externalThreadId || "").trim();
+  const existing = db().conversations.find((c) =>
+    c.orderId === orderId
+    && c.channel === normalizedChannel
+    && (externalId ? c.externalThreadId === externalId : !c.externalThreadId)
+  );
+  if (existing) return existing;
+  const createdAt = now();
+  const conversation = {
+    id: nextSeqId("CONV"),
+    orderId,
+    channel: normalizedChannel,
+    externalThreadId: externalId,
+    sourceLabel: String(sourceLabel || "").trim(),
+    status: "open",
+    createdAt,
+    updatedAt: createdAt,
+    lastMessageAt: null,
+  };
+  db().conversations.push(conversation);
+  return conversation;
+}
+
+export function listOrderMessages(orderId, { channel } = {}) {
+  ensureMessagingCollections();
+  const normalizedChannel = channel ? normalizeMessageChannel(channel) : null;
+  return db().conversationMessages
+    .filter((m) => m.orderId === orderId && (!normalizedChannel || m.channel === normalizedChannel))
+    .sort((a, b) => (a.createdAt || "").localeCompare(b.createdAt || ""));
+}
+
+export function sendOrderMessage(orderId, {
+  body = "",
+  attachments = [],
+  channel = "web",
+  actorRole = "customer",
+  actorId = "",
+  externalThreadId = "",
+  sourceLabel = "",
+} = {}) {
+  const trimmedBody = String(body || "").trim();
+  const normalizedAttachments = normalizeOrderMedia(attachments);
+  if (!trimmedBody && normalizedAttachments.length === 0) return null;
+  const conversation = getOrCreateOrderConversation(orderId, { channel, externalThreadId, sourceLabel });
+  if (!conversation) return null;
+  const role = normalizeActorRole(actorRole);
+  const createdAt = now();
+  const message = {
+    id: nextSeqId("MSG"),
+    orderId,
+    conversationId: conversation.id,
+    channel: conversation.channel,
+    externalThreadId: conversation.externalThreadId || "",
+    actorRole: role,
+    actorId: String(actorId || role),
+    body: trimmedBody,
+    attachments: normalizedAttachments,
+    sourceLabel: conversation.sourceLabel || "",
+    createdAt,
+  };
+  db().conversationMessages.push(message);
+  conversation.status = role === "ops" ? "waitingCustomer" : role === "customer" ? "waitingOps" : "open";
+  conversation.lastMessageAt = createdAt;
+  conversation.updatedAt = createdAt;
+  audit(actorId || role, "conversation", conversation.id, "message", null, role);
+  persist();
+  return publicConversationMessage(message);
+}
+
 function nextOrderId() {
   db().opsCounter += 1;
   return `DM-${String(db().opsCounter).padStart(6, "0")}`;
@@ -213,6 +357,13 @@ export function createIntake(form, customerId = null) {
   // 레퍼런스는 즉시 벤더에게 전달(approved) — 문제 자료는 미디어 피드에서 사후 숨김 처리
   const referenceMedia = (form.referenceMedia || []).map((m) => ({
     id: nextSeqId("REF"), kind: m.kind || "image", src: m.src, status: "approved",
+    ...(m.name ? { name: maskContacts(m.name) } : {}),
+    ...(m.size ? { size: m.size } : {}),
+    ...(m.originalSize ? { originalSize: m.originalSize } : {}),
+    ...(m.width ? { width: m.width } : {}),
+    ...(m.height ? { height: m.height } : {}),
+    ...(m.optimized ? { optimized: true } : {}),
+    ...(m.transient ? { transient: true } : {}),
     annotations: (m.annotations || []).filter((a) => validateAnnotation(a, db().chipCatalog)),
   }));
   const intake = { id: intakeId, orderId, ...form, referenceMedia, createdAt: now() };
@@ -404,23 +555,61 @@ export function submitCadForPr(prId, payload) {
   persist();
   return review;
 }
-export function submitQcForPr(prId, { video, cert, actualWeightG }) {
+export function submitQcForPr(prId, { video, cert, actualWeightG, media }) {
   const pr = getProcurement(prId);
-  pr.result = { video, cert, actualWeightG };
+  const finalMedia = normalizeOrderMedia(media?.length ? media : [video && { kind: "video", src: video }].filter(Boolean));
+  pr.result = { video: video || finalMedia[0]?.src || "", cert, actualWeightG, media: finalMedia };
   pr.status = "submitted";
-  upsertMilestone(pr.orderId, "finalQcVideo", { status: "done", publishToClient: true, link: video || "" });
+  upsertMilestone(pr.orderId, "finalQcVideo", { status: "done", publishToClient: true, link: pr.result.video || "" });
   upsertMilestone(pr.orderId, "igiInscriptionVerified", { status: "inProgress", publishToClient: false });
   // 실중량 증빙 제출 즉시 잔금 자동 정산 (어드민 수동 정산 제거)
   if (actualWeightG && listQuotes(pr.orderId).some((q) => q.status === "accepted")) {
     recordActualWeight(pr.orderId, actualWeightG);
   }
   // 체크포인트 ③: 완성품 영상 → 고객 최종 컨펌 액션 (증거 보존)
-  createCustomerAction(pr.orderId, { type: "finalConfirmation", prompt: "finalQc", link: video || "" });
+  createCustomerAction(pr.orderId, { type: "finalConfirmation", prompt: "finalQc", link: pr.result.video || "", media: finalMedia, note: cert || "" });
   const o = getOpsOrder(pr.orderId);
   if (o.status === "PRODUCTION") updateOpsOrder(o.id, { status: "QC" }, pr.supplierId);
   audit(pr.supplierId, "procurement", prId, "result", null, "qc");
   persist();
   return pr;
+}
+
+export function publishFinalMedia(orderId, { media, note, cert, actualWeightG }, actor = "ops") {
+  const order = getOpsOrder(orderId);
+  if (!order) return null;
+  const finalMedia = normalizeOrderMedia(media || []);
+  const primary = finalMedia[0]?.src || "";
+  listCustomerActions(orderId, true)
+    .filter((a) => a.type === "finalConfirmation")
+    .forEach((a) => { a.status = "cancelled"; });
+  upsertMilestone(orderId, "finalQcVideo", {
+    status: "done",
+    publishToClient: true,
+    link: primary,
+    clientUpdate: maskContacts(note || ""),
+  });
+  if (cert) {
+    upsertMilestone(orderId, "igiInscriptionVerified", {
+      status: "done",
+      publishToClient: true,
+      clientUpdate: maskContacts(cert),
+    });
+  }
+  if (actualWeightG && listQuotes(orderId).some((q) => q.status === "accepted")) {
+    recordActualWeight(orderId, Number(actualWeightG));
+  }
+  const action = createCustomerAction(orderId, {
+    type: "finalConfirmation",
+    prompt: "finalQc",
+    link: primary,
+    media: finalMedia,
+    note: maskContacts(note || ""),
+  });
+  if (["PRODUCTION", "CAD"].includes(order.status)) updateOpsOrder(orderId, { status: "QC" }, actor);
+  audit(actor, "customerAction", action.id, "proxyFinal", null, String(finalMedia.length));
+  persist();
+  return action;
 }
 
 // 어드민 터치포인트 ②: 잔금 입금 확인 → 벤더 발송 태스크 자동 발행
@@ -461,17 +650,29 @@ export function getCandidate(id) { return db().diamondCands.find((c) => c.id ===
 export function submitCandidates(prId, candidates) {
   const pr = getProcurement(prId);
   const existing = listCandidates({ orderId: pr.orderId }).length;
-  const created = candidates.map((cand, i) => ({
-    id: `DIA-${pr.orderId}-${String(existing + i + 1).padStart(2, "0")}`,
-    orderId: pr.orderId, prId,
-    igiNo: cand.igiNo, shape: cand.shape, carat: cand.carat, color: cand.color, clarity: cand.clarity,
-    growth: cand.growth, lab: cand.lab, proportions: cand.proportions || {},
-    reportUrl: cand.reportUrl || "", image: cand.image || "", video: cand.video || "",
-    colorTreatment: cand.colorTreatment || "disclosed", availability: "available",
-    procurementCostUsd: cand.procurementCostUsd, supplierId: pr.supplierId,
-    internalReview: null, internalNotes: "", published: false, customerPriceUsd: null,
-    clientSelection: "none", stockConfirmed: false, locked: false, createdAt: now(),
-  }));
+  const created = candidates.map((cand, i) => {
+    const media = normalizeOrderMedia(cand.media?.length
+      ? cand.media
+      : [
+          cand.image && { kind: "image", src: cand.image },
+          cand.video && { kind: "video", src: cand.video },
+        ].filter(Boolean));
+    return {
+      id: `DIA-${pr.orderId}-${String(existing + i + 1).padStart(2, "0")}`,
+      orderId: pr.orderId, prId,
+      igiNo: cand.igiNo, shape: cand.shape, carat: cand.carat, color: cand.color, clarity: cand.clarity,
+      growth: cand.growth, lab: cand.lab, proportions: cand.proportions || {},
+      reportUrl: cand.reportUrl || "",
+      image: media.find((m) => m.kind === "image")?.src || cand.image || "",
+      video: media.find((m) => m.kind === "video")?.src || cand.video || "",
+      media,
+      clientNote: maskContacts(cand.clientNote || cand.note || ""),
+      colorTreatment: cand.colorTreatment || "disclosed", availability: "available",
+      procurementCostUsd: cand.procurementCostUsd, supplierId: pr.supplierId,
+      internalReview: null, internalNotes: "", published: false, customerPriceUsd: null,
+      clientSelection: "none", stockConfirmed: false, locked: false, createdAt: now(),
+    };
+  });
   db().diamondCands.push(...created);
   pr.status = "submitted";
   audit(pr.supplierId, "procurement", prId, "candidates", null, String(created.length));
@@ -486,6 +687,54 @@ export function submitCandidates(prId, candidates) {
   });
   persist();
   return created;
+}
+export function createProxyDiamondCandidate(orderId, payload, actor = "ops") {
+  const order = getOpsOrder(orderId);
+  if (!order) return null;
+  const existing = listCandidates({ orderId }).length;
+  const media = normalizeOrderMedia(payload.media || []);
+  const shape = payload.shape || "round";
+  const carat = Number(payload.carat) || 1;
+  const candidate = {
+    id: `DIA-${orderId}-${String(existing + 1).padStart(2, "0")}`,
+    orderId, prId: null, poolDiamondId: null,
+    igiNo: payload.igiNo || `OPS-${String(existing + 1).padStart(2, "0")}`,
+    shape, carat, color: payload.color || "E", clarity: payload.clarity || "VS1",
+    growth: payload.growth || "CVD", lab: payload.lab || "IGI",
+    proportions: payload.proportions || {}, reportUrl: payload.reportUrl || "",
+    image: media.find((m) => m.kind === "image")?.src || "",
+    video: media.find((m) => m.kind === "video")?.src || "",
+    media,
+    clientNote: maskContacts(payload.clientNote || ""),
+    colorTreatment: payload.colorTreatment || "disclosed",
+    availability: "available",
+    procurementCostUsd: Number(payload.procurementCostUsd) || 0,
+    supplierId: payload.supplierId || "ops-proxy",
+    internalReview: "recommended",
+    internalNotes: maskContacts(payload.internalNotes || "operator proxy upload"),
+    published: true,
+    customerPriceUsd: Number(payload.customerPriceUsd) || candidateAutoPrice(benchmarkFor(shape, carat)?.unitUsdPerCt || 320, carat, db().settings.opsMultiplier),
+    clientSelection: "none",
+    stockConfirmed: true,
+    locked: false,
+    createdAt: now(),
+  };
+  db().diamondCands.push(candidate);
+  if (!order.selectedDiamondId && order.status === "STYLE_SELECTION") {
+    updateOpsOrder(order.id, { status: "STONE_SELECTION" }, actor);
+  }
+  if (!order.selectedDiamondId && !listCustomerActions(orderId, true).some((a) => a.type === "diamondSelection")) {
+    createCustomerAction(orderId, {
+      type: "diamondSelection",
+      prompt: "Select a diamond from operator-posted candidates",
+      link: candidate.image || candidate.video || "",
+      media,
+      note: candidate.clientNote,
+    });
+  }
+  audit(actor, "diamond", candidate.id, "proxyPublished", null, "true");
+  persist();
+  return candidate;
 }
 export function reviewCandidate(diaId, internalReview, notes) {
   const c = getCandidate(diaId);
@@ -611,22 +860,34 @@ export function lockCandidate(diaId) {
 }
 
 // ---------- styles & specs ----------
+const MAX_STYLE_MEDIA = 5;
+function normalizeOpsStyleMedia(style) {
+  if (!Array.isArray(style.media)) return style;
+  const media = style.media.slice(0, MAX_STYLE_MEDIA);
+  return {
+    ...style,
+    media,
+    coverImage: style.coverImage || media[0]?.src || "",
+    mediaComplete: style.mediaComplete ?? media.length > 0,
+  };
+}
 export function listOpsStyles({ publishedOnly = false } = {}) {
   return db().opsStyles.filter((st) => !publishedOnly || (st.published && st.availableForSale));
 }
 export function getOpsStyle(id) { return db().opsStyles.find((st) => st.id === id) || null; }
 export function saveOpsStyle(style) {
+  const normalized = normalizeOpsStyleMedia(style);
   const list = db().opsStyles;
-  const i = list.findIndex((st) => st.id === style.id);
+  const i = list.findIndex((st) => st.id === normalized.id);
   if (i >= 0) {
-    list[i] = { ...list[i], ...style };
+    list[i] = { ...list[i], ...normalized };
     persist();
     return list[i];
   }
   const created = (() => {
-    const prefix = { ring: "RING", necklace: "NECK", earrings: "EARR", bangle: "BRAC" }[style.category] || "STYL";
-    const count = list.filter((st) => st.category === style.category).length + 1;
-    return { published: false, availableForSale: false, mediaComplete: false, ...style, id: `${prefix}-${String(count).padStart(3, "0")}` };
+    const prefix = { ring: "RING", necklace: "NECK", earrings: "EARR", bangle: "BRAC" }[normalized.category] || "STYL";
+    const count = list.filter((st) => st.category === normalized.category).length + 1;
+    return { published: false, availableForSale: false, mediaComplete: false, ...normalized, id: `${prefix}-${String(count).padStart(3, "0")}` };
   })();
   list.push(created);
   persist();
@@ -756,18 +1017,27 @@ export function upsertMilestone(orderId, stage, patch) {
 
 // ---------- CAD reviews (버전당 1레코드 — 히스토리 불변) ----------
 export function listCadReviews(orderId) { return db().cadReviews.filter((c) => c.orderId === orderId).sort((a, b) => b.version - a.version); }
-export function addCadVersion(orderId, { fileUrl, media, supplierId }) {
+export function addCadVersion(orderId, { fileUrl, media, supplierId, note }) {
+  const order = getOpsOrder(orderId);
   const version = listCadReviews(orderId).length + 1;
+  const reviewMedia = normalizeOrderMedia(media?.length ? media : [fileUrl && { kind: mediaKindFromSrc(fileUrl), src: fileUrl }].filter(Boolean));
   const review = {
     id: nextSeqId("CADR"), orderId, version,
-    fileUrl: fileUrl || media?.[0]?.src || "",
-    media: media || [],
+    fileUrl: fileUrl || reviewMedia[0]?.src || "",
+    media: reviewMedia,
+    clientNote: maskContacts(note || ""),
     supplierUploadedAt: now(), internalReview: "", sentAt: null,
     decision: null, feedback: [], annotations: [], confirmedMeasurements: "", evidence: "", decidedAt: null,
   };
   db().cadReviews.push(review);
   upsertMilestone(orderId, "cadIssued", { status: "waitingClient", publishToClient: true, clientUpdate: `CAD V${version} ready for review`, link: review.fileUrl });
-  createCustomerAction(orderId, { type: "cadReview", prompt: `CAD V${version}`, link: fileUrl });
+  listCustomerActions(orderId, true)
+    .filter((a) => a.type === "cadReview")
+    .forEach((a) => { a.status = "cancelled"; });
+  createCustomerAction(orderId, { type: "cadReview", prompt: `CAD V${version}`, link: review.fileUrl, media: reviewMedia, note: review.clientNote });
+  if (order && ["STYLE_SELECTION", "STONE_SELECTION", "QUOTATION"].includes(order.status)) {
+    updateOpsOrder(orderId, { status: "CAD" }, supplierId || "supplier");
+  }
   audit(supplierId || "supplier", "cad", review.id, "create", null, `V${version}`);
   persist();
   return review;
@@ -821,8 +1091,12 @@ export function freeRevisionsLeft(orderId) {
 export function listCustomerActions(orderId, openOnly = false) {
   return db().customerActions.filter((a) => a.orderId === orderId && (!openOnly || a.status === "open"));
 }
-export function createCustomerAction(orderId, { type, prompt, link, dueDate }) {
-  const action = { id: nextSeqId("CA"), orderId, type, prompt: prompt || "", link: link || "", dueDate: dueDate || null, status: "open", response: null, respondedAt: null, createdAt: now() };
+export function createCustomerAction(orderId, { type, prompt, link, dueDate, media, note }) {
+  const action = {
+    id: nextSeqId("CA"), orderId, type, prompt: prompt || "", link: link || "",
+    media: normalizeOrderMedia(media || []), note: maskContacts(note || ""),
+    dueDate: dueDate || null, status: "open", response: null, respondedAt: null, createdAt: now(),
+  };
   db().customerActions.push(action);
   persist();
   return action;
@@ -873,6 +1147,7 @@ export function portalView(orderId, { customerId, queryCode } = {}) {
     designChangeFeeUsd: db().settings.designChangeFeeUsd,
     finalAction: listCustomerActions(orderId, true).find((a) => a.type === "finalConfirmation") || null,
     actions: listCustomerActions(orderId, true),
+    messages: listOrderMessages(orderId).map(publicConversationMessage),
   };
 }
 

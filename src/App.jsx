@@ -17,13 +17,10 @@ const CustomerShell = lazy(() => import("./pages/Account.jsx"));
 const AccountOrders = named(() => import("./pages/Account.jsx"), "AccountOrders");
 const StaffLogin = lazy(() => import("./pages/StaffLogin.jsx"));
 const Admin = lazy(() => import("./pages/admin/Admin.jsx"));
-const AdminDashboard = named(() => import("./pages/admin/Admin.jsx"), "AdminDashboard");
 const AdminOpsOrders = lazy(() => import("./pages/admin/AdminOpsOrders.jsx"));
 const AdminOpsOrder = lazy(() => import("./pages/admin/AdminOpsOrder.jsx"));
 const AdminOpsStyles = lazy(() => import("./pages/admin/AdminOpsStyles.jsx"));
 const AdminBenchmark = lazy(() => import("./pages/admin/AdminBenchmark.jsx"));
-const AdminDiamonds = lazy(() => import("./pages/admin/AdminDiamonds.jsx"));
-const AdminSettings = lazy(() => import("./pages/admin/AdminSettings.jsx"));
 const CustomBuilderMockup = lazy(() => import("./pages/CustomBuilderMockup.jsx"));
 const CustomFlowMockup = lazy(() => import("./pages/CustomFlowMockup.jsx"));
 const IntakeStoneMockup = lazy(() => import("./pages/IntakeStoneMockup.jsx"));
@@ -67,16 +64,16 @@ export default function App() {
             <Route index element={<AccountOrders />} />
           </Route>
           <Route path="admin" element={<RequireRole role="admin"><Admin /></RequireRole>}>
-            <Route index element={<AdminDashboard />} />
+            <Route index element={<Navigate to="/admin/orders" replace />} />
             <Route path="orders" element={<AdminOpsOrders />} />
             <Route path="orders/:orderId" element={<AdminOpsOrder />} />
             <Route path="designs" element={<AdminOpsStyles />} />
             <Route path="styles" element={<Navigate to="/admin/designs" replace />} />
             <Route path="ops" element={<Navigate to="/admin/orders" replace />} />
             <Route path="ops/:orderId" element={<AdminOpsOrder />} />
-            <Route path="diamonds" element={<AdminDiamonds />} />
             <Route path="benchmark" element={<AdminBenchmark />} />
-            <Route path="settings" element={<AdminSettings />} />
+            <Route path="diamonds" element={<Navigate to="/admin/benchmark" replace />} />
+            <Route path="settings" element={<Navigate to="/admin/orders" replace />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Route>

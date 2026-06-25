@@ -16,7 +16,7 @@ export default function StaffLogin() {
 
   function afterLogin(user) {
     if (from && user.role === "admin") return navigate(from, { replace: true });
-    navigate("/admin", { replace: true });
+    navigate("/admin/orders", { replace: true });
   }
 
   function handleSubmit(e) {

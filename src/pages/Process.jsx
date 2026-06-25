@@ -14,7 +14,7 @@ const processCopy = {
     workspaceBody: "Each order highlights the current stage, who is responsible, the next action, the latest media version, and the expected timing.",
     stages: [
       ["1. Design brief", "Choose a starter design or upload references. We capture size, metal, stone preferences, date, and budget.", "Customer submits request"],
-      ["2. Quote and CAD", "The vendor receives a production-ready brief and returns quotes, CAD, renders, photos, or videos through the order workspace.", "Vendor uploads versions"],
+      ["2. Quote and CAD", "The BeloveD team receives a production-ready brief and returns quotes, CAD, renders, photos, or videos through the order workspace.", "Team uploads versions"],
       ["3. Approval", "The customer reviews each version, leaves precise notes, and approves the design before production starts.", "Customer approves"],
       ["4. QC and delivery", "Final media, certification, balance, and shipping status stay attached to the same order timeline.", "Final approval and shipment"],
     ],
@@ -29,7 +29,7 @@ const processCopy = {
     workspaceBody: "각 주문은 현재 단계, 담당자, 다음 액션, 최신 미디어 버전, 예상 일정을 한 화면에 보여줍니다.",
     stages: [
       ["1. 디자인 브리프", "시작 디자인을 고르거나 레퍼런스를 업로드하세요. 사이즈, 메탈, 스톤 선호, 날짜, 예산을 정리합니다.", "고객 요청 제출"],
-      ["2. 견적 및 CAD", "벤더는 제작 가능한 브리프를 받고, 워크스페이스에 견적, CAD, 렌더, 사진, 영상을 업로드합니다.", "벤더 버전 업로드"],
+      ["2. 견적 및 CAD", "BeloveD 제작팀이 제작 가능한 브리프를 받고, 워크스페이스에 견적, CAD, 렌더, 사진, 영상을 업로드합니다.", "제작팀 버전 업로드"],
       ["3. 승인", "고객은 각 버전을 검토하고 코멘트를 남긴 뒤 제작 전 디자인을 승인합니다.", "고객 승인"],
       ["4. QC 및 배송", "최종 미디어, 인증서, 잔금, 배송 상태가 같은 주문 타임라인에 연결됩니다.", "최종 승인 및 배송"],
     ],
@@ -44,7 +44,7 @@ const processCopy = {
     workspaceBody: "每个订单都会显示当前阶段、负责人、下一步、最新媒体版本和预计时间。",
     stages: [
       ["1. 设计需求", "选择起始设计或上传参考图。我们整理尺寸、金属、钻石偏好、日期和预算。", "客户提交需求"],
-      ["2. 报价与 CAD", "供应商收到可生产的需求，并在工作区返回报价、CAD、渲染图、照片或视频。", "供应商上传版本"],
+      ["2. 报价与 CAD", "BeloveD 团队收到可生产的需求，并在工作区返回报价、CAD、渲染图、照片或视频。", "团队上传版本"],
       ["3. 确认", "客户逐版查看、留下明确意见，并在生产前确认设计。", "客户确认"],
       ["4. 质检与交付", "最终媒体、证书、尾款和物流状态都保留在同一订单时间线。", "最终确认与发货"],
     ],

@@ -7,12 +7,9 @@ import { useLocale } from "../../i18n.jsx";
 export default function Admin() {
   const { p } = useLocale();
   const menu = [
-    { to: "/admin", key: "dashboard", end: true },
     { to: "/admin/orders", key: "orders", ops: true },
     { to: "/admin/designs", key: "styles", ops: true },
-    { to: "/admin/diamonds", key: "diamonds" },
     { to: "/admin/benchmark", key: "benchmark", ops: true },
-    { to: "/admin/settings", key: "settings" },
   ];
   return (
     <div className="page admin-page">

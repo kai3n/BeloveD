@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "../lib/auth.jsx";
 import {
-  acceptQuote, confirmFinal, decideCad, listCustomerActions, portalView, respondCustomerAction, toggleShortlist, requestStockConfirm, lockSelectedCandidate,
+  acceptQuote, confirmFinal, decideCad, listCustomerActions, portalView, respondCustomerAction, sendOrderMessage, toggleShortlist, requestStockConfirm, lockSelectedCandidate,
 } from "../lib/store.js";
 import { useDBVersion } from "../lib/useDB.js";
 import { EmptyNote, MediaThumb, usd } from "../components/ui.jsx";
@@ -45,6 +45,68 @@ function Checkpoint({ index, title, state, summary, children }) {
   );
 }
 
+function mediaFrom(src) {
+  if (!src) return null;
+  return { kind: /\.(mp4|webm|mov)(\?|#|$)/i.test(src) ? "video" : "image", src };
+}
+
+function mediaList(media, fallbackSrc = "") {
+  const items = Array.isArray(media) ? media.filter((m) => m?.src) : [];
+  return items.length ? items : [mediaFrom(fallbackSrc)].filter(Boolean);
+}
+
+function ClientMediaStrip({ media }) {
+  if (!media?.length) return null;
+  return (
+    <div className="client-media-strip">
+      {media.map((m, i) => (
+        <MediaThumb key={`${m.src}-${i}`} media={m} alt="" ratio="1 / 1" />
+      ))}
+    </div>
+  );
+}
+
+function formatMessageTime(iso) {
+  if (!iso) return "";
+  return new Date(iso).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+}
+
+function ConversationPanel({ messages, draft, setDraft, onSend, t }) {
+  const copy = t.chat;
+  return (
+    <section className="panel conversation-panel">
+      <div className="conversation-head">
+        <div>
+          <p className="section-label">{copy.title}</p>
+          <p className="form-hint">{copy.sub}</p>
+        </div>
+        <span className="channel-pill">{copy.channels.web}</span>
+      </div>
+      <div className="conversation-thread" aria-live="polite">
+        {messages.length === 0 ? (
+          <p className="form-hint">{copy.empty}</p>
+        ) : messages.map((message) => {
+          const isCustomer = message.actorRole === "customer";
+          return (
+            <article className={`conversation-message ${isCustomer ? "is-customer" : "is-ops"}`} key={message.id}>
+              <div className="conversation-meta">
+                <span>{isCustomer ? copy.customer : copy.advisor}</span>
+                <span>{copy.channels[message.channel] || message.channel}</span>
+                <span>{formatMessageTime(message.createdAt)}</span>
+              </div>
+              {message.body && <p className="conversation-body">{message.body}</p>}
+            </article>
+          );
+        })}
+      </div>
+      <form className="conversation-form" onSubmit={(e) => { e.preventDefault(); onSend(); }}>
+        <textarea value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={copy.placeholder} rows={2} />
+        <button className="button primary small" type="submit" disabled={!draft.trim()}>{copy.send}</button>
+      </form>
+    </section>
+  );
+}
+
 // 체크포인트 ② 디자인 — 비교 뷰 + 핀 수정요청. 자유 텍스트 입력 없음.
 function DesignCard({ cad, mineMedia, orderId, actor, revisionsLeft, feeUsd, defaultMeasure }) {
   const { p } = useLocale();
@@ -53,8 +115,9 @@ function DesignCard({ cad, mineMedia, orderId, actor, revisionsLeft, feeUsd, def
   const [revising, setRevising] = useState(false);
   const [ann, setAnn] = useState([]);
   const [measure, setMeasure] = useState(defaultMeasure || ""); // 인테이크에서 받은 사이즈로 프리필 — 재입력 불필요
+  const cadMedia = mediaList(cad.media, cad.fileUrl);
   // 핀은 정지 이미지에만 찍는다 — 대표 파일이 영상이면 슬롯 중 첫 이미지를 주석 캔버스로 사용
-  const pinSrc = [cad.fileUrl, ...(cad.media || []).map((m) => m.src)].find((s) => s && !s.endsWith(".mp4")) || cad.fileUrl;
+  const pinSrc = cadMedia.map((m) => m.src).find((s) => s && !/\.(mp4|webm|mov)(\?|#|$)/i.test(s)) || cad.fileUrl;
 
   function send(decision) {
     decideCad(cad.id, {
@@ -78,19 +141,20 @@ function DesignCard({ cad, mineMedia, orderId, actor, revisionsLeft, feeUsd, def
           <p className="label">{t2.compareVendor} — {t.cadVersion(cad.version)}</p>
           {revising
             ? <PinAnnotator src={pinSrc} annotations={ann} onChange={setAnn} />
-            : <MediaThumb media={{ kind: cad.fileUrl.endsWith(".mp4") ? "video" : "image", src: cad.fileUrl }} ratio="4 / 3" alt={t.cadTitle} />}
+            : <MediaThumb media={cadMedia[0]} ratio="4 / 3" alt={t.cadTitle} />}
         </div>
       </div>
-      {cad.media?.length > 1 && (
-        <div className="card-grid cols-3" style={{ marginTop: 10 }}>
-          {cad.media.map((m) => (
-            <div key={m.slot}>
+      {cadMedia.length > 1 && (
+        <div className="card-grid cols-3 client-cad-media-grid" style={{ marginTop: 10 }}>
+          {cadMedia.map((m, i) => (
+            <div key={`${m.src}-${i}`}>
               <p className="label">{t2.slots[m.slot] || m.slot}</p>
               <MediaThumb media={m} alt={m.slot} />
             </div>
           ))}
         </div>
       )}
+      {cad.clientNote && <p className="feedback-note">{cad.clientNote}</p>}
       {!cad.decision && (
         <div className="form-stack" style={{ marginTop: 14 }}>
           <label className="field"><span>{t.cadMeasure}</span>
@@ -118,12 +182,13 @@ export default function ClientPortal() {
   const { user } = useAuth();
   const code = params.get("code") || "";
   const actor = user?.id || `guest:${orderId}`;
+  const [chatDraft, setChatDraft] = useState("");
 
   const view = portalView(orderId, { customerId: user?.id, queryCode: code });
   if (!view) {
     return <div className="page"><EmptyNote>{t.notFound}</EmptyNote></div>;
   }
-  const { order, intake, style, candidates, selected, quote, milestones, cad, freeRevisionsLeft, designChangeFeeUsd, finalAction, actions } = view;
+  const { order, intake, style, candidates, selected, quote, milestones, cad, freeRevisionsLeft, designChangeFeeUsd, finalAction, actions, messages = [] } = view;
 
   function shortlist(diaId) { toggleShortlist(diaId, actor); }
   function reqStock() { requestStockConfirm(orderId, actor); }
@@ -136,6 +201,12 @@ export default function ClientPortal() {
     acceptQuote(quote.id, actor);
     const ca = listCustomerActions(orderId, true).find((a) => a.type === "quoteAcceptance");
     if (ca) respondCustomerAction(ca.id, quote.id, actor);
+  }
+  function sendChat() {
+    const body = chatDraft.trim();
+    if (!body) return;
+    sendOrderMessage(orderId, { body, channel: "web", actorRole: "customer", actorId: actor });
+    setChatDraft("");
   }
 
   const anySelected = selected || candidates.some((c) => c.clientSelection === "selected");
@@ -180,13 +251,17 @@ export default function ClientPortal() {
     : (order.status === "CAD" && cad && !cad.decision) ? t.nextCadReview
       : t.nextStep?.[order.status] || "";
   const activeAction = actions?.[0] || null;
-  const waitingOn = activeAction ? "You" : ["PRODUCTION", "QC", "SHIPPING"].includes(order.status) ? "Atelier" : "BeloveD";
+  const waitingOn = activeAction ? t.waitingYou : ["PRODUCTION", "QC", "SHIPPING"].includes(order.status) ? t.waitingAtelier : t.waitingBeloveD;
+  const activeActionText = activeAction
+    ? (t.todo?.[activeAction.type] || activeAction.prompt || nextMsg || t.reviewUpdates)
+    : (nextMsg || t.reviewUpdates);
+  const finalMedia = mediaList(finalAction?.media, finalAction?.link);
 
   return (
     <div className="page" style={{ maxWidth: 980 }}>
       <section className="workspace-hero">
         <div>
-          <p className="section-label">ORDER WORKSPACE</p>
+          <p className="section-label">{t.workspaceKicker}</p>
           <h1 className="page-title">{order.id}</h1>
           <p className="page-sub">
             {style && <>{style.id} — {pickI18n(style.name, locale)} · </>}
@@ -195,9 +270,9 @@ export default function ClientPortal() {
           </p>
         </div>
         <div className="workspace-status-grid">
-          <div><span>Waiting on</span><strong>{waitingOn}</strong></div>
-          <div><span>Next action</span><strong>{activeAction?.prompt || nextMsg || "Review updates"}</strong></div>
-          <div><span>Due</span><strong>{activeAction?.dueDate || order.requiredDate || "TBD"}</strong></div>
+          <div><span>{t.waitingOn}</span><strong>{waitingOn}</strong></div>
+          <div><span>{t.nextAction}</span><strong>{activeActionText}</strong></div>
+          <div><span>{t.due}</span><strong>{activeAction?.dueDate || order.requiredDate || t.tbd}</strong></div>
         </div>
       </section>
 
@@ -209,6 +284,8 @@ export default function ClientPortal() {
         </div>
       )}
 
+      <ConversationPanel messages={messages} draft={chatDraft} setDraft={setChatDraft} onSend={sendChat} t={t} />
+
       {/* 체크포인트 ① 스톤 (published 후보만) */}
       {showStone && (
         <Checkpoint index={1} title={p.visual.checkpoint.stone} state={stoneState}
@@ -218,33 +295,38 @@ export default function ClientPortal() {
             <>
               <p className="form-hint" style={{ marginBottom: 14 }}>{t.optionsLabel(candidates.length)} · {t.batchNote}</p>
               <div className="card-grid cols-3">
-                {candidates.map((c) => (
-                  <div className={`item-card ${c.clientSelection === "selected" || selected?.id === c.id ? "select-card is-selected" : ""}`} key={c.id}>
-                    <MediaThumb media={c.video ? { kind: "video", src: c.video } : { kind: "image", src: c.image }} alt={c.id} />
-                    <div className="card-body">
-                      <h3>{p.shapes[c.shape] || c.shape} {c.carat.toFixed(2)}ct</h3>
-                      <p className="spec">{c.color} / {c.clarity} · {p.portal.growth[c.growth] || c.growth} · {c.lab}</p>
-                      <p className="spec">{t.igi} {c.igiNo} · {t.treated}</p>
-                      {c.proportions?.faceUp && <p className="spec">T{c.proportions.table} · D{c.proportions.depth} · {c.proportions.faceUp}</p>}
-                      <p className="price">{usd(c.customerPriceUsd)}</p>
-                      {selected?.id === c.id ? (
-                        <p className="form-hint">{t.selected} ✓</p>
-                      ) : !order.selectedDiamondId && order.status === "STONE_SELECTION" ? (
-                        c.availability === "sold" ? <p className="form-hint">{t.soldOut}</p>
-                        : c.stockConfirmed ? (
-                            <div className="row-actions" style={{ marginTop: 8 }}>
-                              <span className="status-badge mst-done">{t.inStock}</span>
-                              <button className="button primary small" onClick={() => lockOne(c.id)}>{t.lockThis}</button>
-                            </div>
-                          )
-                        : c.clientSelection === "selected" ? (
-                            <button className="button secondary small is-active" style={{ marginTop: 8 }} onClick={() => shortlist(c.id)}>{t.shortlisted} ✓</button>
-                          )
-                        : <button className="button secondary small" style={{ marginTop: 8 }} onClick={() => shortlist(c.id)}>{t.shortlist}</button>
-                      ) : null}
+                {candidates.map((c) => {
+                  const candidateMedia = mediaList(c.media, c.video || c.image);
+                  return (
+                    <div className={`item-card ${c.clientSelection === "selected" || selected?.id === c.id ? "select-card is-selected" : ""}`} key={c.id}>
+                      <MediaThumb media={candidateMedia[0]} alt={c.id} />
+                      {candidateMedia.length > 1 && <ClientMediaStrip media={candidateMedia.slice(1)} />}
+                      <div className="card-body">
+                        <h3>{p.shapes[c.shape] || c.shape} {c.carat.toFixed(2)}ct</h3>
+                        <p className="spec">{c.color} / {c.clarity} · {p.portal.growth[c.growth] || c.growth} · {c.lab}</p>
+                        <p className="spec">{t.igi} {c.igiNo} · {t.treated}</p>
+                        {c.proportions?.faceUp && <p className="spec">T{c.proportions.table} · D{c.proportions.depth} · {c.proportions.faceUp}</p>}
+                        {c.clientNote && <p className="form-hint">{c.clientNote}</p>}
+                        <p className="price">{usd(c.customerPriceUsd)}</p>
+                        {selected?.id === c.id ? (
+                          <p className="form-hint">{t.selected} ✓</p>
+                        ) : !order.selectedDiamondId && order.status === "STONE_SELECTION" ? (
+                          c.availability === "sold" ? <p className="form-hint">{t.soldOut}</p>
+                          : c.stockConfirmed ? (
+                              <div className="row-actions" style={{ marginTop: 8 }}>
+                                <span className="status-badge mst-done">{t.inStock}</span>
+                                <button className="button primary small" onClick={() => lockOne(c.id)}>{t.lockThis}</button>
+                              </div>
+                            )
+                          : c.clientSelection === "selected" ? (
+                              <button className="button secondary small is-active" style={{ marginTop: 8 }} onClick={() => shortlist(c.id)}>{t.shortlisted} ✓</button>
+                            )
+                          : <button className="button secondary small" style={{ marginTop: 8 }} onClick={() => shortlist(c.id)}>{t.shortlist}</button>
+                        ) : null}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
               {!order.selectedDiamondId && order.status === "STONE_SELECTION" &&
                 candidates.some((c) => c.clientSelection === "selected" && !c.stockConfirmed) && (
@@ -290,9 +372,13 @@ export default function ClientPortal() {
         {finalAction && (
           <div className="form-stack">
             <h3 style={{ margin: 0 }}>{p.visual.finalTitle}</h3>
-            {finalAction.link && (
-              <MediaThumb media={{ kind: finalAction.link.endsWith(".mp4") ? "video" : "image", src: finalAction.link }} ratio="16 / 9" alt={p.visual.finalTitle} />
+            {finalMedia.length > 0 && (
+              <>
+                <MediaThumb media={finalMedia[0]} ratio="16 / 9" alt={p.visual.finalTitle} />
+                <ClientMediaStrip media={finalMedia.slice(1)} />
+              </>
             )}
+            {finalAction.note && <p className="feedback-note">{finalAction.note}</p>}
             <p className="warn-note">{p.visual.finalNotice}</p>
             <button className="button primary" onClick={() => confirmFinal(orderId, actor)}>{p.visual.finalConfirm}</button>
           </div>
