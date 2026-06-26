@@ -1529,8 +1529,39 @@ html[data-theme="day"] .center-stone-grid .lux-select-trigger:focus-visible {
 }
 .admin-editor-footer {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
+  gap: 18px;
   padding-top: 4px;
+}
+.admin-save-notice {
+  min-height: 24px;
+  max-width: min(360px, 100%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  color: var(--quiet);
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.35;
+  text-align: right;
+}
+.admin-save-notice.is-saving {
+  color: var(--accent-bright);
+}
+.admin-save-notice.is-saved {
+  color: #d8c590;
+}
+.admin-save-notice.is-saved::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  margin-right: 10px;
+  border-radius: 999px;
+  background: rgba(214, 197, 160, 0.9);
+}
+.admin-save-notice.is-error {
+  color: #f0a3a3;
 }
 .admin-collapsible-panel {
   margin-top: 18px;

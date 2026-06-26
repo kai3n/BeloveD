@@ -57,6 +57,11 @@ const ADMIN_STYLE_UI = {
     autoId: "ID is generated after save",
     saveStyle: "Save style",
     addStyle: "Add style",
+    savingStyle: "Saving...",
+    savedStyle: "Style saved.",
+    addedStyle: "New style saved.",
+    saveFailed: "Could not save. Please check the required fields.",
+    catalogSaved: "Catalog copy saved.",
   },
   ko: {
     kicker: "스타일 운영",
@@ -89,6 +94,11 @@ const ADMIN_STYLE_UI = {
     autoId: "저장 후 ID가 자동 생성됩니다",
     saveStyle: "스타일 저장",
     addStyle: "스타일 추가",
+    savingStyle: "저장 중...",
+    savedStyle: "스타일이 저장됐습니다.",
+    addedStyle: "새 스타일이 저장됐습니다.",
+    saveFailed: "저장하지 못했습니다. 필수 항목을 확인해 주세요.",
+    catalogSaved: "카탈로그 문구가 저장됐습니다.",
   },
   zh: {
     kicker: "款式运营",
@@ -121,6 +131,11 @@ const ADMIN_STYLE_UI = {
     autoId: "保存后自动生成 ID",
     saveStyle: "保存款式",
     addStyle: "添加款式",
+    savingStyle: "正在保存...",
+    savedStyle: "款式已保存。",
+    addedStyle: "新款式已保存。",
+    saveFailed: "保存失败。请检查必填项。",
+    catalogSaved: "目录文案已保存。",
   },
   es: {
     kicker: "Operaciones de estilos",
@@ -153,6 +168,11 @@ const ADMIN_STYLE_UI = {
     autoId: "El ID se genera al guardar",
     saveStyle: "Guardar estilo",
     addStyle: "Agregar estilo",
+    savingStyle: "Guardando...",
+    savedStyle: "Estilo guardado.",
+    addedStyle: "Nuevo estilo guardado.",
+    saveFailed: "No se pudo guardar. Revisa los campos requeridos.",
+    catalogSaved: "Texto del catálogo guardado.",
   },
 };
 
@@ -371,6 +391,7 @@ export default function AdminOpsStyles() {
   const [sp, setSp] = useState({ styleId: "", metal: "18kw", size: "", centerStoneSpec: "", estWeightG: "", variancePct: 6, laborUsd: "", materialsUsd: "" });
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [editorLocale, setEditorLocale] = useState(locale || "en");
+  const [saveState, setSaveState] = useState({ status: "idle", message: "" });
   const selected = useMemo(() => styles.find((style) => style.id === draft.id) || null, [draft.id, styles]);
   const isEditing = Boolean(draft.id);
   const filteredStyles = useMemo(() => (
@@ -386,10 +407,12 @@ export default function AdminOpsStyles() {
 
   function setDraftField(patch) {
     setDraft((current) => ({ ...current, ...patch }));
+    if (saveState.status !== "idle") setSaveState({ status: "idle", message: "" });
   }
 
   function startNewStyle() {
     setDraft(newDraftForCategory(categoryFilter));
+    setSaveState({ status: "idle", message: "" });
   }
 
   function setCopyField(copyLocale, key, value) {
@@ -401,12 +424,32 @@ export default function AdminOpsStyles() {
 
   function submitStyle(e) {
     e.preventDefault();
-    const saved = saveOpsStyle(styleFromDraft(draft));
-    setDraft(draftFromStyle(saved));
+    const wasEditing = Boolean(draft.id);
+    setSaveState({ status: "saving", message: ui.savingStyle });
+    try {
+      const saved = saveOpsStyle(styleFromDraft(draft));
+      setDraft(draftFromStyle(saved));
+      setSaveState({ status: "saved", message: wasEditing ? ui.savedStyle : ui.addedStyle });
+    } catch (error) {
+      setSaveState({ status: "error", message: ui.saveFailed });
+      throw error;
+    }
   }
 
   function saveCatalogCopy() {
     updateSettings({ designCopy: copyDraft });
+    setSaveState({ status: "saved", message: ui.catalogSaved });
+  }
+
+  function toggleStyleField(style, patch) {
+    try {
+      const saved = saveOpsStyle({ id: style.id, ...patch });
+      if (draft.id === saved.id) setDraft(draftFromStyle(saved));
+      setSaveState({ status: "saved", message: ui.savedStyle });
+    } catch (error) {
+      setSaveState({ status: "error", message: ui.saveFailed });
+      throw error;
+    }
   }
 
   function removeStyle(style) {
@@ -490,14 +533,14 @@ export default function AdminOpsStyles() {
                     <button
                       type="button"
                       className={`admin-state-chip ${st.availableForSale ? "is-on" : ""}`}
-                      onClick={() => saveOpsStyle({ id: st.id, availableForSale: !st.availableForSale })}
+                      onClick={() => toggleStyleField(st, { availableForSale: !st.availableForSale })}
                     >
                       {st.availableForSale ? t.available : ui.privateDraft}
                     </button>
                     <button
                       type="button"
                       className={`admin-state-chip ${st.published ? "is-on" : ""}`}
-                      onClick={() => saveOpsStyle({ id: st.id, published: !st.published })}
+                      onClick={() => toggleStyleField(st, { published: !st.published })}
                     >
                       {st.published ? t.published : ui.hidden}
                     </button>
@@ -640,8 +683,15 @@ export default function AdminOpsStyles() {
           </section>
 
           <div className="admin-editor-footer">
-            <button className="button primary" type="submit">
-              {isEditing ? ui.saveStyle : ui.addStyle}
+            <div
+              className={`admin-save-notice ${saveState.status !== "idle" ? `is-${saveState.status}` : ""}`}
+              aria-live="polite"
+              role="status"
+            >
+              {saveState.message}
+            </div>
+            <button className="button primary" type="submit" disabled={saveState.status === "saving"}>
+              {saveState.status === "saving" ? ui.savingStyle : isEditing ? ui.saveStyle : ui.addStyle}
             </button>
           </div>
         </form>
