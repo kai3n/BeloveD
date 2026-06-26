@@ -63,15 +63,6 @@ export default function StyleDetail() {
             </>
           )}
         </div>
-        {gallery.length > 1 && (
-          <div className="thumb-row">
-            {gallery.map((m, i) => (
-              <button key={i} className={`thumb-btn ${i === active ? "is-active" : ""}`} onClick={() => setActive(i)}>
-                <MediaThumb media={m} />
-              </button>
-            ))}
-          </div>
-        )}
       </div>
 
       <div className="detail-info">

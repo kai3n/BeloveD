@@ -609,9 +609,6 @@ html[data-theme="day"] .lux-calendar-day.is-selected {
   min-width: 186px;
 }
 .detail-price { font-size: 24px; margin: 0 0 26px; }
-.thumb-row { display: flex; gap: 10px; margin-top: 12px; }
-.thumb-btn { width: 84px; padding: 0; background: none; border: 1px solid var(--line); cursor: pointer; }
-.thumb-btn.is-active { border-color: var(--accent); }
 
 /* 상태 배지 */
 .status-badge {
