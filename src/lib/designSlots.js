@@ -150,6 +150,35 @@ function styleSearchText(style) {
   return Object.values(style.name).join(" ").toLowerCase();
 }
 
+function mediaKey(media) {
+  return `${media?.kind || "image"}:${media?.src || ""}`;
+}
+
+function cleanMediaList(items) {
+  const seen = new Set();
+  return (items || [])
+    .filter((media) => media?.src)
+    .filter((media) => {
+      const key = mediaKey(media);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, 5);
+}
+
+function styleMediaGallery(style, category, index = 0) {
+  const explicitMedia = Array.isArray(style.media) && style.media.length > 0 ? style.media : [];
+  const coverMedia = style.coverImage
+    ? [{ kind: style.coverImage.endsWith(".mp4") ? "video" : "image", src: style.coverImage }]
+    : [];
+  const fallbackMedia = (category.media || []).map((_, offset) => (
+    category.media[(index + offset) % category.media.length]
+  ));
+
+  return cleanMediaList([...explicitMedia, ...coverMedia, ...fallbackMedia]);
+}
+
 export function styleSubcategoryKey(style) {
   if (style?.subcategory) return style.subcategory;
 
@@ -182,16 +211,15 @@ export function designCategoryCards(styles, category, locale, pickI18n, options 
   const { fillSlots = true } = options;
   const realStyles = styles.filter((style) => style.category === category.key).slice(0, 5);
   const cards = realStyles.map((style, index) => {
-    const primaryMedia = Array.isArray(style.media) && style.media.length > 0
-      ? style.media[0]
-      : { kind: style.coverImage?.endsWith(".mp4") ? "video" : "image", src: style.coverImage };
+    const mediaItems = styleMediaGallery(style, category, index);
     return {
       id: style.id,
       category: category.key,
       subcategory: styleSubcategoryKey(style),
       code: style.id,
       title: pickI18n(style.name, locale),
-      media: primaryMedia,
+      media: mediaItems[0],
+      mediaItems,
       lead: `${style.leadDays} days`,
       href: `/designs/${style.id}`,
       ctaHref: `/custom/new?style=${style.id}`,
@@ -206,13 +234,17 @@ export function designCategoryCards(styles, category, locale, pickI18n, options 
     const id = designSlotId(category.key, index);
     const name = sampleNameFor(category, index);
     const title = pickI18n(name, locale) || name.en;
+    const mediaItems = cleanMediaList((category.media || []).map((_, offset) => (
+      category.media[(index + offset) % category.media.length]
+    )));
     cards.push({
       id,
       category: category.key,
       subcategory: slotSubcategories[index % Math.max(slotSubcategories.length, 1)] || defaultSubcategoryFor(category.key),
       code: "",
       title,
-      media: category.media[index % category.media.length],
+      media: mediaItems[0],
+      mediaItems,
       lead: "Media slot ready",
       href: `/designs/${id}`,
       ctaHref: `/custom/new?category=${category.key}&design=${encodeURIComponent(title)}`,

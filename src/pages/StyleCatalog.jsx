@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { getSettings, listOpsStyles } from "../lib/store.js";
 import { useDBVersion } from "../lib/useDB.js";
 import { MediaThumb } from "../components/ui.jsx";
@@ -14,6 +15,58 @@ import {
 
 const CATS = ["all", "ring", "earrings", "bangle", "necklace"];
 const catLabel = (p, c) => (c === "all" ? p.common.all : p.opsCategories[c] || categoryMeta(c)?.label);
+
+function CatalogMediaCarousel({ card }) {
+  const mediaItems = (Array.isArray(card.mediaItems) && card.mediaItems.length > 0 ? card.mediaItems : [card.media]).filter(Boolean);
+  const [active, setActive] = useState(0);
+  const media = mediaItems[active] || mediaItems[0];
+  const hasGallery = mediaItems.length > 1;
+
+  function shift(event, delta) {
+    event.preventDefault();
+    event.stopPropagation();
+    setActive((current) => (current + delta + mediaItems.length) % mediaItems.length);
+  }
+
+  const mediaContent = (
+    <MediaThumb media={media} ratio="1.15 / 1" alt={card.title} />
+  );
+
+  return (
+    <div className="design-shop-media-frame">
+      {card.href ? (
+        <Link to={card.href} className="design-shop-media" aria-label={card.title}>
+          {mediaContent}
+        </Link>
+      ) : (
+        <div className="design-shop-media">
+          {mediaContent}
+        </div>
+      )}
+      {hasGallery && (
+        <>
+          <button
+            type="button"
+            className="design-media-arrow is-left"
+            aria-label="Previous media"
+            onClick={(event) => shift(event, -1)}
+          >
+            <ChevronLeft size={18} strokeWidth={1.8} />
+          </button>
+          <button
+            type="button"
+            className="design-media-arrow is-right"
+            aria-label="Next media"
+            onClick={(event) => shift(event, 1)}
+          >
+            <ChevronRight size={18} strokeWidth={1.8} />
+          </button>
+          <span className="design-media-count">{active + 1}/{mediaItems.length}</span>
+        </>
+      )}
+    </div>
+  );
+}
 
 export default function StyleCatalog() {
   useDBVersion();
@@ -106,15 +159,7 @@ export default function StyleCatalog() {
 
                     return (
                       <article className={`design-shop-card ${card.state === "slot" ? "is-slot" : ""}`} key={card.id}>
-                        {card.href ? (
-                          <Link to={card.href} className="design-shop-media">
-                            <MediaThumb media={card.media} ratio="1.15 / 1" alt={card.title} />
-                          </Link>
-                        ) : (
-                          <div className="design-shop-media">
-                            <MediaThumb media={card.media} ratio="1.15 / 1" alt={card.title} />
-                          </div>
-                        )}
+                        <CatalogMediaCarousel card={card} />
                         <div className="design-shop-body">
                           <span>{cardSubcategory ? `${categoryLabel(category)} · ${cardSubcategory}` : categoryLabel(category)}</span>
                           <h3>{card.title}</h3>
