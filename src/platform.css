@@ -650,6 +650,22 @@ html[data-theme="day"] .lux-calendar-day.is-selected {
   padding: 7px 9px; font: inherit; font-size: 13px;
 }
 .data-table input[type="number"] { width: 110px; }
+.ops-order-row {
+  cursor: pointer;
+  transition: background 160ms ease, box-shadow 160ms ease;
+}
+.ops-order-row:hover {
+  background: rgba(214, 197, 160, 0.055);
+}
+.ops-order-row:focus-visible {
+  background: rgba(214, 197, 160, 0.08);
+  box-shadow: inset 0 0 0 1px var(--accent);
+  outline: none;
+}
+.ops-order-row .text-link {
+  position: relative;
+  z-index: 1;
+}
 
 /* 탭 */
 .tab-row { display: flex; gap: 6px; border-bottom: 1px solid var(--line); margin-bottom: 28px; flex-wrap: wrap; }
