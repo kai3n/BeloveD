@@ -167,7 +167,7 @@ function cleanMediaList(items) {
     .slice(0, 5);
 }
 
-function styleMediaGallery(style, category, index = 0) {
+export function styleMediaGallery(style, category, index = 0) {
   const explicitMedia = Array.isArray(style.media) && style.media.length > 0 ? style.media : [];
   const coverMedia = style.coverImage
     ? [{ kind: style.coverImage.endsWith(".mp4") ? "video" : "image", src: style.coverImage }]

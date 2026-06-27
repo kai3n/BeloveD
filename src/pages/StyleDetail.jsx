@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { getOpsStyle } from "../lib/store.js";
 import { useDBVersion } from "../lib/useDB.js";
-import { MediaThumb } from "../components/ui.jsx";
+import { MediaThumb, MediaZoomModal } from "../components/ui.jsx";
 import { pickI18n, useLocale } from "../i18n.jsx";
-import { getDesignSlotStyle, styleSubcategoryKey } from "../lib/designSlots.js";
+import { categoryMeta, getDesignSlotStyle, styleMediaGallery, styleSubcategoryKey } from "../lib/designSlots.js";
 
 function styleText(style, field, locale, fallback) {
   return pickI18n(style?.[field], locale) || fallback;
@@ -17,19 +17,19 @@ export default function StyleDetail() {
   const { id } = useParams();
   const style = getOpsStyle(id) || getDesignSlotStyle(id);
   const [active, setActive] = useState(0);
+  const [zoomOpen, setZoomOpen] = useState(false);
 
   useEffect(() => {
     setActive(0);
+    setZoomOpen(false);
   }, [id]);
 
   if (!style || !style.published) {
     return <div className="page"><p className="empty-note">{p.styleCat.title} — {p.common.notFound}</p></div>;
   }
 
-  // 갤러리: media 배열 우선, 없으면 coverImage 단일
-  const gallery = style.media?.length
-    ? style.media
-    : [{ kind: (style.coverImage || "").endsWith(".mp4") ? "video" : "image", src: style.coverImage }];
+  const category = categoryMeta(style.category);
+  const gallery = styleMediaGallery(style, category || { media: [] });
   const name = pickI18n(style.name, locale);
   const copy = p.styleDetail;
   const label = styleText(style, "detailLabel", locale, copy.label);
@@ -50,7 +50,18 @@ export default function StyleDetail() {
     <div className="page detail-layout">
       <div className="detail-media">
         <div className="style-media-carousel">
-          <MediaThumb media={gallery[active] || gallery[0]} alt={name} eager />
+          <button
+            type="button"
+            className="style-media-zoom-trigger"
+            aria-label={`${copy.zoom || "Magnify"} ${name}`}
+            onClick={() => setZoomOpen(true)}
+          >
+            <MediaThumb media={gallery[active] || gallery[0]} alt={name} eager />
+            <span className="style-media-zoom-badge">
+              <Search size={16} strokeWidth={1.8} aria-hidden="true" />
+              {copy.zoom || "Magnify"}
+            </span>
+          </button>
           {gallery.length > 1 && (
             <>
               <button className="style-carousel-button is-prev" type="button" aria-label="Previous media" onClick={() => moveGallery(-1)}>
@@ -87,6 +98,15 @@ export default function StyleDetail() {
           <Link className="button secondary" to="/designs">{p.intake.backToDesigns}</Link>
         </div>
       </div>
+      {zoomOpen && (
+        <MediaZoomModal
+          mediaItems={gallery}
+          activeIndex={active}
+          onActiveIndexChange={setActive}
+          onClose={() => setZoomOpen(false)}
+          alt={name}
+        />
+      )}
     </div>
   );
 }
