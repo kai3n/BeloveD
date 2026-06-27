@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Eye, Search, X } from "lucide-react";
+import Lightbox from "yet-another-react-lightbox";
+import Counter from "yet-another-react-lightbox/plugins/counter";
+import Video from "yet-another-react-lightbox/plugins/video";
+import Zoom from "yet-another-react-lightbox/plugins/zoom";
+import "yet-another-react-lightbox/styles.css";
+import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Eye } from "lucide-react";
 import { useLocale } from "../i18n.jsx";
 import { getSettings } from "../lib/store.js";
 
@@ -40,107 +45,74 @@ export function MediaThumb({ media, ratio = "1 / 1", alt = "", eager = false }) 
 export function MediaZoomModal({ mediaItems, activeIndex = 0, onActiveIndexChange, onClose, alt = "" }) {
   const { p } = useLocale();
   const items = (Array.isArray(mediaItems) ? mediaItems : []).filter((item) => item?.src);
-  const [zoomed, setZoomed] = useState(false);
-  const [origin, setOrigin] = useState({ x: 50, y: 50 });
   const active = items[activeIndex] || items[0];
-  const hasGallery = items.length > 1;
   const copy = p.styleDetail || {};
-
-  useEffect(() => {
-    if (!active) return undefined;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const onKeyDown = (event) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        event.stopPropagation();
-        onClose?.();
-      }
-      if (event.key === "ArrowLeft" && hasGallery) {
-        event.preventDefault();
-        onActiveIndexChange?.((activeIndex - 1 + items.length) % items.length);
-      }
-      if (event.key === "ArrowRight" && hasGallery) {
-        event.preventDefault();
-        onActiveIndexChange?.((activeIndex + 1) % items.length);
-      }
-    };
-    document.addEventListener("keydown", onKeyDown, true);
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      document.removeEventListener("keydown", onKeyDown, true);
-    };
-  }, [active, activeIndex, hasGallery, items.length, onActiveIndexChange, onClose]);
-
-  useEffect(() => {
-    setZoomed(false);
-    setOrigin({ x: 50, y: 50 });
-  }, [activeIndex]);
 
   if (!active) return null;
 
-  function move(delta) {
-    if (!hasGallery) return;
-    onActiveIndexChange?.((activeIndex + delta + items.length) % items.length);
+  function videoType(src) {
+    if (/\.webm($|\?)/i.test(src)) return "video/webm";
+    if (/\.mov($|\?)/i.test(src)) return "video/quicktime";
+    return "video/mp4";
   }
 
-  function updateOrigin(event) {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const x = ((event.clientX - rect.left) / rect.width) * 100;
-    const y = ((event.clientY - rect.top) / rect.height) * 100;
-    setOrigin({
-      x: Math.max(0, Math.min(100, x)),
-      y: Math.max(0, Math.min(100, y)),
-    });
-  }
-
-  const isVideo = active.kind === "video";
-  const src = withBase(active.src);
+  const slides = items.map((item) => {
+    const src = withBase(item.src);
+    if (item.kind === "video") {
+      return {
+        type: "video",
+        poster: item.poster ? withBase(item.poster) : undefined,
+        controls: true,
+        autoPlay: true,
+        playsInline: true,
+        preload: "metadata",
+        sources: [{ src, type: videoType(src) }],
+      };
+    }
+    return {
+      src,
+      alt,
+      imageFit: "contain",
+    };
+  });
 
   return (
-    <div className="media-zoom-backdrop" role="dialog" aria-modal="true" aria-label={alt} onClick={onClose}>
-      <div className="media-zoom-shell" onClick={(event) => event.stopPropagation()}>
-        <div className="media-zoom-toolbar">
-          <span>{hasGallery ? `${activeIndex + 1} / ${items.length}` : "1 / 1"}</span>
-          <button type="button" className="media-zoom-close" aria-label={copy.closeViewer || "Close media viewer"} onClick={onClose}>
-            <X size={22} strokeWidth={1.7} aria-hidden="true" />
-          </button>
-        </div>
-
-        <div className="media-zoom-stage">
-          {hasGallery && (
-            <button type="button" className="media-zoom-nav is-prev" aria-label={copy.previousMedia || "Previous media"} onClick={() => move(-1)}>
-              <ChevronLeft size={30} strokeWidth={1.6} aria-hidden="true" />
-            </button>
-          )}
-
-          {isVideo ? (
-            <video className="media-zoom-video" src={src} controls autoPlay playsInline />
-          ) : (
-            <button
-              type="button"
-              className={`media-zoom-image-button ${zoomed ? "is-zoomed" : ""}`}
-              aria-label={zoomed ? (copy.zoomOut || "Zoom out") : (copy.zoomIn || "Zoom in")}
-              onClick={() => setZoomed((current) => !current)}
-              onPointerMove={updateOrigin}
-              style={{ "--zoom-x": `${origin.x}%`, "--zoom-y": `${origin.y}%` }}
-            >
-              <img src={src} alt={alt} draggable="false" />
-              <span className="media-zoom-hint">
-                <Search size={17} strokeWidth={1.8} aria-hidden="true" />
-                {zoomed ? (copy.zoomMove || "Move to inspect") : (copy.zoomClick || "Click to magnify")}
-              </span>
-            </button>
-          )}
-
-          {hasGallery && (
-            <button type="button" className="media-zoom-nav is-next" aria-label={copy.nextMedia || "Next media"} onClick={() => move(1)}>
-              <ChevronRight size={30} strokeWidth={1.6} aria-hidden="true" />
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
+    <Lightbox
+      open
+      close={onClose}
+      index={activeIndex}
+      slides={slides}
+      plugins={[Counter, Zoom, Video]}
+      className="beloved-lightbox"
+      labels={{
+        Close: copy.closeViewer || "Close media viewer",
+        Previous: copy.previousMedia || "Previous media",
+        Next: copy.nextMedia || "Next media",
+        "Zoom in": copy.zoomIn || "Zoom in",
+        "Zoom out": copy.zoomOut || "Zoom out",
+        Lightbox: alt,
+        "Photo gallery": alt,
+      }}
+      counter={{ separator: " / " }}
+      carousel={{ imageFit: "contain", padding: "24px", spacing: "24px", preload: 2 }}
+      controller={{ closeOnBackdropClick: true, closeOnPullDown: true, closeOnEscape: true }}
+      zoom={{
+        maxZoom: 5,
+        maxZoomPixelRatio: 3,
+        zoomInMultiplier: 2,
+        doubleClickMaxStops: 4,
+        scrollToZoom: true,
+        wheelZoomDistanceFactor: 120,
+        pinchZoomV4: true,
+      }}
+      video={{ controls: true, playsInline: true, preload: "metadata" }}
+      toolbar={{ buttons: ["zoom", "close"] }}
+      styles={{
+        container: { backgroundColor: "rgba(2, 3, 3, 0.96)" },
+        slide: { background: "#020303" },
+      }}
+      on={{ view: ({ index }) => onActiveIndexChange?.(index) }}
+    />
   );
 }
 

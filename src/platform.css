@@ -623,145 +623,62 @@ html[data-theme="day"] .lux-calendar-day.is-selected {
   max-width: 620px;
 }
 
-.media-zoom-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  display: grid;
-  place-items: center;
-  padding: clamp(14px, 2vw, 30px);
-  background: rgba(0, 0, 0, 0.88);
+.beloved-lightbox {
+  --yarl__color_backdrop: rgba(2, 3, 3, 0.96);
+  --yarl__color_button: rgba(240, 230, 207, 0.82);
+  --yarl__color_button_active: #f7ead0;
+  --yarl__color_button_disabled: rgba(240, 230, 207, 0.26);
+  --yarl__button_background_color: rgba(5, 6, 7, 0.58);
+  --yarl__button_border: 1px solid rgba(214, 197, 160, 0.26);
+  --yarl__button_filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.38));
+  --yarl__navigation_button_padding: 16px;
+  --yarl__toolbar_padding: 16px;
+  --yarl__icon_size: 28px;
+}
+.beloved-lightbox .yarl__container {
   backdrop-filter: blur(14px);
 }
-.media-zoom-shell {
-  position: relative;
-  width: min(96vw, 1420px);
-  height: min(92vh, 940px);
-  display: grid;
-  grid-template-rows: auto 1fr;
-  border: 1px solid rgba(214, 197, 160, 0.28);
+.beloved-lightbox .yarl__slide {
   background: #020303;
-  box-shadow: 0 32px 90px rgba(0, 0, 0, 0.62);
 }
-.media-zoom-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 58px;
-  padding: 0 18px 0 22px;
-  border-bottom: 1px solid rgba(214, 197, 160, 0.16);
+.beloved-lightbox .yarl__slide_image {
+  cursor: zoom-in;
+}
+.beloved-lightbox .yarl__slide_wrapper_interactive .yarl__slide_image {
+  cursor: grab;
+}
+.beloved-lightbox .yarl__button {
+  min-width: 46px;
+  min-height: 46px;
+  display: inline-grid;
+  place-items: center;
+  transition: color 160ms ease, border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+.beloved-lightbox .yarl__button:hover,
+.beloved-lightbox .yarl__button:focus-visible {
+  border-color: rgba(214, 197, 160, 0.72);
+  background: rgba(5, 6, 7, 0.82);
+  transform: translateY(-1px);
+}
+.beloved-lightbox .yarl__navigation_prev,
+.beloved-lightbox .yarl__navigation_next {
+  border-radius: 999px;
+}
+.beloved-lightbox .yarl__counter {
+  left: 18px;
+  top: 18px;
   color: var(--accent-bright);
   font-size: 12px;
   font-weight: 900;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  letter-spacing: 0.1em;
 }
-.media-zoom-close {
-  width: 42px;
-  height: 42px;
-  display: grid;
-  place-items: center;
-  border: 1px solid rgba(214, 197, 160, 0.26);
-  background: rgba(255, 255, 255, 0.02);
-  color: var(--text);
-  cursor: pointer;
+.beloved-lightbox .yarl__toolbar {
+  gap: 10px;
 }
-.media-zoom-close:hover,
-.media-zoom-close:focus-visible {
-  border-color: var(--accent);
-  color: var(--accent-bright);
-  outline: none;
+.beloved-lightbox video {
+  max-width: 100%;
+  max-height: 100%;
 }
-.media-zoom-stage {
-  position: relative;
-  min-height: 0;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-}
-.media-zoom-image-button {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  display: grid;
-  place-items: center;
-  padding: 0;
-  border: 0;
-  background: #020303;
-  cursor: zoom-in;
-  overflow: hidden;
-}
-.media-zoom-image-button img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  transform-origin: var(--zoom-x) var(--zoom-y);
-  transform: scale(1);
-  transition: transform 180ms ease;
-  user-select: none;
-}
-.media-zoom-image-button.is-zoomed {
-  cursor: zoom-out;
-}
-.media-zoom-image-button.is-zoomed img {
-  transform: scale(2.35);
-}
-.media-zoom-image-button:focus-visible {
-  outline: 1px solid var(--accent);
-  outline-offset: -1px;
-}
-.media-zoom-hint {
-  position: absolute;
-  left: 18px;
-  bottom: 18px;
-  z-index: 2;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 38px;
-  padding: 0 12px;
-  border: 1px solid rgba(214, 197, 160, 0.24);
-  background: rgba(5, 6, 7, 0.72);
-  color: var(--accent-bright);
-  font-size: 11px;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  backdrop-filter: blur(10px);
-}
-.media-zoom-video {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  background: #020303;
-}
-.media-zoom-nav {
-  position: absolute;
-  top: 50%;
-  z-index: 3;
-  width: 54px;
-  height: 54px;
-  display: grid;
-  place-items: center;
-  border: 1px solid rgba(240, 230, 207, 0.22);
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.56);
-  color: var(--text);
-  cursor: pointer;
-  transform: translateY(-50%);
-  backdrop-filter: blur(10px);
-  transition: color 160ms ease, border-color 160ms ease, background 160ms ease, transform 160ms ease;
-}
-.media-zoom-nav:hover,
-.media-zoom-nav:focus-visible {
-  border-color: var(--accent);
-  background: rgba(5, 6, 7, 0.78);
-  color: var(--accent-bright);
-  outline: none;
-  transform: translateY(-50%) scale(1.04);
-}
-.media-zoom-nav.is-prev { left: clamp(16px, 2.4vw, 34px); }
-.media-zoom-nav.is-next { right: clamp(16px, 2.4vw, 34px); }
 
 @media (max-width: 760px) {
   .style-media-zoom-badge {
@@ -773,36 +690,20 @@ html[data-theme="day"] .lux-calendar-day.is-selected {
     font-size: 10px;
     transform: none;
   }
-  .media-zoom-backdrop {
-    padding: 0;
+  .beloved-lightbox {
+    --yarl__carousel_padding_px: 8;
+    --yarl__navigation_button_padding: 10px;
+    --yarl__toolbar_padding: 10px;
+    --yarl__icon_size: 25px;
   }
-  .media-zoom-shell {
-    width: 100vw;
-    height: 100dvh;
-    border-width: 0;
+  .beloved-lightbox .yarl__button {
+    min-width: 42px;
+    min-height: 42px;
   }
-  .media-zoom-toolbar {
-    min-height: 54px;
-    padding: 0 12px 0 16px;
-  }
-  .media-zoom-close {
-    width: 40px;
-    height: 40px;
-  }
-  .media-zoom-nav {
-    width: 46px;
-    height: 46px;
-  }
-  .media-zoom-nav.is-prev { left: 10px; }
-  .media-zoom-nav.is-next { right: 10px; }
-  .media-zoom-hint {
+  .beloved-lightbox .yarl__counter {
     left: 12px;
-    bottom: 12px;
-    min-height: 34px;
-    font-size: 10px;
-  }
-  .media-zoom-image-button.is-zoomed img {
-    transform: scale(2);
+    top: 12px;
+    font-size: 11px;
   }
 }
 .detail-title {
