@@ -45,6 +45,25 @@ function Checkpoint({ index, title, state, summary, children }) {
   );
 }
 
+function ConfirmationRail({ steps }) {
+  const { p } = useLocale();
+  const copy = p.visual;
+  const labelFor = (state) => state === "done" ? copy.doneTag : state === "active" ? copy.nowAction : copy.upcoming;
+  return (
+    <section className="client-confirm-rail" aria-label={p.portal.actionsTitle}>
+      {steps.map((step, index) => (
+        <article className={`client-confirm-step ${step.state}`} key={step.key}>
+          <span className="client-confirm-index">{String(index + 1).padStart(2, "0")}</span>
+          <div>
+            <strong>{step.title}</strong>
+            <small>{labelFor(step.state)}</small>
+          </div>
+        </article>
+      ))}
+    </section>
+  );
+}
+
 function mediaFrom(src) {
   if (!src) return null;
   return { kind: /\.(mp4|webm|mov)(\?|#|$)/i.test(src) ? "video" : "image", src };
@@ -213,17 +232,22 @@ export default function ClientPortal() {
 
   // 타임라인 체크포인트 상태 — 스톤(솔리테어만) → 디자인 → 최종 실물
   // 선택했지만 아직 벤더 재고 확인(자동 락) 전이면 "확인 중" 상태로 유지
+  const showStone = intake?.productLine === "solitaire";
   const stoneState = order.selectedDiamondId ? "done"
     : order.status === "STONE_SELECTION" ? "active" : "upcoming";
   const stockChecking = !order.selectedDiamondId && anySelected;
   const designState = cad?.decision === "approved" ? "done" : cad && !cad.decision ? "active" : "upcoming";
   const finalState = finalAction ? "active"
     : ["BALANCE", "SHIPPING", "DELIVERED", "ARCHIVED"].includes(order.status) ? "done" : "upcoming";
+  const confirmationSteps = [
+    ...(showStone ? [{ key: "stone", title: p.visual.checkpoint.stone, state: stoneState }] : []),
+    { key: "design", title: p.visual.checkpoint.design, state: designState },
+    { key: "final", title: p.visual.checkpoint.final, state: finalState },
+  ];
   const approvedRef = intake?.referenceMedia?.find((m) => m.status === "approved");
   const mineMedia = approvedRef
     ? { kind: approvedRef.kind, src: approvedRef.src }
     : style ? { kind: "image", src: style.coverImage } : null;
-  const showStone = intake?.productLine === "solitaire";
   // 인테이크에서 이미 받은 치수 — CAD 승인 화면 "치수 확인"을 프리필해 재입력을 없앤다
   const cond = intake?.conditional || {};
   const defaultMeasure = cond.ringSize || cond.chainLength || cond.wristSize || cond.earringDetails || "";
@@ -284,7 +308,7 @@ export default function ClientPortal() {
         </div>
       )}
 
-      <ConversationPanel messages={messages} draft={chatDraft} setDraft={setChatDraft} onSend={sendChat} t={t} />
+      <ConfirmationRail steps={confirmationSteps} />
 
       {/* 체크포인트 ① 스톤 (published 후보만) */}
       {showStone && (
@@ -384,6 +408,8 @@ export default function ClientPortal() {
           </div>
         )}
       </Checkpoint>
+
+      <ConversationPanel messages={messages} draft={chatDraft} setDraft={setChatDraft} onSend={sendChat} t={t} />
 
       {/* 진행 상황 — 4페이즈 요약 (스톤→디자인→제작→배송) */}
       <div className="panel">

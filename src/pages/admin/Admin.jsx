@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { dailyChecklist, hideMedia, listOpsOrders, mediaFeed } from "../../lib/store.js";
 import { useDBVersion } from "../../lib/useDB.js";
 import { MediaThumb } from "../../components/ui.jsx";
@@ -6,14 +6,16 @@ import { useLocale } from "../../i18n.jsx";
 
 export default function Admin() {
   const { p } = useLocale();
+  const location = useLocation();
+  const isOrderDetail = /^\/admin\/orders\/[^/]+/.test(location.pathname);
   const menu = [
     { to: "/admin/orders", key: "orders", ops: true },
     { to: "/admin/designs", key: "styles", ops: true },
     { to: "/admin/benchmark", key: "benchmark", ops: true },
   ];
   return (
-    <div className="page admin-page">
-      <h1 className="page-title">{p.admin.title}</h1>
+    <div className={`page admin-page ${isOrderDetail ? "admin-page-detail" : ""}`}>
+      {!isOrderDetail && <h1 className="page-title">{p.admin.title}</h1>}
       <div className="admin-shell">
         <nav className="admin-side">
           {menu.map((m) => (
