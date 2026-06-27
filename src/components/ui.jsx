@@ -1,10 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import Lightbox from "yet-another-react-lightbox";
-import Counter from "yet-another-react-lightbox/plugins/counter";
-import Video from "yet-another-react-lightbox/plugins/video";
-import Zoom from "yet-another-react-lightbox/plugins/zoom";
-import "yet-another-react-lightbox/styles.css";
-import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Eye } from "lucide-react";
+import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Eye, X } from "lucide-react";
 import { useLocale } from "../i18n.jsx";
 import { getSettings } from "../lib/store.js";
 
@@ -45,77 +40,179 @@ export function MediaThumb({ media, ratio = "1 / 1", alt = "", eager = false }) 
 export function MediaZoomModal({ mediaItems, activeIndex = 0, onActiveIndexChange, onClose, alt = "" }) {
   const { p } = useLocale();
   const items = (Array.isArray(mediaItems) ? mediaItems : []).filter((item) => item?.src);
-  const active = items[activeIndex] || items[0];
   const copy = p.styleDetail || {};
+  const [internalIndex, setInternalIndex] = useState(activeIndex);
+  const [inspectPosition, setInspectPosition] = useState({ x: 50, y: 50 });
+  const [inspectZoom, setInspectZoom] = useState(3);
+  const [isInspecting, setIsInspecting] = useState(false);
+
+  const controlledIndex = onActiveIndexChange && Number.isFinite(activeIndex) ? activeIndex : internalIndex;
+  const currentIndex = Math.min(Math.max(controlledIndex, 0), Math.max(items.length - 1, 0));
+  const active = items[currentIndex] || items[0];
+
+  useEffect(() => {
+    setInternalIndex(activeIndex);
+  }, [activeIndex]);
+
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
+
+  function setIndex(nextIndex) {
+    if (!items.length) return;
+    const normalized = (nextIndex + items.length) % items.length;
+    setInternalIndex(normalized);
+    onActiveIndexChange?.(normalized);
+    setInspectPosition({ x: 50, y: 50 });
+    setIsInspecting(false);
+  }
+
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        onClose?.();
+      }
+      if (event.key === "ArrowLeft" && items.length > 1) {
+        event.preventDefault();
+        setIndex(currentIndex - 1);
+      }
+      if (event.key === "ArrowRight" && items.length > 1) {
+        event.preventDefault();
+        setIndex(currentIndex + 1);
+      }
+    };
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => document.removeEventListener("keydown", onKeyDown, true);
+  }, [currentIndex, items.length, onClose]);
 
   if (!active) return null;
 
-  function videoType(src) {
-    if (/\.webm($|\?)/i.test(src)) return "video/webm";
-    if (/\.mov($|\?)/i.test(src)) return "video/quicktime";
-    return "video/mp4";
+  const activeSrc = withBase(active.src);
+  const isVideo = active.kind === "video";
+  const canNavigate = items.length > 1;
+  const mediaPosition = active.pos || "center";
+
+  function updateInspectPosition(event) {
+    if (isVideo) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = ((event.clientX - rect.left) / rect.width) * 100;
+    const y = ((event.clientY - rect.top) / rect.height) * 100;
+    setInspectPosition({
+      x: Math.min(100, Math.max(0, x)),
+      y: Math.min(100, Math.max(0, y)),
+    });
+    setIsInspecting(true);
   }
 
-  const slides = items.map((item) => {
-    const src = withBase(item.src);
-    if (item.kind === "video") {
-      return {
-        type: "video",
-        poster: item.poster ? withBase(item.poster) : undefined,
-        controls: true,
-        autoPlay: true,
-        playsInline: true,
-        preload: "metadata",
-        sources: [{ src, type: videoType(src) }],
-      };
-    }
-    return {
-      src,
-      alt,
-      imageFit: "contain",
-    };
-  });
-
   return (
-    <Lightbox
-      open
-      close={onClose}
-      index={activeIndex}
-      slides={slides}
-      plugins={[Counter, Zoom, Video]}
-      className="beloved-lightbox"
-      labels={{
-        Close: copy.closeViewer || "Close media viewer",
-        Previous: copy.previousMedia || "Previous media",
-        Next: copy.nextMedia || "Next media",
-        "Zoom in": copy.zoomIn || "Zoom in",
-        "Zoom out": copy.zoomOut || "Zoom out",
-        Lightbox: alt,
-        "Photo gallery": alt,
-      }}
-      counter={{ separator: " / " }}
-      carousel={{ imageFit: "contain", padding: "24px", spacing: "24px", preload: 2 }}
-      controller={{ closeOnBackdropClick: true, closeOnPullDown: true, closeOnEscape: true }}
-      zoom={{
-        maxZoom: 5,
-        maxZoomPixelRatio: 3,
-        zoomInMultiplier: 2,
-        doubleClickMaxStops: 4,
-        scrollToZoom: true,
-        wheelZoomDistanceFactor: 120,
-        pinchZoomV4: true,
-      }}
-      video={{ controls: true, playsInline: true, preload: "metadata" }}
-      toolbar={{ buttons: ["zoom", "close"] }}
-      styles={{
-        container: { backgroundColor: "rgba(2, 3, 3, 0.96)" },
-        slide: { background: "#020303" },
-      }}
-      on={{ view: ({ index }) => onActiveIndexChange?.(index) }}
-    />
+    <div
+      className="beloved-inspect-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-label={alt || copy.closeViewer || "Media viewer"}
+      onClick={onClose}
+    >
+      <div className="beloved-inspect-panel" onClick={(event) => event.stopPropagation()}>
+        <header className="beloved-inspect-bar">
+          <span className="beloved-inspect-count">{currentIndex + 1} / {items.length}</span>
+          <div className="beloved-inspect-tools">
+            {!isVideo && (
+              <div className="beloved-inspect-zoom-levels" aria-label={copy.zoomIn || "Zoom in"}>
+                {[2, 3, 4].map((level) => (
+                  <button
+                    key={level}
+                    type="button"
+                    className={Math.round(inspectZoom) === level ? "active" : ""}
+                    onClick={() => {
+                      setInspectZoom(level);
+                      setIsInspecting(true);
+                    }}
+                  >
+                    {level}x
+                  </button>
+                ))}
+              </div>
+            )}
+            <button className="beloved-inspect-close" type="button" aria-label={copy.closeViewer || "Close media viewer"} onClick={onClose}>
+              <X size={26} strokeWidth={1.7} aria-hidden="true" />
+            </button>
+          </div>
+        </header>
+
+        <div className="beloved-inspect-stage">
+          {canNavigate && (
+            <button className="beloved-inspect-arrow is-prev" type="button" aria-label={copy.previousMedia || "Previous media"} onClick={() => setIndex(currentIndex - 1)}>
+              <ChevronLeft size={36} strokeWidth={1.55} aria-hidden="true" />
+            </button>
+          )}
+
+          {isVideo ? (
+            <video
+              className="beloved-inspect-video"
+              src={activeSrc}
+              poster={active.poster ? withBase(active.poster) : undefined}
+              controls
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="metadata"
+            />
+          ) : (
+            <figure
+              className={`containerZoom beloved-inspect-figure active${isInspecting ? " is-inspecting" : ""}`}
+              style={{
+                backgroundImage: isInspecting ? `url("${activeSrc}")` : "none",
+                backgroundPosition: `${inspectPosition.x}% ${inspectPosition.y}%`,
+                backgroundSize: `${inspectZoom * 100}%`,
+              }}
+              onPointerMove={updateInspectPosition}
+              onPointerDown={updateInspectPosition}
+              onPointerLeave={() => setIsInspecting(false)}
+            >
+              <img
+                id="imageZoom"
+                className="beloved-inspect-image"
+                src={activeSrc}
+                alt={alt}
+                style={{ objectPosition: mediaPosition, opacity: isInspecting ? 0 : 1 }}
+                draggable="false"
+              />
+            </figure>
+          )}
+
+          {canNavigate && (
+            <button className="beloved-inspect-arrow is-next" type="button" aria-label={copy.nextMedia || "Next media"} onClick={() => setIndex(currentIndex + 1)}>
+              <ChevronRight size={36} strokeWidth={1.55} aria-hidden="true" />
+            </button>
+          )}
+
+          {!isVideo && <span className="beloved-inspect-hint">{copy.zoomMove || "Move to inspect"}</span>}
+        </div>
+
+        {canNavigate && (
+          <div className="beloved-inspect-progress" aria-hidden="true">
+            {items.map((item, index) => (
+              <button
+                key={`${item.src}-${index}`}
+                type="button"
+                className={index === currentIndex ? "active" : ""}
+                onClick={() => setIndex(index)}
+                tabIndex={-1}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
-
 export function StatusBadge({ status }) {
   const { p } = useLocale();
   return <span className={`status-badge st-${status}`}>{p.status[status] || status}</span>;
