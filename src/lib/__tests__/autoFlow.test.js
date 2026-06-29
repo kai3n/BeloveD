@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   resetDB, createIntake, listProcurements, listQuotes, getOpsOrder, submitCandidates,
-  toggleShortlist, requestStockConfirm, lockSelectedCandidate, submitStockConfirm, markDepositReceived, acceptQuote,
+  toggleShortlist, submitDiamondSelection, markDepositReceived, acceptQuote,
   submitCadForPr, decideCad, listCadReviews, submitQcForPr, confirmFinal,
   markBalanceReceived, submitShipment, markOrderDelivered, listMilestones,
   submitWeightLabor, mediaFeed, hideMedia, dailyChecklist,
@@ -88,25 +88,24 @@ describe("풀 체인 — 어드민 터치포인트는 입금 확인 ②회 + 수
     const { order } = createIntake(solitaireForm);
     const supplier = getSettings().defaultSupplierId;
 
-    // 벤더: 후보 제출 (자동 공개) → 고객: 찜 → 재고확인 요청 → 벤더 '있음' → 확정 락 + 자동 견적
+    // 벤더: 후보 제출 (자동 공개) → 고객: 찜 → 견적/디파짓 단계 → 디파짓 확인 시 확정 락
     const candPr = listProcurements({ orderId: order.id }).find((p) => p.type === "diamondCandidates");
     const [cand] = submitCandidates(candPr.id, [
       { igiNo: "LG-F1", shape: "round", carat: 1.5, color: "E", clarity: "VS1", growth: "CVD", lab: "IGI", procurementCostUsd: 500, image: "/f.png" },
     ]);
     toggleShortlist(cand.id, "customer");
-    requestStockConfirm(order.id, "customer");
-    const sc = listProcurements({ orderId: order.id }).find((p) => p.type === "stockConfirm" && p.diamondId === cand.id);
-    submitStockConfirm(sc.id, true);
-    lockSelectedCandidate(cand.id, "customer");
-    expect(getCandidate(cand.id).locked).toBe(true);
+    submitDiamondSelection(order.id, "customer");
+    expect(listProcurements({ orderId: order.id }).some((p) => p.type === "stockConfirm" && p.status === "open")).toBe(false);
+    expect(getCandidate(cand.id).locked).toBe(false);
     const quote = listQuotes(order.id)[0];
     expect(quote.status).toBe("sent"); // SPEC-000002 (RING-001/18kw) 재사용 — 어드민 손 안 거침
     expect(quote.internal.diamondCostUsd).toBe(500);
 
-    // 고객: 수락 → [어드민 ①] 디파짓 확인 → CAD 태스크 자동 발행
+    // 고객: 수락 → [어드민 ①] 디파짓 확인 + 다이아 락 → CAD 태스크 자동 발행
     acceptQuote(quote.id, "customer");
     expect(dailyChecklist().depositWait).toContain(order.id);
     markDepositReceived(order.id);
+    expect(getCandidate(cand.id).locked).toBe(true);
     const cadPr1 = listProcurements({ orderId: order.id }).find((p) => p.type === "cad");
     expect(cadPr1.status).toBe("open");
     expect(cadPr1.supplierId).toBe(supplier);

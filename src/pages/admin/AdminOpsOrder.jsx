@@ -3,12 +3,12 @@ import { Link, useParams } from "react-router-dom";
 import { BENCHMARK_SHAPES, MILESTONE_STAGES, ORDER_STATUSES, PR_TYPES } from "../../lib/ops.js";
 import {
   addCadVersion,
-  createProcurement, createQuote, getCandidate, getIntake, getOpsOrder, getOpsStyle, listAudit,
+  createProcurement, createQuote, getIntake, getOpsOrder, getOpsStyle, listAudit,
   listCandidates, listCadReviews, listCustomerActions, listMilestones, listOrderMessages, listProcurements, listQuotes,
   lockCandidate, markBalanceReceived, markDepositReceived, markOrderDelivered, publishCandidate,
   publishFinalMedia, recordActualWeight, reviewCandidate, sendQuote,
   setCandidateAvailability, unpublishCandidate, updateOpsOrder, upsertMilestone, getSettings,
-  getDB, reviewReferenceMedia, createProxyDiamondCandidate, ORDER_MESSAGE_CHANNELS, sendOrderMessage,
+  getDB, reviewReferenceMedia, createProxyDiamondCandidate, ORDER_MESSAGE_CHANNELS, sendOrderMessage, isShippingAddressComplete, getQuoteDiamondCandidate,
 } from "../../lib/store.js";
 import { formatAnnotation } from "../../lib/chips.js";
 import { useDBVersion } from "../../lib/useDB.js";
@@ -49,7 +49,7 @@ function PrForm({ orderId, suppliers, t, onSaved, notice }) {
 }
 
 function QuoteBuilder({ order, settings, t, onSaved, notice }) {
-  const dia = order.selectedDiamondId ? getCandidate(order.selectedDiamondId) : null;
+  const dia = getQuoteDiamondCandidate(order.id);
   const intakeMetal = getIntake(order.intakeId)?.metal || "18kw";
   const [f, setF] = useState({
     estWeightG: order.styleId ? getOpsStyle(order.styleId)?.estWeightG || "" : "",
@@ -130,6 +130,8 @@ const OPS_NOTICE_COPY = {
     stageAdvanced: "Order stage updated.",
     procurementCreated: "Procurement request created.",
     quoteCreated: "Quote draft created.",
+    stockConfirmed: "Stock confirmed. Final customer confirmation is now open.",
+    stockSoldOut: "Candidate marked sold out. Customer must choose another diamond.",
   },
   ko: {
     saved: "업데이트가 저장됐습니다.",
@@ -146,6 +148,8 @@ const OPS_NOTICE_COPY = {
     stageAdvanced: "주문 단계가 업데이트됐습니다.",
     procurementCreated: "조달 요청이 생성됐습니다.",
     quoteCreated: "견적 초안이 생성됐습니다.",
+    stockConfirmed: "재고 확인 완료. 고객 포털에 최종 확정 요청이 열렸습니다.",
+    stockSoldOut: "품절 처리했습니다. 고객이 다른 다이아를 선택해야 합니다.",
   },
   zh: {
     saved: "更新已保存。",
@@ -162,6 +166,8 @@ const OPS_NOTICE_COPY = {
     stageAdvanced: "订单阶段已更新。",
     procurementCreated: "采购请求已创建。",
     quoteCreated: "报价草稿已创建。",
+    stockConfirmed: "库存已确认。客户最终确认已开启。",
+    stockSoldOut: "候选钻石已标记为售出。客户需要重新选择。",
   },
   es: {
     saved: "Actualización guardada.",
@@ -178,6 +184,8 @@ const OPS_NOTICE_COPY = {
     stageAdvanced: "Etapa del pedido actualizada.",
     procurementCreated: "Solicitud de compra creada.",
     quoteCreated: "Borrador de cotización creado.",
+    stockConfirmed: "Stock confirmado. La confirmación final del cliente ya está abierta.",
+    stockSoldOut: "Candidato marcado como agotado. El cliente debe elegir otro diamante.",
   },
 };
 
@@ -783,7 +791,7 @@ const OPS_FLOW_GROUPS = [
     primaryStage: "diamondLocked",
     doneStage: "diamondLocked",
     stages: ["depositReceived", "diamondLocked"],
-    actionTypes: ["diamondSelection"],
+    actionTypes: ["diamondSelection", "quoteAcceptance"],
   },
   {
     key: "design",
@@ -911,6 +919,17 @@ function CompactMilestoneSummary({ milestones, p, locale }) {
   );
 }
 
+function formatShippingAddress(address) {
+  if (!address) return "";
+  return [
+    address.recipientName,
+    address.phone,
+    [address.addressLine1, address.addressLine2].filter(Boolean).join(" "),
+    [address.city, address.region, address.postalCode].filter(Boolean).join(", "),
+    address.country,
+  ].filter(Boolean).join(" · ");
+}
+
 function orderBriefRows({ order, intake, style, p, t, locale }) {
   const styleName = style ? pickI18n(style.name, locale) : p.intake.noStyle;
   const subcategory = style?.subcategory || intake?.subcategory;
@@ -932,6 +951,9 @@ function orderBriefRows({ order, intake, style, p, t, locale }) {
     });
   }
   if (intake?.budget) rows.push({ label: t.budgetLabel, value: usd(intake.budget) });
+  const shippingAddress = formatShippingAddress(order.shippingAddress);
+  if (shippingAddress) rows.push({ label: t.shippingAddressLabel, value: shippingAddress });
+  else if (order.status === "QUOTATION") rows.push({ label: t.shippingAddressLabel, value: t.shippingAddressMissing });
   if (intake?.stonePrefs) {
     const s = intake.stonePrefs;
     rows.push({
@@ -945,14 +967,33 @@ function orderBriefRows({ order, intake, style, p, t, locale }) {
   return rows;
 }
 
-function NextActionPanel({ order, nextAction, openActions, t, p, onSaved, notice }) {
+function formatCandidateSummary(candidate, p) {
+  if (!candidate) return "";
+  const carat = Number.isFinite(Number(candidate.carat)) ? Number(candidate.carat).toFixed(2) : candidate.carat;
+  const shape = p.shapes?.[candidate.shape] || candidate.shape || "";
+  return [
+    [shape, carat && `${carat}ct`].filter(Boolean).join(" "),
+    [candidate.color, candidate.clarity, candidate.growth].filter(Boolean).join(" · "),
+    candidate.igiNo,
+  ].filter(Boolean).join(" · ");
+}
+
+function fillStepTemplate(template, values) {
+  return Object.entries(values).reduce((text, [key, value]) => text.replaceAll(`{${key}}`, value), template);
+}
+
+function NextActionPanel({ order, operatorStep, waitingStep, nextAction, openActions, t, p, onSaved, notice }) {
   const customerPortalHref = `/track/${order.id}?code=${order.queryCode}`;
-  const isWaiting = !nextAction && openActions.length > 0;
+  const hasOperatorStep = Boolean(operatorStep || nextAction);
+  const isWaiting = !hasOperatorStep && (Boolean(waitingStep) || openActions.length > 0);
+  const heading = operatorStep?.title || (nextAction ? nextAction.label : waitingStep?.title || (isWaiting ? t.customerWaitingSub : t.naNone));
   return (
-    <section className={`panel ops-next-panel ${nextAction ? "is-operator" : isWaiting ? "is-waiting" : ""}`}>
+    <section className={`panel ops-next-panel ${hasOperatorStep ? "is-operator" : isWaiting ? "is-waiting" : ""}`}>
       <div>
-        <p className="admin-kicker">{nextAction ? t.operatorAction : isWaiting ? t.customerWaiting : t.naTitle}</p>
-        <h2>{nextAction ? nextAction.label : isWaiting ? t.customerWaitingSub : t.naNone}</h2>
+        <p className="admin-kicker">{hasOperatorStep ? t.operatorAction : isWaiting ? t.customerWaiting : t.naTitle}</p>
+        <h2>{heading}</h2>
+        {operatorStep?.body && <p className="form-hint ops-next-body">{operatorStep.body}</p>}
+        {waitingStep?.body && <p className="form-hint ops-next-body">{waitingStep.body}</p>}
       </div>
       {openActions.length > 0 && (
         <div className="ops-open-action-list" aria-label={t.openActions}>
@@ -962,7 +1003,13 @@ function NextActionPanel({ order, nextAction, openActions, t, p, onSaved, notice
         </div>
       )}
       <div className="ops-next-actions">
-        {nextAction && <button className="button primary" onClick={() => { nextAction.fn(); onSaved?.(notice.stageAdvanced); }}>{nextAction.label}</button>}
+        {operatorStep && (
+          <>
+            <button className="button primary" onClick={operatorStep.onPrimary}>{operatorStep.primaryLabel}</button>
+            <button className="button secondary" onClick={operatorStep.onSecondary}>{operatorStep.secondaryLabel}</button>
+          </>
+        )}
+        {!operatorStep && nextAction && <button className="button primary" onClick={() => { nextAction.fn(); onSaved?.(notice.stageAdvanced); }}>{nextAction.label}</button>}
         <Link className="button secondary" to={customerPortalHref}>{t.openPortal || p.portal.title}</Link>
       </div>
     </section>
@@ -1039,10 +1086,12 @@ export default function AdminOpsOrder() {
   const style = order.styleId ? getOpsStyle(order.styleId) : null;
   const candidates = listCandidates({ orderId });
   const quotes = listQuotes(orderId);
+  const quoteDiamondCandidate = getQuoteDiamondCandidate(orderId);
   const milestones = listMilestones(orderId);
   const cads = listCadReviews(orderId);
   const actions = listCustomerActions(orderId);
   const messages = listOrderMessages(orderId);
+  const procurements = listProcurements({ orderId });
   const auditRows = listAudit(orderId).slice(-8).reverse();
   const suppliers = getDB().users.filter((u) => u.role === "supplier");
   const acceptedQuote = quotes.find((q) => q.status === "accepted");
@@ -1053,14 +1102,20 @@ export default function AdminOpsOrder() {
   }
 
   // 어드민 터치포인트는 단 3개 — 지금 필요한 하나만 카드로 띄운다 (나머지는 자동 진행)
+  const depositDone = milestones.some((m) => m.stage === "depositReceived" && m.status === "done");
   const balanceDone = milestones.some((m) => m.stage === "balanceReceived" && m.status === "done");
-  const nextAction = (order.status === "QUOTATION" && acceptedQuote) ? { fn: () => markDepositReceived(order.id), label: t.markDeposit }
+  const shippingAddressComplete = isShippingAddressComplete(order.shippingAddress);
+  const waitingForShippingAddress = order.status === "QUOTATION" && acceptedQuote && !shippingAddressComplete;
+  const nextAction = (order.status === "QUOTATION" && acceptedQuote && shippingAddressComplete) ? { fn: () => markDepositReceived(order.id), label: t.markDeposit }
     : (order.status === "BALANCE" && !balanceDone) ? { fn: () => markBalanceReceived(order.id), label: t.markBalance }
       : order.status === "SHIPPING" ? { fn: () => markOrderDelivered(order.id), label: t.markDelivered }
         : null;
 
   const openCustomerActions = actions.filter((action) => action.status === "open");
-
+  const waitingStep = waitingForShippingAddress ? {
+    title: t.shippingAddressWaitingTitle,
+    body: t.shippingAddressWaitingBody,
+  } : null;
   return (
     <div className="page ops-order-page">
       <header className="ops-order-header">
@@ -1081,7 +1136,7 @@ export default function AdminOpsOrder() {
 
       <div className="ops-command-layout">
         <main className="ops-command-main">
-          <NextActionPanel order={order} nextAction={nextAction} openActions={openCustomerActions} t={t} p={p} onSaved={notify} notice={notice} />
+          <NextActionPanel order={order} waitingStep={waitingStep} nextAction={nextAction} openActions={openCustomerActions} t={t} p={p} onSaved={notify} notice={notice} />
 
           <CustomerFlowPanel order={order} milestones={milestones} actions={actions} t={t} p={p} locale={locale} onSaved={notify} />
 
@@ -1123,7 +1178,7 @@ export default function AdminOpsOrder() {
           <InternalControlsPanel order={order} t={t} p={p} onSaved={notify} notice={notice} />
           <QuoteSnapshotPanel quotes={quotes} acceptedQuote={acceptedQuote} intake={intake} t={t} p={p} onSaved={notify} notice={notice} />
 
-          {(order.selectedDiamondId || intake?.productLine === "multi" || acceptedQuote) && (
+          {(quoteDiamondCandidate || intake?.productLine === "multi" || acceptedQuote) && (
             <details className="ops-admin-details ops-side-details">
               <summary>{t.quoteTitle}</summary>
               <div className="panel form-stack">
@@ -1135,7 +1190,7 @@ export default function AdminOpsOrder() {
                     {q.status === "draft" && <button className="button secondary small" style={{ marginLeft: 10 }} onClick={() => { sendQuote(q.id); notify(notice.quoteSent); }}>{t.send}</button>}
                   </div>
                 ))}
-                {order.selectedDiamondId || intake?.productLine === "multi" ? <QuoteBuilder order={order} settings={settings} t={t} onSaved={notify} notice={notice} /> : null}
+                {quoteDiamondCandidate || intake?.productLine === "multi" ? <QuoteBuilder order={order} settings={settings} t={t} onSaved={notify} notice={notice} /> : null}
                 {acceptedQuote && (
                   <div className="row-actions" style={{ marginTop: 12 }}>
                     <input type="number" step="0.01" placeholder={t.actualWeight} value={actualW} onChange={(e) => setActualW(e.target.value)}
@@ -1157,7 +1212,7 @@ export default function AdminOpsOrder() {
       <div className="panel form-stack" style={{ marginTop: 14 }}>
         <h3>{t.newPr}</h3>
         <PrForm orderId={order.id} suppliers={suppliers} t={t} onSaved={notify} notice={notice} />
-        {listProcurements({ orderId }).map((pr) => (
+        {procurements.map((pr) => (
           <p key={pr.id} className="form-hint">
             {pr.id} · {pr.type} · {suppliers.find((su) => su.id === pr.supplierId)?.name} · {pr.dueDate} · <span className={`status-badge prt-${pr.status}`}>{p.supplierP.status[pr.status]}</span>
             {pr.result && ` · ${prResultSummary(pr)}`}
@@ -1204,7 +1259,7 @@ export default function AdminOpsOrder() {
                   </td>
                   <td>
                     {c.locked ? <span className="status-badge cst-REPLACED">{t.locked}</span> :
-                      c.clientSelection === "selected" && <button className="button primary small" onClick={() => { lockCandidate(c.id); notify(notice.candidateUpdated); }}>{t.lock}</button>}
+                      c.clientSelection === "selected" && depositDone && <button className="button primary small" onClick={() => { lockCandidate(c.id, "ops"); notify(notice.candidateUpdated); }}>{t.lock}</button>}
                   </td>
                 </tr>
               ))}

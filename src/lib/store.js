@@ -22,6 +22,7 @@ const listeners = new Set();
 const GENERATED_STYLE_MEDIA_PREFIX = "/assets/product-styles/";
 const STYLE_MEDIA_AUDIT_VERSION = "original-product-media-v6";
 const STYLE_COPY_AUDIT_VERSION = "seed-style-copy-v3";
+const DIAMOND_DEPOSIT_FLOW_VERSION = "deposit-before-diamond-lock-v1";
 const REMOVED_DUPLICATE_SEED_STYLE_IDS = new Set([
   "RING-008",
   "RING-010",
@@ -242,6 +243,78 @@ function migrateDB(d) {
         changed = true;
       }
     });
+  }
+
+  if (d?.settings?.diamondDepositFlowVersion !== DIAMOND_DEPOSIT_FLOW_VERSION
+    && Array.isArray(d?.diamondCands)
+    && Array.isArray(d?.opsOrders)) {
+    d.opsOrders.forEach((order) => {
+      if (order.selectedDiamondId) return;
+      const submitted = d.diamondCands.find((candidate) => candidate.orderId === order.id
+        && candidate.clientSelection === "selected"
+        && candidate.selectionSubmittedAt
+        && candidate.availability === "available"
+        && candidate.published !== false);
+      if (!submitted) return;
+
+      if (order.status === "STONE_SELECTION") {
+        order.status = "QUOTATION";
+        changed = true;
+      }
+
+      d.procurementReqs
+        ?.filter((pr) => pr.orderId === order.id && pr.type === "stockConfirm" && pr.status === "open")
+        .forEach((pr) => {
+          pr.status = "closed";
+          pr.result = { skipped: "depositBeforeDiamondLock" };
+          changed = true;
+        });
+
+      d.customerActions
+        ?.filter((action) => action.orderId === order.id && action.type === "diamondSelection" && action.status === "open")
+        .forEach((action) => {
+          action.status = "done";
+          action.decision = "submitted";
+          action.response = "submitted";
+          action.respondedAt = action.respondedAt || new Date().toISOString();
+          changed = true;
+        });
+
+      if (!Array.isArray(d.milestones)) d.milestones = [];
+      let milestone = d.milestones.find((item) => item.orderId === order.id && item.stage === "diamondLocked");
+      if (!milestone) {
+        milestone = {
+          id: `M-${order.id}-${String(MILESTONE_STAGES.indexOf("diamondLocked") + 1).padStart(2, "0")}`,
+          orderId: order.id,
+          stage: "diamondLocked",
+          status: "waitingClient",
+          clientUpdate: "Diamond selected; deposit required to lock it.",
+          clientAction: "",
+          link: "",
+          publishToClient: false,
+          at: new Date().toISOString(),
+        };
+        d.milestones.push(milestone);
+        changed = true;
+      } else if (milestone.status !== "done") {
+        milestone.status = "waitingClient";
+        milestone.publishToClient = false;
+        milestone.clientUpdate = "Diamond selected; deposit required to lock it.";
+        milestone.at = new Date().toISOString();
+        changed = true;
+      }
+
+      if (!tryAutoQuote(order.id)) {
+        const intake = d.intakes?.find((item) => item.orderId === order.id);
+        autoIssuePr(order.id, "weightLabor", {
+          brief: intake ? autoBrief(intake) : "",
+          metal: intake?.metal || null,
+          measurements: Object.entries(intake?.conditional || {}).map(([k, v]) => `${k}: ${v}`).join(", ") || null,
+        });
+      }
+    });
+    d.settings.diamondDepositFlowVersion = DIAMOND_DEPOSIT_FLOW_VERSION;
+    changed = true;
   }
 
   return changed;
@@ -668,8 +741,8 @@ export function tryAutoQuote(orderId) {
   if (listQuotes(orderId).some((q) => q.status === "sent" || q.status === "accepted")) return true; // 이미 진행중
   const spec = findSpec(order.styleId, intake.metal);
   if (!spec) return false;
-  const dia = order.selectedDiamondId ? getCandidate(order.selectedDiamondId) : null;
-  if (intake.productLine === "solitaire" && !dia) return false; // 다이아 락 이후 재시도
+  const dia = getQuoteDiamondCandidate(orderId);
+  if (intake.productLine === "solitaire" && !dia) return false; // 고객 선택 이후 재시도
   const s = db().settings;
   const q = createQuote(orderId, {
     estWeightG: spec.estWeightG, metalRefUsdPerG: s.metalRefUsdPerG[intake.metal] || 85,
@@ -698,6 +771,44 @@ export function listOpsOrders(filter = {}) {
 }
 export function getOpsOrder(id) { return db().opsOrders.find((o) => o.id === id) || null; }
 export function getIntake(id) { return db().intakes.find((i) => i.id === id) || null; }
+
+const SHIPPING_REQUIRED_FIELDS = ["recipientName", "phone", "addressLine1", "city", "region", "postalCode", "country"];
+
+function normalizeShippingAddress(address = {}) {
+  return {
+    recipientName: String(address.recipientName || "").trim(),
+    phone: String(address.phone || "").trim(),
+    addressLine1: String(address.addressLine1 || "").trim(),
+    addressLine2: String(address.addressLine2 || "").trim(),
+    city: String(address.city || "").trim(),
+    region: String(address.region || "").trim(),
+    postalCode: String(address.postalCode || "").trim(),
+    country: String(address.country || "").trim(),
+    notes: String(address.notes || "").trim(),
+  };
+}
+
+export function isShippingAddressComplete(address) {
+  if (!address) return false;
+  const normalized = normalizeShippingAddress(address);
+  return SHIPPING_REQUIRED_FIELDS.every((field) => normalized[field]);
+}
+
+export function updateShippingAddress(orderId, address, actor = "customer") {
+  const o = getOpsOrder(orderId);
+  if (!o) return null;
+  const before = o.shippingAddress ? JSON.stringify(o.shippingAddress) : "";
+  const normalized = normalizeShippingAddress(address);
+  o.shippingAddress = {
+    ...normalized,
+    updatedAt: now(),
+    confirmedAt: isShippingAddressComplete(normalized) ? now() : "",
+  };
+  audit(actor, "order", orderId, "shippingAddress", before, JSON.stringify(o.shippingAddress));
+  persist();
+  return o.shippingAddress;
+}
+
 export function updateOpsOrder(id, patch, actor = "ops") {
   const o = getOpsOrder(id);
   for (const [k, v] of Object.entries(patch)) {
@@ -887,6 +998,15 @@ export function listCandidates(filter = {}) {
   return cs;
 }
 export function getCandidate(id) { return db().diamondCands.find((c) => c.id === id) || null; }
+export function getQuoteDiamondCandidate(orderId) {
+  const order = getOpsOrder(orderId);
+  if (!order) return null;
+  if (order.selectedDiamondId) return getCandidate(order.selectedDiamondId);
+  return listCandidates({ orderId }).find((c) => c.clientSelection === "selected"
+    && c.selectionSubmittedAt
+    && c.availability === "available"
+    && c.published !== false) || null;
+}
 export function submitCandidates(prId, candidates) {
   const pr = getProcurement(prId);
   const existing = listCandidates({ orderId: pr.orderId }).length;
@@ -1024,26 +1144,53 @@ export function toggleShortlist(diaId, actor) {
   return c;
 }
 
-// 고객이 제출한 후보들의 벤더에게 재고확인 일괄 발행 (이미 열린 건 건너뜀)
-export function requestStockConfirm(orderId, actor) {
-  const open = new Set(listProcurements({ orderId }).filter((p) => p.type === "stockConfirm" && p.status === "open").map((p) => p.diamondId));
-  const selected = listCandidates({ orderId }).filter((c) => c.clientSelection === "selected" && !c.stockConfirmed);
-  selected.forEach((c) => {
-    c.selectionSubmittedAt = c.selectionSubmittedAt || now();
+// 고객이 고른 후보를 견적 기준으로 제출한다. 최종 다이아 락은 디파짓 입금 확인 후 진행한다.
+export function submitDiamondSelection(orderId, actor) {
+  const order = getOpsOrder(orderId);
+  if (!order || order.selectedDiamondId) return null;
+  const selected = listCandidates({ orderId })
+    .filter((c) => c.clientSelection === "selected" && c.availability === "available" && c.published !== false);
+  const candidate = selected[0] || null;
+  if (!candidate) return null;
+
+  selected.slice(1).forEach((other) => {
+    other.clientSelection = "none";
+    other.selectionSubmittedAt = "";
   });
-  selected.filter((c) => !open.has(c.id))
-    .forEach((c) => createProcurement(orderId, { type: "stockConfirm", supplierId: c.supplierId, dueDate: plusDays(2), brief: c.igiNo, diamondId: c.id }, actor || "customer"));
-  if (selected.length > 0) {
-    listCustomerActions(orderId, true)
-      .filter((action) => action.type === "diamondSelection")
-      .forEach((action) => respondCustomerAction(action.id, { decision: "submitted" }, actor || "customer"));
-    upsertMilestone(orderId, "diamondLocked", {
-      status: "inProgress",
-      publishToClient: false,
-      clientUpdate: "Customer selection submitted; confirming stock.",
+  candidate.selectionSubmittedAt = candidate.selectionSubmittedAt || now();
+
+  listProcurements({ orderId })
+    .filter((pr) => pr.type === "stockConfirm" && pr.status === "open")
+    .forEach((pr) => {
+      pr.status = "closed";
+      pr.result = { skipped: "depositBeforeDiamondLock" };
+    });
+
+  listCustomerActions(orderId, true)
+    .filter((action) => action.type === "diamondSelection")
+    .forEach((action) => respondCustomerAction(action.id, { decision: "submitted" }, actor || "customer"));
+
+  if (order.status === "STONE_SELECTION") updateOpsOrder(order.id, { status: "QUOTATION" }, actor || "customer");
+  upsertMilestone(orderId, "diamondLocked", {
+    status: "waitingClient",
+    publishToClient: false,
+    clientUpdate: "Diamond selected; deposit required to lock it.",
+  });
+
+  if (!tryAutoQuote(orderId)) {
+    const intake = getIntake(order.intakeId);
+    autoIssuePr(orderId, "weightLabor", {
+      brief: intake ? autoBrief(intake) : "",
+      metal: intake?.metal || null,
+      measurements: Object.entries(intake?.conditional || {}).map(([k, v]) => `${k}: ${v}`).join(", ") || null,
     });
   }
   persist();
+  return candidate;
+}
+
+export function requestStockConfirm(orderId, actor) {
+  return submitDiamondSelection(orderId, actor);
 }
 
 // 확인된 고객 선택 후보 중 하나를 최종 락 (→ QUOTATION). 디파짓은 운영자 수동 확인.
@@ -1075,15 +1222,10 @@ export function submitStockConfirm(prId, available) {
   pr.result = { available: effective, ...(takenByOther ? { takenByOther: true } : {}) };
   audit(pr.supplierId, "procurement", prId, "result", null, effective ? "inStock" : (takenByOther ? "takenByOther" : "soldOut"));
   if (effective) {
-    c.stockConfirmed = true; // 락은 lockSelectedCandidate에서 (고객 최종 선택)
-    if (!listCustomerActions(c.orderId, true).some((a) => a.type === "diamondSelection")) {
-      createCustomerAction(c.orderId, {
-        type: "diamondSelection",
-        prompt: "Confirm the stock-checked diamond",
-        link: c.image || c.video || "",
-        media: c.media,
-        note: c.clientNote,
-      });
+    c.stockConfirmed = true;
+    if (c.clientSelection === "selected" && !getOpsOrder(c.orderId)?.selectedDiamondId) {
+      c.selectionSubmittedAt = c.selectionSubmittedAt || now();
+      submitDiamondSelection(c.orderId, pr.supplierId);
     }
   } else {
     setCandidateAvailability(c.id, "sold"); // §13: 즉시 비공개 포함
@@ -1101,8 +1243,9 @@ export function submitStockConfirm(prId, available) {
   persist();
   return pr;
 }
-export function lockCandidate(diaId) {
+export function lockCandidate(diaId, actor = "auto") {
   const c = getCandidate(diaId);
+  if (c.availability !== "available") return null;
   // 이중 판매 방어: 풀 스톤을 다른 주문이 이미 가져갔으면 락하지 않는다
   if (c.poolDiamondId && !c.locked) {
     const taken = getPoolDiamond(c.poolDiamondId);
@@ -1113,6 +1256,12 @@ export function lockCandidate(diaId) {
     }
   }
   c.locked = true;
+  listCandidates({ orderId: c.orderId }).forEach((other) => {
+    if (other.id !== diaId && other.clientSelection === "selected") {
+      other.clientSelection = "none";
+      other.selectionSubmittedAt = "";
+    }
+  });
   // 풀 스톤 소진 + 같은 스톤을 가리키는 다른 주문 후보 무효화 (이중 판매 방지)
   if (c.poolDiamondId) {
     const pool = getPoolDiamond(c.poolDiamondId);
@@ -1128,7 +1277,7 @@ export function lockCandidate(diaId) {
     });
   }
   const order = getOpsOrder(c.orderId);
-  updateOpsOrder(order.id, { selectedDiamondId: diaId, status: "QUOTATION" });
+  updateOpsOrder(order.id, { selectedDiamondId: diaId, status: "QUOTATION" }, actor);
   upsertMilestone(order.id, "diamondLocked", { status: "done", publishToClient: true, clientUpdate: c.id });
   tryAutoQuote(order.id); // 스펙이 준비돼 있으면 어드민 없이 견적 즉시 발송
   return c;
@@ -1146,6 +1295,23 @@ function normalizeOpsStyleMedia(style) {
     mediaComplete: style.mediaComplete ?? media.length > 0,
   };
 }
+
+function nextStyleId(prefix, list) {
+  const usedIds = new Set(list.map((style) => style.id));
+  const matcher = new RegExp(`^${prefix}-(\\d+)$`);
+  const maxExisting = list.reduce((max, style) => {
+    const match = matcher.exec(style.id || "");
+    return match ? Math.max(max, Number(match[1]) || 0) : max;
+  }, 0);
+  let index = maxExisting + 1;
+  let id = `${prefix}-${String(index).padStart(3, "0")}`;
+  while (usedIds.has(id) || REMOVED_DUPLICATE_SEED_STYLE_IDS.has(id)) {
+    index += 1;
+    id = `${prefix}-${String(index).padStart(3, "0")}`;
+  }
+  return id;
+}
+
 export function listOpsStyles({ publishedOnly = false } = {}) {
   return db().opsStyles.filter((st) => !publishedOnly || (st.published && st.availableForSale));
 }
@@ -1161,8 +1327,7 @@ export function saveOpsStyle(style) {
   }
   const created = (() => {
     const prefix = { ring: "RING", necklace: "NECK", earrings: "EARR", bangle: "BRAC" }[normalized.category] || "STYL";
-    const count = list.filter((st) => st.category === normalized.category).length + 1;
-    return { published: false, availableForSale: false, mediaComplete: false, ...normalized, id: `${prefix}-${String(count).padStart(3, "0")}` };
+    return { published: false, availableForSale: false, mediaComplete: false, ...normalized, id: nextStyleId(prefix, list) };
   })();
   list.push(created);
   persist();
@@ -1212,7 +1377,7 @@ export function setBenchmarkPrice(shape, tier, unitUsdPerCt) {
 export function listQuotes(orderId) { return db().quotes.filter((q) => q.orderId === orderId).sort((a, b) => b.version - a.version); }
 export function createQuote(orderId, { estWeightG, metalRefUsdPerG, lossRatePct, nonMetalUsd, internal }) {
   const order = getOpsOrder(orderId);
-  const dia = order.selectedDiamondId ? getCandidate(order.selectedDiamondId) : null;
+  const dia = getQuoteDiamondCandidate(orderId);
   const bench = dia ? benchmarkFor(dia.shape, dia.carat) : null;
   const computed = quoteCompute({
     carat: dia?.carat || 0, benchmarkUsdPerCt: bench?.unitUsdPerCt || 0,
@@ -1251,8 +1416,13 @@ export function acceptQuote(quoteId, actor) {
 // 어드민 터치포인트 ①: 디파짓 입금 확인 → CAD 단계 + 벤더 CAD 태스크 자동 발행
 export function markDepositReceived(orderId) {
   upsertMilestone(orderId, "depositReceived", { status: "done", publishToClient: true });
+  const order = getOpsOrder(orderId);
+  const intake = order ? getIntake(order.intakeId) : null;
+  if (intake?.productLine === "solitaire" && !order?.selectedDiamondId) {
+    const candidate = getQuoteDiamondCandidate(orderId);
+    if (candidate) lockCandidate(candidate.id, "ops");
+  }
   updateOpsOrder(orderId, { status: "CAD" });
-  const intake = getIntake(getOpsOrder(orderId)?.intakeId);
   autoIssuePr(orderId, "cad", {
     brief: intake ? autoBrief(intake) : "", metal: intake?.metal || null,
     measurements: Object.entries(intake?.conditional || {}).map(([k, v]) => `${k}: ${v}`).join(", ") || null,

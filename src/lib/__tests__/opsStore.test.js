@@ -1,16 +1,36 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   resetDB, createIntake, getOpsOrder, createProcurement, submitCandidates,
-  reviewCandidate, publishCandidate, toggleShortlist, requestStockConfirm, submitStockConfirm, lockSelectedCandidate, lockCandidate, createQuote, sendQuote,
+  reviewCandidate, publishCandidate, toggleShortlist, submitDiamondSelection, lockCandidate, createQuote, sendQuote,
   acceptQuote, markDepositReceived, addCadVersion, decideCad, listMilestones, recordActualWeight,
-  portalView, listCadReviews, dailyChecklist, setCandidateAvailability, listCandidates, listProcurements,
+  portalView, listCadReviews, dailyChecklist, setCandidateAvailability, listCandidates, listProcurements, listQuotes,
   createProxyDiamondCandidate, listCustomerActions, publishFinalMedia, confirmFinal, respondCustomerAction,
-  rejectDiamondCandidates, rejectFinalConfirmation, createCustomerAction,
+  rejectDiamondCandidates, rejectFinalConfirmation, createCustomerAction, saveOpsStyle, listOpsStyles, deleteOpsStyle,
+  updateShippingAddress, isShippingAddressComplete,
 } from "../store.js";
 
 beforeEach(() => resetDB());
 
 describe("ops store — 매뉴얼 풀 플로우", () => {
+  it("새 스타일 ID는 삭제된 중복 seed ID를 재사용하지 않는다", () => {
+    const created = saveOpsStyle({
+      category: "ring",
+      subcategory: "engagementRing",
+      name: { en: "QA Temporary Ring" },
+      estWeightG: 4.1,
+      laborUsd: 90,
+      leadDays: 12,
+      media: [{ kind: "image", src: "https://example.com/qa-ring.jpg" }],
+    });
+
+    expect(created.id).toMatch(/^RING-\d{3}$/);
+    expect(["RING-008", "RING-010", "RING-011", "RING-012", "RING-013", "RING-014"]).not.toContain(created.id);
+    expect(listOpsStyles().some((style) => style.id === created.id)).toBe(true);
+
+    deleteOpsStyle(created.id);
+    expect(listOpsStyles().some((style) => style.id === created.id)).toBe(false);
+  });
+
   it("인테이크 → 주문 자동 생성 (DM ID, 쿼리코드, 상태 규칙)", () => {
     const { order, intake } = createIntake({ name: "Test", contact: "t@x.com", productLine: "solitaire", category: "ring", subcategory: "engagementRing", styleId: "RING-001", metal: "18kw", conditional: { ringSize: "7" }, requiredDate: "2026-09-01", country: "USA", termsAccepted: true });
     expect(order.id).toMatch(/^DM-\d{6}$/);
@@ -23,7 +43,7 @@ describe("ops store — 매뉴얼 풀 플로우", () => {
     expect(o3.status).toBe("STYLE_SELECTION");
   });
 
-  it("찜 → 재고확인 요청 → 같은 후보 재요청 시 중복 PR 안 생김", () => {
+  it("찜 → 견적/디파짓 단계 제출 → 재고확인 PR 없이 quote 액션이 열린다", () => {
     const pr = createProcurement("DM-000001", { type: "diamondCandidates", supplierId: "u-supplier1", dueDate: "d", brief: "" });
     const [a, b] = submitCandidates(pr.id, [
       { igiNo: "X1", shape: "round", carat: 1.5, color: "E", clarity: "VS1", growth: "CVD", lab: "IGI", procurementCostUsd: 500, image: "/a.png" },
@@ -32,41 +52,46 @@ describe("ops store — 매뉴얼 풀 플로우", () => {
     publishCandidate(a.id, 1100); publishCandidate(b.id, 1200);
     toggleShortlist(a.id, "customer");
     expect(listCustomerActions("DM-000001", true).some((action) => action.type === "diamondSelection")).toBe(true);
-    requestStockConfirm("DM-000001", "customer");
+    submitDiamondSelection("DM-000001", "customer");
     expect(listCandidates({ orderId: "DM-000001" }).find((c) => c.id === a.id).selectionSubmittedAt).toBeTruthy();
+    expect(getOpsOrder("DM-000001").status).toBe("QUOTATION");
+    expect(getOpsOrder("DM-000001").selectedDiamondId).toBeNull();
     expect(listCustomerActions("DM-000001", true).some((action) => action.type === "diamondSelection")).toBe(false);
+    expect(listCustomerActions("DM-000001", true).some((action) => action.type === "quoteAcceptance")).toBe(true);
     expect(listCustomerActions("DM-000001").find((action) => action.type === "diamondSelection")).toMatchObject({
       status: "done",
       decision: "submitted",
       response: "submitted",
     });
     expect(listMilestones("DM-000001").find((m) => m.stage === "diamondLocked")).toMatchObject({
-      status: "inProgress",
+      status: "waitingClient",
       publishToClient: false,
     });
-    requestStockConfirm("DM-000001", "customer"); // 재요청 — 중복 발행 금지
+    submitDiamondSelection("DM-000001", "customer"); // 재요청 — 중복 quote/PR 발행 금지
     const open = listProcurements({ orderId: "DM-000001" }).filter((p) => p.type === "stockConfirm" && p.status === "open");
-    expect(open.length).toBe(1);
+    expect(open.length).toBe(0);
+    expect(listQuotes("DM-000001").filter((q) => q.status === "sent")).toHaveLength(1);
   });
 
-  it("후보 제출 → 검수 → publish → 고객 선택 → 락 → QUOTATION", () => {
+  it("후보 제출 → 검수 → publish → 고객 선택 → 디파짓 후 락", () => {
     const pr = createProcurement("DM-000001", { type: "diamondCandidates", supplierId: "u-supplier2", dueDate: "2026-06-20", batchValidUntil: "2026-06-30", brief: "b" });
     const [cand] = submitCandidates(pr.id, [{ igiNo: "LG-X1", shape: "round", carat: 1.48, color: "E", clarity: "VS1", growth: "CVD", lab: "IGI", procurementCostUsd: 520 }]);
     expect(cand.id).toMatch(/^DIA-DM-000001-\d{2}$/);
     reviewCandidate(cand.id, "recommended");
     publishCandidate(cand.id, 1150);
     toggleShortlist(cand.id, "customer");
-    requestStockConfirm("DM-000001", "customer");
-    const sc = listProcurements({ orderId: "DM-000001" }).find((p) => p.type === "stockConfirm" && p.diamondId === cand.id);
-    submitStockConfirm(sc.id, true);
-    expect(listCustomerActions("DM-000001", true).find((action) => action.type === "diamondSelection")).toMatchObject({
-      prompt: "Confirm the stock-checked diamond",
+    submitDiamondSelection("DM-000001", "customer");
+    expect(listProcurements({ orderId: "DM-000001" }).some((p) => p.type === "stockConfirm" && p.status === "open")).toBe(false);
+    expect(listCustomerActions("DM-000001", true).find((action) => action.type === "quoteAcceptance")).toMatchObject({
       status: "open",
     });
-    lockSelectedCandidate(cand.id, "customer");
+    expect(getOpsOrder("DM-000001").selectedDiamondId).toBeNull();
+    const quote = listQuotes("DM-000001")[0];
+    acceptQuote(quote.id, "customer");
+    markDepositReceived("DM-000001");
     const order = getOpsOrder("DM-000001");
     expect(order.selectedDiamondId).toBe(cand.id);
-    expect(order.status).toBe("QUOTATION");
+    expect(order.status).toBe("CAD");
     expect(listCustomerActions("DM-000001", true).some((action) => action.type === "diamondSelection")).toBe(false);
     expect(listMilestones("DM-000001").find((m) => m.stage === "diamondLocked").status).toBe("done");
   });
@@ -89,6 +114,32 @@ describe("ops store — 매뉴얼 풀 플로우", () => {
     const { delta } = recordActualWeight("DM-000001", 4.5);
     expect(delta).toBe(Math.round(0.3 * 85 * 1.08));
     expect(q.balanceUsd).toBe(before + delta);
+  });
+
+  it("배송주소는 디파짓 전 견적 수락 단계에서 저장되고 포털에 노출된다", () => {
+    expect(isShippingAddressComplete({ recipientName: "Jiwon" })).toBe(false);
+    const address = updateShippingAddress("DM-000001", {
+      recipientName: "Jiwon Kim",
+      phone: "+1 213-555-0100",
+      addressLine1: "550 S Hill St",
+      addressLine2: "Suite 1100",
+      city: "Los Angeles",
+      region: "CA",
+      postalCode: "90013",
+      country: "USA",
+      notes: "Signature required",
+    }, "customer");
+
+    expect(isShippingAddressComplete(address)).toBe(true);
+    expect(getOpsOrder("DM-000001").shippingAddress).toMatchObject({
+      recipientName: "Jiwon Kim",
+      postalCode: "90013",
+      country: "USA",
+    });
+    expect(portalView("DM-000001", { queryCode: "QX7K-M9P2" }).order.shippingAddress).toMatchObject({
+      addressLine1: "550 S Hill St",
+      city: "Los Angeles",
+    });
   });
 
   it("CAD 버전 히스토리 불변 + 승인 → PRODUCTION", () => {

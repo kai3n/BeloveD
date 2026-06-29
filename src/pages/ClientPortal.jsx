@@ -4,7 +4,8 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "../lib/auth.jsx";
 import {
   acceptQuote, confirmFinal, decideCad, listCustomerActions, portalView, rejectDiamondCandidates,
-  rejectFinalConfirmation, respondCustomerAction, sendOrderMessage, toggleShortlist, requestStockConfirm, lockSelectedCandidate,
+  rejectFinalConfirmation, respondCustomerAction, sendOrderMessage, toggleShortlist, submitDiamondSelection,
+  updateShippingAddress, isShippingAddressComplete,
 } from "../lib/store.js";
 import { useDBVersion } from "../lib/useDB.js";
 import { EmptyNote, MediaPicker, MediaThumb, usd } from "../components/ui.jsx";
@@ -77,7 +78,7 @@ const CUSTOMER_STATUS_COPY = {
     stoneTitle: "Stone",
     stoneBody: "Review the diamond option when BeloveD sends it.",
     stonePendingBody: "BeloveD is preparing diamond options for this order. There is nothing to select yet.",
-    stoneSubmittedBody: "BeloveD is checking the diamond you selected. You will see the next confirmation here when it is ready.",
+    stoneSubmittedBody: "Your diamond choice is saved. Review the quote and deposit step to lock it for production.",
     designTitle: "Design",
     designBody: "Approve CAD/design media before production.",
     finalTitle: "Final piece",
@@ -94,7 +95,7 @@ const CUSTOMER_STATUS_COPY = {
     stoneTitle: "스톤",
     stoneBody: "BeloveD가 보낸 다이아 후보를 확인합니다.",
     stonePendingBody: "BeloveD가 이 주문에 맞는 다이아 후보를 준비 중입니다. 아직 선택할 항목은 없습니다.",
-    stoneSubmittedBody: "선택하신 다이아몬드를 BeloveD가 확인 중입니다. 준비되면 다음 확인 단계가 이 화면에 표시됩니다.",
+    stoneSubmittedBody: "선택하신 다이아몬드가 저장됐습니다. 견적과 디파짓 단계를 완료하면 제작용으로 최종 확정됩니다.",
     designTitle: "디자인",
     designBody: "제작 전 CAD/디자인 자료를 승인합니다.",
     finalTitle: "완성품",
@@ -111,7 +112,7 @@ const CUSTOMER_STATUS_COPY = {
     stoneTitle: "石头",
     stoneBody: "查看 BeloveD 发送的钻石候选。",
     stonePendingBody: "BeloveD 正在为此订单准备钻石候选，目前无需选择。",
-    stoneSubmittedBody: "BeloveD 正在确认您选择的钻石。准备好后，下一步确认会显示在这里。",
+    stoneSubmittedBody: "您的钻石选择已保存。请完成报价与定金步骤后锁定用于制作。",
     designTitle: "设计",
     designBody: "生产前确认 CAD / 设计资料。",
     finalTitle: "成品",
@@ -128,7 +129,7 @@ const CUSTOMER_STATUS_COPY = {
     stoneTitle: "Piedra",
     stoneBody: "Revisa la opción de diamante cuando BeloveD la envíe.",
     stonePendingBody: "BeloveD está preparando opciones de diamante para este pedido. Aún no hay nada que seleccionar.",
-    stoneSubmittedBody: "BeloveD está verificando el diamante que elegiste. Verás la siguiente confirmación aquí cuando esté lista.",
+    stoneSubmittedBody: "Tu elección de diamante quedó guardada. Revisa la cotización y el depósito para bloquearlo para producción.",
     designTitle: "Diseño",
     designBody: "Aprueba CAD o medios de diseño antes de producción.",
     finalTitle: "Pieza final",
@@ -401,8 +402,10 @@ function CustomerStatusOverview({ order, showStone, stoneState, designState, fin
     return "next";
   };
   const stoneFallback = showStone ? stoneState : order.status === "STYLE_SELECTION" ? "active" : "done";
-  const stoneBody = showStone && order.status === "STONE_SELECTION" && stoneState !== "done"
-    ? diamondSelectionSubmitted ? copy.stoneSubmittedBody : !hasDiamondCandidates ? copy.stonePendingBody : copy.stoneBody
+  const stoneBody = showStone && stoneState !== "done"
+    ? diamondSelectionSubmitted ? copy.stoneSubmittedBody
+      : order.status === "STONE_SELECTION" && !hasDiamondCandidates ? copy.stonePendingBody
+        : copy.stoneBody
     : copy.stoneBody;
   const steps = [
     { key: "stone", title: copy.stoneTitle, body: updateFor("diamondLocked", stoneBody), state: toStepState("stone", stoneFallback) },
@@ -514,6 +517,75 @@ function ConversationPanel({ messages, draft, setDraft, onSend, t }) {
         <textarea value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={copy.placeholder} rows={2} />
         <button className="button primary small" type="submit" disabled={!draft.trim()}>{copy.send}</button>
       </form>
+    </section>
+  );
+}
+
+function initialShippingAddress(order, intake) {
+  const saved = order?.shippingAddress || {};
+  const contact = intake?.contact || "";
+  const phone = saved.phone || (/@/.test(contact) ? "" : contact);
+  return {
+    recipientName: saved.recipientName || order?.customerName || intake?.name || "",
+    phone,
+    addressLine1: saved.addressLine1 || "",
+    addressLine2: saved.addressLine2 || "",
+    city: saved.city || "",
+    region: saved.region || "",
+    postalCode: saved.postalCode || "",
+    country: saved.country || intake?.country || "",
+    notes: saved.notes || "",
+  };
+}
+
+function ShippingAddressPanel({ value, onChange, t, locked = false, onSave = null, canSave = false }) {
+  const complete = isShippingAddressComplete(value);
+  function setField(key, nextValue) {
+    onChange((current) => ({ ...value, ...(current || {}), [key]: nextValue }));
+  }
+  return (
+    <section className="shipping-address-card">
+      <div className="shipping-address-head">
+        <div>
+          <p className="section-label">{t.shippingKicker}</p>
+          <h4>{t.shippingTitle}</h4>
+          <p className="form-hint">{t.shippingHelp}</p>
+        </div>
+        {locked && complete && <span className="status-badge cst-REPLACED">{t.shippingConfirmed}</span>}
+      </div>
+      <div className="filter-grid shipping-address-grid">
+        <label className="field"><span>{t.shippingRecipient}</span>
+          <input value={value.recipientName} onChange={(e) => setField("recipientName", e.target.value)} disabled={locked} required />
+        </label>
+        <label className="field"><span>{t.shippingPhone}</span>
+          <input value={value.phone} onChange={(e) => setField("phone", e.target.value)} disabled={locked} required />
+        </label>
+        <label className="field shipping-address-wide"><span>{t.shippingLine1}</span>
+          <input value={value.addressLine1} onChange={(e) => setField("addressLine1", e.target.value)} disabled={locked} required />
+        </label>
+        <label className="field shipping-address-wide"><span>{t.shippingLine2}</span>
+          <input value={value.addressLine2} onChange={(e) => setField("addressLine2", e.target.value)} disabled={locked} />
+        </label>
+        <label className="field"><span>{t.shippingCity}</span>
+          <input value={value.city} onChange={(e) => setField("city", e.target.value)} disabled={locked} required />
+        </label>
+        <label className="field"><span>{t.shippingRegion}</span>
+          <input value={value.region} onChange={(e) => setField("region", e.target.value)} disabled={locked} required />
+        </label>
+        <label className="field"><span>{t.shippingPostal}</span>
+          <input value={value.postalCode} onChange={(e) => setField("postalCode", e.target.value)} disabled={locked} required />
+        </label>
+        <label className="field"><span>{t.shippingCountry}</span>
+          <input value={value.country} onChange={(e) => setField("country", e.target.value)} disabled={locked} required />
+        </label>
+        <label className="field shipping-address-wide"><span>{t.shippingNotes}</span>
+          <input value={value.notes} onChange={(e) => setField("notes", e.target.value)} disabled={locked} />
+        </label>
+      </div>
+      {!locked && !complete && <p className="form-hint">{t.shippingRequired}</p>}
+      {!locked && canSave && onSave && (
+        <button className="button secondary small" type="button" disabled={!complete} onClick={onSave}>{t.shippingSave}</button>
+      )}
     </section>
   );
 }
@@ -664,18 +736,23 @@ export default function ClientPortal() {
   const actor = user?.id || `guest:${orderId}`;
   const [chatDraft, setChatDraft] = useState("");
   const [notice, setNotice] = useState("");
+  const [shippingAddress, setShippingAddress] = useState(null);
 
   const view = portalView(orderId, { customerId: user?.id, userRole: user?.role, queryCode: code });
   if (!view) {
     return <div className="page"><EmptyNote>{t.notFound}</EmptyNote></div>;
   }
   const { order, intake, style, candidates, selected, quote, milestones, cad, freeRevisionsLeft, designChangeFeeUsd, finalAction, actions, messages = [] } = view;
+  const shippingAddressDraft = shippingAddress || initialShippingAddress(order, intake);
+  const shippingAddressComplete = isShippingAddressComplete(shippingAddressDraft);
+  const shippingAddressSaved = isShippingAddressComplete(order.shippingAddress);
   const workspaceCopy = customerWorkspaceCopy(locale);
   const showStone = intake?.productLine === "solitaire";
   const hasDiamondCandidates = candidates.length > 0;
   const waitingForDiamondCandidates = showStone && !order.selectedDiamondId && order.status === "STONE_SELECTION" && !hasDiamondCandidates;
-  const pendingDiamondSelection = candidates.find((c) => c.clientSelection === "selected" && !c.stockConfirmed);
+  const pendingDiamondSelection = candidates.find((c) => c.clientSelection === "selected" && !order.selectedDiamondId);
   const diamondSelectionSubmitted = Boolean(pendingDiamondSelection?.selectionSubmittedAt);
+  const diamondSelectionWaitingForQuote = diamondSelectionSubmitted && !quote;
   const rawActiveAction = actions?.[0] || null;
   const suppressDiamondAction = rawActiveAction?.type === "diamondSelection" && (waitingForDiamondCandidates || diamondSelectionSubmitted);
   const activeAction = suppressDiamondAction ? null : rawActiveAction;
@@ -699,10 +776,6 @@ export default function ClientPortal() {
       notify(t.noticeSoldOut);
       return;
     }
-    if (target.stockConfirmed) {
-      notify(t.noticeDiamondAlreadyConfirmed);
-      return;
-    }
     if (target.clientSelection === "selected") {
       notify(t.noticeDiamondSelected);
       return;
@@ -713,7 +786,7 @@ export default function ClientPortal() {
     toggleShortlist(diaId, actor);
     notify(t.noticeDiamondSelected);
   }
-  function reqStock() {
+  function submitSelection() {
     if (!pendingDiamondSelection) {
       notify(t.noticeSelectFirst);
       return;
@@ -722,20 +795,27 @@ export default function ClientPortal() {
       notify(t.noticeSelectionAlreadySubmitted);
       return;
     }
-    requestStockConfirm(orderId, actor);
+    submitDiamondSelection(orderId, actor);
     notify(t.noticeSelectionSubmitted);
   }
-  function lockOne(diaId) {
-    lockSelectedCandidate(diaId, actor);
-    const ca = listCustomerActions(orderId, true).find((a) => a.type === "diamondSelection");
-    if (ca) respondCustomerAction(ca.id, { decision: "approved", value: diaId }, actor);
-    notify(t.noticeDiamondConfirmed);
-  }
   function accept() {
+    if (!shippingAddressComplete) {
+      notify(t.noticeShippingAddressRequired);
+      return;
+    }
+    updateShippingAddress(orderId, shippingAddressDraft, actor);
     acceptQuote(quote.id, actor);
     const ca = listCustomerActions(orderId, true).find((a) => a.type === "quoteAcceptance");
     if (ca) respondCustomerAction(ca.id, quote.id, actor);
     notify(t.noticeQuoteAccepted);
+  }
+  function saveShippingAddress() {
+    if (!shippingAddressComplete) {
+      notify(t.noticeShippingAddressRequired);
+      return;
+    }
+    updateShippingAddress(orderId, shippingAddressDraft, actor);
+    notify(t.noticeShippingAddressSaved);
   }
   function sendChat() {
     const body = chatDraft.trim();
@@ -762,14 +842,12 @@ export default function ClientPortal() {
   }
 
   const anySelected = selected || candidates.some((c) => c.clientSelection === "selected");
-  const lockableDiamond = candidates.find((c) => c.clientSelection === "selected" && c.stockConfirmed && c.availability === "available");
-
   // 타임라인 체크포인트 상태 — 스톤(솔리테어만) → 디자인 → 최종 실물
-  // 선택했지만 아직 벤더 재고 확인(자동 락) 전이면 "확인 중" 상태로 유지
+  // 선택했지만 아직 디파짓으로 최종 락되기 전이면 "대기" 상태로 유지
   const stoneState = order.selectedDiamondId ? "done"
     : waitingForDiamondCandidates || diamondSelectionSubmitted ? "waiting"
       : order.status === "STONE_SELECTION" ? "active" : "upcoming";
-  const stockChecking = !order.selectedDiamondId && anySelected;
+  const selectionPendingDeposit = !order.selectedDiamondId && diamondSelectionSubmitted;
   const designState = cad?.decision === "approved" ? "done" : cad && !cad.decision ? "active" : "upcoming";
   const finalState = finalAction ? "active"
     : ["BALANCE", "SHIPPING", "DELIVERED", "ARCHIVED"].includes(order.status) ? "done" : "upcoming";
@@ -783,27 +861,28 @@ export default function ClientPortal() {
 
   // 고객용 "다음 단계" 한 줄 — 어드민의 next-step 카드를 고객에게도 (문의 감소)
   const nextMsg = waitingForDiamondCandidates ? workspaceCopy.stonePreparingBody
-    : diamondSelectionSubmitted ? t.selectionSubmittedHelp
+    : diamondSelectionWaitingForQuote ? t.selectionSubmittedHelp
     : (order.status === "QUOTATION" && quote?.status === "accepted") ? t.nextDeposit
     : (order.status === "CAD" && cad && !cad.decision) ? t.nextCadReview
       : t.nextStep?.[order.status] || "";
-  const waitingOn = waitingForDiamondCandidates || diamondSelectionSubmitted ? t.waitingBeloveD
+  const waitingOn = waitingForDiamondCandidates || diamondSelectionWaitingForQuote ? t.waitingBeloveD
     : activeAction ? t.waitingYou
       : ["PRODUCTION", "QC", "SHIPPING"].includes(order.status) ? t.waitingAtelier : t.waitingBeloveD;
   const activeActionText = waitingForDiamondCandidates ? workspaceCopy.stonePreparingBody
-    : diamondSelectionSubmitted ? t.selectionSubmittedHelp
+    : diamondSelectionWaitingForQuote ? t.selectionSubmittedHelp
     : activeAction
     ? (t.todo?.[activeAction.type] || activeAction.prompt || nextMsg || t.reviewUpdates)
     : (nextMsg || t.reviewUpdates);
   const finalMedia = mediaList(finalAction?.media, finalAction?.link);
   const statusLabel = t.statusLabel?.[order.status] || p.orderStatus[order.status] || order.status;
   const dueLabel = activeAction?.dueDate || order.requiredDate || workspaceCopy.noDue;
-  const activeAnchor = waitingForDiamondCandidates || diamondSelectionSubmitted ? "#conversation"
+  const activeAnchor = waitingForDiamondCandidates || diamondSelectionWaitingForQuote ? "#conversation"
     : activeAction?.type === "diamondSelection" ? "#stone-stage"
+    : activeAction?.type === "quoteAcceptance" ? "#quote-stage"
     : ["cadReview", "cadApproval"].includes(activeAction?.type) ? "#design-stage"
       : activeAction?.type === "finalConfirmation" ? "#final-stage"
         : "#conversation";
-  const briefRows = buildOrderBriefRows({ order, intake, style, selected, quote, p, locale, copy: workspaceCopy });
+  const briefRows = buildOrderBriefRows({ order, intake, style, selected: selected || pendingDiamondSelection, quote, p, locale, copy: workspaceCopy });
 
   return (
     <div className="page client-portal-page">
@@ -818,7 +897,7 @@ export default function ClientPortal() {
             <span>{workspaceCopy.due}: {dueLabel}</span>
           </div>
           <div className="row-actions client-next-actions">
-            {waitingForDiamondCandidates || diamondSelectionSubmitted ? (
+            {waitingForDiamondCandidates || diamondSelectionWaitingForQuote ? (
               <a className="button primary" href="#conversation">{workspaceCopy.chat}</a>
             ) : (
               <>
@@ -861,7 +940,7 @@ export default function ClientPortal() {
         <Checkpoint id="stone-stage" index={1} title={waitingForDiamondCandidates ? workspaceCopy.stonePreparingTitle : p.visual.checkpoint.stone} state={stoneState}
           badgeOverride={waitingForDiamondCandidates ? workspaceCopy.stonePreparingBadge : undefined}
           summary={selected && `${p.shapes[selected.shape] || selected.shape} ${selected.carat?.toFixed(2)}ct · ${selected.igiNo}`}>
-          {stockChecking && <p className="warn-note" style={{ marginBottom: 14 }}>{p.visual.stockChecking}</p>}
+          {selectionPendingDeposit && <p className="warn-note" style={{ marginBottom: 14 }}>{p.visual.stockChecking}</p>}
           {waitingForDiamondCandidates && (
             <div className="client-empty-stage">
               <p className="section-label">{workspaceCopy.stonePreparingBadge}</p>
@@ -890,8 +969,8 @@ export default function ClientPortal() {
                   const candidateMedia = mediaList(c.media, c.video || c.image);
                   const isFinalSelected = selected?.id === c.id;
                   const isPendingSelected = pendingDiamondSelection?.id === c.id;
-                  const canChoose = !order.selectedDiamondId && order.status === "STONE_SELECTION" && !diamondSelectionSubmitted && c.availability !== "sold" && !c.stockConfirmed;
-                  const showSelectionBadge = (isPendingSelected || isFinalSelected) && !(diamondSelectionSubmitted && !isFinalSelected);
+                  const canChoose = !order.selectedDiamondId && order.status === "STONE_SELECTION" && !diamondSelectionSubmitted && c.availability !== "sold";
+                  const showSelectionBadge = isPendingSelected || isFinalSelected;
                   return (
                     <div className={`item-card diamond-choice-card ${isPendingSelected || isFinalSelected ? "select-card is-selected" : ""}`} key={c.id}>
                       <ClientMediaCarousel media={candidateMedia} alt={c.id} />
@@ -911,20 +990,13 @@ export default function ClientPortal() {
                         {c.clientNote && <p className="form-hint">{c.clientNote}</p>}
                         <p className="price">{usd(c.customerPriceUsd)}</p>
                         {isFinalSelected ? null : !diamondSelectionSubmitted && !order.selectedDiamondId && order.status === "STONE_SELECTION" ? (
-                          c.stockConfirmed && c.clientSelection === "selected" ? (
-                            <div className="row-actions diamond-card-actions">
-                              <span className="status-badge mst-done">{t.inStock}</span>
-                              <button className="button primary small" onClick={() => lockOne(c.id)}>{t.lockThis}</button>
-                            </div>
-                          ) : (
-                            <button
-                              className={`button small diamond-select-button ${isPendingSelected ? "primary is-active" : "secondary"}`}
-                              disabled={!canChoose && !isPendingSelected}
-                              onClick={() => chooseDiamond(c.id)}
-                            >
-                              {isPendingSelected ? (diamondSelectionSubmitted ? t.submittedSelection : t.shortlisted) : t.shortlist}
-                            </button>
-                          )
+                          <button
+                            className={`button small diamond-select-button ${isPendingSelected ? "primary is-active" : "secondary"}`}
+                            disabled={!canChoose && !isPendingSelected}
+                            onClick={() => chooseDiamond(c.id)}
+                          >
+                            {isPendingSelected ? (diamondSelectionSubmitted ? t.submittedSelection : t.shortlisted) : t.shortlist}
+                          </button>
                         ) : null}
                       </div>
                     </div>
@@ -934,15 +1006,15 @@ export default function ClientPortal() {
               {!order.selectedDiamondId && order.status === "STONE_SELECTION" && !diamondSelectionSubmitted && (
                 <div className="diamond-submit-panel">
                   <div>
-                    <p className="section-label">{lockableDiamond ? t.inStock : pendingDiamondSelection ? t.selectedKicker : t.actionsTitle}</p>
-                    <h3>{lockableDiamond ? `${p.shapes[lockableDiamond.shape] || lockableDiamond.shape} ${lockableDiamond.carat.toFixed(2)}ct` : pendingDiamondSelection ? `${p.shapes[pendingDiamondSelection.shape] || pendingDiamondSelection.shape} ${pendingDiamondSelection.carat.toFixed(2)}ct` : t.selectOneTitle}</h3>
-                    <p>{lockableDiamond ? t.lockThis : pendingDiamondSelection ? t.submitSelectionHelp : t.selectOneHelp}</p>
+                    <p className="section-label">{pendingDiamondSelection ? t.selectedKicker : t.actionsTitle}</p>
+                    <h3>{pendingDiamondSelection ? `${p.shapes[pendingDiamondSelection.shape] || pendingDiamondSelection.shape} ${pendingDiamondSelection.carat.toFixed(2)}ct` : t.selectOneTitle}</h3>
+                    <p>{pendingDiamondSelection ? t.submitSelectionHelp : t.selectOneHelp}</p>
                   </div>
                   <CustomerDecisionPanel
-                    approveLabel={lockableDiamond ? t.lockThis : t.requestStock}
+                    approveLabel={t.requestStock}
                     rejectLabel={t.rejectDiamonds}
-                    approveDisabled={lockableDiamond ? false : !pendingDiamondSelection}
-                    onApprove={() => (lockableDiamond ? lockOne(lockableDiamond.id) : reqStock())}
+                    approveDisabled={!pendingDiamondSelection}
+                    onApprove={submitSelection}
                     onReject={rejectDiamonds}
                   />
                 </div>
@@ -954,7 +1026,7 @@ export default function ClientPortal() {
 
       {/* 견적 */}
       {quote && (
-        <div className="panel pay-panel">
+        <div className="panel pay-panel" id="quote-stage">
           <div className="proposal-head">
             <h3 style={{ margin: 0 }}>{t.quoteTitle} — {quote.id}</h3>
             {quote.status === "accepted" && <span className="status-badge cst-REPLACED">{t.accepted}</span>}
@@ -968,8 +1040,16 @@ export default function ClientPortal() {
             <tr><th>{t.balance}</th><td>{usd(quote.balanceUsd)}</td></tr>
             <tr><th>{t.validUntil}</th><td>{quote.validUntil} · {t.lead(quote.leadDays)}</td></tr>
           </tbody></table>
+          <ShippingAddressPanel
+            value={shippingAddressDraft}
+            onChange={setShippingAddress}
+            t={t}
+            locked={quote.status === "accepted" && shippingAddressSaved}
+            canSave={quote.status === "accepted" && !shippingAddressSaved}
+            onSave={saveShippingAddress}
+          />
           {quote.status === "sent" && (
-            <button className="button primary" style={{ marginTop: 16 }} onClick={accept}>{t.accept}</button>
+            <button className="button primary" style={{ marginTop: 16 }} disabled={!shippingAddressComplete} onClick={accept}>{t.accept}</button>
           )}
         </div>
       )}
