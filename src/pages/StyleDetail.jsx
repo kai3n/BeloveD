@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { getOpsStyle } from "../lib/store.js";
 import { useDBVersion } from "../lib/useDB.js";
-import { MediaThumb, MediaZoomModal } from "../components/ui.jsx";
+import { MediaThumb } from "../components/ui.jsx";
 import { pickI18n, useLocale } from "../i18n.jsx";
 import { categoryMeta, getDesignSlotStyle, styleMediaGallery, styleSubcategoryKey } from "../lib/designSlots.js";
 
@@ -17,11 +17,13 @@ export default function StyleDetail() {
   const { id } = useParams();
   const style = getOpsStyle(id) || getDesignSlotStyle(id);
   const [active, setActive] = useState(0);
-  const [zoomOpen, setZoomOpen] = useState(false);
+  const [isMagnifying, setIsMagnifying] = useState(false);
+  const [magnifyPosition, setMagnifyPosition] = useState({ x: 50, y: 50 });
 
   useEffect(() => {
     setActive(0);
-    setZoomOpen(false);
+    setIsMagnifying(false);
+    setMagnifyPosition({ x: 50, y: 50 });
   }, [id]);
 
   if (!style || !style.published) {
@@ -37,6 +39,8 @@ export default function StyleDetail() {
   const flexibleValue = styleText(style, "flexibleText", locale, copy.flexibleValue);
   const beforeProductionValue = styleText(style, "beforeProductionText", locale, copy.beforeProductionValue);
   const subcategory = styleSubcategoryKey(style);
+  const activeMedia = gallery[active] || gallery[0];
+  const canMagnify = activeMedia?.kind !== "video";
   const categoryLine = [
     p.opsCategories[style.category],
     p.opsSubcategories?.[subcategory],
@@ -44,6 +48,19 @@ export default function StyleDetail() {
 
   function moveGallery(delta) {
     setActive((current) => (current + delta + gallery.length) % gallery.length);
+    setIsMagnifying(false);
+    setMagnifyPosition({ x: 50, y: 50 });
+  }
+
+  function updateMagnifyPosition(event, force = false) {
+    if (!canMagnify || (!isMagnifying && !force)) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = ((event.clientX - rect.left) / rect.width) * 100;
+    const y = ((event.clientY - rect.top) / rect.height) * 100;
+    setMagnifyPosition({
+      x: Math.min(100, Math.max(0, x)),
+      y: Math.min(100, Math.max(0, y)),
+    });
   }
 
   return (
@@ -52,25 +69,38 @@ export default function StyleDetail() {
         <div className="style-media-carousel">
           <button
             type="button"
-            className="style-media-zoom-trigger"
+            className={`style-media-zoom-trigger${isMagnifying ? " is-magnifying" : ""}${canMagnify ? "" : " is-video"}`}
             aria-label={`${copy.zoom || "Magnify"} ${name}`}
-            onClick={() => setZoomOpen(true)}
+            aria-pressed={isMagnifying}
+            onClick={(event) => {
+              if (!canMagnify) return;
+              updateMagnifyPosition(event, true);
+              setIsMagnifying((value) => !value);
+            }}
+            onPointerMove={updateMagnifyPosition}
+            onPointerDown={updateMagnifyPosition}
+            style={{
+              "--detail-magnify-x": `${magnifyPosition.x}%`,
+              "--detail-magnify-y": `${magnifyPosition.y}%`,
+              "--detail-magnify-scale": 3,
+            }}
           >
-            <MediaThumb media={gallery[active] || gallery[0]} alt={name} eager />
-            <span className="style-media-zoom-badge">
-              <Search size={16} strokeWidth={1.8} aria-hidden="true" />
-              {copy.zoom || "Magnify"}
-            </span>
+            <MediaThumb media={activeMedia} alt={name} eager />
+            {canMagnify && (
+              <span className="style-media-zoom-badge">
+                <Search size={16} strokeWidth={1.8} aria-hidden="true" />
+                {isMagnifying ? (copy.zoomMove || "Move to inspect") : (copy.zoom || "Magnify")}
+              </span>
+            )}
           </button>
           {gallery.length > 1 && (
             <>
               <button className="style-carousel-button is-prev" type="button" aria-label="Previous media" onClick={() => moveGallery(-1)}>
-                <ChevronLeft size={22} strokeWidth={1.7} aria-hidden="true" />
+                <ChevronLeft size={34} strokeWidth={1.35} aria-hidden="true" />
               </button>
               <button className="style-carousel-button is-next" type="button" aria-label="Next media" onClick={() => moveGallery(1)}>
-                <ChevronRight size={22} strokeWidth={1.7} aria-hidden="true" />
+                <ChevronRight size={34} strokeWidth={1.35} aria-hidden="true" />
               </button>
-              <span className="style-carousel-count">{active + 1} / {gallery.length}</span>
             </>
           )}
         </div>
@@ -98,15 +128,6 @@ export default function StyleDetail() {
           <Link className="button secondary" to="/designs">{p.intake.backToDesigns}</Link>
         </div>
       </div>
-      {zoomOpen && (
-        <MediaZoomModal
-          mediaItems={gallery}
-          activeIndex={active}
-          onActiveIndexChange={setActive}
-          onClose={() => setZoomOpen(false)}
-          alt={name}
-        />
-      )}
     </div>
   );
 }

@@ -47,7 +47,7 @@ function LanguageMenu({ locale, setLocale, label, up = false }) {
         <span>{current.label}</span>
         <ChevronDown className="lang-caret" size={13} strokeWidth={2} aria-hidden="true" />
       </button>
-      <ul className="lang-list" role="listbox" aria-label={label}>
+      <ul className="lang-list" role="listbox" aria-label={label} hidden={!open}>
         {localeOptions.map((o) => (
           <li key={o.code} role="option" aria-selected={o.code === locale}>
             <button
@@ -74,6 +74,14 @@ export function Header() {
   const pending = pendingCount(user); // 역할별 "내 차례" 수 — 알림 대신 배지
   const panelRef = useRef(null);
   const menuButtonRef = useRef(null);
+  const closeButtonRef = useRef(null);
+
+  function closeMobilePanel({ restoreFocus = false } = {}) {
+    setOpen(false);
+    if (restoreFocus) {
+      window.requestAnimationFrame(() => menuButtonRef.current?.focus());
+    }
+  }
 
   // 모바일 메뉴: 패널·햄버거 바깥을 터치/클릭하면 닫기
   useEffect(() => {
@@ -83,11 +91,22 @@ export function Header() {
         panelRef.current && !panelRef.current.contains(e.target) &&
         menuButtonRef.current && !menuButtonRef.current.contains(e.target)
       ) {
-        setOpen(false);
+        closeMobilePanel();
       }
     };
+    const onKey = (e) => {
+      if (e.key !== "Escape") return;
+      e.preventDefault();
+      e.stopPropagation();
+      closeMobilePanel({ restoreFocus: true });
+    };
     document.addEventListener("pointerdown", onDown);
-    return () => document.removeEventListener("pointerdown", onDown);
+    document.addEventListener("keydown", onKey, true);
+    closeButtonRef.current?.focus();
+    return () => {
+      document.removeEventListener("pointerdown", onDown);
+      document.removeEventListener("keydown", onKey, true);
+    };
   }, [open]);
 
   const navItems = [
@@ -99,7 +118,14 @@ export function Header() {
 
   return (
     <header className="site-header">
-      <button ref={menuButtonRef} className="mobile-menu-button" aria-label={t.aria.openMenu} onClick={() => setOpen(true)}>
+      <button
+        ref={menuButtonRef}
+        className="mobile-menu-button"
+        aria-label={t.aria.openMenu}
+        aria-controls="mobile-nav-panel"
+        aria-expanded={open}
+        onClick={() => setOpen(true)}
+      >
         <Menu size={22} strokeWidth={1.7} />
       </button>
 
@@ -134,14 +160,20 @@ export function Header() {
         )}
       </div>
 
-      <div ref={panelRef} className={`mobile-panel ${open ? "is-open" : ""}`} aria-hidden={!open}>
-        <button className="icon-button close-button" aria-label={t.aria.closeMenu} onClick={() => setOpen(false)}>
+      <div
+        ref={panelRef}
+        id="mobile-nav-panel"
+        className={`mobile-panel ${open ? "is-open" : ""}`}
+        aria-hidden={!open}
+        hidden={!open}
+      >
+        <button ref={closeButtonRef} className="icon-button close-button" aria-label={t.aria.closeMenu} onClick={() => closeMobilePanel({ restoreFocus: true })}>
           <X size={20} strokeWidth={1.7} />
         </button>
         {navItems.map((item) => (
-          <NavLink to={item.to} key={item.to} onClick={() => setOpen(false)}>{item.label}</NavLink>
+          <NavLink to={item.to} key={item.to} onClick={() => closeMobilePanel()}>{item.label}</NavLink>
         ))}
-        <NavLink to={roleHome(user)} onClick={() => setOpen(false)}>
+        <NavLink to={roleHome(user)} onClick={() => closeMobilePanel()}>
           {user?.role === "admin" ? p.nav.admin : user ? p.nav.account : p.nav.login}
         </NavLink>
         <div className="mobile-panel-actions">

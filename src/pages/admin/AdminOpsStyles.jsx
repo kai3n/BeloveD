@@ -60,6 +60,9 @@ const ADMIN_STYLE_UI = {
     savingStyle: "Saving...",
     savedStyle: "Style saved.",
     addedStyle: "New style saved.",
+    deletedStyle: "Style deleted.",
+    specSaved: "Production spec saved.",
+    specDeleted: "Production spec deleted.",
     saveFailed: "Could not save. Please check the required fields.",
     catalogSaved: "Catalog copy saved.",
   },
@@ -97,6 +100,9 @@ const ADMIN_STYLE_UI = {
     savingStyle: "저장 중...",
     savedStyle: "스타일이 저장됐습니다.",
     addedStyle: "새 스타일이 저장됐습니다.",
+    deletedStyle: "스타일이 삭제됐습니다.",
+    specSaved: "제작 스펙이 저장됐습니다.",
+    specDeleted: "제작 스펙이 삭제됐습니다.",
     saveFailed: "저장하지 못했습니다. 필수 항목을 확인해 주세요.",
     catalogSaved: "카탈로그 문구가 저장됐습니다.",
   },
@@ -134,6 +140,9 @@ const ADMIN_STYLE_UI = {
     savingStyle: "正在保存...",
     savedStyle: "款式已保存。",
     addedStyle: "新款式已保存。",
+    deletedStyle: "款式已删除。",
+    specSaved: "制作规格已保存。",
+    specDeleted: "制作规格已删除。",
     saveFailed: "保存失败。请检查必填项。",
     catalogSaved: "目录文案已保存。",
   },
@@ -171,6 +180,9 @@ const ADMIN_STYLE_UI = {
     savingStyle: "Guardando...",
     savedStyle: "Estilo guardado.",
     addedStyle: "Nuevo estilo guardado.",
+    deletedStyle: "Estilo eliminado.",
+    specSaved: "Especificación guardada.",
+    specDeleted: "Especificación eliminada.",
     saveFailed: "No se pudo guardar. Revisa los campos requeridos.",
     catalogSaved: "Texto del catálogo guardado.",
   },
@@ -456,6 +468,7 @@ export default function AdminOpsStyles() {
     if (!confirm(ui.deleteConfirm(style.id))) return;
     deleteOpsStyle(style.id);
     if (draft.id === style.id) setDraft(newDraftForCategory(categoryFilter));
+    setSaveState({ status: "saved", message: ui.deletedStyle });
   }
 
   function submitSpec() {
@@ -467,6 +480,12 @@ export default function AdminOpsStyles() {
       materialsUsd: Number(sp.materialsUsd) || 0,
     });
     setSp({ styleId: sp.styleId, metal: "18kw", size: "", centerStoneSpec: "", estWeightG: "", variancePct: 6, laborUsd: "", materialsUsd: "" });
+    setSaveState({ status: "saved", message: ui.specSaved });
+  }
+
+  function removeSpec(id) {
+    deleteStyleSpec(id);
+    setSaveState({ status: "saved", message: ui.specDeleted });
   }
 
   return (
@@ -745,7 +764,7 @@ export default function AdminOpsStyles() {
                   <td>±{s.variancePct}%</td>
                   <td>{usd(s.laborUsd)}</td>
                   <td>{usd(s.materialsUsd || 0)}</td>
-                  <td><button className="button danger small" type="button" onClick={() => deleteStyleSpec(s.id)}>{p.common.delete}</button></td>
+                  <td><button className="button danger small" type="button" onClick={() => removeSpec(s.id)}>{p.common.delete}</button></td>
                 </tr>
               ))}
             </tbody>

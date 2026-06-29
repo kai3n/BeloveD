@@ -24,6 +24,7 @@ import { defaultSubcategoryFor, styleSubcategoryKey, subcategoryKeysFor } from "
 const DRAFT_KEY = "lumina-intake-draft";
 const MAX_REFERENCE_MEDIA = 5;
 const REVIEW_STEP = 3;
+const DEFAULT_MULTI_STANDARD = "F-G / VS+";
 const RING_SIZE_OPTIONS = Array.from({ length: 21 }, (_, i) => String(3 + i * 0.5).replace(/\.0$/, ""));
 
 function categoryDefaults(category) {
@@ -75,6 +76,12 @@ function labelFromMap(map, value) {
   return map?.[value] || value;
 }
 
+function displayMultiStandard(value, fallback) {
+  const cleanValue = String(value || "").trim();
+  if (!cleanValue || cleanValue === DEFAULT_MULTI_STANDARD) return fallback || DEFAULT_MULTI_STANDARD;
+  return cleanValue;
+}
+
 function normalizeSubcategory(category, subcategory) {
   const keys = subcategoryKeysFor(category);
   if (keys.includes(subcategory)) return subcategory;
@@ -95,8 +102,16 @@ function sanitizeReferenceMedia(items) {
   }));
 }
 
+function submissionContact(form, user) {
+  const fallbackName = user?.email?.split("@")[0] || "";
+  return {
+    name: (user?.name || form.name || fallbackName).trim(),
+    contact: (user?.email || form.contact || "").trim(),
+  };
+}
+
 function hasContactDetails(form) {
-  return Boolean(form.name.trim() && form.contact.trim());
+  return Boolean((form.name || "").trim() && (form.contact || "").trim());
 }
 
 function readDraft() {
@@ -267,11 +282,16 @@ export default function IntakeForm() {
     // 마지막(리뷰) 단계가 아니면 제출하지 않는다. 단계 0의 텍스트형 입력이 하나뿐일 때
     // 브라우저가 Enter로 폼을 암묵적 제출해 위저드(리뷰 포함)를 건너뛰는 것을 방어 — Enter는 "다음"으로 동작.
     if (step !== REVIEW_STEP) { goNext(); return; }
-    if (!hasContactDetails(form) || !form.termsAccepted) { setStepError(true); return; }
+    const contactDetails = submissionContact(form, user);
+    if (!hasContactDetails(contactDetails) || !form.termsAccepted) { setStepError(true); return; }
+    const multiSpec = form.productLine === "multi"
+      ? { ...form.multiSpec, standard: form.multiSpec.standard.trim() || DEFAULT_MULTI_STANDARD }
+      : null;
     const payload = {
       ...form,
+      ...contactDetails,
       stonePrefs: form.productLine === "solitaire" ? { ...form.stonePrefs, carat: Number(form.stonePrefs.carat) || null } : null,
-      multiSpec: form.productLine === "multi" ? form.multiSpec : null,
+      multiSpec,
       referenceMedia: sanitizeReferenceMedia(refs),
     };
     const { order } = createIntake(payload, user?.id || null);
@@ -297,7 +317,7 @@ export default function IntakeForm() {
     }
     if (s === 2) return true;
     if (s === REVIEW_STEP) {
-      return Boolean(hasContactDetails(form) && form.termsAccepted);
+      return Boolean(hasContactDetails(submissionContact(form, user)) && form.termsAccepted);
     }
     return true; // 솔리테어 센터스톤은 기본값이 채워져 있음
   }
@@ -349,6 +369,7 @@ export default function IntakeForm() {
     ...(form.category === "bangle" ? [{ label: t.wristSize, value: labelFromMap(optionLabels.braceletWrist, wristSizeValue) }] : []),
     ...(form.category === "earrings" ? [{ label: t.earringDetails, value: labelFromMap(optionLabels.earringPairing, earringDetailsValue) }] : []),
   ].filter((item) => item.value);
+  const multiStandardLabel = displayMultiStandard(form.multiSpec.standard, t.multiDefaultStandard);
   const stoneReviewItems = (form.productLine === "solitaire" ? [
     { label: t.shape, value: p.shapes[form.stonePrefs.shape] || form.stonePrefs.shape },
     { label: t.carat, value: `${form.stonePrefs.carat} ct` },
@@ -362,7 +383,7 @@ export default function IntakeForm() {
     { label: t.meleeSpec, value: form.multiSpec.meleeSpec },
     { label: t.overallDims, value: form.multiSpec.overallDims },
     { label: t.arrangement, value: form.multiSpec.arrangement },
-    { label: t.multiStandard, value: form.multiSpec.standard },
+    { label: t.multiStandard, value: multiStandardLabel },
   ]).filter((item) => item.value);
   const reviewSections = [
     { key: "product", title: t.wizardSteps[0], items: productReviewItems },
@@ -579,12 +600,24 @@ export default function IntakeForm() {
         )}
         {step === 1 && !solitaire && (
           <>
-            <h3 style={{ margin: "0" }}>{t.multiTitle}</h3>
+            <h3 className="intake-step-title">{t.multiTitle}</h3>
+            <p className="form-hint multi-stone-intro">{t.multiIntro}</p>
+            <div className="multi-auto-match-note">
+              <div>
+                <span>{t.multiAutoMatchKicker}</span>
+                <strong>{t.multiAutoMatchTitle}</strong>
+              </div>
+              <p>{t.multiAutoMatchBody}</p>
+            </div>
             <div className="filter-grid multi-stone-spec-grid">
               <label className="field"><span>{t.meleeSpec} <span className="req">*</span></span><input value={form.multiSpec.meleeSpec} onChange={(e) => setM({ meleeSpec: e.target.value })} placeholder={t.multiPlaceholders?.meleeSpec} required /></label>
               <label className="field"><span>{t.overallDims} <span className="req">*</span></span><input value={form.multiSpec.overallDims} onChange={(e) => setM({ overallDims: e.target.value })} placeholder={t.multiPlaceholders?.overallDims} required /></label>
               <label className="field"><span>{t.arrangement}</span><input value={form.multiSpec.arrangement} onChange={(e) => setM({ arrangement: e.target.value })} placeholder={t.multiPlaceholders?.arrangement} /></label>
-              <label className="field"><span>{t.multiStandard}</span><input value={form.multiSpec.standard} onChange={(e) => setM({ standard: e.target.value })} placeholder={t.multiPlaceholders?.standard} /></label>
+              <div className="multi-standard-card">
+                <span>{t.multiStandard}</span>
+                <strong>{multiStandardLabel}</strong>
+                <p>{t.multiStandardNote}</p>
+              </div>
             </div>
             <div className="stone-edu-inline">
               <MultiStoneGuide />
@@ -606,13 +639,15 @@ export default function IntakeForm() {
         {step === 3 && (
           <>
             <h3 style={{ margin: "0" }}>{t.reviewTitle}</h3>
-            <div className="review-contact-block">
-              <h4>{t.contactTitle}</h4>
-              <div className="filter-grid review-contact-grid">
-                <label className="field"><span>{t.name} <span className="req">*</span></span><input value={form.name} onChange={(e) => setF({ name: e.target.value })} required /></label>
-                <label className="field"><span>{t.contact} <span className="req">*</span></span><input value={form.contact} onChange={(e) => setF({ contact: e.target.value })} required /></label>
+            {!user && (
+              <div className="review-contact-block">
+                <h4>{t.contactTitle}</h4>
+                <div className="filter-grid review-contact-grid">
+                  <label className="field"><span>{t.name} <span className="req">*</span></span><input value={form.name} onChange={(e) => setF({ name: e.target.value })} required /></label>
+                  <label className="field"><span>{t.contact} <span className="req">*</span></span><input value={form.contact} onChange={(e) => setF({ contact: e.target.value })} required /></label>
+                </div>
               </div>
-            </div>
+            )}
             <div className="review-details">
               {reviewSections.map((section) => (
                 <section className="review-detail-section" key={section.title}>

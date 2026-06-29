@@ -26,10 +26,10 @@ function prResultSummary(pr) {
   return "submitted";
 }
 
-function PrForm({ orderId, suppliers, t }) {
+function PrForm({ orderId, suppliers, t, onSaved, notice }) {
   const [f, setF] = useState({ type: "diamondCandidates", supplierId: suppliers[0]?.id || "", dueDate: "", batchValidUntil: "", brief: "" });
   return (
-    <form className="form-stack" onSubmit={(e) => { e.preventDefault(); createProcurement(orderId, f); }}>
+    <form className="form-stack" onSubmit={(e) => { e.preventDefault(); createProcurement(orderId, f); onSaved?.(notice.procurementCreated); }}>
       <div className="filter-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
         <label className="field"><span>{t.prType}</span>
           <select value={f.type} onChange={(e) => setF({ ...f, type: e.target.value })}>
@@ -48,7 +48,7 @@ function PrForm({ orderId, suppliers, t }) {
   );
 }
 
-function QuoteBuilder({ order, settings, t }) {
+function QuoteBuilder({ order, settings, t, onSaved, notice }) {
   const dia = order.selectedDiamondId ? getCandidate(order.selectedDiamondId) : null;
   const intakeMetal = getIntake(order.intakeId)?.metal || "18kw";
   const [f, setF] = useState({
@@ -65,6 +65,7 @@ function QuoteBuilder({ order, settings, t }) {
         nonMetalUsd: Number(f.nonMetalUsd),
         internal: { diamondCostUsd: Number(f.diamondCostUsd), laborUsd: Number(f.laborUsd) || 0, extrasUsd: Number(f.extrasUsd) || 0, riskUsd: Number(f.riskUsd) || 0, multiplier: Number(f.multiplier) },
       });
+      onSaved?.(notice.quoteCreated);
     }}>
       <div className="filter-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
         <label className="field"><span>{t.estWeight}</span><input type="number" step="0.1" value={f.estWeightG} onChange={(e) => setF({ ...f, estWeightG: e.target.value })} required /></label>
@@ -110,19 +111,94 @@ const FALLBACK_PROXY_COPY = {
   issueDesign: "Send design for approval",
   issueFinal: "Send finished piece for confirmation",
   saved: "Uploaded to order workspace",
+  savedMedia: (n, max) => `${n}/${max} files published`,
 };
+
+const OPS_NOTICE_COPY = {
+  en: {
+    saved: "Update saved.",
+    statusSaved: "Status saved.",
+    customerNoteSaved: "Customer update saved.",
+    customerSent: "Sent to customer portal.",
+    customerHidden: "Removed from customer portal.",
+    internalNoteSaved: "Internal note saved.",
+    quoteSent: "Quote sent to the customer.",
+    referenceUpdated: "Reference visibility updated.",
+    candidateUpdated: "Diamond candidate updated.",
+    weightReconciled: "Actual weight reconciled.",
+    chatSent: "Message added to this order.",
+    stageAdvanced: "Order stage updated.",
+    procurementCreated: "Procurement request created.",
+    quoteCreated: "Quote draft created.",
+  },
+  ko: {
+    saved: "업데이트가 저장됐습니다.",
+    statusSaved: "상태가 저장됐습니다.",
+    customerNoteSaved: "고객 업데이트가 저장됐습니다.",
+    customerSent: "고객 포털로 전달됐습니다.",
+    customerHidden: "고객 포털에서 숨겼습니다.",
+    internalNoteSaved: "내부 메모가 저장됐습니다.",
+    quoteSent: "견적이 고객에게 발송됐습니다.",
+    referenceUpdated: "레퍼런스 공개 설정이 저장됐습니다.",
+    candidateUpdated: "다이아 후보가 업데이트됐습니다.",
+    weightReconciled: "실중량 정산이 저장됐습니다.",
+    chatSent: "주문 대화에 메시지가 추가됐습니다.",
+    stageAdvanced: "주문 단계가 업데이트됐습니다.",
+    procurementCreated: "조달 요청이 생성됐습니다.",
+    quoteCreated: "견적 초안이 생성됐습니다.",
+  },
+  zh: {
+    saved: "更新已保存。",
+    statusSaved: "状态已保存。",
+    customerNoteSaved: "客户更新已保存。",
+    customerSent: "已发送到客户门户。",
+    customerHidden: "已从客户门户隐藏。",
+    internalNoteSaved: "内部备注已保存。",
+    quoteSent: "报价已发送给客户。",
+    referenceUpdated: "参考资料可见性已更新。",
+    candidateUpdated: "钻石候选已更新。",
+    weightReconciled: "实际重量已记录。",
+    chatSent: "消息已添加到订单。",
+    stageAdvanced: "订单阶段已更新。",
+    procurementCreated: "采购请求已创建。",
+    quoteCreated: "报价草稿已创建。",
+  },
+  es: {
+    saved: "Actualización guardada.",
+    statusSaved: "Estado guardado.",
+    customerNoteSaved: "Actualización del cliente guardada.",
+    customerSent: "Enviado al portal del cliente.",
+    customerHidden: "Ocultado del portal del cliente.",
+    internalNoteSaved: "Nota interna guardada.",
+    quoteSent: "Cotización enviada al cliente.",
+    referenceUpdated: "Visibilidad de referencia actualizada.",
+    candidateUpdated: "Candidato actualizado.",
+    weightReconciled: "Peso real conciliado.",
+    chatSent: "Mensaje agregado al pedido.",
+    stageAdvanced: "Etapa del pedido actualizada.",
+    procurementCreated: "Solicitud de compra creada.",
+    quoteCreated: "Borrador de cotización creado.",
+  },
+};
+
+function noticeCopy(locale) {
+  return OPS_NOTICE_COPY[locale] || OPS_NOTICE_COPY.en;
+}
 
 const PROXY_STAGE_COPY = {
   en: {
     open: "Waiting for customer",
     ready: "Ready to send",
     done: "Confirmed",
+    rejected: "Rejected",
     notSent: "Not sent",
     sent: "sent",
     activeEdit: "Active upload",
     openActions: "open customer action",
     openActionsPlural: "open customer actions",
     noMedia: "No media yet",
+    rejectionReason: "Rejection reason",
+    customerAttachments: "Customer attachments",
     diamondMeta: "Customer selects one stone before quote/CAD.",
     designMeta: "Customer approves or requests a revision.",
     finalMeta: "Customer confirms the finished piece before balance.",
@@ -131,12 +207,15 @@ const PROXY_STAGE_COPY = {
     open: "고객 확인 대기",
     ready: "전송 준비",
     done: "컨펌 완료",
+    rejected: "반려됨",
     notSent: "아직 미전송",
     sent: "개 공개",
     activeEdit: "현재 업로드",
     openActions: "고객 액션",
     openActionsPlural: "고객 액션",
     noMedia: "아직 미디어 없음",
+    rejectionReason: "반려 사유",
+    customerAttachments: "고객 첨부",
     diamondMeta: "견적/CAD 전에 고객이 스톤 하나를 선택합니다.",
     designMeta: "고객이 디자인을 승인하거나 수정 요청합니다.",
     finalMeta: "잔금 전에 고객이 완성품 실물을 컨펌합니다.",
@@ -145,12 +224,15 @@ const PROXY_STAGE_COPY = {
     open: "等待客户确认",
     ready: "准备发送",
     done: "已确认",
+    rejected: "已驳回",
     notSent: "尚未发送",
     sent: "个已发布",
     activeEdit: "当前上传",
     openActions: "个客户任务",
     openActionsPlural: "个客户任务",
     noMedia: "暂无媒体",
+    rejectionReason: "驳回原因",
+    customerAttachments: "客户附件",
     diamondMeta: "报价/CAD 前客户选择一颗石头。",
     designMeta: "客户确认设计或提出修改。",
     finalMeta: "尾款前客户确认成品实物。",
@@ -159,12 +241,15 @@ const PROXY_STAGE_COPY = {
     open: "Esperando cliente",
     ready: "Listo para enviar",
     done: "Confirmado",
+    rejected: "Rechazado",
     notSent: "No enviado",
     sent: "publicados",
     activeEdit: "Carga activa",
     openActions: "acción cliente",
     openActionsPlural: "acciones cliente",
     noMedia: "Sin medios todavía",
+    rejectionReason: "Motivo de rechazo",
+    customerAttachments: "Adjuntos del cliente",
     diamondMeta: "El cliente elige una piedra antes de cotización/CAD.",
     designMeta: "El cliente aprueba o pide una revisión.",
     finalMeta: "El cliente confirma la pieza final antes del saldo.",
@@ -187,6 +272,10 @@ function latestCustomerAction(actions, type) {
   return [...actions].reverse().find((action) => action.type === type) || null;
 }
 
+function isRejectedAction(action) {
+  return action?.status === "rejected" || action?.decision === "rejected";
+}
+
 function ProxyMediaStrip({ media, emptyText }) {
   const items = media.slice(0, 3);
   if (!items.length) return <div className="ops-proxy-media-empty">{emptyText}</div>;
@@ -199,10 +288,10 @@ function ProxyMediaStrip({ media, emptyText }) {
   );
 }
 
-function ProxyStageCard({ active, done, title, status, meta, media, emptyText, onClick }) {
+function ProxyStageCard({ active, done, rejected, title, status, meta, media, emptyText, rejectionReason, rejectionMedia, copy, onClick }) {
   return (
     <button
-      className={`ops-proxy-stage-card ${active ? "is-active" : ""} ${done ? "is-done" : ""}`}
+      className={`ops-proxy-stage-card ${active ? "is-active" : ""} ${done ? "is-done" : ""} ${rejected ? "is-rejected" : ""}`}
       type="button"
       onClick={onClick}
     >
@@ -212,6 +301,18 @@ function ProxyStageCard({ active, done, title, status, meta, media, emptyText, o
       </div>
       <ProxyMediaStrip media={media} emptyText={emptyText} />
       <p>{meta}</p>
+      {rejected && (
+        <div className="ops-proxy-rejection">
+          <span>{copy.rejectionReason}</span>
+          {rejectionReason && <p>{rejectionReason}</p>}
+          {rejectionMedia?.length > 0 && (
+            <>
+              <span>{copy.customerAttachments}</span>
+              <ProxyMediaStrip media={rejectionMedia} emptyText={emptyText} />
+            </>
+          )}
+        </div>
+      )}
     </button>
   );
 }
@@ -235,33 +336,47 @@ function OperatorProxyPanel({ order, t, p, locale }) {
   const publishedCandidates = candidates.filter((candidate) => candidate.published);
   const selectedCandidate = order.selectedDiamondId ? candidates.find((candidate) => candidate.id === order.selectedDiamondId) : null;
   const latestCad = cads[0] || null;
+  const diamondAction = latestCustomerAction(actions, "diamondSelection");
+  const designAction = latestCustomerAction(actions, "cadReview") || latestCustomerAction(actions, "cadApproval");
   const finalAction = latestCustomerAction(actions, "finalConfirmation");
+  const diamondRejected = isRejectedAction(diamondAction);
+  const designRejected = isRejectedAction(designAction) || latestCad?.decision === "minorRevision";
+  const finalRejected = isRejectedAction(finalAction);
   const finalDone = finalAction?.status === "done" || ["BALANCE", "SHIPPING", "DELIVERED", "ARCHIVED"].includes(order.status);
   const openCount = actions.filter((action) => action.status === "open").length;
   const steps = [
     {
       key: "diamond",
       title: copy.diamondTitle,
-      status: selectedCandidate ? stageCopy.done : publishedCandidates.length ? `${publishedCandidates.length} ${stageCopy.sent}` : stageCopy.notSent,
+      status: diamondRejected ? stageCopy.rejected : selectedCandidate ? stageCopy.done : publishedCandidates.length ? `${publishedCandidates.length} ${stageCopy.sent}` : stageCopy.notSent,
       done: Boolean(selectedCandidate),
+      rejected: diamondRejected,
       meta: stageCopy.diamondMeta,
       media: publishedCandidates.flatMap((candidate) => adminMediaList(candidate.media, candidate.image || candidate.video)).slice(0, 3),
+      rejectionReason: diamondAction?.rejectionReason || "",
+      rejectionMedia: adminMediaList(diamondAction?.responseAttachments),
     },
     {
       key: "design",
       title: copy.designTitle,
-      status: latestCad?.decision ? stageCopy.done : latestCad ? stageCopy.open : stageCopy.notSent,
-      done: Boolean(latestCad?.decision),
+      status: designRejected ? stageCopy.rejected : latestCad?.decision === "approved" ? stageCopy.done : latestCad ? stageCopy.open : stageCopy.notSent,
+      done: latestCad?.decision === "approved",
+      rejected: designRejected,
       meta: stageCopy.designMeta,
       media: adminMediaList(latestCad?.media, latestCad?.fileUrl),
+      rejectionReason: designAction?.rejectionReason || latestCad?.feedback?.join(" · ") || "",
+      rejectionMedia: adminMediaList(designAction?.responseAttachments || latestCad?.responseAttachments),
     },
     {
       key: "final",
       title: copy.finalTitle,
-      status: finalDone ? stageCopy.done : finalAction ? stageCopy.open : stageCopy.notSent,
+      status: finalRejected ? stageCopy.rejected : finalDone ? stageCopy.done : finalAction ? stageCopy.open : stageCopy.notSent,
       done: finalDone,
+      rejected: finalRejected,
       meta: stageCopy.finalMeta,
       media: adminMediaList(finalAction?.media, finalAction?.link),
+      rejectionReason: finalAction?.rejectionReason || "",
+      rejectionMedia: adminMediaList(finalAction?.responseAttachments),
     },
   ];
   const active = steps.find((step) => step.key === activeStep) || steps[0];
@@ -284,11 +399,15 @@ function OperatorProxyPanel({ order, t, p, locale }) {
             key={step.key}
             active={activeStep === step.key}
             done={step.done}
+            rejected={step.rejected}
             title={step.title}
             status={step.status}
             meta={step.meta}
             media={step.media}
             emptyText={stageCopy.noMedia}
+            rejectionReason={step.rejectionReason}
+            rejectionMedia={step.rejectionMedia}
+            copy={stageCopy}
             onClick={() => setActiveStep(step.key)}
           />
         ))}
@@ -306,7 +425,7 @@ function OperatorProxyPanel({ order, t, p, locale }) {
   );
 }
 
-function AdminConversationPanel({ orderId, messages, copy }) {
+function AdminConversationPanel({ orderId, messages, copy, onSaved, notice }) {
   const [draft, setDraft] = useState("");
   const [channel, setChannel] = useState("web");
   const [actorRole, setActorRole] = useState("ops");
@@ -324,17 +443,20 @@ function AdminConversationPanel({ orderId, messages, copy }) {
       sourceLabel: channelLabel(channel),
     });
     setDraft("");
+    onSaved?.(notice.chatSent);
   }
 
   return (
-    <section className="panel conversation-panel admin-conversation-panel">
+    <section className="panel conversation-panel admin-conversation-panel" data-testid="admin-order-chat">
       <div className="conversation-head">
         <div>
-          <p className="form-hint" style={{ margin: 0, letterSpacing: 1 }}>{copy.title}</p>
-          <h3 style={{ margin: "8px 0 0" }}>{copy.sub}</h3>
+          <p className="admin-kicker">{copy.title}</p>
+          <h3>{copy.directTitle || copy.title}</h3>
+          <p className="form-hint">{copy.sub}</p>
         </div>
+        <span className="channel-pill">{channelLabel(channel)}</span>
       </div>
-      <div className="conversation-thread">
+      <div className="conversation-thread" aria-live="polite">
         {messages.length === 0 ? (
           <p className="form-hint">{copy.empty}</p>
         ) : messages.map((message) => (
@@ -349,21 +471,26 @@ function AdminConversationPanel({ orderId, messages, copy }) {
         ))}
       </div>
       <form className="conversation-form admin-conversation-form" onSubmit={submit}>
-        <div className="admin-conversation-controls">
-          <label className="field"><span>{copy.channel}</span>
-            <select value={channel} onChange={(e) => setChannel(e.target.value)}>
-              {ORDER_MESSAGE_CHANNELS.map((key) => <option key={key} value={key}>{channelLabel(key)}</option>)}
-            </select>
-          </label>
-          <label className="field"><span>{copy.role}</span>
-            <select value={actorRole} onChange={(e) => setActorRole(e.target.value)}>
-              <option value="ops">{copy.roleOps}</option>
-              <option value="customer">{copy.roleCustomer}</option>
-            </select>
-          </label>
-        </div>
         <textarea value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={copy.placeholder} rows={2} />
-        <button className="button primary small" type="submit" disabled={!draft.trim()}>{copy.send}</button>
+        <div className="admin-conversation-actions">
+          <details className="admin-conversation-log-options">
+            <summary>{copy.logOptions || copy.channel}</summary>
+            <div className="admin-conversation-controls">
+              <label className="field"><span>{copy.channel}</span>
+                <select value={channel} onChange={(e) => setChannel(e.target.value)}>
+                  {ORDER_MESSAGE_CHANNELS.map((key) => <option key={key} value={key}>{channelLabel(key)}</option>)}
+                </select>
+              </label>
+              <label className="field"><span>{copy.role}</span>
+                <select value={actorRole} onChange={(e) => setActorRole(e.target.value)}>
+                  <option value="ops">{copy.roleOps}</option>
+                  <option value="customer">{copy.roleCustomer}</option>
+                </select>
+              </label>
+            </div>
+          </details>
+          <button className="button primary small" type="submit" disabled={!draft.trim()}>{copy.send}</button>
+        </div>
       </form>
     </section>
   );
@@ -372,6 +499,7 @@ function AdminConversationPanel({ orderId, messages, copy }) {
 function ProxyDiamondForm({ orderId, copy, p }) {
   const [media, setMedia] = useState([]);
   const [saved, setSaved] = useState(false);
+  const [savedMediaCount, setSavedMediaCount] = useState(0);
   const [f, setF] = useState({
     shape: "round",
     carat: "1",
@@ -386,12 +514,14 @@ function ProxyDiamondForm({ orderId, copy, p }) {
   });
   function set(key, value) {
     setSaved(false);
+    setSavedMediaCount(0);
     setF((current) => ({ ...current, [key]: value }));
   }
   function submit(e) {
     e.preventDefault();
-    createProxyDiamondCandidate(orderId, { ...f, media }, "ops");
+    const candidate = createProxyDiamondCandidate(orderId, { ...f, media }, "ops");
     setSaved(true);
+    setSavedMediaCount(candidate?.media?.length || 0);
     setMedia([]);
     setF((current) => ({ ...current, igiNo: "", clientNote: "" }));
   }
@@ -447,12 +577,16 @@ function ProxyDiamondForm({ orderId, copy, p }) {
           <textarea value={f.clientNote} onChange={(e) => set("clientNote", e.target.value)} placeholder={copy.notePh} />
         </label>
         <label className="field"><span>{copy.media}</span>
-          <MediaPicker value={media} onChange={(items) => { setSaved(false); setMedia(items); }} maxItems={5} showSamples={false} previewMode="list" />
+          <MediaPicker value={media} onChange={(items) => { setSaved(false); setSavedMediaCount(0); setMedia(items); }} maxItems={5} showSamples={false} previewMode="list" />
         </label>
       </div>
       <div className="ops-proxy-form-actions">
         <button className="button primary small" disabled={media.length === 0} type="submit">{copy.publishDiamond}</button>
-        {saved && <p className="form-hint">{copy.saved}</p>}
+        {saved && (
+          <p className="form-hint" role="status">
+            {copy.saved}{savedMediaCount ? ` · ${copy.savedMedia?.(savedMediaCount, 5) || `${savedMediaCount}/5 files published`}` : ""}
+          </p>
+        )}
       </div>
     </form>
   );
@@ -487,7 +621,7 @@ function ProxyDesignForm({ orderId, copy }) {
       </div>
       <div className="ops-proxy-form-actions">
         <button className="button primary small" disabled={media.length === 0} type="submit">{copy.issueDesign}</button>
-        {saved && <p className="form-hint">{copy.saved}</p>}
+        {saved && <p className="form-hint" role="status">{copy.saved}</p>}
       </div>
     </form>
   );
@@ -534,7 +668,7 @@ function ProxyFinalForm({ orderId, copy }) {
       </div>
       <div className="ops-proxy-form-actions">
         <button className="button primary small" disabled={media.length === 0} type="submit">{copy.issueFinal}</button>
-        {saved && <p className="form-hint">{copy.saved}</p>}
+        {saved && <p className="form-hint" role="status">{copy.saved}</p>}
       </div>
     </form>
   );
@@ -548,6 +682,233 @@ function customerActionLabel(action, t) {
     finalConfirmation: t.proxy?.finalTitle,
   };
   return labels[action?.type] || action?.type || "";
+}
+
+const OPS_FLOW_COPY = {
+  en: {
+    kicker: "Client flow",
+    title: "Move the order in three confirmations.",
+    sub: "Use this as the operating map. Upload customer-facing media below, then update only the checkpoint that matters now.",
+    stoneTitle: "1. Diamond choice",
+    designTitle: "2. Design approval",
+    finalTitle: "3. Finished piece",
+    stoneHelp: "Send candidate stones and wait for the customer to choose one.",
+    designHelp: "Send CAD, render, or design draft media for approval.",
+    finalHelp: "Send final QC photos or videos before balance and shipping.",
+    status: "Status",
+    clientNote: "Message to customer",
+    notePlaceholder: "Write the update to send to the customer portal",
+    show: "Send to customer portal",
+    hide: "Sent to customer portal",
+    done: "Done",
+    waiting: "Customer turn",
+    current: "In progress",
+    next: "Next",
+    manualTitle: "Technical milestone summary",
+    manualSub: "Use the three cards above for normal operation. These technical checkpoints are shown only for audit/debugging.",
+  },
+  ko: {
+    kicker: "고객 진행 흐름",
+    title: "주문은 3번의 고객 컨펌으로 진행됩니다.",
+    sub: "운영자는 아래 컨펌 자료를 올리고, 지금 필요한 체크포인트만 업데이트하면 됩니다.",
+    stoneTitle: "1. 다이아 선택",
+    designTitle: "2. 디자인 승인",
+    finalTitle: "3. 완성품 컨펌",
+    stoneHelp: "다이아 후보를 공개하고 고객이 하나를 선택할 때까지 대기합니다.",
+    designHelp: "CAD, 렌더, 디자인 시안을 올려 고객 승인을 받습니다.",
+    finalHelp: "잔금·배송 전에 최종 QC 사진이나 영상을 공개합니다.",
+    status: "상태",
+    clientNote: "고객에게 보낼 메시지",
+    notePlaceholder: "고객 포털에 보낼 업데이트를 입력하세요",
+    show: "고객 포털로 보내기",
+    hide: "고객에게 전달됨",
+    done: "완료",
+    waiting: "고객 확인",
+    current: "진행중",
+    next: "예정",
+    manualTitle: "기술 마일스톤 요약",
+    manualSub: "일반 운영은 위 3개 카드만 사용하세요. 아래는 감사/디버깅용 진행 요약입니다.",
+  },
+  zh: {
+    kicker: "客户流程",
+    title: "订单通过三次客户确认推进。",
+    sub: "上传客户可见资料，然后只更新当前需要的确认节点。",
+    stoneTitle: "1. 选钻",
+    designTitle: "2. 设计确认",
+    finalTitle: "3. 成品确认",
+    stoneHelp: "发布候选钻石，等待客户选择。",
+    designHelp: "发布 CAD、渲染图或设计草案供客户确认。",
+    finalHelp: "尾款与发货前发布最终质检照片或视频。",
+    status: "状态",
+    clientNote: "发送给客户的消息",
+    notePlaceholder: "填写要发送到客户门户的更新",
+    show: "发送到客户门户",
+    hide: "已发送到客户门户",
+    done: "完成",
+    waiting: "客户确认",
+    current: "进行中",
+    next: "下一步",
+    manualTitle: "技术里程碑摘要",
+    manualSub: "日常操作使用上方三个卡片；以下仅用于审计/排查。",
+  },
+  es: {
+    kicker: "Flujo cliente",
+    title: "El pedido avanza con tres confirmaciones.",
+    sub: "Sube medios visibles para el cliente y actualiza solo el checkpoint activo.",
+    stoneTitle: "1. Elección de diamante",
+    designTitle: "2. Aprobación de diseño",
+    finalTitle: "3. Pieza final",
+    stoneHelp: "Envía candidatos de diamante y espera la elección del cliente.",
+    designHelp: "Envía CAD, renders o bocetos para aprobación.",
+    finalHelp: "Envía fotos o videos QC finales antes de saldo y envío.",
+    status: "Estado",
+    clientNote: "Mensaje para el cliente",
+    notePlaceholder: "Escribe la actualización para enviar al portal del cliente",
+    show: "Enviar al portal del cliente",
+    hide: "Enviado al portal del cliente",
+    done: "Listo",
+    waiting: "Turno cliente",
+    current: "En curso",
+    next: "Siguiente",
+    manualTitle: "Resumen técnico de hitos",
+    manualSub: "Para operación normal usa las tres tarjetas superiores. Esto es solo auditoría/debug.",
+  },
+};
+
+const OPS_FLOW_GROUPS = [
+  {
+    key: "stone",
+    titleKey: "stoneTitle",
+    helpKey: "stoneHelp",
+    primaryStage: "diamondLocked",
+    doneStage: "diamondLocked",
+    stages: ["depositReceived", "diamondLocked"],
+    actionTypes: ["diamondSelection"],
+  },
+  {
+    key: "design",
+    titleKey: "designTitle",
+    helpKey: "designHelp",
+    primaryStage: "cadIssued",
+    doneStage: "cadApproved",
+    stages: ["cadIssued", "cadApproved", "productionStarted"],
+    actionTypes: ["cadReview", "cadApproval"],
+  },
+  {
+    key: "final",
+    titleKey: "finalTitle",
+    helpKey: "finalHelp",
+    primaryStage: "finalQcVideo",
+    doneStage: "deliveredArchived",
+    stages: ["finalQcVideo", "balanceReceived", "sentDomesticWarehouse", "oceanShipment", "deliveredArchived"],
+    actionTypes: ["finalConfirmation"],
+  },
+];
+
+function opsFlowCopy(locale) {
+  return OPS_FLOW_COPY[locale] || OPS_FLOW_COPY.en;
+}
+
+function milestoneFor(milestones, stage) {
+  return milestones.find((m) => m.stage === stage);
+}
+
+function flowGroupState(group, milestones, actions) {
+  const openAction = actions.find((action) => action.status === "open" && group.actionTypes.includes(action.type));
+  const done = milestoneFor(milestones, group.doneStage)?.status === "done";
+  const relevant = group.stages.map((stage) => milestoneFor(milestones, stage)).filter(Boolean);
+  if (done) return "done";
+  if (openAction) return "waiting";
+  if (relevant.some((m) => m.status === "blocked")) return "blocked";
+  if (relevant.some((m) => m.status === "inProgress" || m.status === "waitingClient")) return "current";
+  return "next";
+}
+
+function flowLabel(copy, state) {
+  if (state === "done") return copy.done;
+  if (state === "waiting") return copy.waiting;
+  if (state === "current" || state === "blocked") return copy.current;
+  return copy.next;
+}
+
+function CustomerFlowPanel({ order, milestones, actions, t, p, locale, onSaved }) {
+  const copy = opsFlowCopy(locale);
+  const notice = noticeCopy(locale);
+
+  function saveFlow(stage, patch, message) {
+    upsertMilestone(order.id, stage, patch);
+    onSaved?.(message);
+  }
+
+  return (
+    <section className="panel ops-customer-flow">
+      <div className="ops-flow-head">
+        <div>
+          <p className="admin-kicker">{copy.kicker}</p>
+          <h3>{copy.title}</h3>
+          <p className="form-hint">{copy.sub}</p>
+        </div>
+        <Link className="button secondary small" to={`/track/${order.id}?code=${order.queryCode}`}>{t.openPortal || p.portal.title}</Link>
+      </div>
+      <div className="ops-flow-grid">
+        {OPS_FLOW_GROUPS.map((group) => {
+          const primary = milestoneFor(milestones, group.primaryStage);
+          const state = flowGroupState(group, milestones, actions);
+          return (
+            <article className={`ops-flow-card ${state}`} key={group.key}>
+              <div className="ops-flow-card-top">
+                <div>
+                  <h4>{copy[group.titleKey]}</h4>
+                  <p>{copy[group.helpKey]}</p>
+                </div>
+                <span className={`status-badge mst-${state === "waiting" ? "waitingClient" : state === "current" ? "inProgress" : state === "next" ? "pending" : state}`}>{flowLabel(copy, state)}</span>
+              </div>
+              <div className="ops-flow-controls">
+                <label className="field"><span>{copy.status}</span>
+                  <select value={primary?.status || "pending"} onChange={(e) => saveFlow(group.primaryStage, { status: e.target.value }, notice.statusSaved)}>
+                    {["pending", "inProgress", "waitingClient", "blocked", "done"].map((st) => <option key={st} value={st}>{p.msStatus[st]}</option>)}
+                  </select>
+                </label>
+                <label className="field"><span>{copy.clientNote}</span>
+                  <input defaultValue={primary?.clientUpdate || ""} key={`${group.primaryStage}-${primary?.clientUpdate}`} placeholder={copy.notePlaceholder}
+                    onBlur={(e) => saveFlow(group.primaryStage, { clientUpdate: e.target.value }, notice.customerNoteSaved)} />
+                </label>
+              </div>
+              <button className={`chip ops-flow-visibility ${primary?.publishToClient ? "is-active" : ""}`}
+                onClick={() => saveFlow(
+                  group.primaryStage,
+                  { publishToClient: !primary?.publishToClient },
+                  primary?.publishToClient ? notice.customerHidden : notice.customerSent,
+                )}>
+                {primary?.publishToClient ? copy.hide : copy.show}
+              </button>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function CompactMilestoneSummary({ milestones, p, locale }) {
+  const copy = opsFlowCopy(locale);
+  return (
+    <div className="panel ops-compact-milestones">
+      <h3>{copy.manualTitle}</h3>
+      <p className="form-hint">{copy.manualSub}</p>
+      <div className="ops-compact-milestone-grid">
+        {MILESTONE_STAGES.map((stage) => {
+          const status = milestoneFor(milestones, stage)?.status || "pending";
+          return (
+            <span className={`ops-compact-milestone mst-${status}`} key={stage}>
+              <strong>{p.msStages[stage]}</strong>
+              <em>{p.msStatus[status]}</em>
+            </span>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 function orderBriefRows({ order, intake, style, p, t, locale }) {
@@ -584,7 +945,7 @@ function orderBriefRows({ order, intake, style, p, t, locale }) {
   return rows;
 }
 
-function NextActionPanel({ order, nextAction, openActions, t, p }) {
+function NextActionPanel({ order, nextAction, openActions, t, p, onSaved, notice }) {
   const customerPortalHref = `/track/${order.id}?code=${order.queryCode}`;
   const isWaiting = !nextAction && openActions.length > 0;
   return (
@@ -601,7 +962,7 @@ function NextActionPanel({ order, nextAction, openActions, t, p }) {
         </div>
       )}
       <div className="ops-next-actions">
-        {nextAction && <button className="button primary" onClick={nextAction.fn}>{nextAction.label}</button>}
+        {nextAction && <button className="button primary" onClick={() => { nextAction.fn(); onSaved?.(notice.stageAdvanced); }}>{nextAction.label}</button>}
         <Link className="button secondary" to={customerPortalHref}>{t.openPortal || p.portal.title}</Link>
       </div>
     </section>
@@ -625,23 +986,23 @@ function OrderBriefPanel({ order, intake, style, p, t, locale }) {
   );
 }
 
-function InternalControlsPanel({ order, t, p }) {
+function InternalControlsPanel({ order, t, p, onSaved, notice }) {
   return (
     <section className="panel ops-side-card ops-internal-card">
       <p className="admin-kicker">{t.internalControls}</p>
       <label className="field"><span>{t.statusSet}</span>
-        <select value={order.status} onChange={(e) => updateOpsOrder(order.id, { status: e.target.value })}>
+        <select value={order.status} onChange={(e) => { updateOpsOrder(order.id, { status: e.target.value }); onSaved?.(notice.statusSaved); }}>
           {ORDER_STATUSES.map((st) => <option key={st} value={st}>{p.orderStatus[st]}</option>)}
         </select>
       </label>
       <label className="field"><span>{t.internalNotes}</span>
-        <textarea defaultValue={order.internalNotes} key={order.internalNotes} onBlur={(e) => updateOpsOrder(order.id, { internalNotes: e.target.value })} rows={4} />
+        <textarea defaultValue={order.internalNotes} key={order.internalNotes} onBlur={(e) => { updateOpsOrder(order.id, { internalNotes: e.target.value }); onSaved?.(notice.internalNoteSaved); }} rows={4} />
       </label>
     </section>
   );
 }
 
-function QuoteSnapshotPanel({ quotes, acceptedQuote, intake, t, p }) {
+function QuoteSnapshotPanel({ quotes, acceptedQuote, intake, t, p, onSaved, notice }) {
   const latestQuote = acceptedQuote || quotes[0] || null;
   return (
     <section className="panel ops-side-card ops-quote-card">
@@ -656,7 +1017,7 @@ function QuoteSnapshotPanel({ quotes, acceptedQuote, intake, t, p }) {
         </div>
       )}
       {quotes.filter((q) => q.status === "draft").map((quote) => (
-        <button key={quote.id} className="button secondary small" onClick={() => sendQuote(quote.id)}>{t.send} · {usd(quote.totalUsd)}</button>
+        <button key={quote.id} className="button secondary small" onClick={() => { sendQuote(quote.id); onSaved?.(notice.quoteSent); }}>{t.send} · {usd(quote.totalUsd)}</button>
       ))}
     </section>
   );
@@ -670,6 +1031,7 @@ export default function AdminOpsOrder() {
   const order = getOpsOrder(orderId);
   const settings = getSettings();
   const [actualW, setActualW] = useState("");
+  const [saveNotice, setSaveNotice] = useState("");
 
   if (!order) return <div className="page"><EmptyNote>—</EmptyNote></div>;
 
@@ -684,6 +1046,11 @@ export default function AdminOpsOrder() {
   const auditRows = listAudit(orderId).slice(-8).reverse();
   const suppliers = getDB().users.filter((u) => u.role === "supplier");
   const acceptedQuote = quotes.find((q) => q.status === "accepted");
+  const notice = noticeCopy(locale);
+
+  function notify(message = notice.saved) {
+    setSaveNotice(message);
+  }
 
   // 어드민 터치포인트는 단 3개 — 지금 필요한 하나만 카드로 띄운다 (나머지는 자동 진행)
   const balanceDone = milestones.some((m) => m.stage === "balanceReceived" && m.status === "done");
@@ -708,14 +1075,19 @@ export default function AdminOpsOrder() {
         </div>
         <Link className="button secondary" to="/admin/orders">← {t.title}</Link>
       </header>
+      <p className={`admin-save-notice ops-page-notice ${saveNotice ? "is-saved" : ""}`} role="status" aria-live="polite">
+        {saveNotice}
+      </p>
 
       <div className="ops-command-layout">
         <main className="ops-command-main">
-          <NextActionPanel order={order} nextAction={nextAction} openActions={openCustomerActions} t={t} p={p} />
+          <NextActionPanel order={order} nextAction={nextAction} openActions={openCustomerActions} t={t} p={p} onSaved={notify} notice={notice} />
+
+          <CustomerFlowPanel order={order} milestones={milestones} actions={actions} t={t} p={p} locale={locale} onSaved={notify} />
 
           <OperatorProxyPanel order={order} t={t} p={p} locale={locale} />
 
-          <AdminConversationPanel orderId={order.id} messages={messages} copy={t.chat} />
+          <AdminConversationPanel orderId={order.id} messages={messages} copy={t.chat} onSaved={notify} notice={notice} />
 
           {intake?.referenceMedia?.length > 0 && (
             <details className="ops-admin-details">
@@ -732,9 +1104,9 @@ export default function AdminOpsOrder() {
                         ))}
                         <div className="row-actions">
                           {m.status === "approved" ? (
-                            <button className="button secondary small" onClick={() => reviewReferenceMedia(intake.id, m.id, "hidden")}>{t.hideRef}</button>
+                            <button className="button secondary small" onClick={() => { reviewReferenceMedia(intake.id, m.id, "hidden"); notify(notice.referenceUpdated); }}>{t.hideRef}</button>
                           ) : (
-                            <button className="button primary small" onClick={() => reviewReferenceMedia(intake.id, m.id, "approved")}>{t.showRef}</button>
+                            <button className="button primary small" onClick={() => { reviewReferenceMedia(intake.id, m.id, "approved"); notify(notice.referenceUpdated); }}>{t.showRef}</button>
                           )}
                         </div>
                       </div>
@@ -748,8 +1120,8 @@ export default function AdminOpsOrder() {
 
         <aside className="ops-command-side">
           <OrderBriefPanel order={order} intake={intake} style={style} p={p} t={t} locale={locale} />
-          <InternalControlsPanel order={order} t={t} p={p} />
-          <QuoteSnapshotPanel quotes={quotes} acceptedQuote={acceptedQuote} intake={intake} t={t} p={p} />
+          <InternalControlsPanel order={order} t={t} p={p} onSaved={notify} notice={notice} />
+          <QuoteSnapshotPanel quotes={quotes} acceptedQuote={acceptedQuote} intake={intake} t={t} p={p} onSaved={notify} notice={notice} />
 
           {(order.selectedDiamondId || intake?.productLine === "multi" || acceptedQuote) && (
             <details className="ops-admin-details ops-side-details">
@@ -760,15 +1132,15 @@ export default function AdminOpsOrder() {
                     <strong>{q.id}</strong> · {q.status} · {usd(q.totalUsd)} ({p.portal.deposit} {usd(q.depositUsd)} / {p.portal.balance} {usd(q.balanceUsd)})
                     {intake?.budget && q.totalUsd > intake.budget && <span style={{ color: "#e08585", marginLeft: 6 }}>⚠ {t.overBudget} (${intake.budget})</span>}
                     {q.actualWeightG && ` · actual ${q.actualWeightG}g`}
-                    {q.status === "draft" && <button className="button secondary small" style={{ marginLeft: 10 }} onClick={() => sendQuote(q.id)}>{t.send}</button>}
+                    {q.status === "draft" && <button className="button secondary small" style={{ marginLeft: 10 }} onClick={() => { sendQuote(q.id); notify(notice.quoteSent); }}>{t.send}</button>}
                   </div>
                 ))}
-                {order.selectedDiamondId || intake?.productLine === "multi" ? <QuoteBuilder order={order} settings={settings} t={t} /> : null}
+                {order.selectedDiamondId || intake?.productLine === "multi" ? <QuoteBuilder order={order} settings={settings} t={t} onSaved={notify} notice={notice} /> : null}
                 {acceptedQuote && (
                   <div className="row-actions" style={{ marginTop: 12 }}>
                     <input type="number" step="0.01" placeholder={t.actualWeight} value={actualW} onChange={(e) => setActualW(e.target.value)}
                       style={{ width: 150, background: "var(--bg-2)", border: "1px solid var(--line)", color: "var(--text)", padding: "9px 10px" }} />
-                    <button className="button secondary small" disabled={!actualW} onClick={() => { recordActualWeight(order.id, Number(actualW)); setActualW(""); }}>{t.reconcile}</button>
+                    <button className="button secondary small" disabled={!actualW} onClick={() => { recordActualWeight(order.id, Number(actualW)); setActualW(""); notify(notice.weightReconciled); }}>{t.reconcile}</button>
                   </div>
                 )}
               </div>
@@ -784,7 +1156,7 @@ export default function AdminOpsOrder() {
       {/* 조달 요청 */}
       <div className="panel form-stack" style={{ marginTop: 14 }}>
         <h3>{t.newPr}</h3>
-        <PrForm orderId={order.id} suppliers={suppliers} t={t} />
+        <PrForm orderId={order.id} suppliers={suppliers} t={t} onSaved={notify} notice={notice} />
         {listProcurements({ orderId }).map((pr) => (
           <p key={pr.id} className="form-hint">
             {pr.id} · {pr.type} · {suppliers.find((su) => su.id === pr.supplierId)?.name} · {pr.dueDate} · <span className={`status-badge prt-${pr.status}`}>{p.supplierP.status[pr.status]}</span>
@@ -806,7 +1178,7 @@ export default function AdminOpsOrder() {
                   <td>{c.shape} {c.carat}ct {c.color}/{c.clarity} {c.growth}</td>
                   <td>{usd(c.procurementCostUsd)}</td>
                   <td>
-                    <select value={c.internalReview || ""} onChange={(e) => reviewCandidate(c.id, e.target.value)}>
+                    <select value={c.internalReview || ""} onChange={(e) => { reviewCandidate(c.id, e.target.value); notify(notice.candidateUpdated); }}>
                       <option value="" disabled>—</option>
                       {["recommended", "alternate", "excluded"].map((r) => <option key={r} value={r}>{t.reviews[r]}</option>)}
                     </select>
@@ -818,21 +1190,21 @@ export default function AdminOpsOrder() {
                           {usd(c.customerPriceUsd)}
                           {intake?.budget && c.customerPriceUsd > intake.budget && <span style={{ color: "#e08585", marginLeft: 6 }} title={`${t.budgetLabel} $${intake.budget}`}>⚠ {t.overBudget}</span>}
                         </span>
-                        <button className="chip is-active" onClick={() => unpublishCandidate(c.id)}>{t.unpublish}</button>
+                        <button className="chip is-active" onClick={() => { unpublishCandidate(c.id); notify(notice.candidateUpdated); }}>{t.unpublish}</button>
                       </div>
                     ) : (
                       <input type="number" placeholder={t.pricePh} style={{ width: 132 }}
-                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); publishCandidate(c.id, Number(e.target.value)); } }} />
+                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); publishCandidate(c.id, Number(e.target.value)); notify(notice.candidateUpdated); } }} />
                     )}
                   </td>
                   <td>
-                    <select value={c.availability} onChange={(e) => setCandidateAvailability(c.id, e.target.value)}>
+                    <select value={c.availability} onChange={(e) => { setCandidateAvailability(c.id, e.target.value); notify(notice.candidateUpdated); }}>
                       {["available", "hold", "sold"].map((a) => <option key={a} value={a}>{p.portal.availability[a]}</option>)}
                     </select>
                   </td>
                   <td>
                     {c.locked ? <span className="status-badge cst-REPLACED">{t.locked}</span> :
-                      c.clientSelection === "selected" && <button className="button primary small" onClick={() => lockCandidate(c.id)}>{t.lock}</button>}
+                      c.clientSelection === "selected" && <button className="button primary small" onClick={() => { lockCandidate(c.id); notify(notice.candidateUpdated); }}>{t.lock}</button>}
                   </td>
                 </tr>
               ))}
@@ -841,37 +1213,7 @@ export default function AdminOpsOrder() {
         </div>
       )}
 
-      {/* 마일스톤 보드 */}
-      <div className="panel" style={{ overflowX: "auto", marginTop: 14 }}>
-        <h3>{t.msTitle}</h3>
-        <table className="data-table">
-          <tbody>
-            {MILESTONE_STAGES.map((stage) => {
-              const m = milestones.find((x) => x.stage === stage);
-              return (
-                <tr key={stage}>
-                  <th>{p.msStages[stage]}</th>
-                  <td>
-                    <select value={m?.status || "pending"} onChange={(e) => upsertMilestone(order.id, stage, { status: e.target.value })}>
-                      {["pending", "inProgress", "waitingClient", "blocked", "done"].map((st) => <option key={st} value={st}>{p.msStatus[st]}</option>)}
-                    </select>
-                  </td>
-                  <td>
-                    <input defaultValue={m?.clientUpdate || ""} key={`${stage}-${m?.clientUpdate}`} placeholder="Client update"
-                      onBlur={(e) => upsertMilestone(order.id, stage, { clientUpdate: e.target.value })} />
-                  </td>
-                  <td>
-                    <button className={`chip ${m?.publishToClient ? "is-active" : ""}`}
-                      onClick={() => upsertMilestone(order.id, stage, { publishToClient: !m?.publishToClient })}>
-                      {t.publishClient}
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      <CompactMilestoneSummary milestones={milestones} p={p} locale={locale} />
 
       {/* CAD 리뷰 이력 */}
       {cads.length > 0 && (

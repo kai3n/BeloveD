@@ -119,13 +119,19 @@ describe("visual store — 운영자 프록시 업로드", () => {
       media: [{ kind: "image", src: "/proxy-stone.png" }, { kind: "video", src: "/proxy-stone.mp4" }],
     });
     expect(c.published).toBe(true);
-    expect(c.stockConfirmed).toBe(true);
+    expect(c.stockConfirmed).toBe(false);
     const view = portalView("DM-000001", { queryCode: "QX7K-M9P2" });
     const publicCandidate = view.candidates.find((x) => x.id === c.id);
     expect(publicCandidate.media.length).toBe(2);
     expect(publicCandidate.clientNote).toContain("clean oval");
     expect(JSON.stringify(publicCandidate)).not.toContain("procurementCostUsd");
     expect(view.actions.some((a) => a.type === "diamondSelection")).toBe(true);
+
+    toggleShortlist(c.id, "customer");
+    requestStockConfirm("DM-000001", "customer");
+    const selected = listCandidates({ orderId: "DM-000001" }).find((x) => x.id === c.id);
+    expect(selected.clientSelection).toBe("selected");
+    expect(selected.selectionSubmittedAt).toBeTruthy();
   });
 
   it("운영자가 올린 디자인과 완성품 미디어는 고객 승인 액션에 보존된다", () => {

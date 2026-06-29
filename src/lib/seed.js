@@ -1,5 +1,6 @@
 import { defaultBenchmark } from "./ops.js";
 import { defaultChipCatalog } from "./chips.js";
+import { styleSeedData } from "./styleSeedData.js";
 
 const TWEEZERS = "/assets/lab-diamond-tweezers.webp";
 const NOIR_VIDEO = "/assets/diamond-noir-white.mp4";
@@ -75,32 +76,7 @@ export function seed() {
         status: "CAD", owner: "Operations", queryCode: "H3WT-8RVK", selectedDiamondId: null,
         requiredDate: "2026-07-30", internalNotes: "Multi-stone — melee spec confirmed", createdAt: "2026-06-05T10:20:00.000Z" },
     ],
-    opsStyles: [
-      { id: "RING-001", category: "ring", subcategory: "engagementRing", coverImage: "/assets/lineup-ring.png", mediaComplete: true,
-        metalOptions: ["18kw", "18ky", "pt"], estWeightG: 4.2, laborUsd: 85, leadDays: 10,
-        availableForSale: true, published: true, supplierEvidence: "Supplier quote 2026-05", firstQuoteAt: "2026-05-10",
-        name: { ko: "솔리테어 링 (6프롱)", en: "Solitaire Ring (6-prong)", zh: "六爪单钻戒", es: "Anillo solitario (6 garras)" } },
-      { id: "RING-002", category: "ring", subcategory: "weddingBand", coverImage: "/assets/lineup-band.png", mediaComplete: true,
-        metalOptions: ["18kw", "18ky", "18kr"], estWeightG: 3.8, laborUsd: 110, leadDays: 12,
-        availableForSale: true, published: true, supplierEvidence: "", firstQuoteAt: "2026-05-12",
-        name: { ko: "이터니티 밴드", en: "Eternity Band", zh: "永恒排钻戒", es: "Anillo Eternity" } },
-      { id: "NECK-001", category: "necklace", subcategory: "pendant", coverImage: "/assets/lineup-pendant.png", mediaComplete: true,
-        metalOptions: ["18ky", "18kw", "pt"], estWeightG: 4.2, laborUsd: 75, leadDays: 10,
-        availableForSale: true, published: true, supplierEvidence: "Manual example spec", firstQuoteAt: "2026-05-15",
-        name: { ko: "솔리테어 펜던트", en: "Solitaire Pendant", zh: "单钻吊坠", es: "Colgante solitario" } },
-      { id: "EARR-001", category: "earrings", subcategory: "studs", coverImage: "/assets/lineup-studs.png", mediaComplete: true,
-        metalOptions: ["14ky", "18ky", "18kw"], estWeightG: 2.4, laborUsd: 70, leadDays: 9,
-        availableForSale: true, published: true, supplierEvidence: "", firstQuoteAt: "2026-05-18",
-        name: { ko: "클래식 스터드", en: "Classic Studs", zh: "经典耳钉", es: "Aretes clásicos" } },
-      { id: "BRAC-001", category: "bangle", subcategory: "tennisBracelet", coverImage: "/assets/lineup-bracelet.png", mediaComplete: true,
-        metalOptions: ["18kw", "18ky"], estWeightG: 9.6, laborUsd: 160, leadDays: 14,
-        availableForSale: true, published: true, supplierEvidence: "", firstQuoteAt: "2026-05-20",
-        name: { ko: "테니스 브레이슬릿", en: "Tennis Bracelet", zh: "Tennis 手链", es: "Pulsera tenis" } },
-      { id: "RING-003", category: "ring", subcategory: "statementRing", coverImage: "/assets/freestyle-trump.mp4", mediaComplete: false,
-        metalOptions: ["18kw"], estWeightG: 5.0, laborUsd: 240, leadDays: 18,
-        availableForSale: true, published: true, supplierEvidence: "Custom cutting demo", firstQuoteAt: "2026-06-01",
-        name: { ko: "프리스타일 커스텀 커팅", en: "Freestyle Custom Cut", zh: "自由定制切割", es: "Talla personalizada" } },
-    ],
+    opsStyles: styleSeedData,
     styleSpecs: [
       { id: "SPEC-000001", styleId: "NECK-001", metal: "18ky", size: "18in", centerStoneSpec: "standard center stone",
         estWeightG: 4.2, variancePct: 6, laborUsd: 75, materialsUsd: 30, status: "approved", evidence: "supplier quote 2026-05-15" },

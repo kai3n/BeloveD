@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { resetDB, addUser, findUserByEmail, findUserByAccessCode, genAccessCode } from "../store.js";
+import {
+  resetDB, addUser, findUserByEmail, findUserByAccessCode, genAccessCode,
+  listOpsOrders, portalView,
+} from "../store.js";
 
 beforeEach(() => resetDB());
 
@@ -28,5 +31,39 @@ describe("역할별 인증 — 벤더 접근 코드", () => {
   it("이메일 조회는 코드와 별개 — 고객은 이메일로만", () => {
     expect(findUserByEmail("customer@demo.com")?.role).toBe("customer");
     expect(findUserByAccessCode("customer@demo.com")).toBeNull();
+  });
+});
+
+describe("고객 포털 권한 — 게스트 / 회원 / 어드민 분리", () => {
+  it("게스트는 주문 ID와 조회 코드가 모두 맞을 때만 주문을 볼 수 있다", () => {
+    expect(portalView("DM-000001", { queryCode: " qx7k-m9p2 " })?.order.id).toBe("DM-000001");
+    expect(portalView("DM-000001", { queryCode: "WRONG-CODE" })).toBeNull();
+    expect(portalView("DM-000001", {})).toBeNull();
+  });
+
+  it("로그인 회원은 자기 주문만 조회하고, 조회 코드로 남의 주문을 우회할 수 없다", () => {
+    expect(portalView("DM-000001", { customerId: "u-customer" })?.order.id).toBe("DM-000001");
+    expect(portalView("DM-000002", { customerId: "u-customer", queryCode: "H3WT-8RVK" })).toBeNull();
+    expect(portalView("DM-000001", { customerId: "u-admin", queryCode: "WRONG-CODE" })).toBeNull();
+  });
+
+  it("어드민은 정확한 조회 코드가 있을 때 고객 포털을 미리 볼 수 있다", () => {
+    expect(portalView("DM-000001", { customerId: "u-admin", queryCode: "QX7K-M9P2" })?.order.id).toBe("DM-000001");
+  });
+
+  it("회원 마이페이지 목록은 customerId 소유 주문만 반환한다", () => {
+    const ownOrders = listOpsOrders({ customerId: "u-customer" });
+    expect(ownOrders.map((order) => order.id)).toEqual(["DM-000001"]);
+    expect(ownOrders.every((order) => order.customerId === "u-customer")).toBe(true);
+  });
+
+  it("고객 포털 projection은 내부 운영 필드를 노출하지 않는다", () => {
+    const view = portalView("DM-000001", { customerId: "u-customer" });
+    expect(view.order.queryCode).toBeUndefined();
+    expect(view.order.internalNotes).toBeUndefined();
+    expect(view.order.owner).toBeUndefined();
+    expect(view.candidates.every((candidate) => candidate.procurementCostUsd === undefined)).toBe(true);
+    expect(view.candidates.every((candidate) => candidate.supplierId === undefined)).toBe(true);
+    expect(view.candidates.every((candidate) => candidate.internalNotes === undefined)).toBe(true);
   });
 });

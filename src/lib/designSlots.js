@@ -1,3 +1,8 @@
+const BEZEL_BRACELET_SAMPLE_MEDIA = {
+  kind: "image",
+  src: "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/BCGTXBR07076/medium/BCGTXBR07076-RG-RB-WH-811-M0.jpg",
+};
+
 export const DESIGN_CATEGORIES = [
   {
     key: "ring",
@@ -37,7 +42,7 @@ export const DESIGN_CATEGORIES = [
       { kind: "image", src: "/assets/lineup-bracelet.png" },
       { kind: "video", src: "/assets/diamond-noir-white.mp4" },
       { kind: "image", src: "/assets/lineup-bracelet.png" },
-      { kind: "image", src: "/assets/lab-diamond-tweezers.webp" },
+      BEZEL_BRACELET_SAMPLE_MEDIA,
     ],
     names: ["Tennis Bracelet", "Diamond Bangle", "Half Tennis Bracelet", "Bezel Bracelet"],
   },
@@ -169,6 +174,10 @@ function cleanMediaList(items) {
 
 export function styleMediaGallery(style, category, index = 0) {
   const explicitMedia = Array.isArray(style.media) && style.media.length > 0 ? style.media : [];
+  if (explicitMedia.length > 0) {
+    return cleanMediaList(explicitMedia);
+  }
+
   const coverMedia = style.coverImage
     ? [{ kind: style.coverImage.endsWith(".mp4") ? "video" : "image", src: style.coverImage }]
     : [];
@@ -209,7 +218,7 @@ export function styleSubcategoryKey(style) {
 
 export function designCategoryCards(styles, category, locale, pickI18n, options = {}) {
   const { fillSlots = true } = options;
-  const realStyles = styles.filter((style) => style.category === category.key).slice(0, 5);
+  const realStyles = styles.filter((style) => style.category === category.key);
   const cards = realStyles.map((style, index) => {
     const mediaItems = styleMediaGallery(style, category, index);
     return {
@@ -253,7 +262,7 @@ export function designCategoryCards(styles, category, locale, pickI18n, options 
     });
   }
 
-  return cards.slice(0, 5);
+  return cards;
 }
 
 export function getDesignSlotStyle(id) {

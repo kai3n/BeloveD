@@ -4,7 +4,8 @@ import {
   reviewCandidate, publishCandidate, toggleShortlist, requestStockConfirm, submitStockConfirm, lockSelectedCandidate, lockCandidate, createQuote, sendQuote,
   acceptQuote, markDepositReceived, addCadVersion, decideCad, listMilestones, recordActualWeight,
   portalView, listCadReviews, dailyChecklist, setCandidateAvailability, listCandidates, listProcurements,
-  createProxyDiamondCandidate, listCustomerActions, publishFinalMedia, confirmFinal,
+  createProxyDiamondCandidate, listCustomerActions, publishFinalMedia, confirmFinal, respondCustomerAction,
+  rejectDiamondCandidates, rejectFinalConfirmation, createCustomerAction,
 } from "../store.js";
 
 beforeEach(() => resetDB());
@@ -30,7 +31,19 @@ describe("ops store — 매뉴얼 풀 플로우", () => {
     ]);
     publishCandidate(a.id, 1100); publishCandidate(b.id, 1200);
     toggleShortlist(a.id, "customer");
+    expect(listCustomerActions("DM-000001", true).some((action) => action.type === "diamondSelection")).toBe(true);
     requestStockConfirm("DM-000001", "customer");
+    expect(listCandidates({ orderId: "DM-000001" }).find((c) => c.id === a.id).selectionSubmittedAt).toBeTruthy();
+    expect(listCustomerActions("DM-000001", true).some((action) => action.type === "diamondSelection")).toBe(false);
+    expect(listCustomerActions("DM-000001").find((action) => action.type === "diamondSelection")).toMatchObject({
+      status: "done",
+      decision: "submitted",
+      response: "submitted",
+    });
+    expect(listMilestones("DM-000001").find((m) => m.stage === "diamondLocked")).toMatchObject({
+      status: "inProgress",
+      publishToClient: false,
+    });
     requestStockConfirm("DM-000001", "customer"); // 재요청 — 중복 발행 금지
     const open = listProcurements({ orderId: "DM-000001" }).filter((p) => p.type === "stockConfirm" && p.status === "open");
     expect(open.length).toBe(1);
@@ -46,10 +59,15 @@ describe("ops store — 매뉴얼 풀 플로우", () => {
     requestStockConfirm("DM-000001", "customer");
     const sc = listProcurements({ orderId: "DM-000001" }).find((p) => p.type === "stockConfirm" && p.diamondId === cand.id);
     submitStockConfirm(sc.id, true);
+    expect(listCustomerActions("DM-000001", true).find((action) => action.type === "diamondSelection")).toMatchObject({
+      prompt: "Confirm the stock-checked diamond",
+      status: "open",
+    });
     lockSelectedCandidate(cand.id, "customer");
     const order = getOpsOrder("DM-000001");
     expect(order.selectedDiamondId).toBe(cand.id);
     expect(order.status).toBe("QUOTATION");
+    expect(listCustomerActions("DM-000001", true).some((action) => action.type === "diamondSelection")).toBe(false);
     expect(listMilestones("DM-000001").find((m) => m.stage === "diamondLocked").status).toBe("done");
   });
 
@@ -107,6 +125,27 @@ describe("ops store — 매뉴얼 풀 플로우", () => {
     expect(c.waitingClient).toContain("DM-000002");
     expect(c.lowCandidates).toContain("DM-000001"); // published 2 < 3
   });
+
+  it("공개된 다이아 후보가 없으면 고객 포털에서 선택 액션을 숨긴다", () => {
+    const { order } = createIntake({
+      name: "No Candidate",
+      contact: "none@example.com",
+      productLine: "solitaire",
+      category: "ring",
+      subcategory: "engagementRing",
+      styleId: "RING-001",
+      metal: "18kw",
+      conditional: { ringSize: "6" },
+      stonePrefs: { shape: "princess", carat: 1.5, color: "E", clarity: "VS1", growth: "CVD", lab: "IGI" },
+      termsAccepted: true,
+    });
+    createCustomerAction(order.id, { type: "diamondSelection", prompt: "stale selection action" });
+
+    const view = portalView(order.id, { queryCode: order.queryCode });
+    expect(view.candidates).toHaveLength(0);
+    expect(view.actions.some((a) => a.type === "diamondSelection")).toBe(false);
+    expect(listProcurements({ orderId: order.id }).some((p) => p.type === "diamondCandidates")).toBe(true);
+  });
 });
 
 describe("ops store — 운영자 프록시 고객 컨펌 플로우", () => {
@@ -160,6 +199,16 @@ describe("ops store — 운영자 프록시 고객 컨펌 플로우", () => {
     const view = portalView(order.id, { queryCode: order.queryCode });
     expect(view.actions[0].type).toBe("diamondSelection");
     expect(view.candidates.find((c) => c.id === candidate.id).media).toHaveLength(5);
+
+    const secondCandidate = createProxyDiamondCandidate(order.id, {
+      shape: "round",
+      carat: "1",
+      color: "E",
+      clarity: "VS1",
+      media: mediaSix,
+    }, "ops");
+    expect(secondCandidate.media).toHaveLength(5);
+    expect(portalView(order.id, { queryCode: order.queryCode }).candidates.find((c) => c.id === secondCandidate.id).media).toHaveLength(5);
   });
 
   it("디자인 초안 재업로드는 이전 CAD 고객 액션을 닫고 최신 버전만 고객에게 대기시킨다", () => {
@@ -190,6 +239,57 @@ describe("ops store — 운영자 프록시 고객 컨펌 플로우", () => {
     const view = portalView("DM-000002", { queryCode: "H3WT-8RVK" });
     expect(view.cad.version).toBe(2);
     expect(view.actions.filter((a) => a.type === "cadReview")).toHaveLength(1);
+  });
+
+  it("고객 액션 반려는 사유와 최대 5개 첨부를 저장한다", () => {
+    const action = listCustomerActions("DM-000002", true).find((a) => a.type === "cadReview");
+    const rejected = respondCustomerAction(action.id, {
+      decision: "rejected",
+      reason: "Make the prongs lower and soften the side profile.",
+      attachments: mediaSix,
+    }, "customer");
+
+    expect(rejected.status).toBe("rejected");
+    expect(rejected.decision).toBe("rejected");
+    expect(rejected.rejectionReason).toBe("Make the prongs lower and soften the side profile.");
+    expect(rejected.responseAttachments).toHaveLength(5);
+    expect(listCustomerActions("DM-000002", true).filter((a) => a.type === "cadReview")).toHaveLength(0);
+  });
+
+  it("고객이 다이아 후보를 반려하면 선택 상태를 비우고 반려 사유를 주문에 남긴다", () => {
+    const { order } = createIntake({
+      name: "Reject Stone",
+      contact: "reject@example.com",
+      productLine: "solitaire",
+      category: "ring",
+      styleId: "RING-001",
+      metal: "18kw",
+      conditional: { ringSize: "6" },
+      termsAccepted: true,
+    });
+    const candidate = createProxyDiamondCandidate(order.id, {
+      shape: "round",
+      carat: "1.1",
+      color: "F",
+      clarity: "VS1",
+      media: mediaSix,
+    }, "ops");
+    toggleShortlist(candidate.id, "customer");
+
+    const rejected = rejectDiamondCandidates(order.id, {
+      reason: "Please send more elongated options.",
+      attachments: mediaSix,
+    }, "customer");
+
+    expect(rejected.status).toBe("rejected");
+    expect(rejected.rejectionReason).toBe("Please send more elongated options.");
+    expect(rejected.responseAttachments).toHaveLength(5);
+    expect(listCandidates({ orderId: order.id }).every((c) => c.clientSelection === "none")).toBe(true);
+    expect(getOpsOrder(order.id).status).toBe("STONE_SELECTION");
+    expect(listMilestones(order.id).find((m) => m.stage === "diamondLocked")).toMatchObject({
+      status: "blocked",
+      publishToClient: true,
+    });
   });
 
   it("완성품 프록시 업로드는 최종 컨펌 액션과 공개 마일스톤을 만들고 고객 컨펌 후 BALANCE로 이동한다", () => {
@@ -225,5 +325,28 @@ describe("ops store — 운영자 프록시 고객 컨펌 플로우", () => {
     confirmFinal("DM-000002", "customer");
     expect(second.status).toBe("done");
     expect(getOpsOrder("DM-000002").status).toBe("BALANCE");
+  });
+
+  it("완성품 컨펌 반려는 QC 상태로 유지하고 반려 첨부를 보존한다", () => {
+    publishFinalMedia("DM-000002", {
+      media: mediaSix,
+      note: "Final QC video and photos are ready.",
+      cert: "IGI inscription verified.",
+      actualWeightG: "4.4",
+    }, "ops");
+
+    const rejected = rejectFinalConfirmation("DM-000002", {
+      reason: "The polish near the clasp needs another pass.",
+      attachments: mediaSix,
+    }, "customer");
+
+    expect(rejected.status).toBe("rejected");
+    expect(rejected.rejectionReason).toBe("The polish near the clasp needs another pass.");
+    expect(rejected.responseAttachments).toHaveLength(5);
+    expect(getOpsOrder("DM-000002").status).toBe("QC");
+    expect(listMilestones("DM-000002").find((m) => m.stage === "finalQcVideo")).toMatchObject({
+      status: "blocked",
+      publishToClient: true,
+    });
   });
 });

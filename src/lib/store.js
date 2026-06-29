@@ -1,4 +1,5 @@
 import { seed } from "./seed.js";
+import { styleSeedData } from "./styleSeedData.js";
 import { maskContacts } from "./masking.js";
 import { validateAnnotation } from "./chips.js";
 import {
@@ -7,7 +8,7 @@ import {
   autoBrief, candidateAutoPrice, isCandidateComplete, poolStoneMatches,
 } from "./ops.js";
 
-const KEY = "lumina-db-v12"; // v12: 무거운 이미지 webp 전환(시드 경로 .png→.webp) — 재시드 필요
+const KEY = "lumina-db-v14"; // v14: 이미지 없는 CSV 스타일 제거 + 원본 미디어 재동기화
 
 // 테스트(node) 환경 폴백
 const memoryStorage = (() => {
@@ -18,6 +19,127 @@ const storage = typeof localStorage !== "undefined" ? localStorage : memoryStora
 
 let cache = null;
 const listeners = new Set();
+const GENERATED_STYLE_MEDIA_PREFIX = "/assets/product-styles/";
+const STYLE_MEDIA_AUDIT_VERSION = "original-product-media-v6";
+const STYLE_COPY_AUDIT_VERSION = "seed-style-copy-v3";
+const REMOVED_DUPLICATE_SEED_STYLE_IDS = new Set([
+  "RING-008",
+  "RING-010",
+  "RING-011",
+  "RING-012",
+  "RING-013",
+  "RING-014",
+  "BAND-002",
+]);
+const STYLE_COPY_FIELDS = [
+  "category",
+  "subcategory",
+  "supplierEvidence",
+  "firstQuoteAt",
+  "name",
+  "detailLabel",
+  "description",
+  "flexibleText",
+  "beforeProductionText",
+];
+const seedStyleMediaById = new Map(
+  styleSeedData.map((style) => [
+    style.id,
+    {
+      coverImage: style.coverImage,
+      media: Array.isArray(style.media) ? style.media.map((item) => ({ ...item })) : [],
+      mediaComplete: style.mediaComplete,
+    },
+  ]),
+);
+const seedStyleCopyById = new Map(
+  styleSeedData.map((style) => [
+    style.id,
+    STYLE_COPY_FIELDS.reduce((copy, field) => ({ ...copy, [field]: style[field] }), {}),
+  ]),
+);
+const seedStyleIds = new Set(styleSeedData.map((style) => style.id));
+
+function cloneValue(value) {
+  return value && typeof value === "object" ? JSON.parse(JSON.stringify(value)) : value;
+}
+
+function sameValue(current, next) {
+  return JSON.stringify(current ?? null) === JSON.stringify(next ?? null);
+}
+
+function hasGeneratedStyleMedia(style) {
+  const media = Array.isArray(style?.media) ? style.media : [];
+  return String(style?.coverImage || "").includes(GENERATED_STYLE_MEDIA_PREFIX)
+    || media.some((item) => String(item?.src || "").includes(GENERATED_STYLE_MEDIA_PREFIX));
+}
+
+function hasLocalFallbackStyleMedia(style) {
+  const media = Array.isArray(style?.media) ? style.media : [];
+  return String(style?.coverImage || "").startsWith("/assets/lineup-")
+    || media.some((item) => String(item?.src || "").startsWith("/assets/lineup-"));
+}
+
+function isRemovedSeedStyle(style) {
+  return REMOVED_DUPLICATE_SEED_STYLE_IDS.has(style?.id)
+    || (!seedStyleIds.has(style?.id) && (
+      style?.supplierEvidence === "CSV style import"
+      || hasGeneratedStyleMedia(style)
+      || hasLocalFallbackStyleMedia(style)
+    ));
+}
+
+function sameMediaSources(current = [], next = []) {
+  const currentSources = (Array.isArray(current) ? current : []).map((item) => item?.src || "");
+  const nextSources = (Array.isArray(next) ? next : []).map((item) => item?.src || "");
+  return currentSources.length === nextSources.length
+    && currentSources.every((src, index) => src === nextSources[index]);
+}
+
+function restoreOriginalStyleMedia(d, force = false) {
+  if (!Array.isArray(d?.opsStyles)) return false;
+  let changed = false;
+  if (force) {
+    const filtered = d.opsStyles.filter((style) => !isRemovedSeedStyle(style));
+    if (filtered.length !== d.opsStyles.length) {
+      d.opsStyles = filtered;
+      changed = true;
+    }
+  }
+  d.opsStyles = d.opsStyles.map((style) => {
+    const seedMedia = seedStyleMediaById.get(style.id);
+    const shouldRestore = force
+      || hasGeneratedStyleMedia(style)
+      || !sameMediaSources(style.media, seedMedia?.media);
+    if (!seedMedia?.media?.length || !shouldRestore) return style;
+    changed = true;
+    return {
+      ...style,
+      coverImage: seedMedia.coverImage,
+      media: seedMedia.media.map((item) => ({ ...item })),
+      mediaComplete: seedMedia.mediaComplete,
+    };
+  });
+  return changed;
+}
+
+function restoreSeedStyleCopy(d, force = false) {
+  if (!force || !Array.isArray(d?.opsStyles)) return false;
+  let changed = false;
+  d.opsStyles = d.opsStyles.map((style) => {
+    const seedCopy = seedStyleCopyById.get(style.id);
+    if (!seedCopy) return style;
+    const nextStyle = { ...style };
+    STYLE_COPY_FIELDS.forEach((field) => {
+      if (!sameValue(nextStyle[field], seedCopy[field])) {
+        nextStyle[field] = cloneValue(seedCopy[field]);
+        changed = true;
+      }
+    });
+    return nextStyle;
+  });
+  return changed;
+}
 
 // 저장된 DB가 현재 스키마와 맞는지 검사 — 깨진/구버전 데이터면 재시드
 function isValidDB(d) {
@@ -33,6 +155,98 @@ function isValidDB(d) {
   );
 }
 
+function migrateDB(d) {
+  let changed = false;
+
+  const shouldAuditStyleMedia = d?.settings?.styleMediaAuditVersion !== STYLE_MEDIA_AUDIT_VERSION;
+  if (restoreOriginalStyleMedia(d, shouldAuditStyleMedia)) {
+    changed = true;
+  }
+  if (shouldAuditStyleMedia && d?.settings) {
+    d.settings.styleMediaAuditVersion = STYLE_MEDIA_AUDIT_VERSION;
+    changed = true;
+  }
+  const shouldAuditStyleCopy = d?.settings?.styleCopyAuditVersion !== STYLE_COPY_AUDIT_VERSION;
+  if (restoreSeedStyleCopy(d, shouldAuditStyleCopy)) {
+    changed = true;
+  }
+  if (shouldAuditStyleCopy && d?.settings) {
+    d.settings.styleCopyAuditVersion = STYLE_COPY_AUDIT_VERSION;
+    changed = true;
+  }
+
+  // v13 hotfix: operator-proxy diamond candidates are published for the
+  // customer to choose, but older records marked them as already stock-confirmed.
+  // That combination leaves the customer with a visible card and a disabled
+  // Select button. Keep already-selected/locked stones intact.
+  if (Array.isArray(d?.diamondCands)) {
+    d.diamondCands.forEach((candidate) => {
+      const order = d.opsOrders?.find((item) => item.id === candidate.orderId);
+      const unchosenProxyCandidate = candidate.prId == null
+        && candidate.published === true
+        && candidate.stockConfirmed === true
+        && candidate.clientSelection !== "selected"
+        && !candidate.locked
+        && !order?.selectedDiamondId;
+      if (unchosenProxyCandidate) {
+        candidate.stockConfirmed = false;
+        changed = true;
+      }
+    });
+  }
+
+  // v14 hotfix: once a customer submits a diamond choice for stock
+  // confirmation, the original "choose a diamond" action is no longer the
+  // customer's turn. Older localStorage data left that action open, so admin
+  // still showed "Customer turn" while the customer portal correctly said
+  // BeloveD was confirming the stone.
+  if (Array.isArray(d?.diamondCands) && Array.isArray(d?.customerActions)) {
+    const submittedStockCheckOrders = new Set(
+      d.diamondCands
+        .filter((candidate) => candidate.clientSelection === "selected"
+          && candidate.selectionSubmittedAt
+          && !candidate.stockConfirmed
+          && !candidate.locked)
+        .map((candidate) => candidate.orderId),
+    );
+    d.customerActions.forEach((action) => {
+      if (action.type !== "diamondSelection" || action.status !== "open" || !submittedStockCheckOrders.has(action.orderId)) return;
+      action.status = "done";
+      action.decision = "submitted";
+      action.response = "submitted";
+      action.respondedAt = action.respondedAt || new Date().toISOString();
+      changed = true;
+    });
+    submittedStockCheckOrders.forEach((orderId) => {
+      let milestone = d.milestones?.find((item) => item.orderId === orderId && item.stage === "diamondLocked");
+      if (!Array.isArray(d.milestones)) d.milestones = [];
+      if (!milestone) {
+        milestone = {
+          id: `M-${orderId}-${String(MILESTONE_STAGES.indexOf("diamondLocked") + 1).padStart(2, "0")}`,
+          orderId,
+          stage: "diamondLocked",
+          status: "pending",
+          clientUpdate: "",
+          clientAction: "",
+          link: "",
+          publishToClient: false,
+          at: new Date().toISOString(),
+        };
+        d.milestones.push(milestone);
+      }
+      if (!["done", "inProgress"].includes(milestone.status)) {
+        milestone.status = "inProgress";
+        milestone.publishToClient = false;
+        milestone.clientUpdate = milestone.clientUpdate || "Customer selection submitted; confirming stock.";
+        milestone.at = new Date().toISOString();
+        changed = true;
+      }
+    });
+  }
+
+  return changed;
+}
+
 function db() {
   if (!cache) {
     storage.removeItem("lumina-db-v1");
@@ -46,6 +260,8 @@ function db() {
     storage.removeItem("lumina-db-v9");
     storage.removeItem("lumina-db-v10");
     storage.removeItem("lumina-db-v11");
+    storage.removeItem("lumina-db-v12");
+    storage.removeItem("lumina-db-v13");
     let parsed = null;
     try {
       const raw = storage.getItem(KEY);
@@ -54,6 +270,7 @@ function db() {
       parsed = null;
     }
     cache = isValidDB(parsed) ? parsed : seed();
+    migrateDB(cache);
     storage.setItem(KEY, JSON.stringify(cache));
   }
   return cache;
@@ -94,6 +311,29 @@ function normalizeOrderMedia(media = []) {
       ...(m.optimized ? { optimized: true } : {}),
       ...(m.transient ? { transient: true } : {}),
     }));
+}
+
+function normalizeActionResponse(response) {
+  if (response && typeof response === "object" && !Array.isArray(response)) {
+    const decision = response.decision || response.status || "submitted";
+    const reason = maskContacts(response.reason || response.feedback || "");
+    const value = maskContacts(response.value || response.response || reason || decision);
+    return {
+      status: decision === "rejected" ? "rejected" : "done",
+      decision,
+      value,
+      reason,
+      attachments: normalizeOrderMedia(response.attachments || response.media || []),
+    };
+  }
+  const value = maskContacts(response || "");
+  return {
+    status: "done",
+    decision: value || "submitted",
+    value,
+    reason: "",
+    attachments: [],
+  };
 }
 
 function normalizeMessageChannel(channel) {
@@ -715,7 +955,7 @@ export function createProxyDiamondCandidate(orderId, payload, actor = "ops") {
     published: true,
     customerPriceUsd: Number(payload.customerPriceUsd) || candidateAutoPrice(benchmarkFor(shape, carat)?.unitUsdPerCt || 320, carat, db().settings.opsMultiplier),
     clientSelection: "none",
-    stockConfirmed: true,
+    stockConfirmed: false,
     locked: false,
     createdAt: now(),
   };
@@ -762,49 +1002,68 @@ export function setCandidateAvailability(diaId, availability) {
   if (availability === "sold") c.published = false; // 매뉴얼 §13: Sold는 즉시 비공개
   persist();
 }
-// ④ 다중선택: 찜 토글 (PR/락 없음). 여러 후보를 동시에 찜할 수 있다.
+// ④ 고객 후보 선택. 최종 락 전까지는 고객 선택 상태만 저장한다.
 export function toggleShortlist(diaId, actor) {
   const c = getCandidate(diaId);
   const order = getOpsOrder(c.orderId);
   if (order.selectedDiamondId) return c; // 이미 락된 주문
   if (c.clientSelection === "selected") {
     c.clientSelection = "none";
+    c.selectionSubmittedAt = "";
     audit(actor, "diamond", diaId, "clientSelection", "selected", "none");
   } else {
-    // 매뉴얼 §13: 무효 후보(비공개·품절·배치 만료)는 찜 차단
+    // 매뉴얼 §13: 무효 후보(비공개·품절·배치 만료)는 선택 차단
     const pr = c.prId ? getProcurement(c.prId) : null;
     const expired = pr?.batchValidUntil && pr.batchValidUntil < today();
     if (!c.published || c.availability !== "available" || expired) throw new Error("notSelectable");
     c.clientSelection = "selected";
+    c.selectionSubmittedAt = "";
     audit(actor, "diamond", diaId, "clientSelection", "none", "selected");
   }
   persist();
   return c;
 }
 
-// 찜한 후보들의 벤더에게 재고확인 일괄 발행 (이미 열린 건 건너뜀)
+// 고객이 제출한 후보들의 벤더에게 재고확인 일괄 발행 (이미 열린 건 건너뜀)
 export function requestStockConfirm(orderId, actor) {
   const open = new Set(listProcurements({ orderId }).filter((p) => p.type === "stockConfirm" && p.status === "open").map((p) => p.diamondId));
-  listCandidates({ orderId }).filter((c) => c.clientSelection === "selected" && !c.stockConfirmed && !open.has(c.id))
+  const selected = listCandidates({ orderId }).filter((c) => c.clientSelection === "selected" && !c.stockConfirmed);
+  selected.forEach((c) => {
+    c.selectionSubmittedAt = c.selectionSubmittedAt || now();
+  });
+  selected.filter((c) => !open.has(c.id))
     .forEach((c) => createProcurement(orderId, { type: "stockConfirm", supplierId: c.supplierId, dueDate: plusDays(2), brief: c.igiNo, diamondId: c.id }, actor || "customer"));
+  if (selected.length > 0) {
+    listCustomerActions(orderId, true)
+      .filter((action) => action.type === "diamondSelection")
+      .forEach((action) => respondCustomerAction(action.id, { decision: "submitted" }, actor || "customer"));
+    upsertMilestone(orderId, "diamondLocked", {
+      status: "inProgress",
+      publishToClient: false,
+      clientUpdate: "Customer selection submitted; confirming stock.",
+    });
+  }
   persist();
 }
 
-// 확인된 찜 후보 중 하나를 최종 락 (→ QUOTATION). 디파짓은 운영자 수동 확인.
+// 확인된 고객 선택 후보 중 하나를 최종 락 (→ QUOTATION). 디파짓은 운영자 수동 확인.
 export function lockSelectedCandidate(diaId, actor) {
   const c = getCandidate(diaId);
   if (!(c.clientSelection === "selected" && c.stockConfirmed && c.availability === "available")) throw new Error("notLockable");
   audit(actor, "diamond", diaId, "lock", null, "selected");
   lockCandidate(diaId);
-  // 같은 주문의 다른 찜 후보 초기화
+  // 같은 주문의 다른 선택 후보 초기화
   listCandidates({ orderId: c.orderId }).forEach((o) => {
     if (o.id !== diaId && o.clientSelection === "selected") o.clientSelection = "none";
   });
+  listCustomerActions(c.orderId, true)
+    .filter((action) => action.type === "diamondSelection")
+    .forEach((action) => respondCustomerAction(action.id, { decision: "approved", value: diaId }, actor || "customer"));
   persist();
   return c;
 }
 
-// 벤더 재고 확인 응답: 있음 → stockConfirmed(락은 고객이 최종 선택 시), 품절 → sold·비공개·찜 해제
+// 벤더 재고 확인 응답: 있음 → stockConfirmed(락은 고객이 최종 선택 시), 품절 → sold·비공개·선택 해제
 export function submitStockConfirm(prId, available) {
   const pr = getProcurement(prId);
   const c = getCandidate(pr.diamondId);
@@ -817,11 +1076,27 @@ export function submitStockConfirm(prId, available) {
   audit(pr.supplierId, "procurement", prId, "result", null, effective ? "inStock" : (takenByOther ? "takenByOther" : "soldOut"));
   if (effective) {
     c.stockConfirmed = true; // 락은 lockSelectedCandidate에서 (고객 최종 선택)
+    if (!listCustomerActions(c.orderId, true).some((a) => a.type === "diamondSelection")) {
+      createCustomerAction(c.orderId, {
+        type: "diamondSelection",
+        prompt: "Confirm the stock-checked diamond",
+        link: c.image || c.video || "",
+        media: c.media,
+        note: c.clientNote,
+      });
+    }
   } else {
     setCandidateAvailability(c.id, "sold"); // §13: 즉시 비공개 포함
     c.clientSelection = "none";
     c.stockConfirmed = false;
     audit(pr.supplierId, "diamond", c.id, "clientSelection", "selected", "none");
+    if (listCandidates({ orderId: c.orderId, publishedOnly: true }).length > 0
+      && !listCustomerActions(c.orderId, true).some((a) => a.type === "diamondSelection")) {
+      createCustomerAction(c.orderId, {
+        type: "diamondSelection",
+        prompt: "Selected diamond is no longer available. Please choose another candidate.",
+      });
+    }
   }
   persist();
   return pr;
@@ -1042,13 +1317,14 @@ export function addCadVersion(orderId, { fileUrl, media, supplierId, note }) {
   persist();
   return review;
 }
-export function decideCad(reviewId, { decision, feedback, annotations, annotatedSrc, confirmedMeasurements }, actor) {
+export function decideCad(reviewId, { decision, feedback, annotations, annotatedSrc, confirmedMeasurements, attachments }, actor) {
   const r = db().cadReviews.find((x) => x.id === reviewId);
   r.decision = decision;
   r.feedback = (feedback || []).map((f) => maskContacts(f)).filter(Boolean);
   r.annotations = (annotations || []).filter((a) => validateAnnotation(a, db().chipCatalog));
   r.annotatedSrc = annotatedSrc || ""; // 핀이 찍힌 정지 이미지 — 벤더에게 같은 캔버스로 전달
   r.confirmedMeasurements = confirmedMeasurements || "";
+  r.responseAttachments = normalizeOrderMedia(attachments || []);
   r.decidedAt = now();
   r.feeAppliedUsd = 0;
   audit(actor, "cad", reviewId, "decision", null, decision);
@@ -1095,7 +1371,8 @@ export function createCustomerAction(orderId, { type, prompt, link, dueDate, med
   const action = {
     id: nextSeqId("CA"), orderId, type, prompt: prompt || "", link: link || "",
     media: normalizeOrderMedia(media || []), note: maskContacts(note || ""),
-    dueDate: dueDate || null, status: "open", response: null, respondedAt: null, createdAt: now(),
+    dueDate: dueDate || null, status: "open", response: null, decision: null,
+    rejectionReason: "", responseAttachments: [], respondedAt: null, createdAt: now(),
   };
   db().customerActions.push(action);
   persist();
@@ -1103,36 +1380,86 @@ export function createCustomerAction(orderId, { type, prompt, link, dueDate, med
 }
 export function respondCustomerAction(actionId, response, actor) {
   const a = db().customerActions.find((x) => x.id === actionId);
-  a.status = "done";
-  a.response = maskContacts(response || "");
+  const oldStatus = a.status;
+  const normalized = normalizeActionResponse(response);
+  a.status = normalized.status;
+  a.response = normalized.value;
+  a.decision = normalized.decision;
+  a.rejectionReason = normalized.reason;
+  a.responseAttachments = normalized.attachments;
   a.respondedAt = now();
-  audit(actor, "customerAction", actionId, "status", "open", "done");
+  audit(actor, "customerAction", actionId, "status", oldStatus, a.status);
   persist();
   return a;
+}
+
+export function rejectDiamondCandidates(orderId, { reason, attachments } = {}, actor = "customer") {
+  const a = db().customerActions.find((x) => x.orderId === orderId && x.type === "diamondSelection" && x.status === "open");
+  if (!a) return null;
+  listCandidates({ orderId }).forEach((c) => {
+    c.clientSelection = "none";
+    c.selectionSubmittedAt = "";
+  });
+  const action = respondCustomerAction(a.id, { decision: "rejected", reason, attachments }, actor);
+  upsertMilestone(orderId, "diamondLocked", {
+    status: "blocked",
+    publishToClient: true,
+    clientUpdate: action.rejectionReason,
+  });
+  updateOpsOrder(orderId, { status: "STONE_SELECTION" }, actor);
+  return action;
 }
 
 // 최종 실물 컨펌 — "이 영상의 실물이 배송됩니다"에 대한 고객 동의. 분쟁 방어 증거.
 export function confirmFinal(orderId, actor) {
   const a = db().customerActions.find((x) => x.orderId === orderId && x.type === "finalConfirmation" && x.status === "open");
   if (!a) return null;
-  respondCustomerAction(a.id, "confirmed", actor);
+  respondCustomerAction(a.id, { decision: "approved", value: "confirmed" }, actor);
   updateOpsOrder(orderId, { status: "BALANCE" }, actor);
   return a;
 }
 
+export function rejectFinalConfirmation(orderId, { reason, attachments } = {}, actor = "customer") {
+  const a = db().customerActions.find((x) => x.orderId === orderId && x.type === "finalConfirmation" && x.status === "open");
+  if (!a) return null;
+  const action = respondCustomerAction(a.id, { decision: "rejected", reason, attachments }, actor);
+  upsertMilestone(orderId, "finalQcVideo", {
+    status: "blocked",
+    publishToClient: true,
+    clientUpdate: action.rejectionReason,
+  });
+  updateOpsOrder(orderId, { status: "QC" }, actor);
+  return action;
+}
+
 // ---------- client portal (보안 프로젝션 적용) ----------
-export function portalView(orderId, { customerId, queryCode } = {}) {
+function normalizePortalCode(code) {
+  return String(code || "").trim().toUpperCase();
+}
+
+export function portalView(orderId, { customerId, queryCode, userRole } = {}) {
   sweepExpiredBatches();
   const order = getOpsOrder(orderId);
   if (!order) return null;
-  const authorized = (customerId && order.customerId === customerId) || (queryCode && order.queryCode === queryCode);
+
+  const hasCustomerSession = Boolean(customerId);
+  const sessionUser = hasCustomerSession ? getUser(customerId) : null;
+  const ownsOrder = hasCustomerSession && order.customerId === customerId;
+  const codeMatches = Boolean(normalizePortalCode(queryCode))
+    && normalizePortalCode(order.queryCode) === normalizePortalCode(queryCode);
+  const guestCodeMatches = !hasCustomerSession && codeMatches;
+  const adminPreviewMatches = (sessionUser?.role === "admin" || userRole === "admin") && codeMatches;
+  const authorized = ownsOrder || guestCodeMatches || adminPreviewMatches;
   if (!authorized) return null;
   const quote = listQuotes(orderId).find((q) => q.status === "sent" || q.status === "accepted") || null;
+  const publishedCandidates = listCandidates({ orderId, publishedOnly: true }).map(publicDiamondView);
+  const visibleActions = listCustomerActions(orderId, true)
+    .filter((action) => action.type !== "diamondSelection" || publishedCandidates.length > 0);
   return {
     order: customerOrderView(order),
     intake: getIntake(order.intakeId),
     style: order.styleId ? getOpsStyle(order.styleId) : null,
-    candidates: listCandidates({ orderId, publishedOnly: true }).map(publicDiamondView),
+    candidates: publishedCandidates,
     selected: order.selectedDiamondId ? publicDiamondView(getCandidate(order.selectedDiamondId)) : null,
     quote: quote && {
       id: quote.id, status: quote.status, estWeightG: quote.estWeightG,
@@ -1145,8 +1472,8 @@ export function portalView(orderId, { customerId, queryCode } = {}) {
 
     freeRevisionsLeft: freeRevisionsLeft(orderId),
     designChangeFeeUsd: db().settings.designChangeFeeUsd,
-    finalAction: listCustomerActions(orderId, true).find((a) => a.type === "finalConfirmation") || null,
-    actions: listCustomerActions(orderId, true),
+    finalAction: visibleActions.find((a) => a.type === "finalConfirmation") || null,
+    actions: visibleActions,
     messages: listOrderMessages(orderId).map(publicConversationMessage),
   };
 }

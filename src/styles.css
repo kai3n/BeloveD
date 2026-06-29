@@ -259,8 +259,11 @@ html[data-theme="day"] .language-control {
 .lang-trigger {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  padding: 6px 2px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 4px;
   border: 0;
   background: transparent;
   color: rgba(245, 247, 251, 0.82);
@@ -297,6 +300,11 @@ html[data-theme="day"] .lang-trigger:hover { color: #17130e; }
   transform-origin: top right;
   pointer-events: none;
   transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.lang-list[hidden],
+.mobile-panel[hidden] {
+  display: none !important;
 }
 
 .lang-menu.drops-up .lang-list {

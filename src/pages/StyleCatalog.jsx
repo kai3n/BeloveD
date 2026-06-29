@@ -51,7 +51,7 @@ function CatalogMediaCarousel({ card }) {
             aria-label="Previous media"
             onClick={(event) => shift(event, -1)}
           >
-            <ChevronLeft size={18} strokeWidth={1.8} />
+            <ChevronLeft size={28} strokeWidth={1.45} />
           </button>
           <button
             type="button"
@@ -59,9 +59,8 @@ function CatalogMediaCarousel({ card }) {
             aria-label="Next media"
             onClick={(event) => shift(event, 1)}
           >
-            <ChevronRight size={18} strokeWidth={1.8} />
+            <ChevronRight size={28} strokeWidth={1.45} />
           </button>
-          <span className="design-media-count">{active + 1}/{mediaItems.length}</span>
         </>
       )}
     </div>
@@ -96,11 +95,11 @@ export default function StyleCatalog() {
     setParams(nextSubcat === "all" ? { category: cat } : { category: cat, subcategory: nextSubcat });
   }
 
-  function categoryNote(category) {
+  function categoryNote(category, count = category.target) {
     if (catalogCopy.categoryNote) {
-      return catalogCopy.categoryNote.replaceAll("{count}", String(category.target));
+      return catalogCopy.categoryNote.replaceAll("{count}", String(count));
     }
-    return p.styleCat.categoryNote?.(category.target) || `${category.target} starter designs.`;
+    return p.styleCat.categoryNote?.(count) || `${count} starter designs.`;
   }
 
   function categoryLabel(category) {
@@ -147,7 +146,7 @@ export default function StyleCatalog() {
             <section className={`catalog-category ${cat !== "all" ? "is-focused" : ""}`} key={category.key}>
               <div className="category-block-head">
                 <h2>{categoryLabel(category)}</h2>
-                <p>{categoryNote(category)}</p>
+                <p>{categoryNote(category, cards.length)}</p>
               </div>
               {cards.length === 0 ? (
                 <p className="empty-note">{p.styleCat.noStyles || p.styleCat.awaitingMedia}</p>

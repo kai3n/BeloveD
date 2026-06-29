@@ -656,18 +656,20 @@ export function MediaPicker({ value, onChange, maxItems = Infinity, showSamples 
   const [busy, setBusy] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef(null);
+  const items = Array.isArray(value) ? value : [];
   const hasLimit = Number.isFinite(maxItems);
-  const remainingSlots = hasLimit ? Math.max(0, maxItems - value.length) : Infinity;
+  const remainingSlots = hasLimit ? Math.max(0, maxItems - items.length) : Infinity;
+  const isFull = hasLimit && remainingSlots <= 0;
 
   function toggleSample(item) {
     if (!showSamples) return;
-    const exists = value.some((m) => m.src === item.src && m.pos === item.pos);
+    const exists = items.some((m) => m.src === item.src && m.pos === item.pos);
     const media = { kind: item.kind, src: item.src, ...(item.pos ? { pos: item.pos } : {}) };
-    if (!exists && value.length >= maxItems) {
+    if (!exists && items.length >= maxItems) {
       setError(p.picker.maxError(maxItems));
       return;
     }
-    onChange(exists ? value.filter((m) => !(m.src === item.src && m.pos === item.pos)) : [...value, media]);
+    onChange(exists ? items.filter((m) => !(m.src === item.src && m.pos === item.pos)) : [...items, media]);
   }
   async function prepareFile(file) {
     const kind = mediaKindFromFile(file);
@@ -699,7 +701,7 @@ export function MediaPicker({ value, onChange, maxItems = Infinity, showSamples 
       else if (failed?.message === "unsupportedType") setError(p.picker.typeError);
       else if (failed) setError(p.picker.optimizeError || p.picker.typeError);
       if (added.length) {
-        onChange([...value, ...added]);
+        onChange([...items, ...added]);
         const compressed = added.filter((item) => item.kind === "image" && item.optimized).length;
         const videoCount = added.filter((item) => item.kind === "video").length;
         setNotice(
@@ -718,6 +720,10 @@ export function MediaPicker({ value, onChange, maxItems = Infinity, showSamples 
   function handleDrop(e) {
     e.preventDefault();
     setDragOver(false);
+    if (isFull) {
+      setError(p.picker.maxError(maxItems));
+      return;
+    }
     addFiles(e.dataTransfer?.files);
   }
 
@@ -734,9 +740,17 @@ export function MediaPicker({ value, onChange, maxItems = Infinity, showSamples 
       />
       <button
         type="button"
-        className={`drop-zone ${dragOver ? "is-over" : ""}`}
+        className={`drop-zone ${dragOver ? "is-over" : ""} ${isFull ? "is-full" : ""}`}
         aria-busy={busy}
-        onClick={() => inputRef.current?.click()}
+        aria-disabled={isFull}
+        disabled={busy}
+        onClick={() => {
+          if (isFull) {
+            setError(p.picker.maxError(maxItems));
+            return;
+          }
+          inputRef.current?.click();
+        }}
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
         onDrop={handleDrop}
@@ -745,15 +759,15 @@ export function MediaPicker({ value, onChange, maxItems = Infinity, showSamples 
           <path d="M12 16V4M12 4l-5 5M12 4l5 5" strokeLinecap="round" strokeLinejoin="round" />
           <path d="M5 20h14" strokeLinecap="round" />
         </svg>
-        <span className="drop-title">{busy ? p.picker.optimizing : p.picker.dropHint}</span>
+        <span className="drop-title">{busy ? p.picker.optimizing : isFull ? p.picker.maxError(maxItems) : p.picker.dropHint}</span>
         <span className="form-hint">
-          {hasLimit ? p.picker.limitHint(value.length, maxItems) : p.picker.dropSub}
+          {hasLimit ? p.picker.limitHint(items.length, maxItems) : p.picker.dropSub}
         </span>
       </button>
-      {value.length > 0 && (
+      {items.length > 0 && (
         previewMode === "list" ? (
-          <div className="picker-list" aria-label={p.picker.attachedLabel || p.picker.hint(value.length)}>
-            {value.map((m, i) => {
+          <div className="picker-list" aria-label={p.picker.attachedLabel || p.picker.hint(items.length)}>
+            {items.map((m, i) => {
               const kindLabel = m.kind === "video" ? p.picker.videoLabel || "Video" : p.picker.photoLabel || "Photo";
               const sizeLabel = formatFileSize(m.size);
               return (
@@ -767,7 +781,7 @@ export function MediaPicker({ value, onChange, maxItems = Infinity, showSamples 
                       </span>
                     )}
                   </div>
-                  <button type="button" className="picker-remove-button" onClick={() => onChange(value.filter((_, j) => j !== i))}>
+                  <button type="button" className="picker-remove-button" onClick={() => onChange(items.filter((_, j) => j !== i))}>
                     {p.picker.removeLabel || "Remove"}
                   </button>
                 </div>
@@ -776,10 +790,10 @@ export function MediaPicker({ value, onChange, maxItems = Infinity, showSamples 
           </div>
         ) : (
           <div className="picker-grid picker-previews">
-            {value.map((m, i) => (
+            {items.map((m, i) => (
               <div key={i} className="picker-cell is-selected">
                 <MediaThumb media={m} alt="" />
-                <button type="button" className="chip remove-media" onClick={() => onChange(value.filter((_, j) => j !== i))}>✕</button>
+                <button type="button" className="chip remove-media" onClick={() => onChange(items.filter((_, j) => j !== i))}>✕</button>
               </div>
             ))}
           </div>
@@ -791,7 +805,7 @@ export function MediaPicker({ value, onChange, maxItems = Infinity, showSamples 
           <p className="form-hint">{p.picker.sampleToggle}</p>
           <div className="picker-grid picker-samples-grid">
             {SAMPLE_LIBRARY.map((item, i) => {
-              const selected = value.some((m) => m.src === item.src && m.pos === item.pos);
+              const selected = items.some((m) => m.src === item.src && m.pos === item.pos);
               return (
                 <button type="button" key={i} className={`picker-cell ${selected ? "is-selected" : ""}`} onClick={() => toggleSample(item)}>
                   <MediaThumb media={item} alt={p.picker.labels[item.labelKey]} />
@@ -802,7 +816,7 @@ export function MediaPicker({ value, onChange, maxItems = Infinity, showSamples 
           </div>
         </>
       )}
-      {notice && !error && <p className="form-hint">{notice}</p>}
+      {notice && !error && <p className="form-hint" role="status">{notice}</p>}
       {error && <p className="form-error">{error}</p>}
     </div>
   );

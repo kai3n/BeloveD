@@ -17,7 +17,7 @@ describe("design slot cards", () => {
     expect(cards[0].media).toEqual(cards[0].mediaItems[0]);
   });
 
-  it("keeps uploaded style media as a gallery for catalog cards", () => {
+  it("keeps uploaded style media as the complete gallery for catalog cards", () => {
     const category = categoryMeta("ring");
     const cards = designCategoryCards([
       {
@@ -38,9 +38,6 @@ describe("design slot cards", () => {
     expect(cards[0].mediaItems).toEqual([
       { kind: "image", src: "/uploads/front.webp" },
       { kind: "video", src: "/uploads/spin.mp4" },
-      { kind: "image", src: "/assets/fallback.png" },
-      { kind: "image", src: "/assets/lineup-ring.png" },
-      { kind: "image", src: "/assets/lineup-band.png" },
     ]);
     expect(cards[0].media).toEqual({ kind: "image", src: "/uploads/front.webp" });
   });
@@ -56,5 +53,22 @@ describe("design slot cards", () => {
     });
     expect(style.name.en).toBe("Halo Studs");
     expect(style.media).toHaveLength(1);
+  });
+
+  it("uses bracelet media for the bezel bracelet sample slot", () => {
+    const category = categoryMeta("bangle");
+    const existingStyles = [1, 2, 3].map((number) => ({
+      id: `BRAC-00${number}`,
+      category: "bangle",
+      subcategory: "tennisBracelet",
+      media: [{ kind: "image", src: `/uploads/bracelet-${number}.webp` }],
+      name: { en: `Bracelet ${number}` },
+      leadDays: 14,
+    }));
+    const cards = designCategoryCards(existingStyles, category, "en", pickI18n);
+    const bezelSlot = cards.find((card) => card.title === "Bezel Bracelet");
+
+    expect(bezelSlot?.media?.kind).toBe("image");
+    expect(bezelSlot?.media?.src).toContain("productimages/BCGTXBR07076/");
   });
 });

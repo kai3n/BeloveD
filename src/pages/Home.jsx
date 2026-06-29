@@ -20,8 +20,8 @@ const collectionImageClass = {
 const collectionCopy = {
   en: {
     label: "THE ATELIER",
-    title: ["The atelier", "of you."],
-    body: "Choose a silhouette. We compose the stone, the metal, and every detail around you.",
+    title: ["Design yours."],
+    body: "We compose the stone, the metal, and every detail around you.",
     viewAll: "Explore all",
     shopLabel: (name) => `Shop ${name.toLowerCase()}`,
     items: {
@@ -33,8 +33,8 @@ const collectionCopy = {
   },
   ko: {
     label: "아틀리에",
-    title: ["당신만의", "아틀리에."],
-    body: "실루엣을 고르면, 스톤·메탈·디테일을 당신에게 맞춰 완성합니다.",
+    title: ["당신만의 디자인."],
+    body: "스톤·메탈·디테일은 당신에게 맞춰 완성합니다.",
     viewAll: "전체 둘러보기",
     shopLabel: (name) => `${name} 보기`,
     items: {
@@ -46,8 +46,8 @@ const collectionCopy = {
   },
   zh: {
     label: "工坊",
-    title: ["你的专属", "工坊。"],
-    body: "先选轮廓，钻石、金属与每一处细节，皆为你而成。",
+    title: ["设计你的专属。"],
+    body: "钻石、金属与每一处细节，皆为你而成。",
     viewAll: "浏览全部",
     shopLabel: (name) => `查看${name}`,
     items: {
@@ -59,8 +59,8 @@ const collectionCopy = {
   },
   es: {
     label: "EL ATELIER",
-    title: ["Tu atelier", "a medida."],
-    body: "Elige la silueta. Componemos la piedra, el metal y cada detalle a tu medida.",
+    title: ["Diseña la tuya."],
+    body: "Componemos la piedra, el metal y cada detalle a tu medida.",
     viewAll: "Explorar todo",
     shopLabel: (name) => `Ver ${name.toLowerCase()}`,
     items: {
