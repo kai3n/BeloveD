@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { ApiError } from "./errors.js";
-import { createMagicLink, verifyMagicLink, loginWithPassword, setCustomerPassword } from "./auth.js";
+import { createMagicLink, verifyMagicLink, loginWithPassword, setCustomerPassword, createLoginCode, verifyLoginCode } from "./auth.js";
 import { revokeSession } from "./session.js";
 import { rateLimit } from "./rateLimit.js";
 import {
@@ -45,6 +45,34 @@ export function authRouter() {
       const token = req.query.token;
       if (!token) throw new ApiError("MAGIC_LINK_INVALID", 400);
       const { session } = await verifyMagicLink(String(token));
+      setSessionCookie(res, COOKIE_CUSTOMER, session);
+      res.json({ ok: true, principal: "customer" });
+    } catch (e) { next(e); }
+  });
+
+  // 이메일 6자리 인증번호 — 요청 (IP+이메일 키로 타이트하게 제한)
+  r.post("/code",
+    rateLimit({ limit: 3, windowMs: MINUTE, keyFn: (req) => `${req.ip}:${String(req.body?.email || "").toLowerCase()}` }),
+    rateLimit({ limit: 10, windowMs: MINUTE }),
+    async (req, res, next) => {
+    try {
+      const { email } = req.body || {};
+      if (typeof email !== "string") throw new ApiError("VALIDATION_ERROR", 400);
+      const { code } = await createLoginCode(email);
+      const body = { ok: true };
+      if (process.env.NODE_ENV !== "production") body.devCode = code; // dev만 노출
+      res.status(201).json(body);
+    } catch (e) { next(e); }
+  });
+
+  // 인증번호 검증 → 고객 세션 발급
+  r.post("/code/verify",
+    rateLimit({ limit: 10, windowMs: MINUTE }),
+    async (req, res, next) => {
+    try {
+      const { email, code } = req.body || {};
+      if (typeof email !== "string" || typeof code !== "string") throw new ApiError("VALIDATION_ERROR", 400);
+      const { session } = await verifyLoginCode(email, code);
       setSessionCookie(res, COOKIE_CUSTOMER, session);
       res.json({ ok: true, principal: "customer" });
     } catch (e) { next(e); }

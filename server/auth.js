@@ -1,10 +1,10 @@
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomInt } from "node:crypto";
 import { query, withTransaction } from "./db.js";
 import { ApiError } from "./errors.js";
 import { nextCode } from "./codes.js";
 import { hashToken, issueSession, revokeAllForPrincipal } from "./session.js";
 import { hashPassword, verifyPassword } from "./passwords.js";
-import { sendMagicLink } from "./mailer.js";
+import { sendMagicLink, sendLoginCode } from "./mailer.js";
 
 const MAGIC_TTL_MS = 1000 * 60 * 15; // 15 minutes
 const ADMIN_TTL_MS = 1000 * 60 * 60 * 12; // 12 hours — admin sessions are short-lived
@@ -56,6 +56,57 @@ export async function verifyMagicLink(raw) {
     }
     await client.query("update magic_link_tokens set used_at=now() where token_hash=$1", [hashToken(raw)]);
     const customer = await ensureCustomer(client, token.email);
+    const session = await issueSession("customer", customer.id);
+    return { session, customer };
+  });
+}
+
+const CODE_TTL_MS = 1000 * 60 * 10; // 10 minutes
+const CODE_MAX_ATTEMPTS = 5;
+
+// 이메일 6자리 인증번호 발급 — 코드 원문은 메일로만, DB에는 해시만 (M2와 동일 원칙)
+export async function createLoginCode(email) {
+  const normalized = normalizeEmail(email);
+  if (!normalized) throw new ApiError("EMAIL_REQUIRED", 400);
+  const code = String(randomInt(0, 1000000)).padStart(6, "0");
+  const expiresAt = new Date(Date.now() + CODE_TTL_MS);
+  // 같은 이메일의 이전 미사용 코드는 폐기 — 항상 마지막 코드 하나만 유효
+  await query("update login_codes set used_at=now() where email=$1 and used_at is null", [normalized]);
+  await query(
+    "insert into login_codes (email, code_hash, expires_at) values ($1,$2,$3)",
+    [normalized, hashToken(code), expiresAt],
+  );
+  await sendLoginCode(normalized, code);
+  return { email: normalized, expiresAt, code };
+}
+
+export async function verifyLoginCode(email, code) {
+  const normalized = normalizeEmail(email);
+  // 주의: 실패 시 throw가 트랜잭션을 롤백하면 attempts 증가까지 사라져
+  // 브루트포스 제한이 무력화된다 — 증가/폐기는 트랜잭션 밖에서 커밋한다.
+  const { rows } = await query(
+    `select * from login_codes where email=$1 and used_at is null
+     order by created_at desc limit 1`,
+    [normalized],
+  );
+  const row = rows[0];
+  if (!row || new Date(row.expires_at) < new Date()) throw new ApiError("CODE_INVALID", 400);
+  if (row.attempts >= CODE_MAX_ATTEMPTS) {
+    await query("update login_codes set used_at=now() where id=$1", [row.id]);
+    throw new ApiError("CODE_INVALID", 400);
+  }
+  if (hashToken(String(code || "")) !== row.code_hash) {
+    await query("update login_codes set attempts=attempts+1 where id=$1", [row.id]);
+    throw new ApiError("CODE_INVALID", 400);
+  }
+  // 단일 사용 보장 — 조건부 갱신은 동시 요청에서도 한 번만 성공한다
+  const used = await query(
+    "update login_codes set used_at=now() where id=$1 and used_at is null returning id",
+    [row.id],
+  );
+  if (used.rowCount === 0) throw new ApiError("CODE_INVALID", 400);
+  return withTransaction(async (client) => {
+    const customer = await ensureCustomer(client, normalized);
     const session = await issueSession("customer", customer.id);
     return { session, customer };
   });

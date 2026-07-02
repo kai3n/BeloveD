@@ -19,3 +19,4 @@ demo-video/
 /*.mp4
 /*.mov
 .claude/
+.vercel
