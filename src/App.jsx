@@ -16,6 +16,7 @@ const named = (p, key) => lazy(() => p().then((m) => ({ default: m[key] })));
 const CustomerShell = lazy(() => import("./pages/Account.jsx"));
 const AccountOrders = named(() => import("./pages/Account.jsx"), "AccountOrders");
 const StaffLogin = lazy(() => import("./pages/StaffLogin.jsx"));
+const ReviewNew = lazy(() => import("./pages/ReviewNew.jsx"));
 const Admin = lazy(() => import("./pages/admin/Admin.jsx"));
 const AdminOpsOrders = lazy(() => import("./pages/admin/AdminOpsOrders.jsx"));
 const AdminOpsOrder = lazy(() => import("./pages/admin/AdminOpsOrder.jsx"));
@@ -48,6 +49,7 @@ export default function App() {
           <Route path="custom/flow-mockup" element={<CustomFlowMockup />} />
           <Route path="custom/stone-mockup" element={<IntakeStoneMockup />} />
           <Route path="custom/new" element={<IntakeForm />} />
+          <Route path="reviews/new" element={<ReviewNew />} />
           <Route path="track" element={<TrackEntry />} />
           <Route path="track/:orderId" element={<ClientPortal />} />
           <Route path="orders/:orderId" element={<ClientPortal />} />

@@ -178,12 +178,12 @@ function migrateDB(d) {
 
   // 리뷰 스토어 — 데모 리뷰 1회 주입 (버전 플래그).
   // 첫 배포가 빈 배열을 심은 브라우저도 구제해야 하므로 "배열 없음"이 아니라 플래그로 판단한다.
-  if (d?.settings && d.settings.reviewsSeedVersion !== 1) {
-    const existing = Array.isArray(d.reviews) ? d.reviews : [];
+  if (d?.settings && d.settings.reviewsSeedVersion !== 2) {
     const seeded = seed().reviews || [];
-    const have = new Set(existing.map((r) => r.id));
-    d.reviews = [...existing, ...seeded.filter((r) => !have.has(r.id))];
-    d.settings.reviewsSeedVersion = 1;
+    const seededIds = new Set(seeded.map((r) => r.id));
+    const userReviews = (Array.isArray(d.reviews) ? d.reviews : []).filter((r) => !seededIds.has(r.id));
+    d.reviews = [...userReviews, ...seeded]; // 데모는 최신 시드로 교체, 실제 리뷰는 보존
+    d.settings.reviewsSeedVersion = 2;
     changed = true;
   }
 

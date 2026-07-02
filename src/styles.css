@@ -3806,3 +3806,13 @@ html[data-theme="day"] .spread-noir-stat { box-shadow: 0 14px 34px rgba(24, 22, 
 /* 화이트 배경에선 페일 샴페인의 대비가 약해 살짝 딥하게 */
 html[data-theme="day"] .brand-logo { filter: brightness(0.68) saturate(1.12); }
 .footer-brand .brand-logo { height: 42px; }
+
+/* Day: 모바일 하단 독 — 다크 패널을 화이트 카드로 */
+html[data-theme="day"] .noir-dock {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: var(--line);
+  color: var(--text);
+  box-shadow: 0 -12px 34px rgba(20, 18, 15, 0.08);
+}
+html[data-theme="day"] .noir-dock strong, html[data-theme="day"] .noir-dock span { color: var(--text); }
+html[data-theme="day"] .noir-dock small, html[data-theme="day"] .noir-dock p { color: var(--muted); }

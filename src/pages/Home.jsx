@@ -422,14 +422,20 @@ function LovedWorn({ locale }) {
   const reviews = listReviews({ publishedOnly: true });
   const [open, setOpen] = useState(null); // review | null
   const [mIdx, setMIdx] = useState(0);
+  const [progress, setProgress] = useState(0);
   const trackRef = useRef(null);
   if (reviews.length === 0) return null;
   const avg = (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1);
+  // iOS에서 scroll-snap mandatory와 scrollBy(smooth)가 충돌해 안 움직인다 → 셀 offsetLeft로 정확히 이동
   const scroll = (dir) => {
     const el = trackRef.current;
     if (!el) return;
-    const cell = el.querySelector(".lw-cell");
-    el.scrollBy({ left: dir * ((cell?.getBoundingClientRect().width || 280) + 2), behavior: "smooth" });
+    const cells = [...el.querySelectorAll(".lw-cell")];
+    if (cells.length === 0) return;
+    const width = cells[0].offsetWidth + 10;
+    const idx = Math.round(el.scrollLeft / width);
+    const next = Math.min(Math.max(idx + dir, 0), cells.length - 1);
+    el.scrollTo({ left: cells[next].offsetLeft - el.offsetLeft, behavior: "smooth" });
   };
   const active = open ? (open.media[mIdx] || open.media[0]) : null;
   return (
@@ -441,9 +447,19 @@ function LovedWorn({ locale }) {
         <div className="lw-agg"><strong>{avg}</strong><span className="lw-stars">{"★".repeat(5)}</span><span>{reviews.length} {copy.verified}</span></div>
       </div>
       <div className="lw-feed">
-        <button className="lw-arrow is-l" type="button" aria-label="Previous" onClick={() => scroll(-1)}>‹</button>
-        <button className="lw-arrow is-r" type="button" aria-label="Next" onClick={() => scroll(1)}>›</button>
-        <div className="lw-track" ref={trackRef}>
+        <div className="lw-nav">
+          <button className="lw-arrow" type="button" aria-label="Previous" onClick={() => scroll(-1)}>‹</button>
+          <button className="lw-arrow" type="button" aria-label="Next" onClick={() => scroll(1)}>›</button>
+        </div>
+        <div
+          className="lw-track"
+          ref={trackRef}
+          onScroll={(e) => {
+            const el = e.currentTarget;
+            const max = el.scrollWidth - el.clientWidth;
+            setProgress(max > 0 ? el.scrollLeft / max : 0);
+          }}
+        >
           {reviews.map((review) => (
             <button className="lw-cell" type="button" key={review.id} onClick={() => { setOpen(review); setMIdx(0); }}>
               <MediaThumb media={review.media[0]} ratio="4 / 5" alt={review.quote} />
@@ -456,9 +472,10 @@ function LovedWorn({ locale }) {
             </button>
           ))}
         </div>
+        <div className="lw-progress" aria-hidden="true"><i style={{ width: `${Math.max(progress * 100, 25)}%` }} /></div>
       </div>
       <div className="lw-cta">
-        <Link className="noir-btn" to="/orders">{copy.share}<ArrowRight size={15} strokeWidth={1.6} /></Link>
+        <Link className="noir-btn" to="/reviews/new">{copy.share}<ArrowRight size={15} strokeWidth={1.6} /></Link>
         <p>{copy.shareNote}</p>
       </div>
 
