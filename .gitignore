@@ -20,3 +20,4 @@ demo-video/
 /*.mov
 .claude/
 .vercel
+.env*
