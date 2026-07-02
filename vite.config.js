@@ -5,6 +5,10 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [react()],
   base: process.env.GITHUB_PAGES ? "/lumina-lab/" : "/",
+  server: {
+    // 로컬 개발: `npm run api`(8787)로 /v1 프록시 — 프로덕션(Vercel)과 같은 same-origin 형태
+    proxy: { "/v1": "http://127.0.0.1:8787" },
+  },
   test: {
     exclude: ["**/node_modules/**", "**/.claude/**", "**/dist/**", "**/server/**"],
   },

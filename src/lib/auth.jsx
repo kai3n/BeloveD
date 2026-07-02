@@ -1,6 +1,7 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { addUser, findUserByEmail, findUserByAccessCode, getUser } from "./store.js";
+import { ApiUnavailableError, apiFetch } from "./api.js";
 
 const SESSION_KEY = "lumina-session";
 const AuthContext = createContext(null);
@@ -19,7 +20,59 @@ export function AuthProvider({ children }) {
     return found;
   }
 
-  // 이메일 + 비밀번호. allow=허용 역할 목록 — 진입 경로에 맞지 않는 역할은 거부(엉뚱한 포털 로그인 차단)
+  // 서버 principal(customer/admin)을 데모 스토어 유저로 브리지 — 기존 UI(포털·어드민) 호환 유지
+  function commitServerPrincipal(principal, email) {
+    if (principal === "admin") {
+      const admin = findUserByEmail("admin@demo.com");
+      if (admin) return commit(admin);
+    }
+    const normalized = String(email || "").trim().toLowerCase();
+    const found = findUserByEmail(normalized);
+    if (found) return commit(found);
+    return commit(addUser({ email: normalized, name: normalized.split("@")[0], role: "customer" }));
+  }
+
+  // 부팅 시 서버 세션 하이드레이션 — 쿠키가 살아 있으면 로컬 세션 복원
+  useEffect(() => {
+    if (userId) return; // 로컬 세션이 이미 있으면 유지
+    let cancelled = false;
+    apiFetch("/auth/me").then((data) => {
+      if (cancelled || !data?.principal) return;
+      // 서버는 이메일을 안 주므로(id만) 데모 스토어 매핑은 로그인 시점에 저장된 이메일에 의존.
+      // 하이드레이션은 어드민만 확실히 복원 가능.
+      if (data.principal.type === "admin") commitServerPrincipal("admin");
+    }).catch(() => {});
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 이메일 6자리 인증번호 — 요청. 서버 없으면 ApiUnavailableError를 그대로 던져 폴백 유도.
+  async function requestLoginCode(email) {
+    return apiFetch("/auth/code", { method: "POST", body: { email } }); // { ok, devCode? }
+  }
+
+  // 인증번호 검증 → 서버 세션 + 데모 스토어 브리지
+  async function verifyLoginCode(email, code) {
+    const data = await apiFetch("/auth/code/verify", { method: "POST", body: { email, code } });
+    return commitServerPrincipal(data.principal, email);
+  }
+
+  // 어드민/고객 비밀번호 로그인 — 서버 우선, 서버 부재 시 데모 폴백
+  async function loginServer(email, password, allow = null) {
+    try {
+      const data = await apiFetch("/auth/password", { method: "POST", body: { email, password } });
+      const role = data.principal === "admin" ? "admin" : "customer";
+      if (allow && !allow.includes(role)) throw new Error("wrongPortal");
+      return commitServerPrincipal(data.principal, email);
+    } catch (e) {
+      if (e instanceof ApiUnavailableError) return login(email, password, allow); // 정적 데모 폴백
+      if (e.code === "INVALID_CREDENTIALS") throw new Error("badCredentials");
+      if (e.code === "RATE_LIMITED") throw new Error("rateLimited");
+      throw e;
+    }
+  }
+
+  // (데모 폴백) 이메일 + 비밀번호. allow=허용 역할 목록
   function login(email, password, allow = null) {
     const found = findUserByEmail(email);
     if (!found || password !== DEMO_PASSWORD) throw new Error("badCredentials");
@@ -43,12 +96,13 @@ export function AuthProvider({ children }) {
   }
 
   function logout() {
+    apiFetch("/auth/logout", { method: "POST" }).catch(() => {}); // 서버 세션도 폐기 (없으면 무시)
     localStorage.removeItem(SESSION_KEY);
     setUserId(null);
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, loginWithCode, signup, logout }}>
+    <AuthContext.Provider value={{ user, login, loginWithCode, signup, logout, requestLoginCode, verifyLoginCode, loginServer }}>
       {children}
     </AuthContext.Provider>
   );

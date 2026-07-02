@@ -6,7 +6,7 @@ import { useLocale } from "../i18n.jsx";
 // 스태프 로그인 — 현재 앱에서는 admin만 허용한다. Vendor/dealer 포털은 별도 앱에서 다룬다.
 export default function StaffLogin() {
   const { p } = useLocale();
-  const { login } = useAuth();
+  const { login, loginServer } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [email, setEmail] = useState("");
@@ -19,12 +19,12 @@ export default function StaffLogin() {
     navigate("/admin/orders", { replace: true });
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     setError("");
     try {
-      // 스태프 전용 — admin만. 고객/벤더/딜러 계정은 거부(wrongPortal)
-      afterLogin(login(email, password, ["admin"]));
+      // 실서버 우선(스크립트 해시 검증) — 서버 부재 시 데모 폴백은 loginServer 내부에서 처리
+      afterLogin(await loginServer(email, password, ["admin"]));
     } catch (err) {
       setError(p.login.errors[err.message] || err.message);
     }
