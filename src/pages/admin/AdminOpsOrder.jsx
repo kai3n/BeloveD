@@ -102,6 +102,7 @@ const PROPOSAL_COMPOSER_COPY = {
     subNote: "Substitution note (leave blank for the default policy text)",
     save: "Save proposal",
     reportedShort: "customer reported sent",
+    autoSave: "Changes save automatically.",
     reportedAt: (when) => `Customer reported the deposit sent · ${when}`,
     useForProposal: "Use for proposal",
     proposalStone: "Proposal stone",
@@ -120,6 +121,7 @@ const PROPOSAL_COMPOSER_COPY = {
     subNote: "대체 안내문 (비우면 기본 정책 문구 사용)",
     save: "제안 저장",
     reportedShort: "고객 송금 보고됨",
+    autoSave: "변경하면 즉시 자동 저장됩니다.",
     reportedAt: (when) => `고객이 디파짓 송금을 보고했습니다 · ${when}`,
     useForProposal: "제안 스톤으로 지정",
     proposalStone: "제안 스톤",
@@ -138,6 +140,7 @@ const PROPOSAL_COMPOSER_COPY = {
     subNote: "替换说明（留空则使用默认政策文本）",
     save: "保存方案",
     reportedShort: "客户已报告转账",
+    autoSave: "更改后自动保存。",
     reportedAt: (when) => `客户报告已转定金 · ${when}`,
     useForProposal: "用于最终方案",
     proposalStone: "方案钻石",
@@ -156,6 +159,7 @@ const PROPOSAL_COMPOSER_COPY = {
     subNote: "Nota de sustitución (vacío = texto de política por defecto)",
     save: "Guardar propuesta",
     reportedShort: "cliente reportó envío",
+    autoSave: "Los cambios se guardan automáticamente.",
     reportedAt: (when) => `El cliente reportó el depósito enviado · ${when}`,
     useForProposal: "Usar en la propuesta",
     proposalStone: "Piedra de la propuesta",
@@ -1173,7 +1177,7 @@ function OrderBriefPanel({ order, intake, style, p, t, locale }) {
   );
 }
 
-function InternalControlsPanel({ order, t, p, onSaved, notice }) {
+function InternalControlsPanel({ order, t, p, locale, onSaved, notice }) {
   return (
     <section className="panel ops-side-card ops-internal-card">
       <p className="admin-kicker">{t.internalControls}</p>
@@ -1185,6 +1189,7 @@ function InternalControlsPanel({ order, t, p, onSaved, notice }) {
       <label className="field"><span>{t.internalNotes}</span>
         <textarea defaultValue={order.internalNotes} key={order.internalNotes} onBlur={(e) => { updateOpsOrder(order.id, { internalNotes: e.target.value }); onSaved?.(notice.internalNoteSaved); }} rows={4} />
       </label>
+      <p className="form-hint">{proposalComposerCopy(locale).autoSave}</p>
     </section>
   );
 }
@@ -1471,7 +1476,7 @@ export default function AdminOpsOrder() {
         <summary>{stageCopy.groupInternal}</summary>
         <div className="ops-stage-body">
           <CustomerFlowPanel order={order} milestones={milestones} actions={actions} t={t} p={p} locale={locale} onSaved={notify} />
-          <InternalControlsPanel order={order} t={t} p={p} onSaved={notify} notice={notice} />
+          <InternalControlsPanel order={order} t={t} p={p} locale={locale} onSaved={notify} notice={notice} />
           <div className="panel form-stack">
             <h3>{t.newPr}</h3>
             <PrForm orderId={order.id} suppliers={suppliers} t={t} onSaved={notify} notice={notice} />
