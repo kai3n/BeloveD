@@ -5331,3 +5331,26 @@ html[data-theme="day"] .stepper li.current .dot {
   border-color: #16130f;
 }
 html[data-theme="day"] .gflow-carat-range { accent-color: #16130f; }
+
+/* ── 고객 포털: 슬림 액션바 + 주문 요약 아코디언 (히어로/저니레일 대체) ── */
+.client-actionbar {
+  display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap;
+  border: 1px solid var(--line-strong); background: var(--surface);
+  padding: 16px 20px; margin-bottom: 6px;
+}
+.client-actionbar-copy { display: grid; gap: 3px; min-width: 0; }
+.client-actionbar-copy strong { font-size: 15.5px; line-height: 1.45; font-weight: 600; }
+.client-actionbar-meta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); }
+.client-brief-details {
+  border: 1px solid var(--line); background: var(--surface); padding: 0 20px;
+}
+.client-brief-details summary {
+  cursor: pointer; padding: 15px 0; list-style: none;
+  font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 700; color: var(--muted);
+}
+.client-brief-details summary:hover { color: var(--text); }
+.client-brief-details[open] summary { border-bottom: 1px solid var(--hair); }
+.client-brief-details .client-brief-list { padding: 14px 0 18px; }
+@media (max-width: 640px) {
+  .client-actionbar { align-items: flex-start; flex-direction: column; }
+}

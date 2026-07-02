@@ -8,7 +8,7 @@ import {
   updateShippingAddress, isShippingAddressComplete,
 } from "../lib/store.js";
 import { useDBVersion } from "../lib/useDB.js";
-import { EmptyNote, MediaPicker, MediaThumb, usd } from "../components/ui.jsx";
+import { MediaPicker, MediaThumb, usd } from "../components/ui.jsx";
 import { pickI18n, useLocale } from "../i18n.jsx";
 
 // 게스트 조회 입력 (Order ID + 쿼리코드)
@@ -198,33 +198,6 @@ function proposalFlowCopy(locale) {
   return PROPOSAL_FLOW_COPY[locale] || PROPOSAL_FLOW_COPY.en;
 }
 
-// 4단계 저니 레일: Request → Proposal → Deposit → Production
-function JourneyRail({ order, quote, depositDone, fc }) {
-  const confirmed = quote?.status === "accepted";
-  const stages = [
-    { key: "request", title: fc.journeyRequest, sub: fc.journeyRequestSub, state: "done" },
-    {
-      key: "proposal", title: fc.journeyProposal,
-      sub: quote ? fc.journeyProposalSubNow : fc.journeyProposalSubPrep,
-      state: confirmed ? "done" : quote ? "now" : "prep",
-    },
-    { key: "deposit", title: fc.journeyDeposit, sub: fc.journeyDepositSub, state: depositDone ? "done" : confirmed ? "now" : "idle" },
-    {
-      key: "production", title: fc.journeyProduction, sub: fc.journeyProductionSub,
-      state: ["DELIVERED", "ARCHIVED"].includes(order.status) ? "done" : depositDone ? "now" : "idle",
-    },
-  ];
-  return (
-    <div className="client-journey" aria-label={fc.journeyProposal}>
-      {stages.map((stage) => (
-        <div className={`client-journey-step is-${stage.state}`} key={stage.key}>
-          <strong>{stage.title}</strong>
-          <small>{stage.sub}</small>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 const CUSTOMER_WORKSPACE_COPY = {
   en: {
@@ -428,40 +401,6 @@ function buildOrderBriefRows({ order, intake, style, selected, quote, p, locale,
   return rows.filter((row) => row.value);
 }
 
-function ClientOrderBrief({ rows, order, waitingOn, due, statusLabel, copy }) {
-  return (
-    <aside className="client-order-brief">
-      <div className="client-brief-top">
-        <p className="section-label">{copy.orderBrief}</p>
-        <strong>{order.id}</strong>
-      </div>
-      <div className="client-brief-status">
-        <div><span>{copy.advisor}</span><strong>{waitingOn}</strong></div>
-        <div><span>{copy.currentStatus}</span><strong>{statusLabel}</strong></div>
-        <div><span>{copy.due}</span><strong>{due}</strong></div>
-      </div>
-      <dl className="client-brief-list client-brief-list-desktop">
-        {rows.map((row) => (
-          <div key={`${row.label}-${row.value}`}>
-            <dt>{row.label}</dt>
-            <dd>{row.value}</dd>
-          </div>
-        ))}
-      </dl>
-      <details className="client-brief-mobile-details">
-        <summary>{copy.detailsToggle}</summary>
-        <dl className="client-brief-list">
-          {rows.map((row) => (
-            <div key={`${row.label}-${row.value}`}>
-              <dt>{row.label}</dt>
-              <dd>{row.value}</dd>
-            </div>
-          ))}
-        </dl>
-      </details>
-    </aside>
-  );
-}
 
 // 카테고리 조건부 사이즈 요약 (제안 카드 Setting 라인)
 function conditionalSizeSummary(intake, t) {
@@ -485,15 +424,9 @@ function ProposalCard({ quote, intake, style, fc, t, p, locale, shippingProps, o
     conditionalSizeSummary(intake, p.intake),
   ].filter(Boolean).join(" · ");
   const confirmed = quote.status === "accepted";
+  // 스테이지(Checkpoint) 안에 들어가는 콘텐츠 전용 — 헤더/배지는 스테이지가 담당
   return (
-    <section id="proposal-stage" className={`panel proposal-card ${confirmed ? "is-confirmed" : ""}`}>
-      <div className="proposal-card-head">
-        <div>
-          <p className="section-label">{fc.proposalKicker}</p>
-          <h3>{quote.id}</h3>
-        </div>
-        {confirmed && <span className="status-badge cst-REPLACED">{fc.confirmedBadge}</span>}
-      </div>
+    <div className="proposal-card">
       <div className="proposal-card-body">
         <div className="proposal-media">
           <ClientMediaCarousel media={media} alt={quote.id} />
@@ -526,12 +459,12 @@ function ProposalCard({ quote, intake, style, fc, t, p, locale, shippingProps, o
           {fc.confirmCta}
         </button>
       )}
-    </section>
+    </div>
   );
 }
 
-// Zelle/Venmo 결제 카드 — 디파짓·잔금 공용. state: locked | active | reported | done
-function PaymentCard({ id, title, amountUsd, orderId, state, fc, sentCta, reportedNote, onReport }) {
+// Zelle/Venmo 결제 내용 — 디파짓·잔금 공용. 스테이지 안 콘텐츠 전용 (reported면 안내문, 아니면 셀프리포트 버튼)
+function PaymentCard({ amountUsd, orderId, reported, fc, sentCta, reportedNote, onReport }) {
   const payment = getSettings().payment || {};
   const [copiedKey, setCopiedKey] = useState("");
   const methods = [
@@ -543,43 +476,28 @@ function PaymentCard({ id, title, amountUsd, orderId, state, fc, sentCta, report
     setCopiedKey(key);
     window.setTimeout(() => setCopiedKey(""), 1600);
   }
-  const badge = state === "done" ? { cls: "mst-done", label: fc.doneBadge }
-    : state === "reported" ? { cls: "mst-inProgress", label: fc.reportedBadge }
-      : state === "locked" ? { cls: "mst-pending", label: fc.payAfter }
-        : { cls: "mst-waitingClient", label: usd(amountUsd) };
   return (
-    <section id={id} className={`panel payment-card is-${state}`}>
-      <div className="payment-card-head">
-        <div>
-          <p className="section-label">{fc.journeyDepositSub}</p>
-          <h3>{title}</h3>
-        </div>
-        <span className={`status-badge ${badge.cls}`}>{badge.label}</span>
-      </div>
-      {(state === "active" || state === "reported") && (
-        <>
-          <div className="payment-amount">{usd(amountUsd)}</div>
-          <div className="payment-methods">
-            {methods.map((m) => (
-              <div className="payment-method" key={m.key}>
-                <h4>{m.name}</h4>
-                <code>{m.handle}</code>
-                <small>{m.hint}</small>
-                <button className="button secondary small" type="button" onClick={() => copyHandle(m.key, m.handle)}>
-                  {copiedKey === m.key ? fc.copiedBtn : fc.copyBtn}
-                </button>
-              </div>
-            ))}
+    <div className="payment-card">
+      <div className="payment-amount">{usd(amountUsd)}</div>
+      <div className="payment-methods">
+        {methods.map((m) => (
+          <div className="payment-method" key={m.key}>
+            <h4>{m.name}</h4>
+            <code>{m.handle}</code>
+            <small>{m.hint}</small>
+            <button className="button secondary small" type="button" onClick={() => copyHandle(m.key, m.handle)}>
+              {copiedKey === m.key ? fc.copiedBtn : fc.copyBtn}
+            </button>
           </div>
-          <p className="payment-memo">{fc.payMemo(orderId)}</p>
-          {payment.note && <p className="form-hint">{payment.note}</p>}
-          {state === "reported"
-            ? <p className="warn-note">{reportedNote}</p>
-            : <button className="button primary payment-sent" type="button" onClick={onReport}>{sentCta}</button>}
-          <p className="form-hint">{fc.sentHelp}</p>
-        </>
-      )}
-    </section>
+        ))}
+      </div>
+      <p className="payment-memo">{fc.payMemo(orderId)}</p>
+      {payment.note && <p className="form-hint">{payment.note}</p>}
+      {reported
+        ? <p className="warn-note">{reportedNote}</p>
+        : <button className="button primary payment-sent" type="button" onClick={onReport}>{sentCta}</button>}
+      <p className="form-hint">{fc.sentHelp}</p>
+    </div>
   );
 }
 
@@ -880,10 +798,28 @@ export default function ClientPortal() {
   const [chatDraft, setChatDraft] = useState("");
   const [notice, setNotice] = useState("");
   const [shippingAddress, setShippingAddress] = useState(null);
+  const [codeDraft, setCodeDraft] = useState("");
+  const navigate = useNavigate();
 
   const view = portalView(orderId, { customerId: user?.id, userRole: user?.role, queryCode: code });
   if (!view) {
-    return <div className="page"><EmptyNote>{t.notFound}</EmptyNote></div>;
+    // 코드가 없거나 틀림 — 빈 문구 대신 바로 코드 입력으로 안내
+    return (
+      <div className="page page-narrow">
+        <h1 className="page-title">{t.guestTitle}</h1>
+        <form
+          className="panel form-stack"
+          onSubmit={(e) => { e.preventDefault(); navigate(`/orders/${orderId}?code=${codeDraft.trim().toUpperCase()}`); }}
+        >
+          <p className="form-hint">{t.notFound}</p>
+          <label className="field"><span>{t.orderId}</span><input value={orderId} readOnly /></label>
+          <label className="field"><span>{t.code}</span>
+            <input value={codeDraft} onChange={(e) => setCodeDraft(e.target.value)} placeholder="XXXX-XXXX" required autoFocus />
+          </label>
+          <button className="button primary" type="submit">{t.open}</button>
+        </form>
+      </div>
+    );
   }
   const { order, intake, style, selected, quote, milestones, cad, freeRevisionsLeft, designChangeFeeUsd, finalAction, actions, messages = [] } = view;
   const shippingAddressDraft = shippingAddress || initialShippingAddress(order, intake);
@@ -972,9 +908,6 @@ export default function ClientPortal() {
     : (order.status === "CAD" && cad && !cad.decision) ? t.nextCadReview
     : order.status === "BALANCE" ? fc.nextBalance
       : t.nextStep?.[order.status] || "";
-  const waitingOn = proposalPreparing || depositCardState === "reported" ? t.waitingBeloveD
-    : activeAction || depositTurn || order.status === "BALANCE" ? t.waitingYou
-      : ["PRODUCTION", "QC", "SHIPPING"].includes(order.status) ? t.waitingAtelier : t.waitingBeloveD;
   const activeActionText = proposalPreparing ? fc.preparingBody
     : activeAction
     ? (t.todo?.[activeAction.type] || activeAction.prompt || nextMsg || t.reviewUpdates)
@@ -992,37 +925,35 @@ export default function ClientPortal() {
         : "#conversation";
   const briefRows = buildOrderBriefRows({ order, intake, style, selected, quote, p, locale, copy: workspaceCopy });
 
+  // 스테이지 상태 매핑 — 한 페이지 = 한 타임라인, 지금 할 일만 펼친다
+  const proposalStageState = quote?.status === "accepted" ? "done"
+    : quote?.status === "sent" ? "active"
+      : "waiting"; // 준비 중 — BeloveD 차례
+  const depositStageState = depositCardState === "done" ? "done"
+    : depositCardState === "reported" ? "waiting"
+      : depositCardState === "active" ? "active"
+        : "upcoming";
+  const balanceDoneStates = ["SHIPPING", "DELIVERED", "ARCHIVED"];
+  const balanceStageState = balanceDoneStates.includes(order.status) ? "done"
+    : order.status === "BALANCE" ? "active"
+      : "upcoming";
+
   return (
     <div className="page client-portal-page">
-      <section className="client-workspace-hero">
-        <div className="client-next-card">
+      {/* 슬림 액션바 — 지금 할 일 한 줄 + 주문 메타 (큰 히어로/사이드 브리프 제거) */}
+      <section className="client-actionbar">
+        <div className="client-actionbar-copy">
           <p className="section-label">{heroReady ? workspaceCopy.nextKicker : workspaceCopy.statusKicker}</p>
-          <h1>{heroReady ? workspaceCopy.titleReady : workspaceCopy.titleWaiting}</h1>
-          <p className="client-next-copy">{activeActionText}</p>
-          <div className="client-next-meta">
-            <span>{workspaceCopy.orderLine(order.id)}</span>
-            <span className={`status-badge ost-${order.status}`}>{statusLabel}</span>
-            <span>{workspaceCopy.due}: {dueLabel}</span>
-          </div>
-          <div className="row-actions client-next-actions">
-            {proposalPreparing ? (
-              <a className="button primary" href="#conversation">{workspaceCopy.chat}</a>
-            ) : (
-              <>
-                <a className="button primary" href={activeAnchor}>{workspaceCopy.goToAction}</a>
-                <a className="button secondary" href="#conversation">{workspaceCopy.chat}</a>
-              </>
-            )}
-          </div>
+          <strong>{activeActionText}</strong>
         </div>
-        <ClientOrderBrief
-          rows={briefRows}
-          order={order}
-          waitingOn={waitingOn}
-          due={dueLabel}
-          statusLabel={statusLabel}
-          copy={workspaceCopy}
-        />
+        <div className="client-actionbar-meta">
+          <span>{order.id}</span>
+          <span className={`status-badge ost-${order.status}`}>{statusLabel}</span>
+          <span>{workspaceCopy.due}: {dueLabel}</span>
+          <a className="button primary small" href={proposalPreparing ? "#conversation" : activeAnchor}>
+            {proposalPreparing ? workspaceCopy.chat : workspaceCopy.goToAction}
+          </a>
+        </div>
       </section>
 
       {notice && (
@@ -1031,62 +962,65 @@ export default function ClientPortal() {
         </p>
       )}
 
-      <JourneyRail order={order} quote={quote} depositDone={depositDone} fc={fc} />
-
-      {/* 확정 제안 — 준비 중이면 안내 카드, 도착하면 제안 카드 */}
-      {proposalPreparing ? (
-        <section id="proposal-stage" className="panel proposal-card is-preparing">
+      {/* 스테이지 01 — 확정 제안 */}
+      <Checkpoint id="proposal-stage" index={1} title={fc.proposalKicker} state={proposalStageState}
+        badgeOverride={proposalPreparing ? fc.journeyProposalSubPrep : undefined}
+        summary={quote?.status === "accepted" ? `${usd(quote.totalUsd)} · ${fc.confirmedBadge}` : null}>
+        {proposalPreparing ? (
           <div className="client-empty-stage">
-            <p className="section-label">{fc.journeyProposalSubPrep}</p>
             <h4>{fc.preparingTitle}</h4>
             <p>{fc.preparingBody}</p>
             <a className="button secondary small" href="#conversation">{workspaceCopy.chat}</a>
           </div>
-        </section>
-      ) : (
-        <ProposalCard
-          quote={quote}
-          intake={intake}
-          style={style}
-          fc={fc}
-          t={t}
-          p={p}
-          locale={locale}
-          shippingProps={{
-            value: shippingAddressDraft,
-            onChange: setShippingAddress,
-            t,
-            locked: quote.status === "accepted" && shippingAddressSaved,
-            canSave: quote.status === "accepted" && !shippingAddressSaved,
-            onSave: saveShippingAddress,
-          }}
-          onConfirm={accept}
-          confirmDisabled={!shippingAddressComplete}
-        />
-      )}
+        ) : (
+          <ProposalCard
+            quote={quote}
+            intake={intake}
+            style={style}
+            fc={fc}
+            t={t}
+            p={p}
+            locale={locale}
+            shippingProps={{
+              value: shippingAddressDraft,
+              onChange: setShippingAddress,
+              t,
+              locked: quote.status === "accepted" && shippingAddressSaved,
+              canSave: quote.status === "accepted" && !shippingAddressSaved,
+              onSave: saveShippingAddress,
+            }}
+            onConfirm={accept}
+            confirmDisabled={!shippingAddressComplete}
+          />
+        )}
+      </Checkpoint>
 
-      {/* 디파짓 — Zelle/Venmo 송금 + 셀프 리포트 */}
-      <PaymentCard
-        id="pay-stage"
-        title={fc.payTitle}
-        amountUsd={quote?.depositUsd || 0}
-        orderId={order.id}
-        state={depositCardState}
-        fc={fc}
-        sentCta={fc.depositSentCta}
-        reportedNote={fc.reportedNote}
-        onReport={reportDeposit}
-      />
+      {/* 스테이지 02 — 디파짓 */}
+      <Checkpoint id="pay-stage" index={2} title={fc.payTitle} state={depositStageState}
+        badgeOverride={depositStageState === "waiting" ? fc.reportedBadge : undefined}
+        summary={depositStageState === "done" && quote ? `${usd(quote.depositUsd)} · ${fc.doneBadge}` : null}>
+        {quote && (
+          <PaymentCard
+            amountUsd={quote.depositUsd}
+            orderId={order.id}
+            reported={depositCardState === "reported"}
+            fc={fc}
+            sentCta={fc.depositSentCta}
+            reportedNote={fc.reportedNote}
+            onReport={reportDeposit}
+          />
+        )}
+      </Checkpoint>
 
-      {/* 제작 체크포인트 ① 디자인 */}
-      <Checkpoint id="design-stage" index={1} title={p.visual.checkpoint.design} state={designState}
+      {/* 스테이지 03 — 디자인 승인 */}
+      <Checkpoint id="design-stage" index={3} title={p.visual.checkpoint.design} state={designState}
         summary={cad?.decision === "approved" ? `${t.cadVersion(cad.version)} ✓` : null}>
         {cad && <DesignCard cad={cad} mineMedia={mineMedia} orderId={orderId} actor={actor}
           revisionsLeft={freeRevisionsLeft} feeUsd={designChangeFeeUsd} defaultMeasure={defaultMeasure} onNotice={notify} />}
       </Checkpoint>
 
-      {/* 제작 체크포인트 ② 최종 실물 컨펌 */}
-      <Checkpoint id="final-stage" index={2} title={p.visual.checkpoint.final} state={finalState}
+      {/* 스테이지 04 — 완성품 컨펌 */}
+      <Checkpoint id="final-stage" index={4} title={p.visual.checkpoint.final} state={finalState}
         summary={finalState === "done" ? p.visual.finalConfirmed : null}>
         {finalAction && (
           <div className="form-stack">
@@ -1104,20 +1038,34 @@ export default function ClientPortal() {
         )}
       </Checkpoint>
 
-      {/* 잔금 — 배송 전 동일 결제 카드 재사용 */}
-      {order.status === "BALANCE" && quote && (
-        <PaymentCard
-          id="balance-stage"
-          title={fc.balanceTitle}
-          amountUsd={quote.balanceUsd}
-          orderId={order.id}
-          state="active"
-          fc={fc}
-          sentCta={fc.balanceSentCta}
-          reportedNote={fc.balanceReportedNote}
-          onReport={reportBalance}
-        />
-      )}
+      {/* 스테이지 05 — 잔금 & 배송 */}
+      <Checkpoint id="balance-stage" index={5} title={fc.balanceTitle} state={balanceStageState}
+        summary={balanceStageState === "done" ? statusLabel : null}>
+        {order.status === "BALANCE" && quote && (
+          <PaymentCard
+            amountUsd={quote.balanceUsd}
+            orderId={order.id}
+            reported={false}
+            fc={fc}
+            sentCta={fc.balanceSentCta}
+            reportedNote={fc.balanceReportedNote}
+            onReport={reportBalance}
+          />
+        )}
+      </Checkpoint>
+
+      {/* 주문 요약 — 필요할 때만 펼쳐 보는 아코디언 */}
+      <details className="client-brief-details">
+        <summary>{workspaceCopy.orderBrief} · {order.id}</summary>
+        <dl className="client-brief-list">
+          {briefRows.map((row) => (
+            <div key={`${row.label}-${row.value}`}>
+              <dt>{row.label}</dt>
+              <dd>{row.value}</dd>
+            </div>
+          ))}
+        </dl>
+      </details>
 
       <div id="conversation">
         <ConversationPanel messages={messages} draft={chatDraft} setDraft={setChatDraft} onSend={sendChat} t={t} />
