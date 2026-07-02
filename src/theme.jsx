@@ -5,8 +5,9 @@ const STORAGE_KEY = "lumina-theme";
 
 export function ThemeProvider({ children }) {
   const [theme, setThemeState] = useState(() => {
-    if (typeof window === "undefined") return "dark";
-    return window.localStorage.getItem(STORAGE_KEY) === "day" ? "day" : "dark";
+    // 기본 테마는 day(화사한 갤러리 화이트) — 사용자가 직접 고른 값만 존중
+    if (typeof window === "undefined") return "day";
+    return window.localStorage.getItem(STORAGE_KEY) === "dark" ? "dark" : "day";
   });
 
   useEffect(() => {
