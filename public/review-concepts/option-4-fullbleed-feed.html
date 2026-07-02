@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Option 4 — Full-Bleed Feed · BeloveD Review Concepts</title>
+<link rel="stylesheet" href="../intake-concepts/intake-concepts.css" />
+<style>
+  body { overflow-x: hidden; }
+  .sect-head { text-align: center; padding: 52px 20px 26px; }
+  .sect-head h1 { font-family: var(--serif); font-weight: 500; font-size: clamp(26px, 4.4vw, 40px); letter-spacing: 0.08em; margin: 8px 0 6px; text-transform: uppercase; }
+  .sect-head .at { color: var(--muted); font-size: 13px; letter-spacing: 0.12em; }
+  .agg { display: flex; align-items: baseline; justify-content: center; gap: 12px; color: var(--muted); font-size: 12.5px; margin-top: 10px; }
+  .agg strong { font-family: var(--serif); font-size: 22px; color: var(--gold-strong); }
+  .stars { color: var(--gold); letter-spacing: 3px; }
+
+  /* 레퍼런스 문법: 화면 끝까지 붙는 풀블리드 스트립, 타일은 밀착(2px), 크롬 최소화 */
+  .feed { position: relative; width: 100vw; margin-left: calc(50% - 50vw); }
+  .feed-track { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(240px, 1fr); gap: 2px; overflow-x: auto; scrollbar-width: none; scroll-snap-type: x mandatory; }
+  .feed-track::-webkit-scrollbar { display: none; }
+  .cell { position: relative; aspect-ratio: 4 / 5; overflow: hidden; background: #0b0b0d; cursor: pointer; scroll-snap-align: start; }
+  .cell img, .cell video { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.45s ease, filter 0.3s ease; }
+  .cell:hover img, .cell:hover video { transform: scale(1.045); }
+  .cell .veil {
+    position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end;
+    padding: 16px; gap: 3px; opacity: 0; transition: opacity 0.25s ease;
+    background: linear-gradient(180deg, transparent 50%, rgba(3,3,4,0.82));
+  }
+  .cell:hover .veil { opacity: 1; }
+  .cell .veil .stars { font-size: 11px; }
+  .cell .veil q { font-family: var(--serif); font-size: 15px; line-height: 1.3; quotes: "“" "”"; }
+  .cell .veil .who { font-size: 10.5px; color: var(--muted); letter-spacing: 0.06em; }
+  .cell .veil .who b { color: var(--gold-strong); }
+  .verified { display: inline-flex; align-items: center; gap: 4px; font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold); }
+  .verified::before { content: "✓"; width: 12px; height: 12px; display: inline-grid; place-items: center; border: 1px solid var(--gold-dim); border-radius: 50%; font-size: 7px; }
+  .cell .play { position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-size: 9px; color: var(--gold-strong); background: rgba(3,3,4,0.6); border: 1px solid var(--gold-dim); }
+
+  .feed-arrow {
+    position: absolute; top: 50%; transform: translateY(-50%); z-index: 3;
+    width: 44px; height: 44px; border-radius: 50%;
+    border: 1px solid var(--gold-dim); background: rgba(3,3,4,0.62); backdrop-filter: blur(6px);
+    color: var(--gold-strong); font-size: 17px; cursor: pointer;
+  }
+  .feed-arrow:hover { background: rgba(214,197,160,0.18); }
+  .feed-arrow.l { left: 18px; } .feed-arrow.r { right: 18px; }
+
+  .cta-row { display: flex; justify-content: center; gap: 14px; margin-top: 30px; }
+  .ghost-note { text-align: center; color: var(--quiet); font-size: 12px; margin: 12px 0 80px; }
+</style>
+</head>
+<body>
+<header class="concept-topbar">
+  <span class="brand">BeloveD</span>
+  <span class="tag">Review Concept 4 · Full-Bleed Feed</span>
+  <nav><a href="./option-3-story-rail.html">← Prev</a><a href="./index.html">All concepts</a></nav>
+</header>
+
+<div class="sect-head">
+  <p class="kicker">Loved &amp; Worn</p>
+  <h1>See what we're creating</h1>
+  <p class="at">@beloved — real client moments</p>
+  <div class="agg"><strong>4.9</strong><span class="stars">★★★★★</span><span>127 verified reviews</span></div>
+</div>
+
+<div class="feed">
+  <button class="feed-arrow l" aria-label="prev">‹</button>
+  <button class="feed-arrow r" aria-label="next">›</button>
+  <div class="feed-track" id="track">
+    <figure class="cell"><video src="../assets/diamond-noir-white.mp4" autoplay muted loop playsinline></video>
+      <figcaption class="veil"><span class="stars">★★★★★</span><q>She said yes.</q><span class="who"><b>Jiwon K.</b> · Los Angeles</span><span class="verified">Verified order</span></figcaption></figure>
+    <figure class="cell"><img src="../assets/lineup-ring.png" alt=""/>
+      <figcaption class="veil"><span class="stars">★★★★★</span><q>Better than the render.</q><span class="who"><b>Noah L.</b> · Seattle</span><span class="verified">Verified order</span></figcaption></figure>
+    <figure class="cell"><img src="../assets/hero-diamond-ring-crisp.png" alt=""/><span class="play">▶</span>
+      <figcaption class="veil"><span class="stars">★★★★★</span><q>Icy white. No yellow.</q><span class="who"><b>Emma S.</b> · NYC</span><span class="verified">Verified order</span></figcaption></figure>
+    <figure class="cell"><img src="../assets/lineup-studs.png" alt=""/>
+      <figcaption class="veil"><span class="stars">★★★★★</span><q>Everyday studs, forever.</q><span class="who"><b>Sofia M.</b> · Miami</span><span class="verified">Verified order</span></figcaption></figure>
+    <figure class="cell"><img src="../assets/lineup-bracelet.png" alt=""/>
+      <figcaption class="veil"><span class="stars">★★★★★</span><q>Tennis dream, half retail.</q><span class="who"><b>Hana P.</b> · SF</span><span class="verified">Verified order</span></figcaption></figure>
+    <figure class="cell"><img src="../assets/lineup-pendant.png" alt=""/>
+      <figcaption class="veil"><span class="stars">★★★★★</span><q>She wears it every day.</q><span class="who"><b>Daniel R.</b> · Chicago</span><span class="verified">Verified order</span></figcaption></figure>
+  </div>
+</div>
+
+<div class="cta-row">
+  <a class="btn primary" href="#">Share your moment</a>
+  <a class="btn" href="#">View all 127</a>
+</div>
+<p class="ghost-note">클릭하면 라이트박스에서 영상·사진 크게 + 풀 리뷰 · 배송 완료 주문만 작성 가능(주문번호 자동 인증)</p>
+
+<script>
+  const track = document.getElementById("track");
+  const step = () => track.querySelector(".cell").getBoundingClientRect().width + 2;
+  document.querySelector(".feed-arrow.l").addEventListener("click", () => track.scrollBy({ left: -step(), behavior: "smooth" }));
+  document.querySelector(".feed-arrow.r").addEventListener("click", () => track.scrollBy({ left: step(), behavior: "smooth" }));
+</script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Option 1 — Gallery Wall · BeloveD Review Concepts</title>
+<link rel="stylesheet" href="../intake-concepts/intake-concepts.css" />
+<style>
+  main { width: min(100%, 1160px); margin: 0 auto; padding: 46px 20px 90px; }
+  .sect-head { text-align: center; margin-bottom: 8px; }
+  .sect-head .kicker { letter-spacing: 0.3em; }
+  .sect-head h1 { font-family: var(--serif); font-weight: 500; font-size: clamp(34px, 6vw, 56px); margin: 8px 0 10px; }
+  .agg { display: flex; align-items: baseline; justify-content: center; gap: 14px; color: var(--muted); font-size: 13px; margin-bottom: 34px; }
+  .agg strong { font-family: var(--serif); font-size: 26px; color: var(--gold-strong); }
+  .stars { color: var(--gold); letter-spacing: 3px; }
+
+  /* 매거진 월 — 마소너리 그리드, 미디어가 전부 */
+  .wall { columns: 3 280px; column-gap: 14px; }
+  .tile { position: relative; break-inside: avoid; margin-bottom: 14px; overflow: hidden; border: 1px solid var(--line); background: #0b0b0d; cursor: pointer; }
+  .tile img, .tile video { width: 100%; display: block; transition: transform 0.4s ease; }
+  .tile:hover img, .tile:hover video { transform: scale(1.04); }
+  .tile .veil {
+    position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end;
+    padding: 16px; gap: 4px;
+    background: linear-gradient(180deg, transparent 45%, rgba(3,3,4,0.82));
+    opacity: 0; transition: opacity 0.25s ease;
+  }
+  .tile:hover .veil { opacity: 1; }
+  .tile .veil .stars { font-size: 11px; }
+  .tile .veil q { font-family: var(--serif); font-size: 16px; line-height: 1.35; quotes: "“" "”"; }
+  .tile .veil .who { font-size: 11px; color: var(--muted); letter-spacing: 0.08em; }
+  .tile .veil .who b { color: var(--gold-strong); font-weight: 600; }
+  .verified { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold); }
+  .verified::before { content: "✓"; display: inline-grid; place-items: center; width: 13px; height: 13px; border: 1px solid var(--gold-dim); border-radius: 50%; font-size: 8px; }
+  .tile .play {
+    position: absolute; top: 12px; right: 12px; width: 30px; height: 30px; border-radius: 50%;
+    display: grid; place-items: center; font-size: 10px; color: var(--gold-strong);
+    background: rgba(3,3,4,0.6); border: 1px solid var(--gold-dim);
+  }
+  .cta-row { display: flex; justify-content: center; gap: 14px; margin-top: 34px; }
+  .ghost-note { text-align: center; color: var(--quiet); font-size: 12px; margin-top: 12px; }
+</style>
+</head>
+<body>
+<header class="concept-topbar">
+  <span class="brand">BeloveD</span>
+  <span class="tag">Review Concept 1 · Gallery Wall</span>
+  <nav><a href="./index.html">← All concepts</a><a href="./option-2-spotlight.html">Next →</a></nav>
+</header>
+<main>
+  <div class="sect-head">
+    <p class="kicker">Loved &amp; Worn</p>
+    <h1>From our clients.</h1>
+    <div class="agg"><strong>4.9</strong><span class="stars">★★★★★</span><span>127 verified reviews</span></div>
+  </div>
+
+  <div class="wall">
+    <figure class="tile"><img src="../assets/lineup-ring.png" alt=""/><span class="play">▶</span>
+      <figcaption class="veil"><span class="stars">★★★★★</span><q>The proposal video made me cry — the ring is unreal.</q><span class="who"><b>Jiwon K.</b> · Los Angeles</span><span class="verified">Verified order</span></figcaption></figure>
+    <figure class="tile"><img src="../assets/hero-diamond-ring-crisp.png" alt=""/>
+      <figcaption class="veil"><span class="stars">★★★★★</span><q>Icy white, exactly as promised.</q><span class="who"><b>Noah L.</b> · Seattle</span><span class="verified">Verified order</span></figcaption></figure>
+    <figure class="tile"><img src="../assets/lineup-studs.png" alt=""/>
+      <figcaption class="veil"><span class="stars">★★★★★</span><q>Half the retail quote for a better stone.</q><span class="who"><b>Emma S.</b> · NYC</span><span class="verified">Verified order</span></figcaption></figure>
+    <figure class="tile"><img src="../assets/lab-diamond-tweezers.webp" alt=""/><span class="play">▶</span>
+      <figcaption class="veil"><span class="stars">★★★★★</span><q>They sent the IGI video before I paid a cent.</q><span class="who"><b>Sofia M.</b> · Miami</span><span class="verified">Verified order</span></figcaption></figure>
+    <figure class="tile"><img src="../assets/lineup-bracelet.png" alt=""/>
+      <figcaption class="veil"><span class="stars">★★★★★</span><q>Tennis bracelet of my dreams.</q><span class="who"><b>Hana P.</b> · SF</span><span class="verified">Verified order</span></figcaption></figure>
+    <figure class="tile"><img src="../assets/lineup-pendant.png" alt=""/>
+      <figcaption class="veil"><span class="stars">★★★★★</span><q>Anniversary gift — she wears it every day.</q><span class="who"><b>Daniel R.</b> · Chicago</span><span class="verified">Verified order</span></figcaption></figure>
+  </div>
+
+  <div class="cta-row">
+    <a class="btn primary" href="#">Share your moment</a>
+    <a class="btn" href="#">View all 127</a>
+  </div>
+  <p class="ghost-note">리뷰 작성은 배송 완료된 주문만 가능 — 주문번호로 자동 인증 · 사진/영상 최대 5개</p>
+</main>
+</body>
+</html>
