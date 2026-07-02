@@ -6,7 +6,8 @@ import {
   Play,
 } from "lucide-react";
 import { useLocale } from "../i18n.jsx";
-import { withBase } from "../components/ui.jsx";
+import { MediaThumb, withBase } from "../components/ui.jsx";
+import { listReviews } from "../lib/store.js";
 import { useDBVersion } from "../lib/useDB.js";
 import { DESIGN_CATEGORIES } from "../lib/designSlots.js";
 
@@ -407,6 +408,88 @@ function MobileDock({ locale, p }) {
   );
 }
 
+
+// ── Loved & Worn: 고객 리뷰 풀블리드 피드 (4+2 하이브리드: 피드 + 시네마틱 라이트박스) ──
+const lovedCopy = {
+  en: { kicker: "Loved & Worn", title: "See what we're creating", sub: "@beloved — real client moments", verified: "verified reviews", verifiedOne: "Verified order", share: "Share your moment", shareNote: "Delivered orders can leave a review from the order page — photos and video first.", close: "Close" },
+  ko: { kicker: "Loved & Worn", title: "고객들의 순간", sub: "@beloved — 실제 주문 인증샷", verified: "인증 리뷰", verifiedOne: "주문 인증", share: "내 순간 남기기", shareNote: "배송 완료된 주문 페이지에서 사진·영상과 함께 리뷰를 남길 수 있어요.", close: "닫기" },
+  zh: { kicker: "Loved & Worn", title: "客户的真实瞬间", sub: "@beloved — 真实订单晒单", verified: "认证评价", verifiedOne: "订单认证", share: "分享你的瞬间", shareNote: "已送达的订单可在订单页面上传照片或视频留下评价。", close: "关闭" },
+  es: { kicker: "Loved & Worn", title: "Momentos de nuestros clientes", sub: "@beloved — pedidos reales", verified: "reseñas verificadas", verifiedOne: "Pedido verificado", share: "Comparte tu momento", shareNote: "Los pedidos entregados pueden dejar una reseña con fotos y video desde la página del pedido.", close: "Cerrar" },
+};
+
+function LovedWorn({ locale }) {
+  const copy = lovedCopy[locale] || lovedCopy.en;
+  const reviews = listReviews({ publishedOnly: true });
+  const [open, setOpen] = useState(null); // review | null
+  const [mIdx, setMIdx] = useState(0);
+  const trackRef = useRef(null);
+  if (reviews.length === 0) return null;
+  const avg = (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1);
+  const scroll = (dir) => {
+    const el = trackRef.current;
+    if (!el) return;
+    const cell = el.querySelector(".lw-cell");
+    el.scrollBy({ left: dir * ((cell?.getBoundingClientRect().width || 280) + 2), behavior: "smooth" });
+  };
+  const active = open ? (open.media[mIdx] || open.media[0]) : null;
+  return (
+    <section className="lw-section" aria-label={copy.title}>
+      <div className="lw-head">
+        <p className="section-label">{copy.kicker}</p>
+        <h2>{copy.title}</h2>
+        <p className="lw-at">{copy.sub}</p>
+        <div className="lw-agg"><strong>{avg}</strong><span className="lw-stars">{"★".repeat(5)}</span><span>{reviews.length} {copy.verified}</span></div>
+      </div>
+      <div className="lw-feed">
+        <button className="lw-arrow is-l" type="button" aria-label="Previous" onClick={() => scroll(-1)}>‹</button>
+        <button className="lw-arrow is-r" type="button" aria-label="Next" onClick={() => scroll(1)}>›</button>
+        <div className="lw-track" ref={trackRef}>
+          {reviews.map((review) => (
+            <button className="lw-cell" type="button" key={review.id} onClick={() => { setOpen(review); setMIdx(0); }}>
+              <MediaThumb media={review.media[0]} ratio="4 / 5" alt={review.quote} />
+              <span className="lw-veil">
+                <span className="lw-stars">{"★".repeat(review.rating)}</span>
+                <q>{review.quote}</q>
+                <span className="lw-who"><b>{review.name}</b>{review.location ? ` · ${review.location}` : ""}</span>
+                <span className="lw-verified">{copy.verifiedOne}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="lw-cta">
+        <Link className="noir-btn" to="/orders">{copy.share}<ArrowRight size={15} strokeWidth={1.6} /></Link>
+        <p>{copy.shareNote}</p>
+      </div>
+
+      {open && (
+        <div className="lw-lightbox" role="dialog" aria-modal="true" onClick={() => setOpen(null)}>
+          <div className="lw-lightbox-inner" onClick={(e) => e.stopPropagation()}>
+            <div className="lw-lightbox-media">
+              <MediaThumb media={active} ratio="4 / 3" alt={open.quote} fit="contain" eager />
+              {open.media.length > 1 && (
+                <div className="lw-lightbox-nav">
+                  <button type="button" onClick={() => setMIdx((i) => (i - 1 + open.media.length) % open.media.length)}>‹</button>
+                  <span>{mIdx + 1} / {open.media.length}</span>
+                  <button type="button" onClick={() => setMIdx((i) => (i + 1) % open.media.length)}>›</button>
+                </div>
+              )}
+            </div>
+            <div className="lw-lightbox-copy">
+              <span className="lw-stars">{"★".repeat(open.rating)}</span>
+              <blockquote>“{open.quote}”</blockquote>
+              {open.body && <p>{open.body}</p>}
+              <span className="lw-who"><b>{open.name}</b>{open.location ? ` · ${open.location}` : ""}</span>
+              <span className="lw-verified">{copy.verifiedOne}</span>
+              <button className="button secondary small" type="button" onClick={() => setOpen(null)}>{copy.close}</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default function Home() {
   useDBVersion();
   const { locale, t, p } = useLocale();
@@ -425,6 +508,7 @@ export default function Home() {
       <Hero t={t} p={p} />
       <Collections locale={locale} />
       <HomeCore locale={locale} />
+      <LovedWorn locale={locale} />
       <MobileDock locale={locale} p={p} />
     </>
   );

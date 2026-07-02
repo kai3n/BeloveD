@@ -5384,3 +5384,62 @@ html[data-theme="day"] .gflow-carat-range { accent-color: #16130f; }
 
 /* 잘리면 안 되는 업로드 콘텐츠용 — 여백은 토큰 배경으로 (day/night 모두 자연스럽게) */
 .media-thumb.is-contain { object-fit: contain; background: var(--bg-2); }
+
+/* ── Loved & Worn: 홈 고객 리뷰 풀블리드 피드 + 라이트박스 (토큰 기반 — day에선 밝게) ── */
+.lw-section { padding: 72px 0 84px; border-top: 1px solid var(--hair); }
+.lw-head { text-align: center; padding: 0 20px 26px; }
+.lw-head h2 { font-family: var(--serif); font-weight: 500; font-size: clamp(26px, 4.4vw, 40px); letter-spacing: 0.06em; text-transform: uppercase; margin: 8px 0 6px; }
+.lw-at { color: var(--muted); font-size: 13px; letter-spacing: 0.1em; margin: 0; }
+.lw-agg { display: flex; align-items: baseline; justify-content: center; gap: 12px; color: var(--muted); font-size: 12.5px; margin-top: 10px; }
+.lw-agg strong { font-family: var(--serif); font-size: 22px; color: var(--accent-bright); }
+.lw-stars { color: var(--accent); letter-spacing: 3px; }
+.lw-feed { position: relative; }
+.lw-track { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(240px, 23vw); gap: 2px; overflow-x: auto; scrollbar-width: none; scroll-snap-type: x mandatory; }
+.lw-track::-webkit-scrollbar { display: none; }
+.lw-cell { position: relative; padding: 0; border: none; background: var(--surface-2); cursor: pointer; overflow: hidden; scroll-snap-align: start; }
+.lw-cell .media-thumb { transition: transform 0.45s ease; }
+.lw-cell:hover .media-thumb { transform: scale(1.045); }
+.lw-veil {
+  position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-start;
+  padding: 16px; gap: 3px; text-align: left; opacity: 0; transition: opacity 0.25s ease;
+  background: linear-gradient(180deg, transparent 50%, rgba(8, 7, 5, 0.78));
+  color: #f4f1ea;
+}
+.lw-cell:hover .lw-veil, .lw-cell:focus-visible .lw-veil { opacity: 1; }
+.lw-veil q { font-family: var(--serif); font-size: 15px; line-height: 1.3; quotes: "“" "”"; }
+.lw-who { font-size: 10.5px; letter-spacing: 0.06em; color: rgba(244, 241, 234, 0.8); }
+.lw-who b { color: #f4f1ea; font-weight: 600; }
+.lw-verified { display: inline-flex; align-items: center; gap: 4px; font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent-bright); }
+.lw-verified::before { content: "✓"; width: 12px; height: 12px; display: inline-grid; place-items: center; border: 1px solid currentColor; border-radius: 50%; font-size: 7px; }
+.lw-arrow {
+  position: absolute; top: 50%; transform: translateY(-50%); z-index: 3;
+  width: 44px; height: 44px; border-radius: 50%; cursor: pointer; font-size: 17px;
+  border: 1px solid var(--line-strong); background: var(--surface); color: var(--text);
+  box-shadow: 0 10px 26px rgba(20, 18, 14, 0.16);
+}
+.lw-arrow:hover { border-color: var(--accent); color: var(--accent-bright); }
+.lw-arrow.is-l { left: 16px; } .lw-arrow.is-r { right: 16px; }
+.lw-cta { text-align: center; margin-top: 30px; display: grid; gap: 10px; justify-items: center; }
+.lw-cta p { margin: 0; color: var(--quiet); font-size: 12px; }
+.lw-lightbox { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; padding: 20px; background: rgba(6, 5, 4, 0.8); backdrop-filter: blur(10px); }
+.lw-lightbox-inner { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr); width: min(100%, 980px); max-height: 86vh; border: 1px solid var(--line-strong); background: var(--bg-2); overflow: hidden; }
+.lw-lightbox-media { position: relative; background: var(--surface-2); }
+.lw-lightbox-nav { position: absolute; right: 12px; bottom: 12px; display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--muted); }
+.lw-lightbox-nav button { width: 34px; height: 34px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--text); cursor: pointer; }
+.lw-lightbox-copy { padding: clamp(18px, 3vw, 30px); display: grid; gap: 12px; align-content: center; justify-items: start; overflow-y: auto; }
+.lw-lightbox-copy blockquote { margin: 0; font-family: var(--serif); font-style: italic; font-size: clamp(19px, 2.4vw, 26px); line-height: 1.3; }
+.lw-lightbox-copy p { margin: 0; color: var(--muted); font-size: 13.5px; line-height: 1.65; }
+@media (max-width: 760px) { .lw-lightbox-inner { grid-template-columns: 1fr; } .lw-track { grid-auto-columns: 70vw; } }
+
+/* ── Day 화사한 미디어 무대: 다이아가 돋보이는 밝은 배경 (다크 타일 제거) ── */
+html[data-theme="day"] .media-thumb { background: #f5f5f4; }
+html[data-theme="day"] .client-media-carousel { background: #f5f5f4; border-bottom-color: var(--hair); }
+html[data-theme="day"] .admin-media-stage { background: #f7f7f6; border-color: var(--line); }
+html[data-theme="day"] .lw-lightbox { background: rgba(250, 250, 249, 0.82); }
+html[data-theme="day"] .client-media-arrow { background: rgba(255, 255, 255, 0.85); color: #15130f; border-color: var(--line-strong); }
+html[data-theme="day"] .client-media-counter { background: rgba(255, 255, 255, 0.9); color: #5f5133; border-color: var(--line-strong); }
+
+/* 리뷰 별점 입력 */
+.review-stars { display: flex; gap: 6px; }
+.review-stars button { background: none; border: none; cursor: pointer; font-size: 26px; color: var(--quiet); padding: 0; }
+.review-stars button.is-on { color: var(--accent); }

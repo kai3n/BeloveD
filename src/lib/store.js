@@ -176,6 +176,12 @@ function migrateDB(d) {
     changed = true;
   }
 
+  // 리뷰 스토어 — 구버전 저장 DB에 배열 주입
+  if (d && !Array.isArray(d.reviews)) {
+    d.reviews = [];
+    changed = true;
+  }
+
   // 결제 채널 설정 — 구버전 저장 DB에 시드 기본값 주입
   if (d?.settings && !d.settings.payment) {
     d.settings.payment = { zelle: "pay@beloved.co", venmo: "@BeloveD-Fine", note: "" };
@@ -1783,5 +1789,42 @@ export function saveChip(chip) {
 }
 
 // ---------- misc ----------
+// ---------- 고객 리뷰 (인증샷 미디어 퍼스트 · 어드민 검수 후 게시) ----------
+export function listReviews(filter = {}) {
+  let rows = [...(db().reviews || [])];
+  if (filter.orderId) rows = rows.filter((r) => r.orderId === filter.orderId);
+  if (filter.publishedOnly) rows = rows.filter((r) => r.status === "published");
+  return rows.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+}
+// 배송 완료된 주문만, 주문당 1건 — 주문번호가 곧 인증(Verified)
+export function submitReview(orderId, { rating, quote, body, media, name, location }, actor = "customer") {
+  const order = getOpsOrder(orderId);
+  if (!order || !["DELIVERED", "ARCHIVED"].includes(order.status)) throw new Error("reviewNotAllowed");
+  const existing = listReviews({ orderId }).find((r) => r.status !== "hidden");
+  if (existing) return existing;
+  const review = {
+    id: nextSeqId("REV"), orderId,
+    name: (name || order.customerName || "Client").trim(),
+    location: (location || "").trim(),
+    rating: Math.min(5, Math.max(1, Number(rating) || 5)),
+    quote: maskContacts((quote || "").trim()),
+    body: maskContacts((body || "").trim()),
+    media: normalizeOrderMedia(media || []).slice(0, 5),
+    status: "pending", createdAt: now(),
+  };
+  db().reviews.push(review);
+  audit(actor, "review", review.id, "create", null, "pending");
+  persist();
+  return review;
+}
+export function setReviewStatus(reviewId, status, actor = "ops") {
+  const review = db().reviews.find((r) => r.id === reviewId);
+  if (!review) return null;
+  audit(actor, "review", reviewId, "status", review.status, status);
+  review.status = status;
+  persist();
+  return review;
+}
+
 export function getSettings() { return db().settings; }
 export function updateSettings(patch) { Object.assign(db().settings, patch); persist(); }

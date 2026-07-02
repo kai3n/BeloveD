@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "../lib/auth.jsx";
 import {
-  acceptQuote, confirmFinal, decideCad, getSettings, listCustomerActions, portalView,
+  acceptQuote, confirmFinal, decideCad, getSettings, listCustomerActions, listReviews, portalView, submitReview,
   rejectFinalConfirmation, reportDepositSent, respondCustomerAction, sendOrderMessage,
   updateShippingAddress, isShippingAddressComplete,
 } from "../lib/store.js";
@@ -192,6 +192,13 @@ const PROPOSAL_FLOW_COPY = {
     confirmingDeposit: "Depósito reportado — BeloveD está confirmando la transferencia.",
     nextBalance: "Envía el saldo para terminar la preparación del envío.",
   },
+};
+
+const REVIEW_COPY = {
+  en: { title: "Leave a review", done: "Thank you — your review is being curated before it goes live.", published: "Your review is live on our homepage. Thank you!", rating: "Rating", quoteLbl: "One line", quotePh: "She said yes.", bodyLbl: "Your story (optional)", mediaLbl: "Photos & video first (max 5)", submit: "Submit review", note: "Verified with your order number. Curated before publishing." },
+  ko: { title: "리뷰 남기기", done: "감사합니다 — 검수 후 홈페이지에 게시됩니다.", published: "리뷰가 홈페이지에 게시되었습니다. 감사합니다!", rating: "별점", quoteLbl: "한 줄 소감", quotePh: "She said yes.", bodyLbl: "이야기 (선택)", mediaLbl: "사진·영상 먼저 (최대 5)", submit: "리뷰 제출", note: "주문번호로 자동 인증됩니다. 검수 후 게시돼요." },
+  zh: { title: "留下评价", done: "谢谢 — 审核后将展示在首页。", published: "您的评价已在首页展示，谢谢！", rating: "评分", quoteLbl: "一句话", quotePh: "She said yes.", bodyLbl: "您的故事（可选）", mediaLbl: "照片·视频优先（最多 5）", submit: "提交评价", note: "通过订单号自动认证，审核后发布。" },
+  es: { title: "Deja una reseña", done: "Gracias — tu reseña se curará antes de publicarse.", published: "Tu reseña está en nuestra página. ¡Gracias!", rating: "Calificación", quoteLbl: "Una línea", quotePh: "She said yes.", bodyLbl: "Tu historia (opcional)", mediaLbl: "Fotos y video primero (máx. 5)", submit: "Enviar reseña", note: "Verificada con tu número de pedido. Se cura antes de publicar." },
 };
 
 function proposalFlowCopy(locale) {
@@ -497,6 +504,41 @@ function PaymentCard({ amountUsd, orderId, reported, fc, sentCta, reportedNote, 
         ? <p className="warn-note">{reportedNote}</p>
         : <button className="button primary payment-sent" type="button" onClick={onReport}>{sentCta}</button>}
       <p className="form-hint">{fc.sentHelp}</p>
+    </div>
+  );
+}
+
+// 리뷰 작성 — 미디어 퍼스트: 인증샷부터, 별점, 한 줄
+function ReviewForm({ orderId, rc, onDone }) {
+  const [media, setMedia] = useState([]);
+  const [rating, setRating] = useState(5);
+  const [quote, setQuote] = useState("");
+  const [body, setBody] = useState("");
+  function submit() {
+    if (!quote.trim()) return;
+    submitReview(orderId, { rating, quote, body, media });
+    onDone?.();
+  }
+  return (
+    <div className="form-stack review-form">
+      <div className="field"><span>{rc.mediaLbl}</span>
+        <MediaPicker value={media} onChange={setMedia} maxItems={5} showSamples={false} previewMode="list" />
+      </div>
+      <div className="field"><span>{rc.rating}</span>
+        <div className="review-stars" role="radiogroup" aria-label={rc.rating}>
+          {[1, 2, 3, 4, 5].map((n) => (
+            <button key={n} type="button" className={n <= rating ? "is-on" : ""} aria-label={`${n}`} onClick={() => setRating(n)}>★</button>
+          ))}
+        </div>
+      </div>
+      <label className="field"><span>{rc.quoteLbl}</span>
+        <input value={quote} placeholder={rc.quotePh} onChange={(e) => setQuote(e.target.value)} />
+      </label>
+      <label className="field"><span>{rc.bodyLbl}</span>
+        <textarea rows={3} value={body} onChange={(e) => setBody(e.target.value)} />
+      </label>
+      <p className="form-hint">{rc.note}</p>
+      <button className="button primary" type="button" disabled={!quote.trim()} onClick={submit}>{rc.submit}</button>
     </div>
   );
 }
@@ -938,6 +980,11 @@ export default function ClientPortal() {
     : order.status === "BALANCE" ? "active"
       : "upcoming";
 
+  // 리뷰: 배송 완료 주문만
+  const rc = REVIEW_COPY[locale] || REVIEW_COPY.en;
+  const reviewEligible = ["DELIVERED", "ARCHIVED"].includes(order.status);
+  const myReview = reviewEligible ? listReviews({ orderId }).find((r) => r.status !== "hidden") : null;
+
   return (
     <div className="page client-portal-page">
       {/* 슬림 액션바 — 지금 할 일 한 줄 + 주문 메타 (큰 히어로/사이드 브리프 제거) */}
@@ -1053,6 +1100,14 @@ export default function ClientPortal() {
           />
         )}
       </Checkpoint>
+
+      {/* 리뷰 — 배송 완료 후 인증샷과 함께 */}
+      {reviewEligible && (
+        <Checkpoint id="review-stage" index={6} title={rc.title} state={myReview ? "done" : "active"}
+          summary={myReview ? (myReview.status === "published" ? rc.published : rc.done) : null}>
+          {!myReview && <ReviewForm orderId={orderId} rc={rc} onDone={() => notify(rc.done)} />}
+        </Checkpoint>
+      )}
 
       {/* 주문 요약 — 필요할 때만 펼쳐 보는 아코디언 */}
       <details className="client-brief-details">

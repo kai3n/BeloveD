@@ -9,7 +9,7 @@ import {
   publishFinalMedia, recordActualWeight, reviewCandidate, sendQuote, submitDiamondSelection,
   toggleShortlist, updateQuoteProposal,
   setCandidateAvailability, unpublishCandidate, updateOpsOrder, upsertMilestone, getSettings,
-  getDB, reviewReferenceMedia, createProxyDiamondCandidate, ORDER_MESSAGE_CHANNELS, sendOrderMessage, isShippingAddressComplete, getQuoteDiamondCandidate,
+  getDB, reviewReferenceMedia, createProxyDiamondCandidate, ORDER_MESSAGE_CHANNELS, sendOrderMessage, isShippingAddressComplete, getQuoteDiamondCandidate, listReviews, setReviewStatus,
 } from "../../lib/store.js";
 import { formatAnnotation } from "../../lib/chips.js";
 import { useDBVersion } from "../../lib/useDB.js";
@@ -1488,6 +1488,17 @@ export default function AdminOpsOrder() {
             {actions.length === 0 ? <p className="form-hint">—</p> : actions.map((a) => (
               <p key={a.id} className="form-hint">{a.id} · {a.type} · {a.status}{a.response && ` → ${a.response}`}</p>
             ))}
+          </div>
+          <div className="panel form-stack">
+            <h3>Reviews</h3>
+            {listReviews({ orderId: order.id }).length === 0 ? <p className="form-hint">—</p>
+              : listReviews({ orderId: order.id }).map((r) => (
+                <div key={r.id} className="feedback-note">
+                  <strong>{r.id}</strong> · {"★".repeat(r.rating)} · “{r.quote}” · {r.name} · <span className={`status-badge ${r.status === "published" ? "mst-done" : r.status === "pending" ? "mst-inProgress" : "mst-pending"}`}>{r.status}</span>
+                  {r.status !== "published" && <button className="button secondary small" style={{ marginLeft: 10 }} onClick={() => { setReviewStatus(r.id, "published"); notify(); }}>Publish</button>}
+                  {r.status !== "hidden" && <button className="button secondary small" style={{ marginLeft: 6 }} onClick={() => { setReviewStatus(r.id, "hidden"); notify(); }}>Hide</button>}
+                </div>
+              ))}
           </div>
           <div className="panel">
             <h3>{t.auditTitle}</h3>
