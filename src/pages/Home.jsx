@@ -461,7 +461,7 @@ function LovedWorn({ locale }) {
         <div className="lw-lightbox" role="dialog" aria-modal="true" onClick={() => setOpen(null)}>
           <div className="lw-lightbox-inner" onClick={(e) => e.stopPropagation()}>
             <div className="lw-lightbox-media">
-              <MediaThumb media={active} ratio="4 / 3" alt={open.quote} fit="contain" eager />
+              <MediaThumb media={active} ratio="4 / 5" alt={open.quote} eager />
               {open.media.length > 1 && (
                 <div className="lw-lightbox-nav">
                   <button type="button" onClick={() => setMIdx((i) => (i - 1 + open.media.length) % open.media.length)}>‹</button>
