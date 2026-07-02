@@ -5052,3 +5052,87 @@ button.text-link:hover {
   .qc-row { grid-template-columns: 104px 1fr; }
   .qc-range { grid-column: 2; text-align: left; min-width: 0; }
 }
+
+/* ---------- 고객 포털: 확정 제안 → 디파짓 flow ---------- */
+.client-journey {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+  margin: 4px 0 6px;
+}
+.client-journey-step {
+  border-top: 2px solid var(--hair);
+  padding: 10px 2px 0;
+  display: grid; gap: 2px;
+}
+.client-journey-step strong {
+  font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--quiet);
+}
+.client-journey-step small { font-size: 11px; color: var(--quiet); }
+.client-journey-step.is-done { border-top-color: rgba(200, 168, 106, 0.45); }
+.client-journey-step.is-done strong { color: var(--muted); }
+.client-journey-step.is-now { border-top-color: var(--accent); }
+.client-journey-step.is-now strong { color: var(--accent-bright); }
+.client-journey-step.is-now small { color: var(--muted); }
+.client-journey-step.is-prep { border-top-color: rgba(200, 168, 106, 0.25); }
+@media (max-width: 640px) {
+  .client-journey { grid-template-columns: repeat(2, 1fr); }
+}
+
+.proposal-card { border-color: var(--line-strong); display: grid; gap: 18px; }
+.proposal-card.is-preparing { border-color: var(--line); }
+.proposal-card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.proposal-card-head h3 { margin: 2px 0 0; font-family: var(--serif); font-size: 22px; }
+.proposal-card-body { display: grid; grid-template-columns: minmax(0, 280px) minmax(0, 1fr); gap: 20px; align-items: start; }
+.proposal-media { max-width: 280px; }
+.proposal-spec { margin: 0; display: grid; align-content: start; }
+.proposal-spec > div {
+  display: flex; justify-content: space-between; gap: 14px;
+  padding: 9px 0; border-bottom: 1px solid var(--hair);
+}
+.proposal-spec dt {
+  margin: 0; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--quiet); align-self: center; white-space: nowrap;
+}
+.proposal-spec dd { margin: 0; font-weight: 600; text-align: right; }
+.proposal-total { text-align: center; padding: 4px 0 0; }
+.proposal-amount {
+  font-family: var(--luxury-display); font-size: clamp(38px, 7vw, 52px);
+  line-height: 1.05; color: var(--text);
+}
+.proposal-split { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.proposal-split > div { border: 1px solid var(--line); padding: 12px 14px; text-align: center; }
+.proposal-split span {
+  display: block; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--quiet);
+}
+.proposal-split strong { font-family: var(--serif); font-size: 21px; }
+.proposal-sub-note {
+  margin: 0; padding: 12px 16px; border: 1px solid var(--hair);
+  background: var(--bg-2); font-size: 12.5px; line-height: 1.65; color: var(--muted);
+}
+.proposal-sub-note strong { color: var(--text); }
+.proposal-confirm { width: 100%; }
+@media (max-width: 700px) {
+  .proposal-card-body { grid-template-columns: 1fr; }
+  .proposal-media { max-width: none; }
+}
+
+.payment-card { display: grid; gap: 16px; }
+.payment-card.is-locked, .payment-card.is-done { opacity: 0.75; }
+.payment-card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.payment-card-head h3 { margin: 2px 0 0; font-family: var(--serif); font-size: 21px; }
+.payment-amount {
+  text-align: center; font-family: var(--luxury-display);
+  font-size: clamp(30px, 6vw, 40px); line-height: 1.05;
+}
+.payment-methods { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.payment-method { border: 1px solid var(--line); padding: 14px 16px; display: grid; gap: 5px; justify-items: start; }
+.payment-method h4 { margin: 0; font-size: 15px; }
+.payment-method code { font-family: var(--mono); font-size: 13px; color: var(--accent-bright); }
+.payment-method small { font-size: 11px; color: var(--quiet); }
+.payment-memo {
+  margin: 0; padding: 11px 14px; border: 1px dashed var(--line-strong);
+  font-size: 13px; color: var(--muted);
+}
+.payment-sent { width: 100%; }
+@media (max-width: 560px) {
+  .payment-methods { grid-template-columns: 1fr; }
+}

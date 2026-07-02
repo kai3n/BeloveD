@@ -3,8 +3,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "../lib/auth.jsx";
 import {
-  acceptQuote, confirmFinal, decideCad, listCustomerActions, portalView, rejectDiamondCandidates,
-  rejectFinalConfirmation, respondCustomerAction, sendOrderMessage, toggleShortlist, submitDiamondSelection,
+  acceptQuote, confirmFinal, decideCad, getSettings, listCustomerActions, portalView,
+  rejectFinalConfirmation, reportDepositSent, respondCustomerAction, sendOrderMessage,
   updateShippingAddress, isShippingAddressComplete,
 } from "../lib/store.js";
 import { useDBVersion } from "../lib/useDB.js";
@@ -70,79 +70,160 @@ function ConfirmationRail({ steps }) {
   );
 }
 
-const CUSTOMER_STATUS_COPY = {
+// 확정 제안 → 디파짓 flow 카피 (Request → Proposal → Deposit → Production)
+const PROPOSAL_FLOW_COPY = {
   en: {
-    kicker: "Current status",
-    title: "Three checkpoints.",
-    subtitle: "Your order moves through stone, design, and final confirmation.",
-    stoneTitle: "Stone",
-    stoneBody: "Review the diamond option when BeloveD sends it.",
-    stonePendingBody: "BeloveD is preparing diamond options for this order. There is nothing to select yet.",
-    stoneSubmittedBody: "Your diamond choice is saved. Review the quote and deposit step to lock it for production.",
-    designTitle: "Design",
-    designBody: "Approve CAD/design media before production.",
-    finalTitle: "Final piece",
-    finalBody: "Confirm the finished media before delivery.",
-    done: "Done",
-    current: "In progress",
-    waiting: "Your turn",
-    next: "Next",
+    journeyRequest: "Request", journeyRequestSub: "Submitted",
+    journeyProposal: "Proposal", journeyProposalSubNow: "Confirm now", journeyProposalSubPrep: "Preparing",
+    journeyDeposit: "Deposit", journeyDepositSub: "Zelle / Venmo",
+    journeyProduction: "Production", journeyProductionSub: "CAD → Final → Ship",
+    proposalKicker: "Your final proposal",
+    preparingTitle: "We are preparing your final proposal.",
+    preparingBody: "BeloveD is confirming the exact stone and total price with our ateliers. You will review one proposal here — usually within 24–48 hours.",
+    specStone: "Stone", specGrade: "Grade", specCert: "Certificate", specSetting: "Setting", specLead: "Lead time",
+    totalLabel: "Total, all-inclusive",
+    totalMeta: "Setting, stone, labor, shipping and insurance included — no hidden fees.",
+    depositToday: "Deposit — today", balanceShip: "Balance — before shipping",
+    subTitle: "Equivalent substitution",
+    subBody: "Depending on availability, this stone may be replaced with another certified stone of equal or better specs (±0.03 ct, same color/clarity grade or higher). If that happens, we send the new IGI number and video first and proceed only after your OK.",
+    confirmCta: "Confirm this proposal", confirmedBadge: "Confirmed",
+    payTitle: "Reserve with deposit", payAfter: "After you confirm",
+    payMemo: (id) => `Add order number ${id} to the payment memo — it speeds up confirmation.`,
+    zelleHint: "No fee · fast confirmation", venmoHint: "Same-day confirmation",
+    copyBtn: "Copy", copiedBtn: "Copied ✓",
+    depositSentCta: "I've sent the deposit", balanceSentCta: "I've sent the balance",
+    sentHelp: "We confirm within 1 business day, lock your stone, and email you right away.",
+    reportedBadge: "Confirming transfer",
+    reportedNote: "Payment reported. BeloveD is confirming the transfer — we'll email you as soon as your stone is locked.",
+    doneBadge: "Deposit confirmed",
+    balanceTitle: "Balance payment",
+    balanceReportedNote: "Thanks — we'll confirm the balance shortly and prepare shipping.",
+    nextConfirm: "Review and confirm your final proposal.",
+    confirmingDeposit: "Deposit reported — BeloveD is confirming the transfer.",
+    nextBalance: "Send the balance to finish shipping preparation.",
   },
   ko: {
-    kicker: "현재 진행 상황",
-    title: "핵심 3단계만 확인하세요.",
-    subtitle: "스톤, 디자인, 완성품 확인 순서로 주문이 진행됩니다.",
-    stoneTitle: "스톤",
-    stoneBody: "BeloveD가 보낸 다이아 후보를 확인합니다.",
-    stonePendingBody: "BeloveD가 이 주문에 맞는 다이아 후보를 준비 중입니다. 아직 선택할 항목은 없습니다.",
-    stoneSubmittedBody: "선택하신 다이아몬드가 저장됐습니다. 견적과 디파짓 단계를 완료하면 제작용으로 최종 확정됩니다.",
-    designTitle: "디자인",
-    designBody: "제작 전 CAD/디자인 자료를 승인합니다.",
-    finalTitle: "완성품",
-    finalBody: "배송 전 실제 완성품 사진·영상을 확인합니다.",
-    done: "완료",
-    current: "진행중",
-    waiting: "확인 필요",
-    next: "예정",
+    journeyRequest: "요청", journeyRequestSub: "제출 완료",
+    journeyProposal: "확정 제안", journeyProposalSubNow: "지금 컨펌", journeyProposalSubPrep: "준비 중",
+    journeyDeposit: "디파짓", journeyDepositSub: "Zelle / Venmo",
+    journeyProduction: "제작", journeyProductionSub: "CAD → 완성 → 배송",
+    proposalKicker: "확정 제안",
+    preparingTitle: "확정 제안을 준비하고 있습니다.",
+    preparingBody: "BeloveD가 아뜰리에와 정확한 스톤·총액을 확정하는 중입니다. 보통 24–48시간 안에 이 화면에서 제안 1건을 확인하실 수 있어요.",
+    specStone: "스톤", specGrade: "등급", specCert: "감정서", specSetting: "세팅", specLead: "제작 기간",
+    totalLabel: "총액 (올인클루시브)",
+    totalMeta: "세팅 · 스톤 · 세공 · 배송 · 보험 포함 — 숨은 비용 없음.",
+    depositToday: "디파짓 — 지금", balanceShip: "잔금 — 배송 전",
+    subTitle: "동급 대체 안내",
+    subBody: "확보 시점에 따라 이 스톤은 동일 또는 상위 스펙(캐럿 ±0.03, 같은 컬러·클래리티 등급 이상)의 다른 인증 스톤으로 대체될 수 있습니다. 대체 시 새 IGI 번호와 실물 영상을 먼저 보내드리고, 동의 후에만 진행합니다.",
+    confirmCta: "이 제안으로 확정", confirmedBadge: "컨펌 완료",
+    payTitle: "디파짓으로 예약 확정", payAfter: "컨펌 후 진행",
+    payMemo: (id) => `송금 메모에 주문번호 ${id}를 적어주세요 — 입금 확인이 빨라집니다.`,
+    zelleHint: "수수료 없음 · 빠른 확인", venmoHint: "당일 확인",
+    copyBtn: "복사", copiedBtn: "복사됨 ✓",
+    depositSentCta: "디파짓 보냈어요", balanceSentCta: "잔금 보냈어요",
+    sentHelp: "영업일 기준 24시간 내에 입금을 확인하고 스톤을 락한 뒤 바로 이메일로 알려드립니다.",
+    reportedBadge: "입금 확인 중",
+    reportedNote: "송금 보고가 접수됐습니다. BeloveD가 입금을 확인하는 중이며, 스톤이 락되는 즉시 이메일로 알려드려요.",
+    doneBadge: "디파짓 확인 완료",
+    balanceTitle: "잔금 결제",
+    balanceReportedNote: "감사합니다 — 곧 잔금을 확인하고 배송을 준비할게요.",
+    nextConfirm: "확정 제안을 확인하고 컨펌해 주세요.",
+    confirmingDeposit: "송금 보고 완료 — BeloveD가 입금을 확인하는 중입니다.",
+    nextBalance: "잔금을 보내주시면 배송 준비가 마무리됩니다.",
   },
   zh: {
-    kicker: "当前状态",
-    title: "只看三个关键节点。",
-    subtitle: "订单按选石、设计确认、成品确认推进。",
-    stoneTitle: "石头",
-    stoneBody: "查看 BeloveD 发送的钻石候选。",
-    stonePendingBody: "BeloveD 正在为此订单准备钻石候选，目前无需选择。",
-    stoneSubmittedBody: "您的钻石选择已保存。请完成报价与定金步骤后锁定用于制作。",
-    designTitle: "设计",
-    designBody: "生产前确认 CAD / 设计资料。",
-    finalTitle: "成品",
-    finalBody: "发货前确认成品照片或视频。",
-    done: "完成",
-    current: "进行中",
-    waiting: "需确认",
-    next: "下一步",
+    journeyRequest: "需求", journeyRequestSub: "已提交",
+    journeyProposal: "最终方案", journeyProposalSubNow: "立即确认", journeyProposalSubPrep: "准备中",
+    journeyDeposit: "定金", journeyDepositSub: "Zelle / Venmo",
+    journeyProduction: "制作", journeyProductionSub: "CAD → 成品 → 发货",
+    proposalKicker: "您的最终方案",
+    preparingTitle: "正在准备您的最终方案。",
+    preparingBody: "BeloveD 正在与工坊确认具体钻石与总价。通常 24–48 小时内，您将在此确认一份方案。",
+    specStone: "钻石", specGrade: "等级", specCert: "证书", specSetting: "镶嵌", specLead: "制作周期",
+    totalLabel: "总价（全包）",
+    totalMeta: "含镶嵌、钻石、工费、运费与保险 — 无隐藏费用。",
+    depositToday: "定金 — 现在", balanceShip: "尾款 — 发货前",
+    subTitle: "同级替换说明",
+    subBody: "视库存情况，此钻石可能替换为规格相同或更优（±0.03 克拉，同级或更高颜色/净度）的其他认证钻石。如有替换，我们会先发送新的 IGI 编号与实物视频，征得您同意后才继续。",
+    confirmCta: "确认此方案", confirmedBadge: "已确认",
+    payTitle: "支付定金锁定", payAfter: "确认后开放",
+    payMemo: (id) => `请在转账备注中填写订单号 ${id} — 有助于更快确认。`,
+    zelleHint: "免手续费 · 快速确认", venmoHint: "当日确认",
+    copyBtn: "复制", copiedBtn: "已复制 ✓",
+    depositSentCta: "我已转定金", balanceSentCta: "我已转尾款",
+    sentHelp: "我们将在 1 个工作日内确认到账并锁定钻石，随后立即邮件通知您。",
+    reportedBadge: "确认到账中",
+    reportedNote: "已收到您的转账报告。BeloveD 正在确认到账，钻石锁定后会立即邮件通知您。",
+    doneBadge: "定金已确认",
+    balanceTitle: "尾款支付",
+    balanceReportedNote: "谢谢 — 我们会尽快确认尾款并安排发货。",
+    nextConfirm: "请查看并确认您的最终方案。",
+    confirmingDeposit: "已报告转账 — BeloveD 正在确认到账。",
+    nextBalance: "请支付尾款以完成发货准备。",
   },
   es: {
-    kicker: "Estado actual",
-    title: "Solo tres puntos clave.",
-    subtitle: "Tu pedido avanza por piedra, diseño y confirmación final.",
-    stoneTitle: "Piedra",
-    stoneBody: "Revisa la opción de diamante cuando BeloveD la envíe.",
-    stonePendingBody: "BeloveD está preparando opciones de diamante para este pedido. Aún no hay nada que seleccionar.",
-    stoneSubmittedBody: "Tu elección de diamante quedó guardada. Revisa la cotización y el depósito para bloquearlo para producción.",
-    designTitle: "Diseño",
-    designBody: "Aprueba CAD o medios de diseño antes de producción.",
-    finalTitle: "Pieza final",
-    finalBody: "Confirma fotos o video final antes del envío.",
-    done: "Listo",
-    current: "En curso",
-    waiting: "Tu turno",
-    next: "Siguiente",
+    journeyRequest: "Solicitud", journeyRequestSub: "Enviada",
+    journeyProposal: "Propuesta", journeyProposalSubNow: "Confirma ahora", journeyProposalSubPrep: "En preparación",
+    journeyDeposit: "Depósito", journeyDepositSub: "Zelle / Venmo",
+    journeyProduction: "Producción", journeyProductionSub: "CAD → Final → Envío",
+    proposalKicker: "Tu propuesta final",
+    preparingTitle: "Estamos preparando tu propuesta final.",
+    preparingBody: "BeloveD está confirmando la piedra exacta y el precio total con nuestros talleres. Normalmente en 24–48 horas revisarás una propuesta aquí.",
+    specStone: "Piedra", specGrade: "Grado", specCert: "Certificado", specSetting: "Montura", specLead: "Tiempo de producción",
+    totalLabel: "Total, todo incluido",
+    totalMeta: "Incluye montura, piedra, trabajo, envío y seguro — sin costos ocultos.",
+    depositToday: "Depósito — hoy", balanceShip: "Saldo — antes del envío",
+    subTitle: "Sustitución equivalente",
+    subBody: "Según disponibilidad, esta piedra puede sustituirse por otra certificada de especificaciones iguales o mejores (±0.03 ct, mismo grado de color/claridad o superior). Si ocurre, primero enviamos el nuevo número IGI y un video, y avanzamos solo con tu OK.",
+    confirmCta: "Confirmar esta propuesta", confirmedBadge: "Confirmada",
+    payTitle: "Reserva con depósito", payAfter: "Después de confirmar",
+    payMemo: (id) => `Agrega el número de pedido ${id} en la nota del pago — acelera la confirmación.`,
+    zelleHint: "Sin comisión · confirmación rápida", venmoHint: "Confirmación el mismo día",
+    copyBtn: "Copiar", copiedBtn: "Copiado ✓",
+    depositSentCta: "Ya envié el depósito", balanceSentCta: "Ya envié el saldo",
+    sentHelp: "Confirmamos en 1 día hábil, bloqueamos tu piedra y te avisamos por correo.",
+    reportedBadge: "Confirmando transferencia",
+    reportedNote: "Pago reportado. BeloveD está confirmando la transferencia — te avisaremos por correo cuando tu piedra quede bloqueada.",
+    doneBadge: "Depósito confirmado",
+    balanceTitle: "Pago del saldo",
+    balanceReportedNote: "Gracias — confirmaremos el saldo en breve y prepararemos el envío.",
+    nextConfirm: "Revisa y confirma tu propuesta final.",
+    confirmingDeposit: "Depósito reportado — BeloveD está confirmando la transferencia.",
+    nextBalance: "Envía el saldo para terminar la preparación del envío.",
   },
 };
 
-function customerStatusCopy(locale) {
-  return CUSTOMER_STATUS_COPY[locale] || CUSTOMER_STATUS_COPY.en;
+function proposalFlowCopy(locale) {
+  return PROPOSAL_FLOW_COPY[locale] || PROPOSAL_FLOW_COPY.en;
+}
+
+// 4단계 저니 레일: Request → Proposal → Deposit → Production
+function JourneyRail({ order, quote, depositDone, fc }) {
+  const confirmed = quote?.status === "accepted";
+  const stages = [
+    { key: "request", title: fc.journeyRequest, sub: fc.journeyRequestSub, state: "done" },
+    {
+      key: "proposal", title: fc.journeyProposal,
+      sub: quote ? fc.journeyProposalSubNow : fc.journeyProposalSubPrep,
+      state: confirmed ? "done" : quote ? "now" : "prep",
+    },
+    { key: "deposit", title: fc.journeyDeposit, sub: fc.journeyDepositSub, state: depositDone ? "done" : confirmed ? "now" : "idle" },
+    {
+      key: "production", title: fc.journeyProduction, sub: fc.journeyProductionSub,
+      state: ["DELIVERED", "ARCHIVED"].includes(order.status) ? "done" : depositDone ? "now" : "idle",
+    },
+  ];
+  return (
+    <div className="client-journey" aria-label={fc.journeyProposal}>
+      {stages.map((stage) => (
+        <div className={`client-journey-step is-${stage.state}`} key={stage.key}>
+          <strong>{stage.title}</strong>
+          <small>{stage.sub}</small>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 const CUSTOMER_WORKSPACE_COPY = {
@@ -382,60 +463,122 @@ function ClientOrderBrief({ rows, order, waitingOn, due, statusLabel, copy }) {
   );
 }
 
-function CustomerStatusOverview({ order, showStone, stoneState, designState, finalState, actions, milestones = [], hasDiamondCandidates = false, diamondSelectionSubmitted = false }) {
-  const { locale } = useLocale();
-  const copy = customerStatusCopy(locale);
-  const openAction = actions?.find((action) => action.status === "open");
-  const actionType = openAction?.type === "diamondSelection" && (!hasDiamondCandidates || diamondSelectionSubmitted) ? null : openAction?.type;
-  const updateFor = (stage, fallback) => {
-    const milestone = milestones.find((item) => item.stage === stage);
-    return milestone?.publishToClient && milestone?.clientUpdate ? milestone.clientUpdate : fallback;
-  };
-  const toStepState = (key, fallbackState) => {
-    const waiting =
-      (key === "stone" && actionType === "diamondSelection") ||
-      (key === "design" && ["cadReview", "cadApproval"].includes(actionType)) ||
-      (key === "final" && actionType === "finalConfirmation");
-    if (waiting) return "waiting";
-    if (fallbackState === "done") return "done";
-    if (fallbackState === "active" || fallbackState === "waiting") return "current";
-    return "next";
-  };
-  const stoneFallback = showStone ? stoneState : order.status === "STYLE_SELECTION" ? "active" : "done";
-  const stoneBody = showStone && stoneState !== "done"
-    ? diamondSelectionSubmitted ? copy.stoneSubmittedBody
-      : order.status === "STONE_SELECTION" && !hasDiamondCandidates ? copy.stonePendingBody
-        : copy.stoneBody
-    : copy.stoneBody;
-  const steps = [
-    { key: "stone", title: copy.stoneTitle, body: updateFor("diamondLocked", stoneBody), state: toStepState("stone", stoneFallback) },
-    { key: "design", title: copy.designTitle, body: updateFor("cadIssued", copy.designBody), state: toStepState("design", designState) },
-    { key: "final", title: copy.finalTitle, body: updateFor("finalQcVideo", copy.finalBody), state: toStepState("final", finalState) },
-  ];
-  const activeStep = steps.find((step) => step.state === "waiting") ||
-    steps.find((step) => step.state === "current") ||
-    steps.find((step) => step.state !== "done") ||
-    steps[steps.length - 1];
-  const labelFor = (state) => state === "done" ? copy.done : state === "waiting" ? copy.waiting : state === "current" ? copy.current : copy.next;
+// 카테고리 조건부 사이즈 요약 (제안 카드 Setting 라인)
+function conditionalSizeSummary(intake, t) {
+  const cond = intake?.conditional || {};
+  if (cond.ringSize) return `US ${cond.ringSize}`;
+  if (cond.chainLength) return chainLengthLabel(cond.chainLength);
+  if (cond.wristSize) return optionLabel(t, "braceletWrist", cond.wristSize);
+  if (cond.earringDetails) return optionLabel(t, "earringPairing", cond.earringDetails);
+  return "";
+}
 
+// 확정 제안 카드 — 미디어 캐러셀 + 스펙 + 총액(총액만) + 동급 대체 안내 + 컨펌
+function ProposalCard({ quote, intake, style, fc, t, p, locale, shippingProps, onConfirm, confirmDisabled }) {
+  const spec = quote.stoneSpec;
+  const media = quote.proposalMedia?.length
+    ? quote.proposalMedia
+    : mediaList(style?.media, style?.coverImage);
+  const settingSummary = [
+    style ? pickI18n(style.name, locale) : (p.opsCategories?.[intake?.category] || ""),
+    p.opsMetals?.[intake?.metal] || "",
+    conditionalSizeSummary(intake, p.intake),
+  ].filter(Boolean).join(" · ");
+  const confirmed = quote.status === "accepted";
   return (
-    <section className="panel customer-status-overview" aria-label={copy.kicker}>
-      <div className="customer-status-copy">
-        <p className="section-label">{copy.kicker}</p>
-        <h3>{copy.title}</h3>
-        <p>{activeStep?.body || copy.subtitle}</p>
+    <section id="proposal-stage" className={`panel proposal-card ${confirmed ? "is-confirmed" : ""}`}>
+      <div className="proposal-card-head">
+        <div>
+          <p className="section-label">{fc.proposalKicker}</p>
+          <h3>{quote.id}</h3>
+        </div>
+        {confirmed && <span className="status-badge cst-REPLACED">{fc.confirmedBadge}</span>}
       </div>
-      <div className="customer-status-steps">
-        {steps.map((step, index) => (
-          <article className={`customer-status-step ${step.state}`} key={step.key}>
-            <span className="customer-status-index">{index + 1}</span>
-            <div>
-              <strong>{step.title}</strong>
-              <small>{labelFor(step.state)}</small>
-            </div>
-          </article>
-        ))}
+      <div className="proposal-card-body">
+        <div className="proposal-media">
+          <ClientMediaCarousel media={media} alt={quote.id} />
+        </div>
+        <dl className="proposal-spec">
+          {spec && (
+            <>
+              <div><dt>{fc.specStone}</dt><dd>{p.shapes[spec.shape] || spec.shape} · {Number(spec.carat).toFixed(2)}ct</dd></div>
+              <div><dt>{fc.specGrade}</dt><dd>{[spec.color, spec.clarity, spec.growth].filter(Boolean).join(" · ")}</dd></div>
+              {spec.igiNo && <div><dt>{fc.specCert}</dt><dd>{spec.lab || "IGI"} {spec.igiNo}</dd></div>}
+            </>
+          )}
+          {settingSummary && <div><dt>{fc.specSetting}</dt><dd>{settingSummary}</dd></div>}
+          <div><dt>{fc.specLead}</dt><dd>{t.lead(quote.leadDays)}</dd></div>
+        </dl>
       </div>
+      <div className="proposal-total">
+        <p className="section-label">{fc.totalLabel}</p>
+        <div className="proposal-amount">{usd(quote.totalUsd)}</div>
+        <p className="form-hint">{fc.totalMeta} · {t.validUntil}: {quote.validUntil}</p>
+      </div>
+      <div className="proposal-split">
+        <div><span>{fc.depositToday}</span><strong>{usd(quote.depositUsd)}</strong></div>
+        <div><span>{fc.balanceShip}</span><strong>{usd(quote.balanceUsd)}</strong></div>
+      </div>
+      <p className="proposal-sub-note"><strong>{fc.subTitle}.</strong> {quote.substitutionNote || fc.subBody}</p>
+      <ShippingAddressPanel {...shippingProps} />
+      {!confirmed && (
+        <button className="button primary proposal-confirm" type="button" disabled={confirmDisabled} onClick={onConfirm}>
+          {fc.confirmCta}
+        </button>
+      )}
+    </section>
+  );
+}
+
+// Zelle/Venmo 결제 카드 — 디파짓·잔금 공용. state: locked | active | reported | done
+function PaymentCard({ id, title, amountUsd, orderId, state, fc, sentCta, reportedNote, onReport }) {
+  const payment = getSettings().payment || {};
+  const [copiedKey, setCopiedKey] = useState("");
+  const methods = [
+    { key: "zelle", name: "Zelle", handle: payment.zelle, hint: fc.zelleHint },
+    { key: "venmo", name: "Venmo", handle: payment.venmo, hint: fc.venmoHint },
+  ].filter((m) => m.handle);
+  function copyHandle(key, value) {
+    try { navigator.clipboard?.writeText(value); } catch { /* 클립보드 미지원 브라우저 */ }
+    setCopiedKey(key);
+    window.setTimeout(() => setCopiedKey(""), 1600);
+  }
+  const badge = state === "done" ? { cls: "mst-done", label: fc.doneBadge }
+    : state === "reported" ? { cls: "mst-inProgress", label: fc.reportedBadge }
+      : state === "locked" ? { cls: "mst-pending", label: fc.payAfter }
+        : { cls: "mst-waitingClient", label: usd(amountUsd) };
+  return (
+    <section id={id} className={`panel payment-card is-${state}`}>
+      <div className="payment-card-head">
+        <div>
+          <p className="section-label">{fc.journeyDepositSub}</p>
+          <h3>{title}</h3>
+        </div>
+        <span className={`status-badge ${badge.cls}`}>{badge.label}</span>
+      </div>
+      {(state === "active" || state === "reported") && (
+        <>
+          <div className="payment-amount">{usd(amountUsd)}</div>
+          <div className="payment-methods">
+            {methods.map((m) => (
+              <div className="payment-method" key={m.key}>
+                <h4>{m.name}</h4>
+                <code>{m.handle}</code>
+                <small>{m.hint}</small>
+                <button className="button secondary small" type="button" onClick={() => copyHandle(m.key, m.handle)}>
+                  {copiedKey === m.key ? fc.copiedBtn : fc.copyBtn}
+                </button>
+              </div>
+            ))}
+          </div>
+          <p className="payment-memo">{fc.payMemo(orderId)}</p>
+          {payment.note && <p className="form-hint">{payment.note}</p>}
+          {state === "reported"
+            ? <p className="warn-note">{reportedNote}</p>
+            : <button className="button primary payment-sent" type="button" onClick={onReport}>{sentCta}</button>}
+          <p className="form-hint">{fc.sentHelp}</p>
+        </>
+      )}
     </section>
   );
 }
@@ -742,62 +885,24 @@ export default function ClientPortal() {
   if (!view) {
     return <div className="page"><EmptyNote>{t.notFound}</EmptyNote></div>;
   }
-  const { order, intake, style, candidates, selected, quote, milestones, cad, freeRevisionsLeft, designChangeFeeUsd, finalAction, actions, messages = [] } = view;
+  const { order, intake, style, selected, quote, milestones, cad, freeRevisionsLeft, designChangeFeeUsd, finalAction, actions, messages = [] } = view;
   const shippingAddressDraft = shippingAddress || initialShippingAddress(order, intake);
   const shippingAddressComplete = isShippingAddressComplete(shippingAddressDraft);
   const shippingAddressSaved = isShippingAddressComplete(order.shippingAddress);
   const workspaceCopy = customerWorkspaceCopy(locale);
-  const showStone = intake?.productLine === "solitaire";
-  const hasDiamondCandidates = candidates.length > 0;
-  const waitingForDiamondCandidates = showStone && !order.selectedDiamondId && order.status === "STONE_SELECTION" && !hasDiamondCandidates;
-  const pendingDiamondSelection = candidates.find((c) => c.clientSelection === "selected" && !order.selectedDiamondId);
-  const diamondSelectionSubmitted = Boolean(pendingDiamondSelection?.selectionSubmittedAt);
-  const diamondSelectionWaitingForQuote = diamondSelectionSubmitted && !quote;
-  const rawActiveAction = actions?.[0] || null;
-  const suppressDiamondAction = rawActiveAction?.type === "diamondSelection" && (waitingForDiamondCandidates || diamondSelectionSubmitted);
-  const activeAction = suppressDiamondAction ? null : rawActiveAction;
+  const fc = proposalFlowCopy(locale);
+  // 디파짓 확인 여부: 마일스톤 done 또는 이미 제작 단계 진입
+  const depositMilestone = milestones.find((m) => m.stage === "depositReceived");
+  const depositDone = depositMilestone?.status === "done"
+    || ["CAD", "PRODUCTION", "QC", "BALANCE", "SHIPPING", "DELIVERED", "ARCHIVED"].includes(order.status);
+  const proposalPreparing = !quote;
+  const depositReported = Boolean(quote?.depositReportedAt);
+  const activeAction = actions?.[0] || null;
 
   function notify(message) {
     setNotice(message);
   }
 
-  function chooseDiamond(diaId) {
-    if (diamondSelectionSubmitted) {
-      notify(t.noticeSelectionAlreadySubmitted);
-      return;
-    }
-    if (order.selectedDiamondId) {
-      notify(t.noticeDiamondAlreadyConfirmed);
-      return;
-    }
-    const target = candidates.find((c) => c.id === diaId);
-    if (!target) return;
-    if (target.availability === "sold") {
-      notify(t.noticeSoldOut);
-      return;
-    }
-    if (target.clientSelection === "selected") {
-      notify(t.noticeDiamondSelected);
-      return;
-    }
-    candidates
-      .filter((c) => c.clientSelection === "selected" && c.id !== diaId)
-      .forEach((c) => toggleShortlist(c.id, actor));
-    toggleShortlist(diaId, actor);
-    notify(t.noticeDiamondSelected);
-  }
-  function submitSelection() {
-    if (!pendingDiamondSelection) {
-      notify(t.noticeSelectFirst);
-      return;
-    }
-    if (diamondSelectionSubmitted) {
-      notify(t.noticeSelectionAlreadySubmitted);
-      return;
-    }
-    submitDiamondSelection(orderId, actor);
-    notify(t.noticeSelectionSubmitted);
-  }
   function accept() {
     if (!shippingAddressComplete) {
       notify(t.noticeShippingAddressRequired);
@@ -824,13 +929,13 @@ export default function ClientPortal() {
     setChatDraft("");
     notify(t.noticeMessageSent);
   }
-  function rejectDiamonds(payload) {
-    if (diamondSelectionSubmitted) {
-      notify(t.noticeSelectionAlreadySubmitted);
-      return;
-    }
-    rejectDiamondCandidates(orderId, payload, actor);
-    notify(t.noticeRejectionSent);
+  function reportDeposit() {
+    reportDepositSent(quote.id, actor);
+    notify(fc.reportedNote);
+  }
+  function reportBalance() {
+    sendOrderMessage(orderId, { body: `${fc.balanceSentCta} — ${order.id}`, channel: "web", actorRole: "customer", actorId: actor });
+    notify(fc.balanceReportedNote);
   }
   function rejectFinal(payload) {
     rejectFinalConfirmation(orderId, payload, actor);
@@ -841,13 +946,7 @@ export default function ClientPortal() {
     notify(t.noticeFinalConfirmed);
   }
 
-  const anySelected = selected || candidates.some((c) => c.clientSelection === "selected");
-  // 타임라인 체크포인트 상태 — 스톤(솔리테어만) → 디자인 → 최종 실물
-  // 선택했지만 아직 디파짓으로 최종 락되기 전이면 "대기" 상태로 유지
-  const stoneState = order.selectedDiamondId ? "done"
-    : waitingForDiamondCandidates || diamondSelectionSubmitted ? "waiting"
-      : order.status === "STONE_SELECTION" ? "active" : "upcoming";
-  const selectionPendingDeposit = !order.selectedDiamondId && diamondSelectionSubmitted;
+  // 제작 체크포인트 상태 — 디자인 → 최종 실물 (스톤 선택 단계는 확정 제안으로 대체)
   const designState = cad?.decision === "approved" ? "done" : cad && !cad.decision ? "active" : "upcoming";
   const finalState = finalAction ? "active"
     : ["BALANCE", "SHIPPING", "DELIVERED", "ARCHIVED"].includes(order.status) ? "done" : "upcoming";
@@ -859,37 +958,46 @@ export default function ClientPortal() {
   const cond = intake?.conditional || {};
   const defaultMeasure = cond.ringSize || cond.chainLength || cond.wristSize || cond.earringDetails || "";
 
+  // 디파짓 카드 상태: 컨펌 전 잠금 → 송금 안내 → 확인 중 → 완료
+  const depositCardState = depositDone ? "done"
+    : quote?.status === "accepted" ? (depositReported ? "reported" : "active")
+      : "locked";
+  const depositTurn = depositCardState === "active"; // 액션은 없지만 고객 차례
+
   // 고객용 "다음 단계" 한 줄 — 어드민의 next-step 카드를 고객에게도 (문의 감소)
-  const nextMsg = waitingForDiamondCandidates ? workspaceCopy.stonePreparingBody
-    : diamondSelectionWaitingForQuote ? t.selectionSubmittedHelp
-    : (order.status === "QUOTATION" && quote?.status === "accepted") ? t.nextDeposit
+  const nextMsg = proposalPreparing ? fc.preparingBody
+    : quote.status === "sent" ? fc.nextConfirm
+    : depositCardState === "active" ? t.nextDeposit
+    : depositCardState === "reported" ? fc.confirmingDeposit
     : (order.status === "CAD" && cad && !cad.decision) ? t.nextCadReview
+    : order.status === "BALANCE" ? fc.nextBalance
       : t.nextStep?.[order.status] || "";
-  const waitingOn = waitingForDiamondCandidates || diamondSelectionWaitingForQuote ? t.waitingBeloveD
-    : activeAction ? t.waitingYou
+  const waitingOn = proposalPreparing || depositCardState === "reported" ? t.waitingBeloveD
+    : activeAction || depositTurn || order.status === "BALANCE" ? t.waitingYou
       : ["PRODUCTION", "QC", "SHIPPING"].includes(order.status) ? t.waitingAtelier : t.waitingBeloveD;
-  const activeActionText = waitingForDiamondCandidates ? workspaceCopy.stonePreparingBody
-    : diamondSelectionWaitingForQuote ? t.selectionSubmittedHelp
+  const activeActionText = proposalPreparing ? fc.preparingBody
     : activeAction
     ? (t.todo?.[activeAction.type] || activeAction.prompt || nextMsg || t.reviewUpdates)
     : (nextMsg || t.reviewUpdates);
+  const heroReady = Boolean(activeAction) || depositTurn || order.status === "BALANCE";
   const finalMedia = mediaList(finalAction?.media, finalAction?.link);
   const statusLabel = t.statusLabel?.[order.status] || p.orderStatus[order.status] || order.status;
   const dueLabel = activeAction?.dueDate || order.requiredDate || workspaceCopy.noDue;
-  const activeAnchor = waitingForDiamondCandidates || diamondSelectionWaitingForQuote ? "#conversation"
-    : activeAction?.type === "diamondSelection" ? "#stone-stage"
-    : activeAction?.type === "quoteAcceptance" ? "#quote-stage"
+  const activeAnchor = proposalPreparing ? "#conversation"
+    : activeAction?.type === "quoteAcceptance" ? "#proposal-stage"
+    : depositTurn || depositCardState === "reported" ? "#pay-stage"
     : ["cadReview", "cadApproval"].includes(activeAction?.type) ? "#design-stage"
       : activeAction?.type === "finalConfirmation" ? "#final-stage"
+        : order.status === "BALANCE" ? "#balance-stage"
         : "#conversation";
-  const briefRows = buildOrderBriefRows({ order, intake, style, selected: selected || pendingDiamondSelection, quote, p, locale, copy: workspaceCopy });
+  const briefRows = buildOrderBriefRows({ order, intake, style, selected, quote, p, locale, copy: workspaceCopy });
 
   return (
     <div className="page client-portal-page">
       <section className="client-workspace-hero">
         <div className="client-next-card">
-          <p className="section-label">{activeAction ? workspaceCopy.nextKicker : workspaceCopy.statusKicker}</p>
-          <h1>{activeAction ? workspaceCopy.titleReady : workspaceCopy.titleWaiting}</h1>
+          <p className="section-label">{heroReady ? workspaceCopy.nextKicker : workspaceCopy.statusKicker}</p>
+          <h1>{heroReady ? workspaceCopy.titleReady : workspaceCopy.titleWaiting}</h1>
           <p className="client-next-copy">{activeActionText}</p>
           <div className="client-next-meta">
             <span>{workspaceCopy.orderLine(order.id)}</span>
@@ -897,7 +1005,7 @@ export default function ClientPortal() {
             <span>{workspaceCopy.due}: {dueLabel}</span>
           </div>
           <div className="row-actions client-next-actions">
-            {waitingForDiamondCandidates || diamondSelectionWaitingForQuote ? (
+            {proposalPreparing ? (
               <a className="button primary" href="#conversation">{workspaceCopy.chat}</a>
             ) : (
               <>
@@ -923,146 +1031,62 @@ export default function ClientPortal() {
         </p>
       )}
 
-      <CustomerStatusOverview
-        order={order}
-        showStone={showStone}
-        stoneState={stoneState}
-        designState={designState}
-        finalState={finalState}
-        actions={actions}
-        milestones={milestones}
-        hasDiamondCandidates={hasDiamondCandidates}
-        diamondSelectionSubmitted={diamondSelectionSubmitted}
+      <JourneyRail order={order} quote={quote} depositDone={depositDone} fc={fc} />
+
+      {/* 확정 제안 — 준비 중이면 안내 카드, 도착하면 제안 카드 */}
+      {proposalPreparing ? (
+        <section id="proposal-stage" className="panel proposal-card is-preparing">
+          <div className="client-empty-stage">
+            <p className="section-label">{fc.journeyProposalSubPrep}</p>
+            <h4>{fc.preparingTitle}</h4>
+            <p>{fc.preparingBody}</p>
+            <a className="button secondary small" href="#conversation">{workspaceCopy.chat}</a>
+          </div>
+        </section>
+      ) : (
+        <ProposalCard
+          quote={quote}
+          intake={intake}
+          style={style}
+          fc={fc}
+          t={t}
+          p={p}
+          locale={locale}
+          shippingProps={{
+            value: shippingAddressDraft,
+            onChange: setShippingAddress,
+            t,
+            locked: quote.status === "accepted" && shippingAddressSaved,
+            canSave: quote.status === "accepted" && !shippingAddressSaved,
+            onSave: saveShippingAddress,
+          }}
+          onConfirm={accept}
+          confirmDisabled={!shippingAddressComplete}
+        />
+      )}
+
+      {/* 디파짓 — Zelle/Venmo 송금 + 셀프 리포트 */}
+      <PaymentCard
+        id="pay-stage"
+        title={fc.payTitle}
+        amountUsd={quote?.depositUsd || 0}
+        orderId={order.id}
+        state={depositCardState}
+        fc={fc}
+        sentCta={fc.depositSentCta}
+        reportedNote={fc.reportedNote}
+        onReport={reportDeposit}
       />
 
-      {/* 체크포인트 ① 스톤 (published 후보만) */}
-      {showStone && (
-        <Checkpoint id="stone-stage" index={1} title={waitingForDiamondCandidates ? workspaceCopy.stonePreparingTitle : p.visual.checkpoint.stone} state={stoneState}
-          badgeOverride={waitingForDiamondCandidates ? workspaceCopy.stonePreparingBadge : undefined}
-          summary={selected && `${p.shapes[selected.shape] || selected.shape} ${selected.carat?.toFixed(2)}ct · ${selected.igiNo}`}>
-          {selectionPendingDeposit && <p className="warn-note" style={{ marginBottom: 14 }}>{p.visual.stockChecking}</p>}
-          {waitingForDiamondCandidates && (
-            <div className="client-empty-stage">
-              <p className="section-label">{workspaceCopy.stonePreparingBadge}</p>
-              <h4>{workspaceCopy.stonePreparingTitle}</h4>
-              <p>{workspaceCopy.stonePreparingBody}</p>
-              <a className="button secondary small" href="#conversation">{workspaceCopy.chat}</a>
-            </div>
-          )}
-          {candidates.length > 0 && (
-            <>
-              <div className="diamond-selection-note">
-                <p className="section-label">{t.optionsLabel(candidates.length)}</p>
-                <h3>
-                  {selected ? t.confirmedStone
-                    : diamondSelectionSubmitted ? t.selectionSubmittedKicker
-                      : pendingDiamondSelection ? `${p.shapes[pendingDiamondSelection.shape] || pendingDiamondSelection.shape} ${pendingDiamondSelection.carat.toFixed(2)}ct`
-                      : t.selectOneTitle}
-                </h3>
-                <p>{selected ? `${p.shapes[selected.shape] || selected.shape} ${selected.carat?.toFixed(2)}ct · ${selected.igiNo}`
-                  : diamondSelectionSubmitted ? t.selectionSubmittedHelp
-                    : pendingDiamondSelection ? t.submitSelectionHelp
-                      : `${t.selectOneHelp} ${t.batchNote}`}</p>
-              </div>
-              <div className="card-grid cols-3">
-                {candidates.map((c) => {
-                  const candidateMedia = mediaList(c.media, c.video || c.image);
-                  const isFinalSelected = selected?.id === c.id;
-                  const isPendingSelected = pendingDiamondSelection?.id === c.id;
-                  const canChoose = !order.selectedDiamondId && order.status === "STONE_SELECTION" && !diamondSelectionSubmitted && c.availability !== "sold";
-                  const showSelectionBadge = isPendingSelected || isFinalSelected;
-                  return (
-                    <div className={`item-card diamond-choice-card ${isPendingSelected || isFinalSelected ? "select-card is-selected" : ""}`} key={c.id}>
-                      <ClientMediaCarousel media={candidateMedia} alt={c.id} />
-                      <div className="card-body">
-                        <div className="diamond-card-head">
-                          {showSelectionBadge && (
-                            <span className="status-badge mst-done">
-                              {isFinalSelected ? t.confirmedStone : diamondSelectionSubmitted ? t.submittedSelection : t.shortlisted}
-                            </span>
-                          )}
-                          {c.availability === "sold" && <span className="status-badge cst-REJECTED">{t.soldOut}</span>}
-                        </div>
-                        <h3>{p.shapes[c.shape] || c.shape} {c.carat.toFixed(2)}ct</h3>
-                        <p className="spec">{c.color} / {c.clarity} · {p.portal.growth[c.growth] || c.growth} · {c.lab}</p>
-                        <p className="spec">{t.igi} {c.igiNo} · {t.treated}</p>
-                        {c.proportions?.faceUp && <p className="spec">T{c.proportions.table} · D{c.proportions.depth} · {c.proportions.faceUp}</p>}
-                        {c.clientNote && <p className="form-hint">{c.clientNote}</p>}
-                        <p className="price">{usd(c.customerPriceUsd)}</p>
-                        {isFinalSelected ? null : !diamondSelectionSubmitted && !order.selectedDiamondId && order.status === "STONE_SELECTION" ? (
-                          <button
-                            className={`button small diamond-select-button ${isPendingSelected ? "primary is-active" : "secondary"}`}
-                            disabled={!canChoose && !isPendingSelected}
-                            onClick={() => chooseDiamond(c.id)}
-                          >
-                            {isPendingSelected ? (diamondSelectionSubmitted ? t.submittedSelection : t.shortlisted) : t.shortlist}
-                          </button>
-                        ) : null}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              {!order.selectedDiamondId && order.status === "STONE_SELECTION" && !diamondSelectionSubmitted && (
-                <div className="diamond-submit-panel">
-                  <div>
-                    <p className="section-label">{pendingDiamondSelection ? t.selectedKicker : t.actionsTitle}</p>
-                    <h3>{pendingDiamondSelection ? `${p.shapes[pendingDiamondSelection.shape] || pendingDiamondSelection.shape} ${pendingDiamondSelection.carat.toFixed(2)}ct` : t.selectOneTitle}</h3>
-                    <p>{pendingDiamondSelection ? t.submitSelectionHelp : t.selectOneHelp}</p>
-                  </div>
-                  <CustomerDecisionPanel
-                    approveLabel={t.requestStock}
-                    rejectLabel={t.rejectDiamonds}
-                    approveDisabled={!pendingDiamondSelection}
-                    onApprove={submitSelection}
-                    onReject={rejectDiamonds}
-                  />
-                </div>
-              )}
-            </>
-          )}
-        </Checkpoint>
-      )}
-
-      {/* 견적 */}
-      {quote && (
-        <div className="panel pay-panel" id="quote-stage">
-          <div className="proposal-head">
-            <h3 style={{ margin: 0 }}>{t.quoteTitle} — {quote.id}</h3>
-            {quote.status === "accepted" && <span className="status-badge cst-REPLACED">{t.accepted}</span>}
-          </div>
-          <table className="data-table"><tbody>
-            {quote.diamondAmountUsd > 0 && <tr><th>{t.diamondAmount}</th><td>{usd(quote.diamondAmountUsd)}</td></tr>}
-            <tr><th>{t.metalAmount}</th><td>{usd(quote.metalAmountUsd)} <span className="form-hint">({quote.estWeightG}g)</span></td></tr>
-            <tr><th>{t.packageAmount}</th><td>{usd(quote.nonMetalUsd)}</td></tr>
-            <tr><th>{t.total}</th><td className="price">{usd(quote.totalUsd)}</td></tr>
-            <tr><th>{t.deposit}</th><td>{usd(quote.depositUsd)}</td></tr>
-            <tr><th>{t.balance}</th><td>{usd(quote.balanceUsd)}</td></tr>
-            <tr><th>{t.validUntil}</th><td>{quote.validUntil} · {t.lead(quote.leadDays)}</td></tr>
-          </tbody></table>
-          <ShippingAddressPanel
-            value={shippingAddressDraft}
-            onChange={setShippingAddress}
-            t={t}
-            locked={quote.status === "accepted" && shippingAddressSaved}
-            canSave={quote.status === "accepted" && !shippingAddressSaved}
-            onSave={saveShippingAddress}
-          />
-          {quote.status === "sent" && (
-            <button className="button primary" style={{ marginTop: 16 }} disabled={!shippingAddressComplete} onClick={accept}>{t.accept}</button>
-          )}
-        </div>
-      )}
-
-      {/* 체크포인트 ② 디자인 */}
-      <Checkpoint id="design-stage" index={2} title={p.visual.checkpoint.design} state={designState}
+      {/* 제작 체크포인트 ① 디자인 */}
+      <Checkpoint id="design-stage" index={1} title={p.visual.checkpoint.design} state={designState}
         summary={cad?.decision === "approved" ? `${t.cadVersion(cad.version)} ✓` : null}>
         {cad && <DesignCard cad={cad} mineMedia={mineMedia} orderId={orderId} actor={actor}
           revisionsLeft={freeRevisionsLeft} feeUsd={designChangeFeeUsd} defaultMeasure={defaultMeasure} onNotice={notify} />}
       </Checkpoint>
 
-      {/* 체크포인트 ③ 최종 실물 컨펌 */}
-      <Checkpoint id="final-stage" index={3} title={p.visual.checkpoint.final} state={finalState}
+      {/* 제작 체크포인트 ② 최종 실물 컨펌 */}
+      <Checkpoint id="final-stage" index={2} title={p.visual.checkpoint.final} state={finalState}
         summary={finalState === "done" ? p.visual.finalConfirmed : null}>
         {finalAction && (
           <div className="form-stack">
@@ -1079,6 +1103,21 @@ export default function ClientPortal() {
           </div>
         )}
       </Checkpoint>
+
+      {/* 잔금 — 배송 전 동일 결제 카드 재사용 */}
+      {order.status === "BALANCE" && quote && (
+        <PaymentCard
+          id="balance-stage"
+          title={fc.balanceTitle}
+          amountUsd={quote.balanceUsd}
+          orderId={order.id}
+          state="active"
+          fc={fc}
+          sentCta={fc.balanceSentCta}
+          reportedNote={fc.balanceReportedNote}
+          onReport={reportBalance}
+        />
+      )}
 
       <div id="conversation">
         <ConversationPanel messages={messages} draft={chatDraft} setDraft={setChatDraft} onSend={sendChat} t={t} />
