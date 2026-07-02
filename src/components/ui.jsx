@@ -661,6 +661,13 @@ export function MediaPicker({ value, onChange, maxItems = Infinity, showSamples 
   const remainingSlots = hasLimit ? Math.max(0, maxItems - items.length) : Infinity;
   const isFull = hasLimit && remainingSlots <= 0;
 
+  useEffect(() => {
+    if (items.length > 0) return;
+    setError("");
+    setNotice("");
+    setBusy(false);
+  }, [items.length]);
+
   function toggleSample(item) {
     if (!showSamples) return;
     const exists = items.some((m) => m.src === item.src && m.pos === item.pos);

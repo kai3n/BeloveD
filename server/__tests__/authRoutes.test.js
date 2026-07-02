@@ -1,14 +1,47 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import request from "supertest";
+import express from "express";
+import cookieParser from "cookie-parser";
 import { createApp } from "../app.js";
 import { truncateAuth } from "./helpers.js";
 import { query } from "../db.js";
 import { hashPassword } from "../passwords.js";
 import { __resetRateLimit } from "../rateLimit.js";
+import { attachPrincipal, requireAdmin, requireCustomer } from "../middleware.js";
 
 const app = createApp();
 beforeEach(async () => { await truncateAuth(); __resetRateLimit(); });
 afterEach(() => { delete process.env.PUBLIC_ORIGIN; });
+
+function createProtectedApp() {
+  const protectedApp = express();
+  protectedApp.use(cookieParser());
+  protectedApp.use(attachPrincipal);
+  protectedApp.get("/customer-only", requireCustomer, (req, res) => {
+    res.json({ principal: req.principal });
+  });
+  protectedApp.get("/admin-only", requireAdmin, (req, res) => {
+    res.json({ principal: req.principal });
+  });
+  protectedApp.use((err, _req, res, _next) => {
+    res.status(err.status || 500).json({ error: { code: err.code || "INTERNAL_ERROR" } });
+  });
+  return protectedApp;
+}
+
+async function issueCustomerCookie(email = "guest@b.com") {
+  const ml = await request(app).post("/v1/auth/magic-link").send({ email });
+  const token = new URL(ml.body.devLink).searchParams.get("token");
+  const cb = await request(app).get(`/v1/auth/callback?token=${token}`);
+  return cb.headers["set-cookie"];
+}
+
+async function issueAdminCookie(email = "admin@b.com") {
+  await query("insert into admin_users (email,name,password_hash) values ($1,$2,$3)",
+    [email, "Admin", hashPassword("admin12345")]);
+  const login = await request(app).post("/v1/auth/password").send({ email, password: "admin12345" });
+  return login.headers["set-cookie"];
+}
 
 describe("auth routes", () => {
   it("magic-link → callback issues a customer session cookie", async () => {
@@ -18,6 +51,7 @@ describe("auth routes", () => {
     const cb = await request(app).get(`/v1/auth/callback?token=${token}`);
     expect(cb.body.principal).toBe("customer");
     expect(cb.headers["set-cookie"].join()).toMatch(/bd_sid=/);
+    expect(cb.headers["set-cookie"].join()).toMatch(/SameSite=Lax/i);
   });
 
   it("admin password login sets bd_admin and is rejected on customer routes", async () => {
@@ -26,10 +60,39 @@ describe("auth routes", () => {
     const login = await request(app).post("/v1/auth/password").send({ email: "admin@b.com", password: "admin12345" });
     expect(login.body.principal).toBe("admin");
     const cookie = login.headers["set-cookie"];
+    expect(cookie.join()).toMatch(/bd_admin=/);
+    expect(cookie.join()).toMatch(/SameSite=Strict/i);
     // admin cookie must NOT satisfy requireCustomer
     const setpw = await request(app).post("/v1/auth/set-password").set("Cookie", cookie).send({ password: "longenough" });
     expect(setpw.status).toBe(401);
     expect(setpw.body.error.code).toBe("CUSTOMER_AUTH_REQUIRED");
+  });
+
+  it("customer session cookies are rejected by admin-only routes", async () => {
+    const protectedApp = createProtectedApp();
+    const cookie = await issueCustomerCookie("customer-only@b.com");
+    const customer = await request(protectedApp).get("/customer-only").set("Cookie", cookie);
+    expect(customer.status).toBe(200);
+    expect(customer.body.principal.type).toBe("customer");
+
+    const admin = await request(protectedApp).get("/admin-only").set("Cookie", cookie);
+    expect(admin.status).toBe(401);
+    expect(admin.body.error.code).toBe("ADMIN_AUTH_REQUIRED");
+  });
+
+  it("admin session cookies are rejected by customer-only routes and take precedence if both cookies exist", async () => {
+    const protectedApp = createProtectedApp();
+    const customerCookie = await issueCustomerCookie("both@b.com");
+    const adminCookie = await issueAdminCookie("both-admin@b.com");
+    const bothCookies = [...adminCookie, ...customerCookie];
+
+    const admin = await request(protectedApp).get("/admin-only").set("Cookie", bothCookies);
+    expect(admin.status).toBe(200);
+    expect(admin.body.principal.type).toBe("admin");
+
+    const customer = await request(protectedApp).get("/customer-only").set("Cookie", bothCookies);
+    expect(customer.status).toBe(401);
+    expect(customer.body.error.code).toBe("CUSTOMER_AUTH_REQUIRED");
   });
 
   it("logout revokes the session so /me is anonymous", async () => {

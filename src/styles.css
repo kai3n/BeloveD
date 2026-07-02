@@ -27,23 +27,23 @@
 
 html[data-theme="day"] {
   color-scheme: light;
-  /* Beloved Maison — warm day palette (design handoff) */
-  --bg: #efe9db;
-  --bg-2: #f7f1e6;
-  --surface: #fbf7ee;
-  --surface-2: #f0e9d8;
-  --line: rgba(156, 122, 46, 0.26);
-  --line-strong: rgba(156, 122, 46, 0.4);
-  --hair: rgba(26, 21, 16, 0.08);
-  --text: #1a1510;
-  --muted: #574e41;
-  --quiet: #867c6c;
-  --accent: #9c7a2e;
-  --accent-bright: #b8933c;
-  --gold-deep: #9c7a2e;
-  --gold-soft: #e5d4ad;
-  --silver: #574e41;
-  --shadow: 0 26px 80px rgba(62, 49, 26, 0.16);
+  /* Beloved Maison — porcelain day palette */
+  --bg: #f3f0e9;
+  --bg-2: #fbfaf6;
+  --surface: #fffdf8;
+  --surface-2: #ebe6dc;
+  --line: rgba(129, 103, 58, 0.18);
+  --line-strong: rgba(129, 103, 58, 0.32);
+  --hair: rgba(22, 18, 14, 0.07);
+  --text: #16120e;
+  --muted: #5d554a;
+  --quiet: #898174;
+  --accent: #9d7a37;
+  --accent-bright: #b38d45;
+  --gold-deep: #745929;
+  --gold-soft: #eadbb8;
+  --silver: #7d766c;
+  --shadow: 0 26px 72px rgba(42, 34, 22, 0.12);
 }
 
 /* 핸드오프: eyebrow·스펙·라벨·내비는 JetBrains Mono 대문자 */
@@ -92,8 +92,8 @@ body {
 
 html[data-theme="day"] body {
   background:
-    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.95), transparent 360px),
-    var(--bg);
+    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.96), transparent 360px),
+    linear-gradient(180deg, #fbfaf6 0%, #f3f0e9 44%, #ece6da 100%);
 }
 
 body::selection {
@@ -135,7 +135,8 @@ img {
 }
 
 html[data-theme="day"] .site-header {
-  background: linear-gradient(180deg, rgba(249, 246, 238, 0.92), rgba(249, 246, 238, 0.72) 72%, rgba(249, 246, 238, 0));
+  background: linear-gradient(180deg, rgba(253, 252, 248, 0.96), rgba(253, 252, 248, 0.78) 72%, rgba(253, 252, 248, 0));
+  box-shadow: 0 12px 34px rgba(42, 34, 22, 0.045);
 }
 
 .site-header .brand {
@@ -162,7 +163,7 @@ html[data-theme="day"] .site-header {
 }
 
 html[data-theme="day"] .brand {
-  background: linear-gradient(176deg, #4a3c22 0%, #8a6f3e 58%, #5d4a26 100%);
+  background: linear-gradient(176deg, #33291c 0%, #8d6d33 56%, #5d4724 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -184,7 +185,7 @@ html[data-theme="day"] .brand {
 }
 
 html[data-theme="day"] .desktop-nav {
-  color: rgba(23, 19, 14, 0.76);
+  color: rgba(22, 18, 14, 0.72);
 }
 
 .desktop-nav a,
@@ -203,7 +204,7 @@ html[data-theme="day"] .desktop-nav {
 
 html[data-theme="day"] .desktop-nav a:hover,
 html[data-theme="day"] .footer nav a:hover {
-  color: #17130e;
+  color: #16120e;
 }
 
 .header-actions {
@@ -227,7 +228,8 @@ html[data-theme="day"] .footer nav a:hover {
 }
 
 html[data-theme="day"] .language-control {
-  background: rgba(255, 253, 248, 0.74);
+  border-color: rgba(129, 103, 58, 0.2);
+  background: rgba(255, 253, 248, 0.76);
   color: var(--text);
 }
 
@@ -279,8 +281,8 @@ html[data-theme="day"] .language-control {
 .lang-trigger .lang-caret { opacity: 0.6; transition: transform 0.25s ease; }
 .lang-menu.is-open .lang-trigger .lang-caret { transform: rotate(180deg); }
 
-html[data-theme="day"] .lang-trigger { color: rgba(23, 19, 14, 0.72); }
-html[data-theme="day"] .lang-trigger:hover { color: #17130e; }
+html[data-theme="day"] .lang-trigger { color: rgba(22, 18, 14, 0.72); }
+html[data-theme="day"] .lang-trigger:hover { color: #16120e; }
 
 .lang-list {
   position: absolute;
@@ -345,13 +347,13 @@ html[data-theme="day"] .lang-trigger:hover { color: #17130e; }
 
 html[data-theme="day"] .lang-list {
   background: rgba(255, 253, 248, 0.98);
-  border-color: rgba(156, 128, 71, 0.35);
-  box-shadow: 0 24px 52px rgba(58, 44, 20, 0.18);
+  border-color: rgba(129, 103, 58, 0.28);
+  box-shadow: 0 24px 52px rgba(42, 34, 22, 0.14);
 }
 
-html[data-theme="day"] .lang-list button { color: #3a3328; }
-html[data-theme="day"] .lang-list button:hover { background: rgba(156, 128, 71, 0.12); color: #17130e; }
-html[data-theme="day"] .lang-list button.is-active { color: #8a6f3e; }
+html[data-theme="day"] .lang-list button { color: #3b3329; }
+html[data-theme="day"] .lang-list button:hover { background: rgba(129, 103, 58, 0.1); color: #16120e; }
+html[data-theme="day"] .lang-list button.is-active { color: #85662f; }
 
 /* ── Sign in: 박스 제거 → 미니멀 텍스트 링크 (언어와 통일) ── */
 .header-actions {
@@ -412,8 +414,8 @@ html[data-theme="day"] .lang-list button.is-active { color: #8a6f3e; }
   }
 }
 
-html[data-theme="day"] .header-actions .button.small.ghost { color: rgba(23, 19, 14, 0.72); }
-html[data-theme="day"] .header-actions .button.small.ghost:hover { color: #17130e; background: transparent; }
+html[data-theme="day"] .header-actions .button.small.ghost { color: rgba(22, 18, 14, 0.72); }
+html[data-theme="day"] .header-actions .button.small.ghost:hover { color: #16120e; background: transparent; }
 
 /* ── 포커스 링: 브라우저 기본 파랑 → 골드 (헤더 컨트롤) ── */
 .lang-trigger:focus-visible,
@@ -429,7 +431,7 @@ html[data-theme="day"] .lang-trigger:focus-visible,
 html[data-theme="day"] .header-actions .icon-button:focus-visible,
 html[data-theme="day"] .header-actions .button:focus-visible,
 html[data-theme="day"] .mobile-menu-button:focus-visible {
-  outline-color: rgba(156, 128, 71, 0.7);
+  outline-color: rgba(129, 103, 58, 0.68);
 }
 
 .icon-button,
@@ -643,14 +645,16 @@ html[data-theme="day"] .mobile-menu-button:focus-visible {
 }
 
 html[data-theme="day"] .button.secondary {
-  background: rgba(255, 253, 248, 0.72);
-  color: #5d4a26;
+  border-color: rgba(129, 103, 58, 0.26);
+  background: rgba(255, 253, 248, 0.78);
+  color: #5a482b;
 }
 
 html[data-theme="day"] .button.secondary:hover,
 html[data-theme="day"] .button.ghost:hover {
-  background: rgba(255, 255, 255, 0.96);
-  color: #17130e;
+  border-color: rgba(129, 103, 58, 0.44);
+  background: rgba(255, 253, 248, 0.98);
+  color: #16120e;
 }
 
 .button.wide {
@@ -3743,7 +3747,9 @@ html[data-theme="day"] .quality {
    컬렉션 제품컷은 검은 배경을 키잉해 아이보리 위에 띄우고(text 아래로),
    다이아 스톤은 화이트 카드 속 다크 주얼 윈도우로 유지(천 배경이라 키잉 불가).
    ============================================================ */
-html[data-theme="day"] .coll-noir { background: #f6f0e3; }
+html[data-theme="day"] .coll-noir {
+  background: linear-gradient(180deg, #fbfaf6 0%, #f3f0e9 100%);
+}
 
 html[data-theme="day"] .coll-noir-piece {
   aspect-ratio: auto;
@@ -3788,8 +3794,8 @@ html[data-theme="day"] .coll-noir-discover { color: var(--accent-bright); justif
 
 /* 다이아 카드: 화이트 카드 + 다크 주얼 윈도우 — 입체감/따뜻한 프레임으로 정돈 */
 html[data-theme="day"] .stone-noir-card {
-  border-color: rgba(156, 128, 71, 0.28);
-  box-shadow: 0 20px 44px rgba(58, 44, 20, 0.12);
+  border-color: rgba(129, 103, 58, 0.24);
+  box-shadow: 0 20px 44px rgba(42, 34, 22, 0.1);
 }
 html[data-theme="day"] .spread-noir-row,
-html[data-theme="day"] .spread-noir-stat { box-shadow: 0 14px 34px rgba(58, 44, 20, 0.08); }
+html[data-theme="day"] .spread-noir-stat { box-shadow: 0 14px 34px rgba(42, 34, 22, 0.07); }
