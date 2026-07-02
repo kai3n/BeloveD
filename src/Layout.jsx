@@ -8,6 +8,12 @@ import { useAuth } from "./lib/auth.jsx";
 import { pendingCount } from "./lib/store.js";
 import { useDBVersion } from "./lib/useDB.js";
 import { useTheme } from "./theme.jsx";
+import { withBase } from "./components/ui.jsx";
+
+// 비즈니스 로고 — 원본에서 배경을 키잉한 투명 PNG (글자만 얹혀 어떤 배경에서도 박스가 없다)
+function BrandLogo() {
+  return <img className="brand-logo" src={withBase("/assets/brand-word.png")} alt="BeloveD" />;
+}
 
 function roleHome(user) {
   if (!user) return "/sign-in";
@@ -129,7 +135,7 @@ export function Header() {
         <Menu size={22} strokeWidth={1.7} />
       </button>
 
-      <Link className="brand" to="/" aria-label="BeloveD home">BeloveD</Link>
+      <Link className="brand" to="/" aria-label="BeloveD home"><BrandLogo /></Link>
 
       <nav className="desktop-nav" aria-label={t.aria.primaryNav}>
         {navItems.map((item) => (
@@ -246,7 +252,7 @@ export function Footer() {
       </div>
       <div className="footer-top">
         <div className="footer-brand">
-          <Link className="brand" to="/" aria-label="BeloveD home">BeloveD</Link>
+          <Link className="brand" to="/" aria-label="BeloveD home"><BrandLogo /></Link>
           {f.tagline ? <p className="footer-tagline">{f.tagline}</p> : null}
           {f.cert ? <span className="footer-cert">{f.cert}</span> : null}
         </div>

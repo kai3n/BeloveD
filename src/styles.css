@@ -3799,3 +3799,10 @@ html[data-theme="day"] .stone-noir-card {
 }
 html[data-theme="day"] .spread-noir-row,
 html[data-theme="day"] .spread-noir-stat { box-shadow: 0 14px 34px rgba(24, 22, 18, 0.07); }
+
+/* ── 비즈니스 로고 (BD 모노그램 워드마크) — day/night 원본 스왑 + 배경 블렌드 ── */
+.brand { display: inline-flex; align-items: center; }
+.brand-logo { display: block; height: 34px; width: auto; }
+/* 화이트 배경에선 페일 샴페인의 대비가 약해 살짝 딥하게 */
+html[data-theme="day"] .brand-logo { filter: brightness(0.68) saturate(1.12); }
+.footer-brand .brand-logo { height: 42px; }

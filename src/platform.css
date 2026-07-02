@@ -5210,12 +5210,17 @@ button.text-link:hover {
 .gflow-shape-tile span { font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; }
 .gflow-shape-svg { width: 42px; height: 42px; }
 
-/* 메탈 스와치 */
-.gflow-metal-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+/* 메탈 스와치 — 균일 그리드 (라벨 길이와 무관하게 같은 크기) */
+.gflow-metal-row {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+  width: min(100%, 620px);
+}
+@media (max-width: 560px) { .gflow-metal-row { grid-template-columns: repeat(2, 1fr); } }
 .gflow-metal-chip {
   display: flex; align-items: center; gap: 10px;
   border: 1px solid var(--line); background: var(--surface); color: var(--text);
-  padding: 10px 18px 10px 10px; cursor: pointer; font-size: 13px; font-weight: 600;
+  padding: 12px 14px; cursor: pointer; font-size: 13px; font-weight: 600;
+  min-height: 56px; text-align: left;
   transition: border-color 0.18s ease;
 }
 .gflow-metal-chip:hover { border-color: var(--line-strong); }
