@@ -5443,3 +5443,19 @@ html[data-theme="day"] .client-media-counter { background: rgba(255, 255, 255, 0
 .review-stars { display: flex; gap: 6px; }
 .review-stars button { background: none; border: none; cursor: pointer; font-size: 26px; color: var(--quiet); padding: 0; }
 .review-stars button.is-on { color: var(--accent); }
+
+/* Day: 첨부 파일 행 — 다크 반투명 패널이 회색 슬래브로 보이던 것을 화이트 카드로 */
+html[data-theme="day"] .picker-list-item {
+  background: #ffffff;
+  border-color: var(--line);
+  box-shadow: 0 6px 18px rgba(20, 18, 15, 0.05);
+}
+html[data-theme="day"] .picker-remove-button {
+  border-color: var(--line-strong);
+  color: #4c4536;
+  background: #ffffff;
+}
+html[data-theme="day"] .picker-remove-button:hover {
+  border-color: #16130f;
+  color: #16130f;
+}
