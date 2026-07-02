@@ -235,6 +235,7 @@ export function seed() {
       shipToAddress: "BeloveD Receiving, 550 S Hill St #1100, Los Angeles, CA 90013",
       // 디파짓/잔금 수동 확인 결제 채널 — 어드민 설정에서 편집
       payment: { zelle: "pay@beloved.co", venmo: "@BeloveD-Fine", note: "" },
+      reviewsSeedVersion: 1,
     },
   };
 }

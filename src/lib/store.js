@@ -176,9 +176,14 @@ function migrateDB(d) {
     changed = true;
   }
 
-  // 리뷰 스토어 — 구버전 저장 DB에는 시드 데모 리뷰까지 주입 (빈 배열이면 홈 섹션이 통째로 숨는다)
-  if (d && !Array.isArray(d.reviews)) {
-    d.reviews = seed().reviews || [];
+  // 리뷰 스토어 — 데모 리뷰 1회 주입 (버전 플래그).
+  // 첫 배포가 빈 배열을 심은 브라우저도 구제해야 하므로 "배열 없음"이 아니라 플래그로 판단한다.
+  if (d?.settings && d.settings.reviewsSeedVersion !== 1) {
+    const existing = Array.isArray(d.reviews) ? d.reviews : [];
+    const seeded = seed().reviews || [];
+    const have = new Set(existing.map((r) => r.id));
+    d.reviews = [...existing, ...seeded.filter((r) => !have.has(r.id))];
+    d.settings.reviewsSeedVersion = 1;
     changed = true;
   }
 
