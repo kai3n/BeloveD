@@ -176,6 +176,12 @@ function migrateDB(d) {
     changed = true;
   }
 
+  // 결제 채널 설정 — 구버전 저장 DB에 시드 기본값 주입
+  if (d?.settings && !d.settings.payment) {
+    d.settings.payment = { zelle: "pay@beloved.co", venmo: "@BeloveD-Fine", note: "" };
+    changed = true;
+  }
+
   // v13 hotfix: operator-proxy diamond candidates are published for the
   // customer to choose, but older records marked them as already stock-confirmed.
   // That combination leaves the customer with a visible card and a disabled
@@ -1392,16 +1398,51 @@ export function createQuote(orderId, { estWeightG, metalRefUsdPerG, lossRatePct,
     snapshot: { benchmarkUsdPerCt: bench?.unitUsdPerCt || 0, carat: dia?.carat || 0 }, // 벤치마크 변경이 과거 견적에 영향 없음
     ...computed, validUntil: new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10),
     leadDays: db().settings.productionLeadDays, acceptedAt: null, createdAt: now(),
+    // 확정 제안 필드 — 고객에게는 미디어·스펙·총액만 보인다 (breakdown 미노출)
+    proposalMedia: [], stoneSpec: null, substitutionNote: "", depositReportedAt: null,
   };
   db().quotes.push(quote);
   audit("ops", "quote", quote.id, "create", null, "draft");
   persist();
   return quote;
 }
+// 어드민 제안 컴포저: 고객에게 보여줄 미디어·스톤 스펙·대체 안내문
+export function updateQuoteProposal(quoteId, { proposalMedia, stoneSpec, substitutionNote }) {
+  const q = db().quotes.find((x) => x.id === quoteId);
+  if (!q) return null;
+  if (proposalMedia !== undefined) q.proposalMedia = normalizeOrderMedia(proposalMedia).slice(0, 5);
+  if (stoneSpec !== undefined) q.stoneSpec = stoneSpec;
+  if (substitutionNote !== undefined) q.substitutionNote = substitutionNote;
+  persist();
+  return q;
+}
 export function sendQuote(quoteId) {
   const q = db().quotes.find((x) => x.id === quoteId);
   q.status = "sent";
+  // 스펙/미디어가 비어 있으면 확정 후보에서 자동 채움 — 자동 견적 경로도 제안 카드가 완성된다
+  const dia = getQuoteDiamondCandidate(q.orderId);
+  if (dia) {
+    if (!q.stoneSpec) {
+      q.stoneSpec = {
+        shape: dia.shape, carat: dia.carat, color: dia.color, clarity: dia.clarity,
+        growth: dia.growth, lab: dia.lab, igiNo: dia.igiNo,
+      };
+    }
+    if (!q.proposalMedia?.length && dia.media?.length) {
+      q.proposalMedia = normalizeOrderMedia(dia.media).slice(0, 5);
+    }
+  }
   createCustomerAction(q.orderId, { type: "quoteAcceptance", prompt: q.id, link: "" });
+  persist();
+  return q;
+}
+// 고객 셀프 리포트: "디파짓 보냈어요" → 어드민 입금 확인 대기
+export function reportDepositSent(quoteId, actor = "customer") {
+  const q = db().quotes.find((x) => x.id === quoteId);
+  if (!q || q.status !== "accepted" || q.depositReportedAt) return q;
+  q.depositReportedAt = now();
+  upsertMilestone(q.orderId, "depositReceived", { status: "waitingClient", publishToClient: true });
+  audit(actor, "quote", quoteId, "depositReported", null, q.depositReportedAt);
   persist();
   return q;
 }
@@ -1622,21 +1663,22 @@ export function portalView(orderId, { customerId, queryCode, userRole } = {}) {
   const authorized = ownsOrder || guestCodeMatches || adminPreviewMatches;
   if (!authorized) return null;
   const quote = listQuotes(orderId).find((q) => q.status === "sent" || q.status === "accepted") || null;
-  const publishedCandidates = listCandidates({ orderId, publishedOnly: true }).map(publicDiamondView);
+  // 확정 제안 flow: 고객은 후보 비교 없이 제안 1장만 본다 — diamondSelection 액션도 미노출
   const visibleActions = listCustomerActions(orderId, true)
-    .filter((action) => action.type !== "diamondSelection" || publishedCandidates.length > 0);
+    .filter((action) => action.type !== "diamondSelection");
   return {
     order: customerOrderView(order),
     intake: getIntake(order.intakeId),
     style: order.styleId ? getOpsStyle(order.styleId) : null,
-    candidates: publishedCandidates,
     selected: order.selectedDiamondId ? publicDiamondView(getCandidate(order.selectedDiamondId)) : null,
+    // 보안 프로젝션: 총액·디파짓·잔금만 — breakdown(다이아/메탈/패키지/중량)은 어드민 전용
     quote: quote && {
-      id: quote.id, status: quote.status, estWeightG: quote.estWeightG,
-      metalAmountUsd: quote.metalAmountUsd, nonMetalUsd: quote.nonMetalUsd, diamondAmountUsd: quote.diamondAmountUsd,
+      id: quote.id, status: quote.status,
       totalUsd: quote.totalUsd, depositUsd: quote.depositUsd, balanceUsd: quote.balanceUsd,
       validUntil: quote.validUntil, leadDays: quote.leadDays,
-    }, // 내부 원가·멀티플라이어 미포함
+      proposalMedia: quote.proposalMedia || [], stoneSpec: quote.stoneSpec || null,
+      substitutionNote: quote.substitutionNote || "", depositReportedAt: quote.depositReportedAt || null,
+    },
     milestones: listMilestones(orderId).filter((m) => m.publishToClient),
     cad: listCadReviews(orderId).find((c) => !c.hidden) || null, // 모니터링 숨김 버전 제외
 

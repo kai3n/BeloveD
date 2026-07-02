@@ -62,8 +62,10 @@ describe("고객 포털 권한 — 게스트 / 회원 / 어드민 분리", () =>
     expect(view.order.queryCode).toBeUndefined();
     expect(view.order.internalNotes).toBeUndefined();
     expect(view.order.owner).toBeUndefined();
-    expect(view.candidates.every((candidate) => candidate.procurementCostUsd === undefined)).toBe(true);
-    expect(view.candidates.every((candidate) => candidate.supplierId === undefined)).toBe(true);
-    expect(view.candidates.every((candidate) => candidate.internalNotes === undefined)).toBe(true);
+    expect(view.candidates).toBeUndefined(); // 확정 제안 flow: 후보는 고객 미노출
+    const json = JSON.stringify(view);
+    expect(json).not.toContain("procurementCostUsd");
+    expect(json).not.toContain("supplierId");
+    expect(json).not.toContain("internalNotes");
   });
 });

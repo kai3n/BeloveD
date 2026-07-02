@@ -112,7 +112,7 @@ describe("visual store — 최종 실물 컨펌", () => {
 });
 
 describe("visual store — 운영자 프록시 업로드", () => {
-  it("운영자가 올린 다이아 후보는 고객 포털에 미디어와 고객용 노트로 공개된다", () => {
+  it("운영자가 올린 다이아 후보는 내부 데이터로 유지되고 고객 포털에는 노출되지 않는다", () => {
     const c = createProxyDiamondCandidate("DM-000001", {
       shape: "oval", carat: 1.23, color: "E", clarity: "VS1", growth: "CVD", lab: "IGI",
       igiNo: "LG-PROXY-1", customerPriceUsd: 390, procurementCostUsd: 240,
@@ -121,12 +121,11 @@ describe("visual store — 운영자 프록시 업로드", () => {
     });
     expect(c.published).toBe(true);
     expect(c.stockConfirmed).toBe(false);
+    expect(c.media.length).toBe(2);
+    // 확정 제안 flow: 후보 비교/선택은 고객에게 보이지 않는다 — 제안(quote)으로만 전달
     const view = portalView("DM-000001", { queryCode: "QX7K-M9P2" });
-    const publicCandidate = view.candidates.find((x) => x.id === c.id);
-    expect(publicCandidate.media.length).toBe(2);
-    expect(publicCandidate.clientNote).toContain("clean oval");
-    expect(JSON.stringify(publicCandidate)).not.toContain("procurementCostUsd");
-    expect(view.actions.some((a) => a.type === "diamondSelection")).toBe(true);
+    expect(view.candidates).toBeUndefined();
+    expect(view.actions.some((a) => a.type === "diamondSelection")).toBe(false);
 
     toggleShortlist(c.id, "customer");
     submitDiamondSelection("DM-000001", "customer");

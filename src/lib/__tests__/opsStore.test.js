@@ -74,7 +74,9 @@ describe("ops store — 매뉴얼 풀 플로우", () => {
   });
 
   it("후보 제출 → 검수 → publish → 고객 선택 → 디파짓 후 락", () => {
-    const pr = createProcurement("DM-000001", { type: "diamondCandidates", supplierId: "u-supplier2", dueDate: "2026-06-20", batchValidUntil: "2026-06-30", brief: "b" });
+    // batchValidUntil은 항상 미래여야 함 — 고정 날짜는 달력이 지나면 테스트가 저절로 깨진다
+    const futureBatchDate = new Date(Date.now() + 10 * 86400000).toISOString().slice(0, 10);
+    const pr = createProcurement("DM-000001", { type: "diamondCandidates", supplierId: "u-supplier2", dueDate: "2026-06-20", batchValidUntil: futureBatchDate, brief: "b" });
     const [cand] = submitCandidates(pr.id, [{ igiNo: "LG-X1", shape: "round", carat: 1.48, color: "E", clarity: "VS1", growth: "CVD", lab: "IGI", procurementCostUsd: 520 }]);
     expect(cand.id).toMatch(/^DIA-DM-000001-\d{2}$/);
     reviewCandidate(cand.id, "recommended");
@@ -159,7 +161,7 @@ describe("ops store — 매뉴얼 풀 플로우", () => {
     expect(portalView("DM-000001", { queryCode: "WRONG" })).toBeNull();
     const v = portalView("DM-000001", { queryCode: "QX7K-M9P2" });
     expect(v.order.internalNotes).toBeUndefined();
-    expect(v.candidates.length).toBe(2); // published만 (3번 제외)
+    expect(v.candidates).toBeUndefined(); // 확정 제안 flow: 후보 비교는 고객 미노출
     const json = JSON.stringify(v);
     expect(json).not.toContain("procurementCostUsd");
     expect(json).not.toContain("supplierId");
@@ -193,7 +195,7 @@ describe("ops store — 매뉴얼 풀 플로우", () => {
     createCustomerAction(order.id, { type: "diamondSelection", prompt: "stale selection action" });
 
     const view = portalView(order.id, { queryCode: order.queryCode });
-    expect(view.candidates).toHaveLength(0);
+    expect(view.candidates).toBeUndefined();
     expect(view.actions.some((a) => a.type === "diamondSelection")).toBe(false);
     expect(listProcurements({ orderId: order.id }).some((p) => p.type === "diamondCandidates")).toBe(true);
   });
@@ -247,9 +249,11 @@ describe("ops store — 운영자 프록시 고객 컨펌 플로우", () => {
     expect(actions[0]).toMatchObject({ type: "diamondSelection", status: "open" });
     expect(actions[0].media).toHaveLength(5);
 
+    // 확정 제안 flow: 후보·선택 액션은 고객 포털에 노출되지 않는다 (내부 데이터로만 유지)
     const view = portalView(order.id, { queryCode: order.queryCode });
-    expect(view.actions[0].type).toBe("diamondSelection");
-    expect(view.candidates.find((c) => c.id === candidate.id).media).toHaveLength(5);
+    expect(view.actions.some((a) => a.type === "diamondSelection")).toBe(false);
+    expect(view.candidates).toBeUndefined();
+    expect(listCandidates({ orderId: order.id }).find((c) => c.id === candidate.id).media).toHaveLength(5);
 
     const secondCandidate = createProxyDiamondCandidate(order.id, {
       shape: "round",
@@ -259,7 +263,7 @@ describe("ops store — 운영자 프록시 고객 컨펌 플로우", () => {
       media: mediaSix,
     }, "ops");
     expect(secondCandidate.media).toHaveLength(5);
-    expect(portalView(order.id, { queryCode: order.queryCode }).candidates.find((c) => c.id === secondCandidate.id).media).toHaveLength(5);
+    expect(listCandidates({ orderId: order.id }).find((c) => c.id === secondCandidate.id).media).toHaveLength(5);
   });
 
   it("디자인 초안 재업로드는 이전 CAD 고객 액션을 닫고 최신 버전만 고객에게 대기시킨다", () => {
