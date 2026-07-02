@@ -7,6 +7,7 @@ import { ApiError } from "./errors.js";
 import { attachPrincipal, requireSameOrigin } from "./middleware.js";
 import { query } from "./db.js";
 import { authRouter } from "./authRoutes.js";
+import { mediaRouter } from "./mediaRoutes.js";
 
 const distDir = join(dirname(fileURLToPath(import.meta.url)), "..", "dist");
 
@@ -30,6 +31,7 @@ export function createApp() {
   });
 
   app.use("/v1/auth", authRouter());
+  app.use("/v1/media", mediaRouter());
 
   // Any unmatched /v1 route returns the JSON error contract (never the SPA).
   app.use("/v1", (_req, _res, next) => next(new ApiError("NOT_FOUND", 404)));
