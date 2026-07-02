@@ -592,9 +592,10 @@ html[data-theme="day"] .chip:focus-visible {
   gap: 8px;
   min-height: 36px;
   padding: 0 12px;
-  border: 1px solid rgba(214, 197, 160, 0.38);
-  background: rgba(5, 6, 7, 0.72);
-  color: var(--accent-bright);
+  border: 1px solid rgba(24, 22, 18, 0.14);
+  background: rgba(255, 255, 255, 0.94);
+  color: #26231d;
+  box-shadow: 0 6px 18px rgba(24, 22, 18, 0.14);
   font-size: 11px;
   font-weight: 900;
   letter-spacing: 0.08em;
@@ -3194,6 +3195,16 @@ html[data-theme="day"] .admin-page-detail button:disabled {
 .guide-page h3 { margin: 30px 0 8px; color: var(--text); }
 .guide-card .card-body { min-height: 210px; display: grid; align-content: start; }
 .guide-card h3 { font-family: var(--serif); font-size: 26px; font-weight: 500; line-height: 1.15; }
+.guide-card-cta {
+  align-self: end;
+  margin-top: 18px;
+  color: var(--accent-bright);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.guide-card:hover .guide-card-cta { text-decoration: underline; text-underline-offset: 4px; }
 
 /* 고객 홈/프로세스 */
 .process-strip { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }

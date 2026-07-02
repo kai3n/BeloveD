@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { getSettings, listOpsStyles } from "../lib/store.js";
 import { useDBVersion } from "../lib/useDB.js";
-import { MediaThumb } from "../components/ui.jsx";
+import { MediaThumb, withBase } from "../components/ui.jsx";
 import { pickI18n, useLocale } from "../i18n.jsx";
 import {
   DESIGN_CATEGORIES,
@@ -21,6 +21,15 @@ function CatalogMediaCarousel({ card }) {
   const [active, setActive] = useState(0);
   const media = mediaItems[active] || mediaItems[0];
   const hasGallery = mediaItems.length > 1;
+
+  // 화살표를 누르기 전에 이웃 이미지를 미리 받아 전환이 즉시 되게 한다
+  useEffect(() => {
+    if (!hasGallery) return;
+    [active + 1, active - 1].forEach((idx) => {
+      const item = mediaItems[(idx + mediaItems.length) % mediaItems.length];
+      if (item && item.kind !== "video" && item.src) new Image().src = withBase(item.src);
+    });
+  }, [active, hasGallery, mediaItems]);
 
   function shift(event, delta) {
     event.preventDefault();

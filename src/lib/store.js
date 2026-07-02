@@ -8,7 +8,7 @@ import {
   autoBrief, candidateAutoPrice, isCandidateComplete, poolStoneMatches,
 } from "./ops.js";
 
-const KEY = "lumina-db-v14"; // v14: 이미지 없는 CSV 스타일 제거 + 원본 미디어 재동기화
+const KEY = "lumina-db-v15"; // v15: 카탈로그 미디어를 셀프호스팅 경로(/assets/designs)로 전환
 
 // 테스트(node) 환경 폴백
 const memoryStorage = (() => {
@@ -367,6 +367,7 @@ function db() {
     storage.removeItem("lumina-db-v11");
     storage.removeItem("lumina-db-v12");
     storage.removeItem("lumina-db-v13");
+    storage.removeItem("lumina-db-v14");
     let parsed = null;
     try {
       const raw = storage.getItem(KEY);

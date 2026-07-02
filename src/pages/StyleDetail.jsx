@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { getOpsStyle } from "../lib/store.js";
 import { useDBVersion } from "../lib/useDB.js";
-import { MediaThumb } from "../components/ui.jsx";
+import { MediaThumb, withBase } from "../components/ui.jsx";
 import { pickI18n, useLocale } from "../i18n.jsx";
 import { categoryMeta, getDesignSlotStyle, styleMediaGallery, styleSubcategoryKey } from "../lib/designSlots.js";
 
@@ -26,8 +26,24 @@ export default function StyleDetail() {
     setMagnifyPosition({ x: 50, y: 50 });
   }, [id]);
 
+  // 갤러리 이웃 이미지를 미리 받아 화살표 전환이 즉시 되게 한다
+  useEffect(() => {
+    if (!style || !style.published) return;
+    const gallery = styleMediaGallery(style, categoryMeta(style.category) || { media: [] });
+    if (gallery.length < 2) return;
+    [active + 1, active - 1].forEach((idx) => {
+      const item = gallery[(idx + gallery.length) % gallery.length];
+      if (item && item.kind !== "video" && item.src) new Image().src = withBase(item.src);
+    });
+  }, [style, active]);
+
   if (!style || !style.published) {
-    return <div className="page"><p className="empty-note">{p.styleCat.title} — {p.common.notFound}</p></div>;
+    return (
+      <div className="page" style={{ textAlign: "center" }}>
+        <p className="empty-note">{p.styleCat.title} — {p.common.notFound}</p>
+        <p><Link className="button secondary" to="/designs">{p.intake.backToDesigns}</Link></p>
+      </div>
+    );
   }
 
   const category = categoryMeta(style.category);

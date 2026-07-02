@@ -1,6 +1,6 @@
 const BEZEL_BRACELET_SAMPLE_MEDIA = {
   kind: "image",
-  src: "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/BCGTXBR07076/medium/BCGTXBR07076-RG-RB-WH-811-M0.jpg",
+  src: "/assets/designs/BCGTXBR07076-RG-RB-WH-811-M0.jpg",
 };
 
 export const DESIGN_CATEGORIES = [

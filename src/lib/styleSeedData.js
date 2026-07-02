@@ -4,15 +4,15 @@ export const styleSeedData = [
     "id": "RING-001",
     "category": "ring",
     "subcategory": "engagementRing",
-    "coverImage": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/RIGTXR09875R400/medium/RIGTXR09875R400-WG-RB-WH-400-M0.jpg",
+    "coverImage": "/assets/designs/RIGTXR09875R400-WG-RB-WH-400-M0.jpg",
     "media": [
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/RIGTXR09875R400/medium/RIGTXR09875R400-WG-RB-WH-400-M0.jpg"
+        "src": "/assets/designs/RIGTXR09875R400-WG-RB-WH-400-M0.jpg"
       },
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/RIGTXR09875R400/medium/RIGTXR09875R400-WG-RB-WH-400-M1.jpg"
+        "src": "/assets/designs/RIGTXR09875R400-WG-RB-WH-400-M1.jpg"
       }
     ],
     "mediaComplete": true,
@@ -64,15 +64,15 @@ export const styleSeedData = [
     "id": "RING-002",
     "category": "ring",
     "subcategory": "engagementRing",
-    "coverImage": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/RIGTXR01745/medium/RIGTXR01745-WG-RB-WH-150-M0.jpg",
+    "coverImage": "/assets/designs/RIGTXR01745-WG-RB-WH-150-M0.jpg",
     "media": [
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/RIGTXR01745/medium/RIGTXR01745-WG-RB-WH-150-M0.jpg"
+        "src": "/assets/designs/RIGTXR01745-WG-RB-WH-150-M0.jpg"
       },
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/RIGTXR01745/medium/RIGTXR01745-WG-RB-WH-150-M3.jpg"
+        "src": "/assets/designs/RIGTXR01745-WG-RB-WH-150-M3.jpg"
       }
     ],
     "mediaComplete": true,
@@ -124,15 +124,15 @@ export const styleSeedData = [
     "id": "RING-003",
     "category": "ring",
     "subcategory": "engagementRing",
-    "coverImage": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/RIGKSR6117R600/medium/RIGKSR6117R600-WG-RB-WH-700-M0.jpg",
+    "coverImage": "/assets/designs/RIGKSR6117R600-WG-RB-WH-700-M0.jpg",
     "media": [
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/RIGKSR6117R600/medium/RIGKSR6117R600-WG-RB-WH-700-M0.jpg"
+        "src": "/assets/designs/RIGKSR6117R600-WG-RB-WH-700-M0.jpg"
       },
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/RIGKSR6117R600/medium/RIGKSR6117R600-WG-RB-WH-700-M1.jpg"
+        "src": "/assets/designs/RIGKSR6117R600-WG-RB-WH-700-M1.jpg"
       }
     ],
     "mediaComplete": true,
@@ -184,23 +184,23 @@ export const styleSeedData = [
     "id": "RING-004",
     "category": "ring",
     "subcategory": "engagementRing",
-    "coverImage": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/RIGTXR03183/medium/RIGTXR03183-GW4_1.jpg",
+    "coverImage": "/assets/designs/RIGTXR03183-GW4_1.jpg",
     "media": [
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/RIGTXR03183/medium/RIGTXR03183-GW4_1.jpg"
+        "src": "/assets/designs/RIGTXR03183-GW4_1.jpg"
       },
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/RIGTXR03183/medium/RIGTXR03183-GW4.jpg"
+        "src": "/assets/designs/RIGTXR03183-GW4.jpg"
       },
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/RIGTXR03183/medium/RIGTXR03183-GW4-1-new.jpg"
+        "src": "/assets/designs/RIGTXR03183-GW4-1-new.jpg"
       },
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/RIGTXR03183/medium/RIGTXR03183-WG-M3.jpg"
+        "src": "/assets/designs/RIGTXR03183-WG-M3.jpg"
       }
     ],
     "mediaComplete": true,
@@ -252,19 +252,19 @@ export const styleSeedData = [
     "id": "RING-005",
     "category": "ring",
     "subcategory": "engagementRing",
-    "coverImage": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/RIGJRD0315/medium/RIGJRD0315-HW4_1.jpg",
+    "coverImage": "/assets/designs/RIGJRD0315-HW4_1.jpg",
     "media": [
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/RIGJRD0315/medium/RIGJRD0315-HW4_1.jpg"
+        "src": "/assets/designs/RIGJRD0315-HW4_1.jpg"
       },
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/RIGJRD0315/medium/RIGJRD0315-HW4_2.jpg"
+        "src": "/assets/designs/RIGJRD0315-HW4_2.jpg"
       },
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/RIGJRD0315/medium/RIGJRD0315-HW4-1-new.jpg"
+        "src": "/assets/designs/RIGJRD0315-HW4-1-new.jpg"
       }
     ],
     "mediaComplete": true,
@@ -316,11 +316,11 @@ export const styleSeedData = [
     "id": "RING-006",
     "category": "ring",
     "subcategory": "engagementRing",
-    "coverImage": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/RIG0894X4C400H1/medium/RIG0894X4C400H1-GW-NEW.jpg",
+    "coverImage": "/assets/designs/RIG0894X4C400H1-GW-NEW.jpg",
     "media": [
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/RIG0894X4C400H1/medium/RIG0894X4C400H1-GW-NEW.jpg"
+        "src": "/assets/designs/RIG0894X4C400H1-GW-NEW.jpg"
       }
     ],
     "mediaComplete": true,
@@ -372,15 +372,15 @@ export const styleSeedData = [
     "id": "RING-007",
     "category": "ring",
     "subcategory": "statementRing",
-    "coverImage": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/RIGRVR02048/medium/RIGRVR02048-YG-RB-WH-200-M0.jpg",
+    "coverImage": "/assets/designs/RIGRVR02048-YG-RB-WH-200-M0.jpg",
     "media": [
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/RIGRVR02048/medium/RIGRVR02048-YG-RB-WH-200-M0.jpg"
+        "src": "/assets/designs/RIGRVR02048-YG-RB-WH-200-M0.jpg"
       },
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/RIGRVR02048/medium/RIGRVR02048-YG-RB-WH-200-M1.jpg"
+        "src": "/assets/designs/RIGRVR02048-YG-RB-WH-200-M1.jpg"
       }
     ],
     "mediaComplete": true,
@@ -432,19 +432,19 @@ export const styleSeedData = [
     "id": "RING-009",
     "category": "ring",
     "subcategory": "engagementRing",
-    "coverImage": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/RIGTX06263R200/medium/RIGTX06263R200-GW4_1.jpg",
+    "coverImage": "/assets/designs/RIGTX06263R200-GW4_1.jpg",
     "media": [
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/RIGTX06263R200/medium/RIGTX06263R200-GW4_1.jpg"
+        "src": "/assets/designs/RIGTX06263R200-GW4_1.jpg"
       },
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/RIGTX06263R200/medium/RIGTX06263R200-GW4_2.jpg"
+        "src": "/assets/designs/RIGTX06263R200-GW4_2.jpg"
       },
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/RIGTXR06263/medium/RIGTXR06263-2.50-GW4-1-NEW.jpg"
+        "src": "/assets/designs/RIGTXR06263-2.50-GW4-1-NEW.jpg"
       }
     ],
     "mediaComplete": true,
@@ -496,19 +496,19 @@ export const styleSeedData = [
     "id": "BAND-001",
     "category": "ring",
     "subcategory": "weddingBand",
-    "coverImage": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/RIGWR4428/medium/RIGWR4428-WG-RB-WH-500-M0-new.jpg",
+    "coverImage": "/assets/designs/RIGWR4428-WG-RB-WH-500-M0-new.jpg",
     "media": [
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/RIGWR4428/medium/RIGWR4428-WG-RB-WH-500-M0-new.jpg"
+        "src": "/assets/designs/RIGWR4428-WG-RB-WH-500-M0-new.jpg"
       },
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/RIGWR4428/medium/RIGWR4428-WG-RB-WH-500-M1-new.jpg"
+        "src": "/assets/designs/RIGWR4428-WG-RB-WH-500-M1-new.jpg"
       },
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/BNGWR4428/medium/BNGWR4428-400GW4-1.jpg"
+        "src": "/assets/designs/BNGWR4428-400GW4-1.jpg"
       }
     ],
     "mediaComplete": true,
@@ -560,15 +560,15 @@ export const styleSeedData = [
     "id": "BAND-005",
     "category": "ring",
     "subcategory": "weddingBand",
-    "coverImage": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/BNGTXR04267/medium/BNGTXR04267-YG-RB-WH-100-M0-new.jpg",
+    "coverImage": "/assets/designs/BNGTXR04267-YG-RB-WH-100-M0-new.jpg",
     "media": [
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/BNGTXR04267/medium/BNGTXR04267-YG-RB-WH-100-M0-new.jpg"
+        "src": "/assets/designs/BNGTXR04267-YG-RB-WH-100-M0-new.jpg"
       },
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/BNGTXR04267/medium/BNGTXR04267-YG-RB-WH-100-M1-new.jpg"
+        "src": "/assets/designs/BNGTXR04267-YG-RB-WH-100-M1-new.jpg"
       }
     ],
     "mediaComplete": true,
@@ -620,19 +620,19 @@ export const styleSeedData = [
     "id": "BAND-006",
     "category": "ring",
     "subcategory": "weddingBand",
-    "coverImage": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/BNGYR1450K/medium/BNGYR1450K-WG-RB-WH-200-M0-new.jpg",
+    "coverImage": "/assets/designs/BNGYR1450K-WG-RB-WH-200-M0-new.jpg",
     "media": [
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/BNGYR1450K/medium/BNGYR1450K-WG-RB-WH-200-M0-new.jpg"
+        "src": "/assets/designs/BNGYR1450K-WG-RB-WH-200-M0-new.jpg"
       },
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/BNGYR1450K/medium/BNGYR1450K-WG-RB-WH-200-M1-new.jpg"
+        "src": "/assets/designs/BNGYR1450K-WG-RB-WH-200-M1-new.jpg"
       },
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/BNGYR1450F/medium/BNGYR1450F-GW4%20-%20BNGYR1450G-GW4%20-%20BNGYR1450K-GW4%20-%20BNGYR1450M-GW4%20E_new.jpg"
+        "src": "/assets/designs/BNGYR1450-set.jpg"
       }
     ],
     "mediaComplete": true,
@@ -684,15 +684,15 @@ export const styleSeedData = [
     "id": "EARR-001",
     "category": "earrings",
     "subcategory": "studs",
-    "coverImage": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/EAGTXE01900/medium/EAGTXE01900-GW3-1.jpg",
+    "coverImage": "/assets/designs/EAGTXE01900-GW3-1.jpg",
     "media": [
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/EAGTXE01900/medium/EAGTXE01900-GW3-1.jpg"
+        "src": "/assets/designs/EAGTXE01900-GW3-1.jpg"
       },
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/EAGTXE01900/medium/EAGTXE01900-WG-RB-WH-150-M1-1.jpg"
+        "src": "/assets/designs/EAGTXE01900-WG-RB-WH-150-M1-1.jpg"
       }
     ],
     "mediaComplete": true,
@@ -745,15 +745,15 @@ export const styleSeedData = [
     "id": "EARR-002",
     "category": "earrings",
     "subcategory": "huggies",
-    "coverImage": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/EAGJOE555/medium/EAGJOE555-GP2-1.jpg",
+    "coverImage": "/assets/designs/EAGJOE555-GP2-1.jpg",
     "media": [
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/EAGJOE555/medium/EAGJOE555-GP2-1.jpg"
+        "src": "/assets/designs/EAGJOE555-GP2-1.jpg"
       },
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/EAGJOE555/medium/EAGJOE555-GP2-2.jpg"
+        "src": "/assets/designs/EAGJOE555-GP2-2.jpg"
       }
     ],
     "mediaComplete": true,
@@ -806,19 +806,19 @@ export const styleSeedData = [
     "id": "EARR-003",
     "category": "earrings",
     "subcategory": "studs",
-    "coverImage": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/EAGTXE02393/medium/EAGTXE02393-RG-PR-WH-119-M3.jpg",
+    "coverImage": "/assets/designs/EAGTXE02393-RG-PR-WH-119-M3.jpg",
     "media": [
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/EAGTXE02393/medium/EAGTXE02393-RG-PR-WH-119-M3.jpg"
+        "src": "/assets/designs/EAGTXE02393-RG-PR-WH-119-M3.jpg"
       },
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/EAGTXE02393/medium/EAGTXE02393-RG-PR-WH-119-M1.jpg"
+        "src": "/assets/designs/EAGTXE02393-RG-PR-WH-119-M1.jpg"
       },
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/TXE02393/medium/TXE02393-1-GW1.jpg"
+        "src": "/assets/designs/TXE02393-1-GW1.jpg"
       }
     ],
     "mediaComplete": true,
@@ -871,15 +871,15 @@ export const styleSeedData = [
     "id": "EARR-004",
     "category": "earrings",
     "subcategory": "huggies",
-    "coverImage": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/AJE06021/medium/AJE06021-WG-M0.jpg",
+    "coverImage": "/assets/designs/AJE06021-WG-M0.jpg",
     "media": [
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/AJE06021/medium/AJE06021-WG-M0.jpg"
+        "src": "/assets/designs/AJE06021-WG-M0.jpg"
       },
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/AJE06021/medium/AJE06021-WG-M1.jpg"
+        "src": "/assets/designs/AJE06021-WG-M1.jpg"
       }
     ],
     "mediaComplete": true,
@@ -932,15 +932,15 @@ export const styleSeedData = [
     "id": "EARR-005",
     "category": "earrings",
     "subcategory": "drops",
-    "coverImage": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/EAGTXE02083/medium/EAGTXE02083-RG-EM-WH-250-M0.jpg",
+    "coverImage": "/assets/designs/EAGTXE02083-RG-EM-WH-250-M0.jpg",
     "media": [
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/EAGTXE02083/medium/EAGTXE02083-RG-EM-WH-250-M0.jpg"
+        "src": "/assets/designs/EAGTXE02083-RG-EM-WH-250-M0.jpg"
       },
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/EAGTXE02083/medium/EAGTXE02083-RG-EM-WH-250-M1.jpg"
+        "src": "/assets/designs/EAGTXE02083-RG-EM-WH-250-M1.jpg"
       }
     ],
     "mediaComplete": true,
@@ -993,19 +993,19 @@ export const styleSeedData = [
     "id": "EARR-006",
     "category": "earrings",
     "subcategory": "huggies",
-    "coverImage": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/EAGRVE04056/medium/EAGRVE04056-RG-RB-WH-200-M3.jpg",
+    "coverImage": "/assets/designs/EAGRVE04056-RG-RB-WH-200-M3.jpg",
     "media": [
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/EAGRVE04056/medium/EAGRVE04056-RG-RB-WH-200-M3.jpg"
+        "src": "/assets/designs/EAGRVE04056-RG-RB-WH-200-M3.jpg"
       },
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/EAGRVE04056/medium/EAGRVE04056-RG-RB-WH-200-M1.jpg"
+        "src": "/assets/designs/EAGRVE04056-RG-RB-WH-200-M1.jpg"
       },
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/EARRVE04056/medium/EARRVE04056-GW4-new.jpg"
+        "src": "/assets/designs/EARRVE04056-GW4-new.jpg"
       }
     ],
     "mediaComplete": true,
@@ -1058,23 +1058,23 @@ export const styleSeedData = [
     "id": "BRAC-001",
     "category": "bangle",
     "subcategory": "tennisBracelet",
-    "coverImage": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/BCGTXBR00769/medium/BCGTXBR00769-YG-RB-WH-1200-M0.jpg",
+    "coverImage": "/assets/designs/BCGTXBR00769-YG-RB-WH-1200-M0.jpg",
     "media": [
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/BCGTXBR00769/medium/BCGTXBR00769-YG-RB-WH-1200-M0.jpg"
+        "src": "/assets/designs/BCGTXBR00769-YG-RB-WH-1200-M0.jpg"
       },
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/BCGTXBR00769/medium/BCGTXBR00769-YG-RB-WH-1200-M3.jpg"
+        "src": "/assets/designs/BCGTXBR00769-YG-RB-WH-1200-M3.jpg"
       },
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/BCGTXBR00769/medium/BCGTXBR00769-GW2-1-NEW.jpg"
+        "src": "/assets/designs/BCGTXBR00769-GW2-1-NEW.jpg"
       },
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/BCGTXBR00769/medium/BCGTXBR00769-YG-M2.jpg"
+        "src": "/assets/designs/BCGTXBR00769-YG-M2.jpg"
       }
     ],
     "mediaComplete": true,
@@ -1126,23 +1126,23 @@ export const styleSeedData = [
     "id": "BRAC-002",
     "category": "bangle",
     "subcategory": "bangle",
-    "coverImage": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/BCGVG2664K/medium/BCGVG2664K-WG-RB-WH-210-M0.jpg",
+    "coverImage": "/assets/designs/BCGVG2664K-WG-RB-WH-210-M0.jpg",
     "media": [
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/BCGVG2664K/medium/BCGVG2664K-WG-RB-WH-210-M0.jpg"
+        "src": "/assets/designs/BCGVG2664K-WG-RB-WH-210-M0.jpg"
       },
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/BCGVG2664K/medium/BCGVG2664K-WG-RB-WH-210-M3.jpg"
+        "src": "/assets/designs/BCGVG2664K-WG-RB-WH-210-M3.jpg"
       },
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/BCGVG2664K/medium/BCGVG2664K-GW4-1_new.jpg"
+        "src": "/assets/designs/BCGVG2664K-GW4-1_new.jpg"
       },
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/BCGVG2664K/medium/BCGVG2664K-WG-M2.jpg"
+        "src": "/assets/designs/BCGVG2664K-WG-M2.jpg"
       }
     ],
     "mediaComplete": true,
@@ -1194,15 +1194,15 @@ export const styleSeedData = [
     "id": "BRAC-003",
     "category": "bangle",
     "subcategory": "tennisBracelet",
-    "coverImage": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/BCGTXBR09965/medium/BCGTXBR09965-YG-RB-WH-200-M0.jpg",
+    "coverImage": "/assets/designs/BCGTXBR09965-YG-RB-WH-200-M0.jpg",
     "media": [
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/BCGTXBR09965/medium/BCGTXBR09965-YG-RB-WH-200-M0.jpg"
+        "src": "/assets/designs/BCGTXBR09965-YG-RB-WH-200-M0.jpg"
       },
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/BCGTXBR09965/medium/BCGTXBR09965-YG-RB-WH-200-M3.jpg"
+        "src": "/assets/designs/BCGTXBR09965-YG-RB-WH-200-M3.jpg"
       }
     ],
     "mediaComplete": true,
@@ -1254,19 +1254,19 @@ export const styleSeedData = [
     "id": "NECK-001",
     "category": "necklace",
     "subcategory": "pendant",
-    "coverImage": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/PNGTXP07660R300/medium/PNGTXP07660R300-WG-RB-WH-300-M0.jpg",
+    "coverImage": "/assets/designs/PNGTXP07660R300-WG-RB-WH-300-M0.jpg",
     "media": [
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/PNGTXP07660R300/medium/PNGTXP07660R300-WG-RB-WH-300-M0.jpg"
+        "src": "/assets/designs/PNGTXP07660R300-WG-RB-WH-300-M0.jpg"
       },
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/PNGTXP07660R300/medium/PNGTXP07660R300-WG-RB-WH-300-M1.jpg"
+        "src": "/assets/designs/PNGTXP07660R300-WG-RB-WH-300-M1.jpg"
       },
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/PNGTXP07660R150/medium/PNGTXP07660R150-GW6-new.jpg"
+        "src": "/assets/designs/PNGTXP07660R150-GW6-new.jpg"
       }
     ],
     "mediaComplete": true,
@@ -1319,19 +1319,19 @@ export const styleSeedData = [
     "id": "NECK-002",
     "category": "necklace",
     "subcategory": "pendant",
-    "coverImage": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/PNGTXP01957/medium/PNGTXP01957-RG-RB-WH-175-M0.jpg",
+    "coverImage": "/assets/designs/PNGTXP01957-RG-RB-WH-175-M0.jpg",
     "media": [
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/PNGTXP01957/medium/PNGTXP01957-RG-RB-WH-175-M0.jpg"
+        "src": "/assets/designs/PNGTXP01957-RG-RB-WH-175-M0.jpg"
       },
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/PNGTXP01957/medium/PNGTXP01957-RG-RB-WH-175-M1.jpg"
+        "src": "/assets/designs/PNGTXP01957-RG-RB-WH-175-M1.jpg"
       },
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/PNGTXP01957/medium/PNGTXP01957-RG-M2.jpg"
+        "src": "/assets/designs/PNGTXP01957-RG-M2.jpg"
       }
     ],
     "mediaComplete": true,
@@ -1384,11 +1384,11 @@ export const styleSeedData = [
     "id": "NECK-003",
     "category": "necklace",
     "subcategory": "pendant",
-    "coverImage": "https://ion.bluenile.com/sets/Jewelry/Photoshoot/Bluenile/Orbitvu/FineJewelry/857162W1404L/857162W1404L_SKU_1_1600X1600.jpg",
+    "coverImage": "/assets/designs/857162W1404L_SKU_1_1600X1600.jpg",
     "media": [
       {
         "kind": "image",
-        "src": "https://ion.bluenile.com/sets/Jewelry/Photoshoot/Bluenile/Orbitvu/FineJewelry/857162W1404L/857162W1404L_SKU_1_1600X1600.jpg"
+        "src": "/assets/designs/857162W1404L_SKU_1_1600X1600.jpg"
       }
     ],
     "mediaComplete": true,
@@ -1441,11 +1441,11 @@ export const styleSeedData = [
     "id": "NECK-004",
     "category": "necklace",
     "subcategory": "stationNecklace",
-    "coverImage": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/NCGRVN01233R500/medium/NCGRVN01233R500-WG-RB-WH-500-M0.jpg",
+    "coverImage": "/assets/designs/NCGRVN01233R500-WG-RB-WH-500-M0.jpg",
     "media": [
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/NCGRVN01233R500/medium/NCGRVN01233R500-WG-RB-WH-500-M0.jpg"
+        "src": "/assets/designs/NCGRVN01233R500-WG-RB-WH-500-M0.jpg"
       }
     ],
     "mediaComplete": true,
@@ -1498,11 +1498,11 @@ export const styleSeedData = [
     "id": "NECK-005",
     "category": "necklace",
     "subcategory": "pendant",
-    "coverImage": "https://ion.bluenile.com/sets/Jewelry/Photoshoot/Bluenile/Orbitvu/FineJewelry/857170W14L/857170W14L_SKU_1_1600X1600.jpg",
+    "coverImage": "/assets/designs/857170W14L_SKU_1_1600X1600.jpg",
     "media": [
       {
         "kind": "image",
-        "src": "https://ion.bluenile.com/sets/Jewelry/Photoshoot/Bluenile/Orbitvu/FineJewelry/857170W14L/857170W14L_SKU_1_1600X1600.jpg"
+        "src": "/assets/designs/857170W14L_SKU_1_1600X1600.jpg"
       }
     ],
     "mediaComplete": true,
@@ -1555,11 +1555,11 @@ export const styleSeedData = [
     "id": "NECK-006",
     "category": "necklace",
     "subcategory": "pendant",
-    "coverImage": "https://dianamjewels.com/cdn/shop/files/DP2284-2W_f45a16d1-c237-45c6-b77f-74978e8991c0.jpg?v=1764706150&width=1600",
+    "coverImage": "/assets/designs/DP2284-2W_f45a16d1-c237-45c6-b77f-74978e8991c0.jpg",
     "media": [
       {
         "kind": "image",
-        "src": "https://dianamjewels.com/cdn/shop/files/DP2284-2W_f45a16d1-c237-45c6-b77f-74978e8991c0.jpg?v=1764706150&width=1600"
+        "src": "/assets/designs/DP2284-2W_f45a16d1-c237-45c6-b77f-74978e8991c0.jpg"
       }
     ],
     "mediaComplete": true,
@@ -1612,19 +1612,19 @@ export const styleSeedData = [
     "id": "NECK-007",
     "category": "necklace",
     "subcategory": "tennisNecklace",
-    "coverImage": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/NCGXK4149Q/medium/NCGXK4149Q-RG-RB-WH-700-M0.jpg",
+    "coverImage": "/assets/designs/NCGXK4149Q-RG-RB-WH-700-M0.jpg",
     "media": [
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/NCGXK4149Q/medium/NCGXK4149Q-RG-RB-WH-700-M0.jpg"
+        "src": "/assets/designs/NCGXK4149Q-RG-RB-WH-700-M0.jpg"
       },
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/NCGXK4149Q/medium/NCGXK4149Q-RG-RB-WH-700-M4.jpg"
+        "src": "/assets/designs/NCGXK4149Q-RG-RB-WH-700-M4.jpg"
       },
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/NCGXK4149Q/medium/NCGXK4149Q-RG-RB-WH-700-M1.jpg"
+        "src": "/assets/designs/NCGXK4149Q-RG-RB-WH-700-M1.jpg"
       }
     ],
     "mediaComplete": true,
@@ -1677,23 +1677,23 @@ export const styleSeedData = [
     "id": "NECK-008",
     "category": "necklace",
     "subcategory": "stationNecklace",
-    "coverImage": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/NCGKN29498/medium/NCGKN29498-WG-RB-WH-200-M0-1.jpg",
+    "coverImage": "/assets/designs/NCGKN29498-WG-RB-WH-200-M0-1.jpg",
     "media": [
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/NCGKN29498/medium/NCGKN29498-WG-RB-WH-200-M0-1.jpg"
+        "src": "/assets/designs/NCGKN29498-WG-RB-WH-200-M0-1.jpg"
       },
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/NCGKN29498/medium/NCGKN29498-WG-RB-WH-200-M4.jpg"
+        "src": "/assets/designs/NCGKN29498-WG-RB-WH-200-M4.jpg"
       },
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/NCGKN29498/medium/NCGKN29498-WG-RB-WH-200-M2-1.jpg"
+        "src": "/assets/designs/NCGKN29498-WG-RB-WH-200-M2-1.jpg"
       },
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/NCGKN29498/medium/NCGKN29498-WG-RB-WH-200-M1-1.jpg"
+        "src": "/assets/designs/NCGKN29498-WG-RB-WH-200-M1-1.jpg"
       }
     ],
     "mediaComplete": true,
@@ -1746,11 +1746,11 @@ export const styleSeedData = [
     "id": "NECK-009",
     "category": "necklace",
     "subcategory": "pendant",
-    "coverImage": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/PNGKP0960/medium/PNGKP0960-RG-RB-WH-300-M0.jpg",
+    "coverImage": "/assets/designs/PNGKP0960-RG-RB-WH-300-M0.jpg",
     "media": [
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/PNGKP0960/medium/PNGKP0960-RG-RB-WH-300-M0.jpg"
+        "src": "/assets/designs/PNGKP0960-RG-RB-WH-300-M0.jpg"
       }
     ],
     "mediaComplete": true,
@@ -1803,15 +1803,15 @@ export const styleSeedData = [
     "id": "NECK-010",
     "category": "necklace",
     "subcategory": "pendant",
-    "coverImage": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/NJOP7967/medium/NJOP7967-WG-M0.jpg",
+    "coverImage": "/assets/designs/NJOP7967-WG-M0.jpg",
     "media": [
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/NJOP7967/medium/NJOP7967-WG-M0.jpg"
+        "src": "/assets/designs/NJOP7967-WG-M0.jpg"
       },
       {
         "kind": "image",
-        "src": "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/NJOP7967/medium/NJOP7967-WG-M1.jpg"
+        "src": "/assets/designs/NJOP7967-WG-M1.jpg"
       }
     ],
     "mediaComplete": true,

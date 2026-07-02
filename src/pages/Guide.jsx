@@ -15,6 +15,7 @@ export function GuideHub() {
             <p className="section-label">{g.cards.lab.kicker}</p>
             <h3>{g.cards.lab.title}</h3>
             <p className="spec">{g.cards.lab.body}</p>
+            <span className="guide-card-cta">{p.common.view} →</span>
           </div>
         </Link>
         <Link className="item-card guide-card" to="/guide/4c">
@@ -22,6 +23,7 @@ export function GuideHub() {
             <p className="section-label">{g.cards.fourc.kicker}</p>
             <h3>{g.cards.fourc.title}</h3>
             <p className="spec">{g.cards.fourc.body}</p>
+            <span className="guide-card-cta">{p.common.view} →</span>
           </div>
         </Link>
         <Link className="item-card guide-card" to="/process">
@@ -29,6 +31,7 @@ export function GuideHub() {
             <p className="section-label">{g.cards.custom.kicker}</p>
             <h3>{g.cards.custom.title}</h3>
             <p className="spec">{g.cards.custom.body}</p>
+            <span className="guide-card-cta">{p.common.view} →</span>
           </div>
         </Link>
       </div>

@@ -69,6 +69,6 @@ describe("design slot cards", () => {
     const bezelSlot = cards.find((card) => card.title === "Bezel Bracelet");
 
     expect(bezelSlot?.media?.kind).toBe("image");
-    expect(bezelSlot?.media?.src).toContain("productimages/BCGTXBR07076/");
+    expect(bezelSlot?.media?.src).toContain("/assets/designs/BCGTXBR07076");
   });
 });

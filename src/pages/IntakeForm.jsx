@@ -238,7 +238,19 @@ export default function IntakeForm() {
 
   function submit() {
     const contactDetails = submissionContact(form, user);
-    if (!conditionalComplete(form.category, form.conditional) || !hasContactDetails(contactDetails) || !form.termsAccepted) {
+    // 무엇이 빠졌는지 짚어주고 해당 위치로 데려간다 — 하단의 범용 에러만으로는
+    // 사용자가 빠진 필드를 찾아 헤매게 된다.
+    if (!conditionalComplete(form.category, form.conditional)) {
+      setStepError(`${t.requiredError} — ${g.sizeFit}`);
+      document.getElementById("gflow-size-fit")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+    if (!hasContactDetails(contactDetails)) {
+      setStepError(t.requiredError);
+      setScreen("contact");
+      return;
+    }
+    if (!form.termsAccepted) {
       setStepError(t.requiredError);
       return;
     }
@@ -464,7 +476,7 @@ export default function IntakeForm() {
           </div>
 
           {/* 사이즈 & 핏 — 카테고리별 필수값 */}
-          <section className="gflow-review-section">
+          <section className="gflow-review-section" id="gflow-size-fit">
             <h4>{g.sizeFit} <span className="req">*</span></h4>
             <div className="filter-grid review-contact-grid">
               {cat === "ring" && (

@@ -3,7 +3,8 @@ import { styleSeedData } from "../styleSeedData.js";
 
 const productSignature = (src) => {
   const decoded = decodeURIComponent(String(src || ""));
-  const productMatch = decoded.match(/\/productimages\/([^/]+)\//);
+  // 셀프호스팅 파일명은 제품 코드로 시작한다: /assets/designs/<CODE>-....jpg
+  const productMatch = decoded.match(/\/assets\/designs\/([A-Za-z0-9]+)[-.]/);
   const code = productMatch?.[1] || "";
   const numericGroups = [...code.matchAll(/\d{3,}/g)].map((match) => match[0]);
   return numericGroups.sort((a, b) => b.length - a.length)[0] || code;
@@ -65,7 +66,7 @@ describe("style seed media", () => {
       const media = Array.isArray(style.media) ? style.media : [];
       return media.length === 0
         || style.mediaComplete !== true
-        || media.some((item) => !String(item.src || "").startsWith("http"));
+        || media.some((item) => !String(item.src || "").startsWith("/assets/designs/"));
     });
 
     expect(invalid).toEqual([]);
