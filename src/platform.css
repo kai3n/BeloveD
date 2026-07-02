@@ -5294,3 +5294,40 @@ button.text-link:hover {
   padding: 12px 16px; margin-bottom: 14px; font-size: 13px;
 }
 .gflow-resume-actions { display: flex; gap: 8px; }
+
+/* ── Day 잉크 원칙: 면 채움은 잉크 블랙, 샴페인은 헤어라인·라벨·언더라인만 ──
+   솔리드 골드/샴페인 채움은 화이트 배경에서 탁한 갈색으로 보인다 (럭셔리 화이트 하우스 규칙) */
+html[data-theme="day"] .button.primary {
+  background: #16130f;
+  color: #f8f7f5;
+  box-shadow: 0 16px 34px rgba(24, 22, 18, 0.2), inset 0 1px rgba(255, 255, 255, 0.1);
+}
+html[data-theme="day"] .button.primary:hover {
+  background: #2c2822;
+  color: #ffffff;
+  box-shadow: 0 20px 42px rgba(24, 22, 18, 0.26), inset 0 1px rgba(255, 255, 255, 0.12);
+}
+html[data-theme="day"] .chip.is-active {
+  background: #16130f;
+  border-color: #16130f;
+  color: #f8f7f5;
+}
+html[data-theme="day"] .design-category-tabs .chip.is-active {
+  border-color: #16130f;
+  box-shadow: none;
+}
+html[data-theme="day"] .design-subcategory-tabs .chip.is-active {
+  background: rgba(24, 22, 18, 0.045);
+  color: var(--text);
+}
+html[data-theme="day"] .lux-calendar-day.is-selected {
+  background: #16130f;
+  border-color: #16130f;
+  color: #f8f7f5;
+}
+html[data-theme="day"] .stepper li.done .dot,
+html[data-theme="day"] .stepper li.current .dot {
+  background: #16130f;
+  border-color: #16130f;
+}
+html[data-theme="day"] .gflow-carat-range { accent-color: #16130f; }

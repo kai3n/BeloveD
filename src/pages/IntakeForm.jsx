@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../lib/auth.jsx";
 import {
   CHAIN_LENGTHS, CHAIN_STYLE_OPTIONS, CLASP_OPTIONS,
@@ -105,6 +105,7 @@ export default function IntakeForm() {
   const g = t.gflow;
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [params] = useSearchParams();
   const styles = listOpsStyles({ publishedOnly: true });
   const styleParam = params.get("style") || "";
@@ -149,18 +150,13 @@ export default function IntakeForm() {
       termsAccepted: false,
     };
   });
-  const [screen, setScreen] = useState(() => {
-    // URL 프리필이 있으면 해당 질문은 건너뛴 위치에서 시작.
-    // 드래프트가 있어도 항상 첫 질문부터 — 저장 화면으로의 자동 점프는 "중간부터 시작"처럼 보인다.
-    if (styleFromParam) return "metal";
-    if (categoryFromParam) return "design";
-    return "category";
-  });
+  // 항상 첫 질문부터 시작 — URL 프리필(?style=/?category=)은 답을 미리 골라둘 뿐 화면은 건너뛰지 않는다.
+  // (화면 건너뛰기·드래프트 자동 점프 둘 다 "중간부터 시작"처럼 보여 혼란을 준다)
+  const [screen, setScreen] = useState("category");
   // 드래프트 이어하기는 배너로 명시적 선택 (답변은 이미 프리필되어 있어 새로 시작해도 빠르다)
+  const hasEntryParams = Boolean(styleFromParam || categoryFromParam || refDiamond);
   const [resumeTarget, setResumeTarget] = useState(() => (
-    !styleFromParam && !categoryFromParam && draft?.screen && draft.screen !== "category"
-      ? draft.screen
-      : ""
+    !hasEntryParams && draft?.screen && draft.screen !== "category" ? draft.screen : ""
   ));
   const [done, setDone] = useState(null);
   const [refs, setRefs] = useState(() => sanitizeReferenceMedia(draft?.refs));
@@ -200,6 +196,16 @@ export default function IntakeForm() {
     window.scrollTo({ top: 0, behavior: "auto" });
     setStepError("");
   }, [screen]);
+
+  // 같은 라우트 재진입(nav의 START CUSTOM 재클릭 등)은 리마운트가 없어 화면이 유지된다 → 항상 1번 질문으로 리셋
+  const locationKeyRef = useRef(location.key);
+  useEffect(() => {
+    if (locationKeyRef.current === location.key) return;
+    locationKeyRef.current = location.key;
+    setScreen("category");
+    setResumeTarget("");
+    setStepError("");
+  }, [location.key]);
 
   // 드래프트 이어하기 / 새로 시작
   function resumeDraft() {
