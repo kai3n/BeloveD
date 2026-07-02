@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth.jsx";
 import { ApiUnavailableError } from "../lib/api.js";
+import { WITH_BACKOFFICE } from "../lib/flags.js";
 import { useLocale } from "../i18n.jsx";
 
 // 고객 로그인 — 이메일 6자리 인증번호(실서버). 서버가 없는 정적 데모에선 비밀번호 폴백.
@@ -153,9 +154,11 @@ export default function Login() {
         </form>
       )}
 
-      <p className="form-hint" style={{ marginTop: 18, textAlign: "center" }}>
-        <Link className="text-link" to="/staff">{p.login.staffLink}</Link>
-      </p>
+      {WITH_BACKOFFICE && (
+        <p className="form-hint" style={{ marginTop: 18, textAlign: "center" }}>
+          <Link className="text-link" to="/staff">{p.login.staffLink}</Link>
+        </p>
+      )}
     </div>
   );
 }
