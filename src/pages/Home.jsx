@@ -402,6 +402,17 @@ function LovedWorn({ locale }) {
   const [mIdx, setMIdx] = useState(0);
   const [progress, setProgress] = useState(0);
   const trackRef = useRef(null);
+  // ESC 닫기 · ←/→ 미디어 넘기기 (훅은 조기 return 이전에)
+  useEffect(() => {
+    if (!open) return undefined;
+    function onKey(e) {
+      if (e.key === "Escape") setOpen(null);
+      if (e.key === "ArrowLeft") setMIdx((i) => (i - 1 + open.media.length) % open.media.length);
+      if (e.key === "ArrowRight") setMIdx((i) => (i + 1) % open.media.length);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
   if (reviews.length === 0) return null;
   const avg = (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1);
   // iOS에서 scroll-snap mandatory와 scrollBy(smooth)가 충돌해 안 움직인다 → 셀 offsetLeft로 정확히 이동
