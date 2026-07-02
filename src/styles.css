@@ -3814,8 +3814,9 @@ html[data-theme="day"] .noir-dock {
   color: var(--text);
   box-shadow: 0 -12px 34px rgba(20, 18, 15, 0.08);
 }
-html[data-theme="day"] .noir-dock strong, html[data-theme="day"] .noir-dock span { color: var(--text); }
-html[data-theme="day"] .noir-dock small, html[data-theme="day"] .noir-dock p { color: var(--muted); }
+html[data-theme="day"] .noir-dock-lab b { color: #15130f; }
+html[data-theme="day"] .noir-dock-lab span { color: var(--muted); }
+html[data-theme="day"] .noir-dock-go, html[data-theme="day"] .noir-dock-go * { color: #f8f7f5; }
 
 /* Day: 독 타이틀 "Design yours" — 페일 골드가 화이트 위에서 씻겨 보임 → 잉크 세리프로 또렷하게 */
 html[data-theme="day"] .noir-dock-lab b {
