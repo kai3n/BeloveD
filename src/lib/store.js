@@ -176,9 +176,9 @@ function migrateDB(d) {
     changed = true;
   }
 
-  // 리뷰 스토어 — 구버전 저장 DB에 배열 주입
+  // 리뷰 스토어 — 구버전 저장 DB에는 시드 데모 리뷰까지 주입 (빈 배열이면 홈 섹션이 통째로 숨는다)
   if (d && !Array.isArray(d.reviews)) {
-    d.reviews = [];
+    d.reviews = seed().reviews || [];
     changed = true;
   }
 
