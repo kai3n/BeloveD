@@ -429,7 +429,7 @@ function ProposalCard({ quote, intake, style, fc, t, p, locale, shippingProps, o
     <div className="proposal-card">
       <div className="proposal-card-body">
         <div className="proposal-media">
-          <ClientMediaCarousel media={media} alt={quote.id} />
+          <ClientMediaCarousel media={media} alt={quote.id} fit="contain" />
         </div>
         <dl className="proposal-spec">
           {spec && (
@@ -511,7 +511,7 @@ function mediaList(media, fallbackSrc = "") {
   return items.length ? items : [mediaFrom(fallbackSrc)].filter(Boolean);
 }
 
-function ClientMediaCarousel({ media, alt = "", ratio = "1 / 1" }) {
+function ClientMediaCarousel({ media, alt = "", ratio = "1 / 1", fit = "cover" }) {
   const items = (Array.isArray(media) ? media : []).filter((item) => item?.src);
   const [activeIndex, setActiveIndex] = useState(0);
   if (!items.length) return null;
@@ -525,7 +525,7 @@ function ClientMediaCarousel({ media, alt = "", ratio = "1 / 1" }) {
   }
   return (
     <div className="client-media-carousel">
-      <MediaThumb media={active} alt={alt} ratio={ratio} />
+      <MediaThumb media={active} alt={alt} ratio={ratio} fit={fit} />
       {canNavigate && (
         <>
           <button className="client-media-arrow is-left" type="button" aria-label="Previous media" onClick={(event) => move(-1, event)}>
@@ -750,11 +750,11 @@ function DesignCard({ cad, mineMedia, orderId, actor, revisionsLeft, feeUsd, def
       <div className="split-compare">
         <div>
           <p className="label">{t2.compareMine}</p>
-          <MediaThumb media={mineMedia} ratio="4 / 3" alt={t2.compareMine} />
+          <MediaThumb media={mineMedia} ratio="4 / 3" alt={t2.compareMine} fit="contain" />
         </div>
         <div>
           <p className="label">{t2.compareVendor} — {t.cadVersion(cad.version)}</p>
-          <MediaThumb media={cadMedia[0]} ratio="4 / 3" alt={t.cadTitle} />
+          <MediaThumb media={cadMedia[0]} ratio="4 / 3" alt={t.cadTitle} fit="contain" />
         </div>
       </div>
       {cadMedia.length > 1 && (
@@ -762,7 +762,7 @@ function DesignCard({ cad, mineMedia, orderId, actor, revisionsLeft, feeUsd, def
           {cadMedia.map((m, i) => (
             <div key={`${m.src}-${i}`}>
               <p className="label">{t2.slots[m.slot] || m.slot}</p>
-              <MediaThumb media={m} alt={m.slot} />
+              <MediaThumb media={m} alt={m.slot} fit="contain" />
             </div>
           ))}
         </div>
@@ -1025,7 +1025,7 @@ export default function ClientPortal() {
         {finalAction && (
           <div className="form-stack">
             <h3 style={{ margin: 0 }}>{p.visual.finalTitle}</h3>
-            {finalMedia.length > 0 && <ClientMediaCarousel media={finalMedia} ratio="16 / 9" alt={p.visual.finalTitle} />}
+            {finalMedia.length > 0 && <ClientMediaCarousel media={finalMedia} ratio="16 / 9" alt={p.visual.finalTitle} fit="contain" />}
             {finalAction.note && <p className="feedback-note">{finalAction.note}</p>}
             <p className="warn-note">{p.visual.finalNotice}</p>
             <CustomerDecisionPanel

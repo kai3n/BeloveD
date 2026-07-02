@@ -360,7 +360,7 @@ function StyleMediaManager({ media, onChange, copy }) {
     <div className="admin-media-manager">
       <div className={`admin-media-stage ${activeMedia ? "" : "is-empty"}`}>
         {activeMedia ? (
-          <MediaThumb media={activeMedia} ratio="16 / 10" alt={copy.media} eager />
+          <MediaThumb media={activeMedia} ratio="1 / 1" alt={copy.media} eager />
         ) : (
           <div className="admin-media-empty">
             <span>{copy.cover}</span>

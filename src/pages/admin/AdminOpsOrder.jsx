@@ -430,7 +430,7 @@ function ProxyMediaStrip({ media, emptyText }) {
   return (
     <div className="ops-proxy-media-strip">
       {items.map((item, index) => (
-        <MediaThumb key={`${item.src}-${index}`} media={item} alt="" ratio="1 / 1" />
+        <MediaThumb key={`${item.src}-${index}`} media={item} alt="" ratio="1 / 1" fit="contain" />
       ))}
     </div>
   );
@@ -1445,7 +1445,7 @@ export default function AdminOpsOrder() {
               <div className="card-grid cols-3">
                 {intake.referenceMedia.map((m) => (
                   <div key={m.id} className="item-card">
-                    <MediaThumb media={m} alt={m.id} />
+                    <MediaThumb media={m} alt={m.id} fit="contain" />
                     <div className="card-body">
                       <p className="spec">{m.id} · {p.visual.refStatus[m.status]}</p>
                       {m.annotations?.map((a) => (

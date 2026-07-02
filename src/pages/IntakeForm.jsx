@@ -452,7 +452,7 @@ export default function IntakeForm() {
             <div className="gflow-review-card">
               <div className="rc-media">
                 {refs[0]
-                  ? <MediaThumb media={refs[0]} alt={g.inspirationCard} ratio="16 / 10" />
+                  ? <MediaThumb media={refs[0]} alt={g.inspirationCard} ratio="16 / 10" fit="contain" />
                   : <ShapeSilhouette shape="round" />}
               </div>
               <div className="rc-body">

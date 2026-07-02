@@ -80,7 +80,6 @@ const quoteBoardCopy = {
     body: "Comparable 1ct lab-grown diamond ranges, shown against BeloveD direct custom quotes.",
     belovedSpec: "Comparable 1.00ct / VS+ / Ideal",
     browse: "Start a request",
-    custom: "Start custom order",
     stonePanelAria: "BeloveD diamond pricing reference",
     chipsAria: "Comparison stone specification",
     listAria: "Lab diamond price range comparison",
@@ -102,7 +101,6 @@ const quoteBoardCopy = {
     body: "1캐럿 랩다이아몬드 기준 비교 범위를 BeloveD 직접 견적과 나란히 보여드립니다.",
     belovedSpec: "동급 1.00ct / VS+ / Ideal",
     browse: "요청 시작하기",
-    custom: "주문제작 시작",
     stonePanelAria: "BeloveD 다이아몬드 가격 비교",
     chipsAria: "비교 스톤 사양",
     listAria: "랩다이아몬드 가격 범위 비교",
@@ -124,7 +122,6 @@ const quoteBoardCopy = {
     body: "以 1 克拉培育钻石为例，对比 BeloveD 直接定制报价与常见零售区间。",
     belovedSpec: "同级 1.00ct / VS+ / Ideal",
     browse: "开始需求",
-    custom: "开始定制",
     stonePanelAria: "BeloveD 钻石价格参考",
     chipsAria: "对比钻石规格",
     listAria: "培育钻石价格区间对比",
@@ -146,7 +143,6 @@ const quoteBoardCopy = {
     body: "Rangos comparables de diamantes lab-grown de 1 ct frente a una cotización directa BeloveD.",
     belovedSpec: "Equivalente 1.00ct / VS+ / Ideal",
     browse: "Iniciar solicitud",
-    custom: "Crear pedido",
     stonePanelAria: "Referencia de precio de diamantes BeloveD",
     chipsAria: "Especificación de piedra comparable",
     listAria: "Comparación de rangos de precio lab-grown",
@@ -373,9 +369,6 @@ function HomeCore({ locale }) {
         <Link className="noir-btn" to="/custom/new">
           {copy.browse}
           <ArrowRight size={15} strokeWidth={1.6} />
-        </Link>
-        <Link className="noir-link" to="/custom/new">
-          {copy.custom}
         </Link>
       </div>
     </section>

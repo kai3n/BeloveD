@@ -19,12 +19,15 @@ export function withBase(src) {
 }
 
 // eager=true는 히어로/단독 노출처럼 즉시 보여야 할 때만. 그 외(그리드·카드)는 기본 lazy.
-export function MediaThumb({ media, ratio = "1 / 1", alt = "", eager = false }) {
+// fit="contain": 임의 업로드 콘텐츠(제안·CAD·QC·레퍼런스)처럼 잘리면 안 되는 이미지용.
+// 기본 cover는 큐레이션된 정사각 제품샷 카드용.
+export function MediaThumb({ media, ratio = "1 / 1", alt = "", eager = false, fit = "cover" }) {
+  const fitClass = fit === "contain" ? "media-thumb is-contain" : "media-thumb";
   if (!media) return <div className="media-thumb media-empty" style={{ aspectRatio: ratio }} />;
   const src = withBase(media.src);
   if (media.kind === "video") {
     // 그리드 영상 썸네일은 화면 밖에서 버퍼링하지 않도록 preload="none" — 보이면 autoplay
-    return <video className="media-thumb" style={{ aspectRatio: ratio }} src={src} muted loop autoPlay playsInline preload="none" />;
+    return <video className={fitClass} style={{ aspectRatio: ratio }} src={src} muted loop autoPlay playsInline preload="none" />;
   }
   if (media.pos) {
     return (
@@ -34,7 +37,7 @@ export function MediaThumb({ media, ratio = "1 / 1", alt = "", eager = false }) 
       />
     );
   }
-  return <img className="media-thumb" style={{ aspectRatio: ratio }} src={src} alt={alt} loading={eager ? "eager" : "lazy"} decoding="async" />;
+  return <img className={fitClass} style={{ aspectRatio: ratio }} src={src} alt={alt} loading={eager ? "eager" : "lazy"} decoding="async" />;
 }
 
 export function MediaZoomModal({ mediaItems, activeIndex = 0, onActiveIndexChange, onClose, alt = "" }) {
