@@ -203,6 +203,14 @@ export function seed() {
     salvageLedger: [],
     // 고객 리뷰 — 인증샷 미디어 퍼스트, 어드민 검수(published) 후 홈 노출
     reviews: [
+      { id: "REV-000007", orderId: "DM-000003", name: "Mina C.", location: "Los Angeles", rating: 5,
+        quote: "Bought the whole set here — obsessed.", body: "Pendant, drops and the stack — everything came out so pretty in person. I keep catching myself staring at them.",
+        media: [
+          { kind: "image", src: "/assets/reviews/ugc-232616.jpg" },
+          { kind: "image", src: "/assets/reviews/ugc-232639.jpg" },
+          { kind: "image", src: "/assets/reviews/ugc-232645.jpg" },
+        ],
+        status: "published", createdAt: "2026-06-30T10:00:00.000Z" },
       { id: "REV-000001", orderId: "DM-000002", name: "Jiwon K.", location: "Los Angeles", rating: 5,
         quote: "She said yes.", body: "The proposal video made me cry — the ring is unreal in person.",
         media: [{ kind: "video", src: "/assets/diamond-hero-white.mp4" }, { kind: "image", src: "https://media.grownbrilliance.com/a2c5372a-e16a-4ea3-b361-da9fdc89a59f/https://images.grownbrilliance.com/productimages/RIGTXR09875R400/medium/RIGTXR09875R400-WG-RB-WH-400-M0.jpg" }],
@@ -243,7 +251,7 @@ export function seed() {
       shipToAddress: "BeloveD Receiving, 550 S Hill St #1100, Los Angeles, CA 90013",
       // 디파짓/잔금 수동 확인 결제 채널 — 어드민 설정에서 편집
       payment: { zelle: "pay@beloved.co", venmo: "@BeloveD-Fine", note: "" },
-      reviewsSeedVersion: 2,
+      reviewsSeedVersion: 3,
       demoDeliveredSeedVersion: 1,
     },
   };
