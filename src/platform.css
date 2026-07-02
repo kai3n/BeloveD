@@ -5354,3 +5354,23 @@ html[data-theme="day"] .gflow-carat-range { accent-color: #16130f; }
 @media (max-width: 640px) {
   .client-actionbar { align-items: flex-start; flex-direction: column; }
 }
+
+/* ── 어드민 워크벤치: 상태 기반 스테이지 아코디언 ── */
+.ops-stage {
+  border: 1px solid var(--line); background: var(--surface); margin-bottom: 14px;
+}
+.ops-stage > summary {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 20px; cursor: pointer; list-style: none;
+}
+.ops-stage > summary::-webkit-details-marker { display: none; }
+.ops-stage-no {
+  font-family: var(--serif); font-size: 19px; color: var(--accent); min-width: 26px;
+}
+.ops-stage-title {
+  flex: 1; font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700;
+}
+.ops-stage[open] > summary { border-bottom: 1px solid var(--hair); }
+.ops-stage-body { display: grid; gap: 14px; padding: 16px 20px 20px; }
+.ops-stage-body .panel { margin: 0; }
+.ops-admin-details > .ops-stage-body { padding: 4px 0 16px; }

@@ -105,6 +105,11 @@ const PROPOSAL_COMPOSER_COPY = {
     reportedAt: (when) => `Customer reported the deposit sent · ${when}`,
     useForProposal: "Use for proposal",
     proposalStone: "Proposal stone",
+    stageProposal: "Send the final proposal",
+    stageProduction: "Production — CAD & final piece",
+    stagePayment: "Payment & shipping",
+    groupInfo: "Order info & quote history",
+    groupInternal: "Internal ops (milestones · vendors · audit)",
   },
   ko: {
     title: "확정 제안 (고객 노출)",
@@ -118,6 +123,11 @@ const PROPOSAL_COMPOSER_COPY = {
     reportedAt: (when) => `고객이 디파짓 송금을 보고했습니다 · ${when}`,
     useForProposal: "제안 스톤으로 지정",
     proposalStone: "제안 스톤",
+    stageProposal: "확정 제안 보내기",
+    stageProduction: "제작 진행 — CAD·완성품",
+    stagePayment: "결제·배송",
+    groupInfo: "주문 정보·견적 이력",
+    groupInternal: "내부 관리 (마일스톤·벤더·감사)",
   },
   zh: {
     title: "最终方案（客户可见）",
@@ -131,6 +141,11 @@ const PROPOSAL_COMPOSER_COPY = {
     reportedAt: (when) => `客户报告已转定金 · ${when}`,
     useForProposal: "用于最终方案",
     proposalStone: "方案钻石",
+    stageProposal: "发送最终方案",
+    stageProduction: "制作进行 — CAD·成品",
+    stagePayment: "收款·发货",
+    groupInfo: "订单信息·报价历史",
+    groupInternal: "内部管理（里程碑·供应商·审计）",
   },
   es: {
     title: "Propuesta final (visible al cliente)",
@@ -144,6 +159,11 @@ const PROPOSAL_COMPOSER_COPY = {
     reportedAt: (when) => `El cliente reportó el depósito enviado · ${when}`,
     useForProposal: "Usar en la propuesta",
     proposalStone: "Piedra de la propuesta",
+    stageProposal: "Enviar la propuesta final",
+    stageProduction: "Producción — CAD y pieza final",
+    stagePayment: "Pago y envío",
+    groupInfo: "Datos del pedido e historial",
+    groupInternal: "Operación interna (hitos · proveedores · auditoría)",
   },
 };
 
@@ -1242,6 +1262,11 @@ export default function AdminOpsOrder() {
         : null;
 
   const openCustomerActions = actions.filter((action) => action.status === "open");
+  const stageCopy = proposalComposerCopy(locale);
+  // 워크플로우 페이즈 — 어떤 스테이지를 기본으로 펼칠지
+  const proposalPhase = !depositDone && ["STYLE_SELECTION", "STONE_SELECTION", "QUOTATION"].includes(order.status);
+  const productionPhase = ["CAD", "PRODUCTION", "QC"].includes(order.status);
+  const paymentPhase = ["BALANCE", "SHIPPING"].includes(order.status);
   const waitingStep = waitingForShippingAddress ? {
     title: t.shippingAddressWaitingTitle,
     body: t.shippingAddressWaitingBody,
@@ -1264,192 +1289,213 @@ export default function AdminOpsOrder() {
         {saveNotice}
       </p>
 
-      <div className="ops-command-layout">
-        <main className="ops-command-main">
-          <NextActionPanel order={order} waitingStep={waitingStep} nextAction={nextAction} openActions={openCustomerActions} t={t} p={p} onSaved={notify} notice={notice} />
+      {/* 워크플로우 스테이지 — 지금 단계만 기본으로 펼친다 (상태 바뀌면 key로 초기화) */}
+      <details className="ops-stage" key={`s1-${order.status}-${depositDone}`} open={proposalPhase}>
+        <summary>
+          <span className="ops-stage-no">{depositDone ? "✓" : "01"}</span>
+          <span className="ops-stage-title">{stageCopy.stageProposal}</span>
+          <span className={`status-badge ${proposalPhase ? "mst-waitingClient" : depositDone ? "mst-done" : "mst-pending"}`}>
+            {proposalPhase ? p.visual.nowAction : depositDone ? p.visual.doneTag : p.visual.upcoming}
+          </span>
+        </summary>
+        <div className="ops-stage-body">
+          {candidates.length > 0 && (
+            <div className="panel" style={{ overflowX: "auto" }}>
+              <h3>{t.candidates} ({candidates.length})</h3>
+              <table className="data-table">
+                <thead><tr><th>ID</th><th>4C</th><th>{t.cost}</th><th>{t.review}</th><th>{t.custPrice}</th><th>{p.portal.availability.available}</th><th /></tr></thead>
+                <tbody>
+                  {candidates.map((c) => (
+                    <tr key={c.id} style={c.locked ? { background: "rgba(214,197,160,0.06)" } : undefined}>
+                      <td style={{ whiteSpace: "nowrap" }}>{c.id}<br /><span className="form-hint">{c.igiNo}</span></td>
+                      <td>{c.shape} {c.carat}ct {c.color}/{c.clarity} {c.growth}</td>
+                      <td>{usd(c.procurementCostUsd)}</td>
+                      <td>
+                        <select value={c.internalReview || ""} onChange={(e) => { reviewCandidate(c.id, e.target.value); notify(notice.candidateUpdated); }}>
+                          <option value="" disabled>—</option>
+                          {["recommended", "alternate", "excluded"].map((r) => <option key={r} value={r}>{t.reviews[r]}</option>)}
+                        </select>
+                      </td>
+                      <td>
+                        {c.published ? (
+                          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 6 }}>
+                            <span style={{ whiteSpace: "nowrap" }}>
+                              {usd(c.customerPriceUsd)}
+                              {intake?.budget && c.customerPriceUsd > intake.budget && <span style={{ color: "#e08585", marginLeft: 6 }} title={`${t.budgetLabel} $${intake.budget}`}>⚠ {t.overBudget}</span>}
+                            </span>
+                            <button className="chip is-active" onClick={() => { unpublishCandidate(c.id); notify(notice.candidateUpdated); }}>{t.unpublish}</button>
+                          </div>
+                        ) : (
+                          <input type="number" placeholder={t.pricePh} style={{ width: 132 }}
+                            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); publishCandidate(c.id, Number(e.target.value)); notify(notice.candidateUpdated); } }} />
+                        )}
+                      </td>
+                      <td>
+                        <select value={c.availability} onChange={(e) => { setCandidateAvailability(c.id, e.target.value); notify(notice.candidateUpdated); }}>
+                          {["available", "hold", "sold"].map((a) => <option key={a} value={a}>{p.portal.availability[a]}</option>)}
+                        </select>
+                      </td>
+                      <td>
+                        {c.locked ? <span className="status-badge cst-REPLACED">{t.locked}</span>
+                          : c.clientSelection === "selected" ? (
+                            depositDone
+                              ? <button className="button primary small" onClick={() => { lockCandidate(c.id, "ops"); notify(notice.candidateUpdated); }}>{t.lock}</button>
+                              : <span className="status-badge mst-inProgress">{stageCopy.proposalStone}</span>
+                          )
+                          : (c.published && c.availability === "available" && !order.selectedDiamondId
+                            && !candidates.some((x) => x.clientSelection === "selected")) ? (
+                              // 새 flow: 고객 후보 선택 대신 어드민이 제안 스톤을 지정 → 견적 자동 발송
+                              <button className="button secondary small" onClick={() => {
+                                toggleShortlist(c.id, "ops");
+                                submitDiamondSelection(order.id, "ops");
+                                notify(notice.candidateUpdated);
+                              }}>{stageCopy.useForProposal}</button>
+                            ) : null}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
-          <CustomerFlowPanel order={order} milestones={milestones} actions={actions} t={t} p={p} locale={locale} onSaved={notify} />
+          <div className="panel form-stack">
+            <h3>{t.quoteTitle}</h3>
+            {quotes.map((q) => (
+              <div key={q.id} className="feedback-note">
+                <strong>{q.id}</strong> · {q.status} · {usd(q.totalUsd)} ({p.portal.deposit} {usd(q.depositUsd)} / {p.portal.balance} {usd(q.balanceUsd)})
+                {intake?.budget && q.totalUsd > intake.budget && <span style={{ color: "#e08585", marginLeft: 6 }}>⚠ {t.overBudget} (${intake.budget})</span>}
+                {q.actualWeightG && ` · actual ${q.actualWeightG}g`}
+                {q.status === "draft" && <button className="button secondary small" style={{ marginLeft: 10 }} onClick={() => { sendQuote(q.id); notify(notice.quoteSent); }}>{t.send}</button>}
+              </div>
+            ))}
+            {(() => {
+              const editable = quotes.find((q) => q.status === "draft" || q.status === "sent");
+              return editable
+                ? <ProposalComposer key={editable.id} quote={editable} order={order} locale={locale} onSaved={() => notify()} />
+                : null;
+            })()}
+            {quoteDiamondCandidate || intake?.productLine === "multi" ? <QuoteBuilder order={order} settings={settings} t={t} onSaved={notify} notice={notice} /> : null}
+          </div>
+        </div>
+      </details>
 
+      <details className="ops-stage" key={`s2-${order.status}`} open={productionPhase}>
+        <summary>
+          <span className="ops-stage-no">{["BALANCE", "SHIPPING", "DELIVERED", "ARCHIVED"].includes(order.status) ? "✓" : "02"}</span>
+          <span className="ops-stage-title">{stageCopy.stageProduction}</span>
+          <span className={`status-badge ${productionPhase ? "mst-waitingClient" : ["BALANCE", "SHIPPING", "DELIVERED", "ARCHIVED"].includes(order.status) ? "mst-done" : "mst-pending"}`}>
+            {productionPhase ? p.visual.nowAction : ["BALANCE", "SHIPPING", "DELIVERED", "ARCHIVED"].includes(order.status) ? p.visual.doneTag : p.visual.upcoming}
+          </span>
+        </summary>
+        <div className="ops-stage-body">
           <OperatorProxyPanel order={order} t={t} p={p} locale={locale} />
+          {cads.length > 0 && (
+            <div className="panel">
+              <h3>{t.cadTitle}</h3>
+              {cads.map((c) => (
+                <div key={c.id} className="feedback-note">
+                  V{c.version} · {c.decision ? p.portal.cadDecided[c.decision] : p.msStatus.waitingClient}
+                  {c.feedback.length > 0 && ` · ${c.feedback.join(" / ")}`}
+                  {c.annotations?.length > 0 && c.annotations.map((a) => (
+                    <span key={a.pinId}> · <span className="pin-tag">{a.pinId}</span>{formatAnnotation(a, getDB().chipCatalog, locale, p.visual.parts)}</span>
+                  ))}
+                  {c.feeAppliedUsd > 0 && <span> · fee {usd(c.feeAppliedUsd)}</span>}
+                  {c.confirmedMeasurements && ` · ${c.confirmedMeasurements}`}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </details>
 
-          <AdminConversationPanel orderId={order.id} messages={messages} copy={t.chat} onSaved={notify} notice={notice} />
+      <details className="ops-stage" key={`s3-${order.status}`} open={paymentPhase}>
+        <summary>
+          <span className="ops-stage-no">{["DELIVERED", "ARCHIVED"].includes(order.status) ? "✓" : "03"}</span>
+          <span className="ops-stage-title">{stageCopy.stagePayment}</span>
+          <span className={`status-badge ${paymentPhase ? "mst-waitingClient" : ["DELIVERED", "ARCHIVED"].includes(order.status) ? "mst-done" : "mst-pending"}`}>
+            {paymentPhase ? p.visual.nowAction : ["DELIVERED", "ARCHIVED"].includes(order.status) ? p.visual.doneTag : p.visual.upcoming}
+          </span>
+        </summary>
+        <div className="ops-stage-body">
+          {acceptedQuote ? (
+            <div className="panel form-stack">
+              <h3>{t.actualWeight}</h3>
+              <div className="row-actions">
+                <input type="number" step="0.01" placeholder={t.actualWeight} value={actualW} onChange={(e) => setActualW(e.target.value)}
+                  style={{ width: 150, background: "var(--bg-2)", border: "1px solid var(--line)", color: "var(--text)", padding: "9px 10px" }} />
+                <button className="button secondary small" disabled={!actualW} onClick={() => { recordActualWeight(order.id, Number(actualW)); setActualW(""); notify(notice.weightReconciled); }}>{t.reconcile}</button>
+              </div>
+            </div>
+          ) : <p className="form-hint">—</p>}
+        </div>
+      </details>
 
+      <AdminConversationPanel orderId={order.id} messages={messages} copy={t.chat} onSaved={notify} notice={notice} />
+
+      {/* 참고용 그룹 — 필요할 때만 펼친다 */}
+      <details className="ops-admin-details">
+        <summary>{stageCopy.groupInfo}</summary>
+        <div className="ops-stage-body">
+          <OrderBriefPanel order={order} intake={intake} style={style} p={p} t={t} locale={locale} />
+          <QuoteSnapshotPanel quotes={quotes} acceptedQuote={acceptedQuote} intake={intake} t={t} p={p} locale={locale} onSaved={notify} notice={notice} />
           {intake?.referenceMedia?.length > 0 && (
-            <details className="ops-admin-details">
-              <summary>{p.visual.refReviewTitle}</summary>
-              <div className="panel form-stack">
-                <div className="card-grid cols-3">
-                  {intake.referenceMedia.map((m) => (
-                    <div key={m.id} className="item-card">
-                      <MediaThumb media={m} alt={m.id} />
-                      <div className="card-body">
-                        <p className="spec">{m.id} · {p.visual.refStatus[m.status]}</p>
-                        {m.annotations?.map((a) => (
-                          <p key={a.pinId} className="form-hint"><span className="pin-tag">{a.pinId}</span>{formatAnnotation(a, getDB().chipCatalog, locale, p.visual.parts)}</p>
-                        ))}
-                        <div className="row-actions">
-                          {m.status === "approved" ? (
-                            <button className="button secondary small" onClick={() => { reviewReferenceMedia(intake.id, m.id, "hidden"); notify(notice.referenceUpdated); }}>{t.hideRef}</button>
-                          ) : (
-                            <button className="button primary small" onClick={() => { reviewReferenceMedia(intake.id, m.id, "approved"); notify(notice.referenceUpdated); }}>{t.showRef}</button>
-                          )}
-                        </div>
+            <div className="panel form-stack">
+              <h3>{p.visual.refReviewTitle}</h3>
+              <div className="card-grid cols-3">
+                {intake.referenceMedia.map((m) => (
+                  <div key={m.id} className="item-card">
+                    <MediaThumb media={m} alt={m.id} />
+                    <div className="card-body">
+                      <p className="spec">{m.id} · {p.visual.refStatus[m.status]}</p>
+                      {m.annotations?.map((a) => (
+                        <p key={a.pinId} className="form-hint"><span className="pin-tag">{a.pinId}</span>{formatAnnotation(a, getDB().chipCatalog, locale, p.visual.parts)}</p>
+                      ))}
+                      <div className="row-actions">
+                        {m.status === "approved" ? (
+                          <button className="button secondary small" onClick={() => { reviewReferenceMedia(intake.id, m.id, "hidden"); notify(notice.referenceUpdated); }}>{t.hideRef}</button>
+                        ) : (
+                          <button className="button primary small" onClick={() => { reviewReferenceMedia(intake.id, m.id, "approved"); notify(notice.referenceUpdated); }}>{t.showRef}</button>
+                        )}
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-            </details>
-          )}
-        </main>
-
-        <aside className="ops-command-side">
-          <OrderBriefPanel order={order} intake={intake} style={style} p={p} t={t} locale={locale} />
-          <InternalControlsPanel order={order} t={t} p={p} onSaved={notify} notice={notice} />
-          <QuoteSnapshotPanel quotes={quotes} acceptedQuote={acceptedQuote} intake={intake} t={t} p={p} locale={locale} onSaved={notify} notice={notice} />
-
-          {(quoteDiamondCandidate || intake?.productLine === "multi" || acceptedQuote) && (
-            <details className="ops-admin-details ops-side-details">
-              <summary>{t.quoteTitle}</summary>
-              <div className="panel form-stack">
-                {quotes.map((q) => (
-                  <div key={q.id} className="feedback-note">
-                    <strong>{q.id}</strong> · {q.status} · {usd(q.totalUsd)} ({p.portal.deposit} {usd(q.depositUsd)} / {p.portal.balance} {usd(q.balanceUsd)})
-                    {intake?.budget && q.totalUsd > intake.budget && <span style={{ color: "#e08585", marginLeft: 6 }}>⚠ {t.overBudget} (${intake.budget})</span>}
-                    {q.actualWeightG && ` · actual ${q.actualWeightG}g`}
-                    {q.status === "draft" && <button className="button secondary small" style={{ marginLeft: 10 }} onClick={() => { sendQuote(q.id); notify(notice.quoteSent); }}>{t.send}</button>}
                   </div>
                 ))}
-                {(() => {
-                  const editable = quotes.find((q) => q.status === "draft" || q.status === "sent");
-                  return editable
-                    ? <ProposalComposer key={editable.id} quote={editable} order={order} locale={locale} onSaved={() => notify()} />
-                    : null;
-                })()}
-                {quoteDiamondCandidate || intake?.productLine === "multi" ? <QuoteBuilder order={order} settings={settings} t={t} onSaved={notify} notice={notice} /> : null}
-                {acceptedQuote && (
-                  <div className="row-actions" style={{ marginTop: 12 }}>
-                    <input type="number" step="0.01" placeholder={t.actualWeight} value={actualW} onChange={(e) => setActualW(e.target.value)}
-                      style={{ width: 150, background: "var(--bg-2)", border: "1px solid var(--line)", color: "var(--text)", padding: "9px 10px" }} />
-                    <button className="button secondary small" disabled={!actualW} onClick={() => { recordActualWeight(order.id, Number(actualW)); setActualW(""); notify(notice.weightReconciled); }}>{t.reconcile}</button>
-                  </div>
-                )}
               </div>
-            </details>
-          )}
-        </aside>
-      </div>
-
-      {/* 고급 — 마일스톤·CAD 이력·고객 액션·감사 로그 (평소엔 접어둔다) */}
-      <details className="ops-admin-details" style={{ marginTop: 18 }}>
-        <summary>{t.advanced}</summary>
-
-      {/* 조달 요청 */}
-      <div className="panel form-stack" style={{ marginTop: 14 }}>
-        <h3>{t.newPr}</h3>
-        <PrForm orderId={order.id} suppliers={suppliers} t={t} onSaved={notify} notice={notice} />
-        {procurements.map((pr) => (
-          <p key={pr.id} className="form-hint">
-            {pr.id} · {pr.type} · {suppliers.find((su) => su.id === pr.supplierId)?.name} · {pr.dueDate} · <span className={`status-badge prt-${pr.status}`}>{p.supplierP.status[pr.status]}</span>
-            {pr.result && ` · ${prResultSummary(pr)}`}
-          </p>
-        ))}
-      </div>
-
-      {/* 다이아 후보 검수/공개 */}
-      {candidates.length > 0 && (
-        <div className="panel" style={{ overflowX: "auto" }}>
-          <h3>{t.candidates} ({candidates.length})</h3>
-          <table className="data-table">
-            <thead><tr><th>ID</th><th>4C</th><th>{t.cost}</th><th>{t.review}</th><th>{t.custPrice}</th><th>{p.portal.availability.available}</th><th /></tr></thead>
-            <tbody>
-              {candidates.map((c) => (
-                <tr key={c.id} style={c.locked ? { background: "rgba(214,197,160,0.06)" } : undefined}>
-                  <td style={{ whiteSpace: "nowrap" }}>{c.id}<br /><span className="form-hint">{c.igiNo}</span></td>
-                  <td>{c.shape} {c.carat}ct {c.color}/{c.clarity} {c.growth}</td>
-                  <td>{usd(c.procurementCostUsd)}</td>
-                  <td>
-                    <select value={c.internalReview || ""} onChange={(e) => { reviewCandidate(c.id, e.target.value); notify(notice.candidateUpdated); }}>
-                      <option value="" disabled>—</option>
-                      {["recommended", "alternate", "excluded"].map((r) => <option key={r} value={r}>{t.reviews[r]}</option>)}
-                    </select>
-                  </td>
-                  <td>
-                    {c.published ? (
-                      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 6 }}>
-                        <span style={{ whiteSpace: "nowrap" }}>
-                          {usd(c.customerPriceUsd)}
-                          {intake?.budget && c.customerPriceUsd > intake.budget && <span style={{ color: "#e08585", marginLeft: 6 }} title={`${t.budgetLabel} $${intake.budget}`}>⚠ {t.overBudget}</span>}
-                        </span>
-                        <button className="chip is-active" onClick={() => { unpublishCandidate(c.id); notify(notice.candidateUpdated); }}>{t.unpublish}</button>
-                      </div>
-                    ) : (
-                      <input type="number" placeholder={t.pricePh} style={{ width: 132 }}
-                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); publishCandidate(c.id, Number(e.target.value)); notify(notice.candidateUpdated); } }} />
-                    )}
-                  </td>
-                  <td>
-                    <select value={c.availability} onChange={(e) => { setCandidateAvailability(c.id, e.target.value); notify(notice.candidateUpdated); }}>
-                      {["available", "hold", "sold"].map((a) => <option key={a} value={a}>{p.portal.availability[a]}</option>)}
-                    </select>
-                  </td>
-                  <td>
-                    {c.locked ? <span className="status-badge cst-REPLACED">{t.locked}</span>
-                      : c.clientSelection === "selected" ? (
-                        depositDone
-                          ? <button className="button primary small" onClick={() => { lockCandidate(c.id, "ops"); notify(notice.candidateUpdated); }}>{t.lock}</button>
-                          : <span className="status-badge mst-inProgress">{proposalComposerCopy(locale).proposalStone}</span>
-                      )
-                      : (c.published && c.availability === "available" && !order.selectedDiamondId
-                        && !candidates.some((x) => x.clientSelection === "selected")) ? (
-                          // 새 flow: 고객 후보 선택 대신 어드민이 제안 스톤을 지정 → 견적 자동 발송
-                          <button className="button secondary small" onClick={() => {
-                            toggleShortlist(c.id, "ops");
-                            submitDiamondSelection(order.id, "ops");
-                            notify(notice.candidateUpdated);
-                          }}>{proposalComposerCopy(locale).useForProposal}</button>
-                        ) : null}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      <CompactMilestoneSummary milestones={milestones} p={p} locale={locale} />
-
-      {/* CAD 리뷰 이력 */}
-      {cads.length > 0 && (
-        <div className="panel">
-          <h3>{t.cadTitle}</h3>
-          {cads.map((c) => (
-            <div key={c.id} className="feedback-note">
-              V{c.version} · {c.decision ? p.portal.cadDecided[c.decision] : p.msStatus.waitingClient}
-              {c.feedback.length > 0 && ` · ${c.feedback.join(" / ")}`}
-              {c.annotations?.length > 0 && c.annotations.map((a) => (
-                <span key={a.pinId}> · <span className="pin-tag">{a.pinId}</span>{formatAnnotation(a, getDB().chipCatalog, locale, p.visual.parts)}</span>
-              ))}
-              {c.feeAppliedUsd > 0 && <span> · fee {usd(c.feeAppliedUsd)}</span>}
-              {c.confirmedMeasurements && ` · ${c.confirmedMeasurements}`}
             </div>
-          ))}
+          )}
         </div>
-      )}
+      </details>
 
-      {/* 고객 액션 + 감사 로그 */}
-      <div className="panel">
-        <h3>{t.actionsTitle}</h3>
-        {actions.length === 0 ? <p className="form-hint">—</p> : actions.map((a) => (
-          <p key={a.id} className="form-hint">{a.id} · {a.type} · {a.status}{a.response && ` → ${a.response}`}</p>
-        ))}
-      </div>
-      <div className="panel">
-        <h3>{t.auditTitle}</h3>
-        {auditRows.map((a) => (
-          <p key={a.id} className="form-hint">{a.at.slice(5, 16)} · {a.actor} · {a.field}: {String(a.before ?? "∅")} → {String(a.after ?? "∅")}</p>
-        ))}
-      </div>
+      <details className="ops-admin-details">
+        <summary>{stageCopy.groupInternal}</summary>
+        <div className="ops-stage-body">
+          <CustomerFlowPanel order={order} milestones={milestones} actions={actions} t={t} p={p} locale={locale} onSaved={notify} />
+          <InternalControlsPanel order={order} t={t} p={p} onSaved={notify} notice={notice} />
+          <div className="panel form-stack">
+            <h3>{t.newPr}</h3>
+            <PrForm orderId={order.id} suppliers={suppliers} t={t} onSaved={notify} notice={notice} />
+            {procurements.map((pr) => (
+              <p key={pr.id} className="form-hint">
+                {pr.id} · {pr.type} · {suppliers.find((su) => su.id === pr.supplierId)?.name} · {pr.dueDate} · <span className={`status-badge prt-${pr.status}`}>{p.supplierP.status[pr.status]}</span>
+                {pr.result && ` · ${prResultSummary(pr)}`}
+              </p>
+            ))}
+          </div>
+          <CompactMilestoneSummary milestones={milestones} p={p} locale={locale} />
+          <div className="panel">
+            <h3>{t.actionsTitle}</h3>
+            {actions.length === 0 ? <p className="form-hint">—</p> : actions.map((a) => (
+              <p key={a.id} className="form-hint">{a.id} · {a.type} · {a.status}{a.response && ` → ${a.response}`}</p>
+            ))}
+          </div>
+          <div className="panel">
+            <h3>{t.auditTitle}</h3>
+            {auditRows.map((a) => (
+              <p key={a.id} className="form-hint">{a.at.slice(5, 16)} · {a.actor} · {a.field}: {String(a.before ?? "∅")} → {String(a.after ?? "∅")}</p>
+            ))}
+          </div>
+        </div>
       </details>
     </div>
   );
