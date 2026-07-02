@@ -21,6 +21,7 @@ const Admin = lazy(() => import("./pages/admin/Admin.jsx"));
 const AdminOpsOrders = lazy(() => import("./pages/admin/AdminOpsOrders.jsx"));
 const AdminOpsOrder = lazy(() => import("./pages/admin/AdminOpsOrder.jsx"));
 const AdminOpsStyles = lazy(() => import("./pages/admin/AdminOpsStyles.jsx"));
+const AdminReviews = lazy(() => import("./pages/admin/AdminReviews.jsx"));
 const AdminBenchmark = lazy(() => import("./pages/admin/AdminBenchmark.jsx"));
 const CustomBuilderMockup = lazy(() => import("./pages/CustomBuilderMockup.jsx"));
 const CustomFlowMockup = lazy(() => import("./pages/CustomFlowMockup.jsx"));
@@ -74,6 +75,7 @@ export default function App() {
             <Route path="ops" element={<Navigate to="/admin/orders" replace />} />
             <Route path="ops/:orderId" element={<AdminOpsOrder />} />
             <Route path="benchmark" element={<AdminBenchmark />} />
+            <Route path="reviews" element={<AdminReviews />} />
             <Route path="diamonds" element={<Navigate to="/admin/benchmark" replace />} />
             <Route path="settings" element={<Navigate to="/admin/orders" replace />} />
           </Route>

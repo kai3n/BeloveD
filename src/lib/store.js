@@ -1822,6 +1822,46 @@ export function submitReview(orderId, { rating, quote, body, media, name, locati
   persist();
   return review;
 }
+// 어드민 수동 관리 — 리뷰 추가/수정/삭제 (홈 노출 콘텐츠 큐레이션)
+export function upsertReviewManual(payload, actor = "ops") {
+  const rows = db().reviews;
+  const existing = payload.id ? rows.find((r) => r.id === payload.id) : null;
+  if (existing) {
+    Object.assign(existing, {
+      name: payload.name ?? existing.name,
+      location: payload.location ?? existing.location,
+      rating: Math.min(5, Math.max(1, Number(payload.rating) || existing.rating)),
+      quote: payload.quote ?? existing.quote,
+      body: payload.body ?? existing.body,
+      media: payload.media ? normalizeOrderMedia(payload.media).slice(0, 5) : existing.media,
+      status: payload.status ?? existing.status,
+    });
+    audit(actor, "review", existing.id, "edit", null, existing.status);
+    persist();
+    return existing;
+  }
+  const review = {
+    id: nextSeqId("REV"), orderId: payload.orderId || null,
+    name: (payload.name || "Client").trim(), location: (payload.location || "").trim(),
+    rating: Math.min(5, Math.max(1, Number(payload.rating) || 5)),
+    quote: (payload.quote || "").trim(), body: (payload.body || "").trim(),
+    media: normalizeOrderMedia(payload.media || []).slice(0, 5),
+    status: payload.status || "published", createdAt: now(),
+  };
+  rows.push(review);
+  audit(actor, "review", review.id, "create", null, review.status);
+  persist();
+  return review;
+}
+export function deleteReview(reviewId, actor = "ops") {
+  const idx = db().reviews.findIndex((r) => r.id === reviewId);
+  if (idx === -1) return false;
+  audit(actor, "review", reviewId, "delete", db().reviews[idx].status, null);
+  db().reviews.splice(idx, 1);
+  persist();
+  return true;
+}
+
 export function setReviewStatus(reviewId, status, actor = "ops") {
   const review = db().reviews.find((r) => r.id === reviewId);
   if (!review) return null;

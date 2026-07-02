@@ -318,7 +318,7 @@ const en = {
     chipTitle: "Annotation chips (tap to enable/disable)",
   },
   opsA: {
-    menu: { orders: "Order Control", styles: "Style Library", benchmark: "Diamond Pricing", checklist: "Daily Checklist" },
+    menu: { orders: "Order Control", styles: "Style Library", benchmark: "Diamond Pricing", reviews: "Reviews", checklist: "Daily Checklist" },
     orders: {
       title: "Orders", owner: "Owner", required: "Required", nextAction: "Open actions", queryCode: "Query code",
       detail: "Workbench", intake: "Intake", internalNotes: "Internal notes (never shown to customer)",
@@ -725,7 +725,7 @@ const ko = {
     chipTitle: "주석 칩 관리 (탭하여 활성/비활성)",
   },
   opsA: {
-    menu: { orders: "주문 관제", styles: "스타일 라이브러리", benchmark: "다이아 벤치마크", checklist: "데일리 체크" },
+    menu: { orders: "주문 관제", styles: "스타일 라이브러리", benchmark: "다이아 벤치마크", reviews: "리뷰 관리", checklist: "데일리 체크" },
     orders: {
       title: "주문", owner: "오너", required: "희망일", nextAction: "열린 액션", queryCode: "조회 코드",
       detail: "워크벤치", intake: "인테이크", internalNotes: "내부 노트 (고객에게 절대 미노출)",
@@ -1132,7 +1132,7 @@ const zh = {
     chipTitle: "标注标签管理（点按启用/停用）",
   },
   opsA: {
-    menu: { orders: "订单管控", styles: "款式库", benchmark: "钻石基准价", checklist: "每日检查" },
+    menu: { orders: "订单管控", styles: "款式库", benchmark: "钻石基准价", reviews: "评价管理", checklist: "每日检查" },
     orders: {
       title: "订单", owner: "负责人", required: "需要日期", nextAction: "待办", queryCode: "查询码",
       detail: "工作台", intake: "需求表", internalNotes: "内部备注（绝不向客户展示）",
@@ -1539,7 +1539,7 @@ const es = {
     chipTitle: "Etiquetas de anotación (toca para activar/desactivar)",
   },
   opsA: {
-    menu: { orders: "Control de Pedidos", styles: "Biblioteca de Estilos", benchmark: "Precios de Diamante", checklist: "Checklist Diario" },
+    menu: { orders: "Control de Pedidos", styles: "Biblioteca de Estilos", benchmark: "Precios de Diamante", reviews: "Reseñas", checklist: "Checklist Diario" },
     orders: {
       title: "Pedidos", owner: "Responsable", required: "Requerido", nextAction: "Acciones abiertas", queryCode: "Código",
       detail: "Mesa de trabajo", intake: "Solicitud", internalNotes: "Notas internas (nunca visibles al cliente)",
