@@ -3816,3 +3816,18 @@ html[data-theme="day"] .noir-dock {
 }
 html[data-theme="day"] .noir-dock strong, html[data-theme="day"] .noir-dock span { color: var(--text); }
 html[data-theme="day"] .noir-dock small, html[data-theme="day"] .noir-dock p { color: var(--muted); }
+
+/* Day: 독 타이틀 "Design yours" — 페일 골드가 화이트 위에서 씻겨 보임 → 잉크 세리프로 또렷하게 */
+html[data-theme="day"] .noir-dock-lab b {
+  color: #15130f;
+  -webkit-text-fill-color: #15130f;
+  background: none;
+  font-size: 21px;
+  letter-spacing: 0.01em;
+}
+html[data-theme="day"] .noir-dock-lab span { color: var(--muted); }
+html[data-theme="day"] .noir-dock-go {
+  background: #16130f;
+  border-color: #16130f;
+  color: #f8f7f5;
+}
