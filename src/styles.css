@@ -3816,7 +3816,8 @@ html[data-theme="day"] .noir-dock {
 }
 html[data-theme="day"] .noir-dock-lab b { color: #15130f; }
 html[data-theme="day"] .noir-dock-lab span { color: var(--muted); }
-html[data-theme="day"] .noir-dock-go, html[data-theme="day"] .noir-dock-go * { color: #f8f7f5; }
+/* CTA는 상단 "Share your moment"(noir-btn)와 같은 문법: 샴페인 헤어라인 + 잉크 텍스트 */
+html[data-theme="day"] .noir-dock-go, html[data-theme="day"] .noir-dock-go * { color: var(--text); }
 
 /* Day: 독 타이틀 "Design yours" — 페일 골드가 화이트 위에서 씻겨 보임 → 잉크 세리프로 또렷하게 */
 html[data-theme="day"] .noir-dock-lab b {
@@ -3828,7 +3829,8 @@ html[data-theme="day"] .noir-dock-lab b {
 }
 html[data-theme="day"] .noir-dock-lab span { color: var(--muted); }
 html[data-theme="day"] .noir-dock-go {
-  background: #16130f;
-  border-color: #16130f;
-  color: #f8f7f5;
+  background: rgba(214, 197, 160, 0.08);
+  border: 1px solid var(--accent);
+  color: var(--text);
 }
+html[data-theme="day"] .noir-dock-go:hover { background: rgba(214, 197, 160, 0.16); }
