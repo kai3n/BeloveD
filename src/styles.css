@@ -130,12 +130,14 @@ img {
   align-items: center;
   gap: 28px;
   padding: 0 clamp(22px, 4vw, 56px);
-  background: linear-gradient(180deg, rgba(2, 3, 5, 0.82), rgba(2, 3, 5, 0.18) 78%, transparent);
+  background: rgba(2, 3, 5, 0.78);
   backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(245, 247, 251, 0.12);
 }
 
 html[data-theme="day"] .site-header {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(255, 255, 255, 0.8) 72%, rgba(255, 255, 255, 0));
+  background: rgba(255, 255, 255, 0.92);
+  border-bottom-color: rgba(24, 22, 18, 0.1);
   box-shadow: 0 12px 34px rgba(24, 22, 18, 0.045);
 }
 
@@ -1985,6 +1987,10 @@ html[data-theme="day"] .quality {
     overflow: hidden;
   }
 
+  .brand-logo {
+    height: 38px;
+  }
+
   .language-control {
     display: none;
   }
@@ -3802,7 +3808,7 @@ html[data-theme="day"] .spread-noir-stat { box-shadow: 0 14px 34px rgba(24, 22, 
 
 /* ── 비즈니스 로고 (BD 모노그램 워드마크) — day/night 원본 스왑 + 배경 블렌드 ── */
 .brand { display: inline-flex; align-items: center; }
-.brand-logo { display: block; height: 34px; width: auto; }
+.brand-logo { display: block; height: 46px; width: auto; }
 /* 화이트 배경에선 페일 샴페인의 대비가 약해 살짝 딥하게 */
 html[data-theme="day"] .brand-logo { filter: brightness(0.68) saturate(1.12); }
 .footer-brand .brand-logo { height: 42px; }
