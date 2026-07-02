@@ -5282,3 +5282,7 @@ button.text-link:hover {
 .gflow-edu-toggle summary:hover { color: var(--accent-bright); }
 .gflow-edu-toggle[open] summary { color: var(--accent-bright); }
 .gflow-edu-body { margin-top: 12px; text-align: left; }
+
+/* Gallery Flow: 비회원 연락처 화면 */
+.gflow-contact { width: min(100%, 420px); display: grid; gap: 16px; }
+.gflow-contact .button { margin-top: 4px; }

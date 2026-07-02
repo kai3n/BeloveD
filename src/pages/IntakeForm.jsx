@@ -88,11 +88,13 @@ function readDraft() {
   }
 }
 
-// 질문 순서 — 멀티스톤 디자인이면 셰입/캐럿을 건너뛴다
-function screenList(productLine) {
+// 질문 순서 — 멀티스톤 디자인이면 셰입/캐럿을 건너뛰고, 비회원은 리뷰 직전에 연락처를 받는다
+function screenList(productLine, isGuest) {
   const list = ["category", "design", "metal"];
   if (productLine === "solitaire") list.push("shape", "carat");
-  list.push("inspiration", "review");
+  list.push("inspiration");
+  if (isGuest) list.push("contact");
+  list.push("review");
   return list;
 }
 
@@ -164,8 +166,12 @@ export default function IntakeForm() {
   const setS = (patch) => setForm((f) => ({ ...f, stonePrefs: { ...f.stonePrefs, ...patch } }));
 
   const solitaire = form.productLine === "solitaire";
-  const screens = screenList(form.productLine);
-  const screenIdx = Math.max(0, screens.indexOf(screen));
+  const isGuest = !user;
+  const screens = screenList(form.productLine, isGuest);
+  // 로그인 등으로 질문 목록이 바뀌어 현재 화면이 사라지면 리뷰로 폴백
+  const activeScreen = screens.includes(screen) ? screen : "review";
+  const screenIdx = Math.max(0, screens.indexOf(activeScreen));
+  const guestContactReady = hasContactDetails(submissionContact(form, user));
   const selectedStyle = styles.find((st) => st.id === form.styleId) || null;
   const selectedStyleName = selectedStyle ? pickI18n(selectedStyle.name, locale) : g.notSureTitle;
   const stylesForCategory = styles.filter((st) => st.category === form.category);
@@ -193,7 +199,7 @@ export default function IntakeForm() {
   function selectAndAdvance(patch, currentName) {
     setF(patch);
     const nextLine = patch.productLine || form.productLine;
-    const list = screenList(nextLine);
+    const list = screenList(nextLine, isGuest);
     const next = list[list.indexOf(currentName) + 1] || "review";
     window.setTimeout(() => setScreen(next), 170);
   }
@@ -254,7 +260,7 @@ export default function IntakeForm() {
   const clarityOptions = ["IF", "VVS1", "VVS2", "VS1", "VS2"].map((v) => ({ value: v }));
   const sectionKicker = {
     category: g.pieceCard, design: g.pieceCard, metal: t.metal,
-    shape: g.stoneCard, carat: g.stoneCard, inspiration: g.inspirationCard, review: t.reviewStep,
+    shape: g.stoneCard, carat: g.stoneCard, inspiration: g.inspirationCard, contact: t.contactTitle, review: t.reviewStep,
   };
   const kicker = `${String(screenIdx + 1).padStart(2, "0")} — ${sectionKicker[screen] || ""}`;
   const stepShell = (title, hint, children, extra = {}) => (
@@ -275,7 +281,7 @@ export default function IntakeForm() {
 
   return (
     <div className="page gflow-page">
-      {screen === "category" && stepShell(g.qCategory, null, (
+      {activeScreen === "category" && stepShell(g.qCategory, null, (
         <ImageOptionGrid
           columns={4}
           options={categoryOptions}
@@ -289,7 +295,7 @@ export default function IntakeForm() {
         />
       ))}
 
-      {screen === "design" && stepShell(g.qDesign, g.designHint, (
+      {activeScreen === "design" && stepShell(g.qDesign, g.designHint, (
         <ImageOptionGrid
           columns={4}
           options={designOptions}
@@ -305,7 +311,7 @@ export default function IntakeForm() {
         />
       ))}
 
-      {screen === "metal" && stepShell(g.qMetal, null, (
+      {activeScreen === "metal" && stepShell(g.qMetal, null, (
         <MetalSwatches
           value={form.metal}
           labels={p.opsMetals}
@@ -313,7 +319,7 @@ export default function IntakeForm() {
         />
       ))}
 
-      {screen === "shape" && stepShell(g.qShape, null, (
+      {activeScreen === "shape" && stepShell(g.qShape, null, (
         <>
           <ShapeTiles
             value={form.stonePrefs.shape}
@@ -330,7 +336,7 @@ export default function IntakeForm() {
         </>
       ))}
 
-      {screen === "carat" && stepShell(g.qCarat, g.caratHint, (
+      {activeScreen === "carat" && stepShell(g.qCarat, g.caratHint, (
         <>
           <CaratSlider value={form.stonePrefs.carat} onChange={(value) => setS({ carat: value })} />
           <button className="button primary" type="button" onClick={goNext}>{t.next}</button>
@@ -341,7 +347,7 @@ export default function IntakeForm() {
         </>
       ))}
 
-      {screen === "inspiration" && stepShell(g.qInspiration, g.inspirationHint, (
+      {activeScreen === "inspiration" && stepShell(g.qInspiration, g.inspirationHint, (
         <div style={{ width: "min(100%, 640px)", display: "grid", gap: 16 }}>
           <MediaPicker value={refs} maxItems={MAX_REFERENCE_MEDIA} showSamples={false} previewMode="list" onChange={(v) => {
             setRefs(sanitizeReferenceMedia(v));
@@ -350,7 +356,31 @@ export default function IntakeForm() {
         </div>
       ), { onSkip: goNext })}
 
-      {screen === "review" && stepShell(g.qReview, g.reviewHint, (
+      {/* 비회원: 리뷰 직전 연락처 — "확정 제안이 도착할 곳"으로 프레이밍해 이탈을 줄인다 */}
+      {activeScreen === "contact" && stepShell(g.qContact, g.contactHint, (
+        <div className="gflow-contact">
+          <label className="field"><span>{t.name} <span className="req">*</span></span>
+            <input
+              value={form.name}
+              autoComplete="name"
+              onChange={(e) => setF({ name: e.target.value })}
+              onKeyDown={(e) => { if (e.key === "Enter" && guestContactReady) goNext(); }}
+            />
+          </label>
+          <label className="field"><span>{t.contact} <span className="req">*</span></span>
+            <input
+              value={form.contact}
+              autoComplete="email"
+              placeholder="you@email.com"
+              onChange={(e) => setF({ contact: e.target.value })}
+              onKeyDown={(e) => { if (e.key === "Enter" && guestContactReady) goNext(); }}
+            />
+          </label>
+          <button className="button primary" type="button" disabled={!guestContactReady} onClick={goNext}>{t.next}</button>
+        </div>
+      ))}
+
+      {activeScreen === "review" && stepShell(g.qReview, g.reviewHint, (
         <div className="gflow-review">
           <div className="gflow-review-cards">
             <div className="gflow-review-card">
@@ -493,12 +523,12 @@ export default function IntakeForm() {
             </section>
           )}
 
-          {!user && (
+          {isGuest && (
             <section className="gflow-review-section">
-              <h4>{t.contactTitle} <span className="req">*</span></h4>
-              <div className="filter-grid review-contact-grid">
-                <label className="field"><span>{t.name}</span><input value={form.name} onChange={(e) => setF({ name: e.target.value })} required /></label>
-                <label className="field"><span>{t.contact}</span><input value={form.contact} onChange={(e) => setF({ contact: e.target.value })} required /></label>
+              <h4>{t.contactTitle}</h4>
+              <div className="gflow-quality-row">
+                <strong>{form.name} · {form.contact}</strong>
+                <button className="button secondary small" type="button" onClick={() => setScreen("contact")}>{g.contactEdit}</button>
               </div>
             </section>
           )}
