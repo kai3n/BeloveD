@@ -5428,8 +5428,19 @@ html[data-theme="day"] .gflow-carat-range { accent-color: #16130f; }
 .lw-lightbox { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; padding: 20px; background: rgba(6, 5, 4, 0.8); backdrop-filter: blur(10px); }
 .lw-lightbox-inner { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr); width: min(100%, 980px); max-height: 86vh; border: 1px solid var(--line-strong); background: var(--bg-2); overflow: hidden; }
 .lw-lightbox-media { position: relative; background: var(--surface-2); }
-.lw-lightbox-nav { position: absolute; right: 12px; bottom: 12px; display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--muted); }
-.lw-lightbox-nav button { width: 34px; height: 34px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--text); cursor: pointer; }
+.lw-lightbox-nav {
+  position: absolute; right: 14px; bottom: 12px;
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--serif); font-size: 13px; letter-spacing: 0.14em; color: var(--muted);
+}
+.lw-lightbox-nav button {
+  width: 34px; height: 34px; border: none; background: none; padding: 0;
+  color: var(--quiet); font-size: 22px; line-height: 1; cursor: pointer;
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+.lw-lightbox-nav button:hover { color: var(--text); transform: scale(1.12); }
+.lw-lightbox-nav button:focus-visible,
+.lw-arrow:focus-visible { outline: 1px solid var(--accent); outline-offset: 3px; }
 .lw-lightbox-copy { padding: clamp(18px, 3vw, 30px); display: grid; gap: 12px; align-content: center; justify-items: start; overflow-y: auto; }
 .lw-lightbox-copy blockquote { margin: 0; font-family: var(--serif); font-style: italic; font-size: clamp(19px, 2.4vw, 26px); line-height: 1.3; }
 .lw-lightbox-copy p { margin: 0; color: var(--muted); font-size: 13.5px; line-height: 1.65; }
