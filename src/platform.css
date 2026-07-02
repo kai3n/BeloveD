@@ -5136,3 +5136,7 @@ button.text-link:hover {
 @media (max-width: 560px) {
   .payment-methods { grid-template-columns: 1fr; }
 }
+
+/* 어드민: 견적 스냅샷의 고객 송금 보고 뱃지 */
+.ops-deposit-reported { display: block; margin-top: 6px; color: var(--accent-bright); font-style: normal; font-size: 12px; }
+.ops-proposal-composer { border-top: 1px solid var(--hair); padding-top: 14px; }

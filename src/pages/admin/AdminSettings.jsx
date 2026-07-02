@@ -2,10 +2,21 @@ import { getDB, getSettings, resetDB, saveChip, updateSettings } from "../../lib
 import { useDBVersion } from "../../lib/useDB.js";
 import { useLocale } from "../../i18n.jsx";
 
+// 결제 채널(디파짓/잔금 수동 확인) 설정 카피
+const PAYMENT_SETTINGS_COPY = {
+  en: { title: "Payment channels (Zelle / Venmo)", note: "Shown to customers on the deposit and balance cards. Payments are confirmed manually.", extraNote: "Extra note shown under the handles (optional)" },
+  ko: { title: "결제 채널 (Zelle / Venmo)", note: "고객 디파짓·잔금 카드에 표시됩니다. 입금은 수동으로 확인합니다.", extraNote: "계정 아래 표시할 추가 안내 (선택)" },
+  zh: { title: "收款渠道 (Zelle / Venmo)", note: "显示在客户的定金与尾款卡片上。到账需手动确认。", extraNote: "账号下方的附加说明（可选）" },
+  es: { title: "Canales de pago (Zelle / Venmo)", note: "Se muestran al cliente en las tarjetas de depósito y saldo. Los pagos se confirman manualmente.", extraNote: "Nota adicional bajo las cuentas (opcional)" },
+};
+
 export default function AdminSettings() {
   useDBVersion();
-  const { p } = useLocale();
+  const { p, locale } = useLocale();
   const settings = getSettings();
+  const payment = settings.payment || { zelle: "", venmo: "", note: "" };
+  const payCopy = PAYMENT_SETTINGS_COPY[locale] || PAYMENT_SETTINGS_COPY.en;
+  const setPayment = (patch) => updateSettings({ payment: { ...payment, ...patch } });
 
   return (
     <>
@@ -33,6 +44,22 @@ export default function AdminSettings() {
             </label>
           ))}
         </div>
+      </div>
+      <div className="panel form-stack" style={{ maxWidth: 480 }}>
+        <h3>{payCopy.title}</h3>
+        <p className="form-hint">{payCopy.note}</p>
+        <label className="field"><span>Zelle</span>
+          <input defaultValue={payment.zelle} key={`zelle-${payment.zelle}`}
+            onBlur={(e) => setPayment({ zelle: e.target.value.trim() })} placeholder="pay@beloved.co" />
+        </label>
+        <label className="field"><span>Venmo</span>
+          <input defaultValue={payment.venmo} key={`venmo-${payment.venmo}`}
+            onBlur={(e) => setPayment({ venmo: e.target.value.trim() })} placeholder="@BeloveD-Fine" />
+        </label>
+        <label className="field"><span>{payCopy.extraNote}</span>
+          <input defaultValue={payment.note} key={`paynote-${payment.note}`}
+            onBlur={(e) => setPayment({ note: e.target.value.trim() })} />
+        </label>
       </div>
       <div className="panel form-stack" style={{ maxWidth: 480 }}>
         <h3>{p.admin.settings.heroTitle}</h3>

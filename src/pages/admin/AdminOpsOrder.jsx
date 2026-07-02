@@ -6,7 +6,7 @@ import {
   createProcurement, createQuote, getIntake, getOpsOrder, getOpsStyle, listAudit,
   listCandidates, listCadReviews, listCustomerActions, listMilestones, listOrderMessages, listProcurements, listQuotes,
   lockCandidate, markBalanceReceived, markDepositReceived, markOrderDelivered, publishCandidate,
-  publishFinalMedia, recordActualWeight, reviewCandidate, sendQuote,
+  publishFinalMedia, recordActualWeight, reviewCandidate, sendQuote, updateQuoteProposal,
   setCandidateAvailability, unpublishCandidate, updateOpsOrder, upsertMilestone, getSettings,
   getDB, reviewReferenceMedia, createProxyDiamondCandidate, ORDER_MESSAGE_CHANNELS, sendOrderMessage, isShippingAddressComplete, getQuoteDiamondCandidate,
 } from "../../lib/store.js";
@@ -89,6 +89,117 @@ const DIAMOND_COLORS = ["D", "E", "F", "G", "H", "I", "J"];
 const DIAMOND_CLARITIES = ["VVS1", "VVS2", "VS1", "VS2", "SI1"];
 const GROWTH_METHODS = ["CVD", "HPHT"];
 const LABS = ["IGI", "GIA", "GCAL"];
+
+// 확정 제안 컴포저 카피 — 고객에게 보이는 제안 카드의 미디어/스펙/대체 안내를 어드민이 구성
+const PROPOSAL_COMPOSER_COPY = {
+  en: {
+    title: "Final proposal (customer-facing)",
+    help: "The customer sees these media, the stone spec, and the total only — the cost breakdown below stays admin-only.",
+    media: "Proposal media (max 5 — diamond, setting, finished look)",
+    spec: "Stone spec shown to the customer",
+    igiNo: "IGI No.",
+    subNote: "Substitution note (leave blank for the default policy text)",
+    save: "Save proposal",
+    reportedShort: "customer reported sent",
+    reportedAt: (when) => `Customer reported the deposit sent · ${when}`,
+  },
+  ko: {
+    title: "확정 제안 (고객 노출)",
+    help: "고객에게는 이 미디어·스톤 스펙·총액만 보입니다 — 아래 원가 breakdown은 어드민 전용입니다.",
+    media: "제안 미디어 (최대 5 — 다이아·세팅·완성 예시)",
+    spec: "고객에게 보여줄 스톤 스펙",
+    igiNo: "IGI 번호",
+    subNote: "대체 안내문 (비우면 기본 정책 문구 사용)",
+    save: "제안 저장",
+    reportedShort: "고객 송금 보고됨",
+    reportedAt: (when) => `고객이 디파짓 송금을 보고했습니다 · ${when}`,
+  },
+  zh: {
+    title: "最终方案（客户可见）",
+    help: "客户只能看到这些媒体、钻石规格与总价 — 下方成本明细仅管理员可见。",
+    media: "方案媒体（最多 5 个 — 钻石、镶嵌、成品示例）",
+    spec: "向客户展示的钻石规格",
+    igiNo: "IGI 编号",
+    subNote: "替换说明（留空则使用默认政策文本）",
+    save: "保存方案",
+    reportedShort: "客户已报告转账",
+    reportedAt: (when) => `客户报告已转定金 · ${when}`,
+  },
+  es: {
+    title: "Propuesta final (visible al cliente)",
+    help: "El cliente solo ve estos medios, la especificación de la piedra y el total — el desglose de costos queda solo para admin.",
+    media: "Medios de la propuesta (máx. 5 — diamante, montura, pieza terminada)",
+    spec: "Especificación de la piedra mostrada al cliente",
+    igiNo: "N.º IGI",
+    subNote: "Nota de sustitución (vacío = texto de política por defecto)",
+    save: "Guardar propuesta",
+    reportedShort: "cliente reportó envío",
+    reportedAt: (when) => `El cliente reportó el depósito enviado · ${when}`,
+  },
+};
+
+function proposalComposerCopy(locale) {
+  return PROPOSAL_COMPOSER_COPY[locale] || PROPOSAL_COMPOSER_COPY.en;
+}
+
+function ProposalComposer({ quote, order, locale, onSaved }) {
+  const c = proposalComposerCopy(locale);
+  const dia = getQuoteDiamondCandidate(order.id);
+  const [media, setMedia] = useState(quote.proposalMedia?.length ? quote.proposalMedia : (dia?.media || []));
+  const [spec, setSpec] = useState(quote.stoneSpec || {
+    shape: dia?.shape || "round", carat: dia?.carat || "", color: dia?.color || "E",
+    clarity: dia?.clarity || "VS1", growth: dia?.growth || "CVD", lab: dia?.lab || "IGI", igiNo: dia?.igiNo || "",
+  });
+  const [subNote, setSubNote] = useState(quote.substitutionNote || "");
+  const setS = (patch) => setSpec((s) => ({ ...s, ...patch }));
+  function save() {
+    updateQuoteProposal(quote.id, {
+      proposalMedia: media,
+      stoneSpec: { ...spec, carat: Number(spec.carat) || null },
+      substitutionNote: subNote.trim(),
+    });
+    onSaved?.();
+  }
+  return (
+    <div className="form-stack ops-proposal-composer">
+      <p className="admin-kicker">{c.title} — {quote.id}</p>
+      <p className="form-hint">{c.help}</p>
+      <div className="field"><span>{c.media}</span>
+        <MediaPicker value={media} onChange={setMedia} maxItems={5} showSamples={false} previewMode="list" />
+      </div>
+      <p className="form-hint">{c.spec}</p>
+      <div className="filter-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
+        <label className="field"><span>shape</span>
+          <select value={spec.shape} onChange={(e) => setS({ shape: e.target.value })}>
+            {BENCHMARK_SHAPES.map((sh) => <option key={sh} value={sh}>{sh}</option>)}
+          </select></label>
+        <label className="field"><span>carat</span>
+          <input type="number" step="0.01" value={spec.carat} onChange={(e) => setS({ carat: e.target.value })} /></label>
+        <label className="field"><span>color</span>
+          <select value={spec.color} onChange={(e) => setS({ color: e.target.value })}>
+            {DIAMOND_COLORS.map((v) => <option key={v} value={v}>{v}</option>)}
+          </select></label>
+        <label className="field"><span>clarity</span>
+          <select value={spec.clarity} onChange={(e) => setS({ clarity: e.target.value })}>
+            {DIAMOND_CLARITIES.map((v) => <option key={v} value={v}>{v}</option>)}
+          </select></label>
+        <label className="field"><span>growth</span>
+          <select value={spec.growth} onChange={(e) => setS({ growth: e.target.value })}>
+            {GROWTH_METHODS.map((v) => <option key={v} value={v}>{v}</option>)}
+          </select></label>
+        <label className="field"><span>lab</span>
+          <select value={spec.lab} onChange={(e) => setS({ lab: e.target.value })}>
+            {LABS.map((v) => <option key={v} value={v}>{v}</option>)}
+          </select></label>
+        <label className="field"><span>{c.igiNo}</span>
+          <input value={spec.igiNo} onChange={(e) => setS({ igiNo: e.target.value })} /></label>
+      </div>
+      <label className="field"><span>{c.subNote}</span>
+        <textarea rows={2} value={subNote} onChange={(e) => setSubNote(e.target.value)} /></label>
+      <button className="button secondary small" type="button" onClick={save}>{c.save}</button>
+    </div>
+  );
+}
 
 const FALLBACK_PROXY_COPY = {
   title: "Operator proxy uploads",
@@ -1049,8 +1160,9 @@ function InternalControlsPanel({ order, t, p, onSaved, notice }) {
   );
 }
 
-function QuoteSnapshotPanel({ quotes, acceptedQuote, intake, t, p, onSaved, notice }) {
+function QuoteSnapshotPanel({ quotes, acceptedQuote, intake, t, p, locale, onSaved, notice }) {
   const latestQuote = acceptedQuote || quotes[0] || null;
+  const c = proposalComposerCopy(locale);
   return (
     <section className="panel ops-side-card ops-quote-card">
       <p className="admin-kicker">{t.latestQuote}</p>
@@ -1061,6 +1173,9 @@ function QuoteSnapshotPanel({ quotes, acceptedQuote, intake, t, p, onSaved, noti
           <strong>{usd(latestQuote.totalUsd)}</strong>
           <span>{latestQuote.status} · {p.portal.deposit} {usd(latestQuote.depositUsd)} / {p.portal.balance} {usd(latestQuote.balanceUsd)}</span>
           {intake?.budget && latestQuote.totalUsd > intake.budget && <em>{t.overBudget} · {t.budgetLabel} {usd(intake.budget)}</em>}
+          {acceptedQuote?.depositReportedAt && (
+            <em className="ops-deposit-reported">{c.reportedAt(new Date(acceptedQuote.depositReportedAt).toLocaleString())}</em>
+          )}
         </div>
       )}
       {quotes.filter((q) => q.status === "draft").map((quote) => (
@@ -1106,7 +1221,13 @@ export default function AdminOpsOrder() {
   const balanceDone = milestones.some((m) => m.stage === "balanceReceived" && m.status === "done");
   const shippingAddressComplete = isShippingAddressComplete(order.shippingAddress);
   const waitingForShippingAddress = order.status === "QUOTATION" && acceptedQuote && !shippingAddressComplete;
-  const nextAction = (order.status === "QUOTATION" && acceptedQuote && shippingAddressComplete) ? { fn: () => markDepositReceived(order.id), label: t.markDeposit }
+  const nextAction = (order.status === "QUOTATION" && acceptedQuote && shippingAddressComplete)
+    ? {
+      fn: () => markDepositReceived(order.id),
+      label: acceptedQuote.depositReportedAt
+        ? `${t.markDeposit} · ${proposalComposerCopy(locale).reportedShort}`
+        : t.markDeposit,
+    }
     : (order.status === "BALANCE" && !balanceDone) ? { fn: () => markBalanceReceived(order.id), label: t.markBalance }
       : order.status === "SHIPPING" ? { fn: () => markOrderDelivered(order.id), label: t.markDelivered }
         : null;
@@ -1176,7 +1297,7 @@ export default function AdminOpsOrder() {
         <aside className="ops-command-side">
           <OrderBriefPanel order={order} intake={intake} style={style} p={p} t={t} locale={locale} />
           <InternalControlsPanel order={order} t={t} p={p} onSaved={notify} notice={notice} />
-          <QuoteSnapshotPanel quotes={quotes} acceptedQuote={acceptedQuote} intake={intake} t={t} p={p} onSaved={notify} notice={notice} />
+          <QuoteSnapshotPanel quotes={quotes} acceptedQuote={acceptedQuote} intake={intake} t={t} p={p} locale={locale} onSaved={notify} notice={notice} />
 
           {(quoteDiamondCandidate || intake?.productLine === "multi" || acceptedQuote) && (
             <details className="ops-admin-details ops-side-details">
@@ -1190,6 +1311,12 @@ export default function AdminOpsOrder() {
                     {q.status === "draft" && <button className="button secondary small" style={{ marginLeft: 10 }} onClick={() => { sendQuote(q.id); notify(notice.quoteSent); }}>{t.send}</button>}
                   </div>
                 ))}
+                {(() => {
+                  const editable = quotes.find((q) => q.status === "draft" || q.status === "sent");
+                  return editable
+                    ? <ProposalComposer key={editable.id} quote={editable} order={order} locale={locale} onSaved={() => notify()} />
+                    : null;
+                })()}
                 {quoteDiamondCandidate || intake?.productLine === "multi" ? <QuoteBuilder order={order} settings={settings} t={t} onSaved={notify} notice={notice} /> : null}
                 {acceptedQuote && (
                   <div className="row-actions" style={{ marginTop: 12 }}>
