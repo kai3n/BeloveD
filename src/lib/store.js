@@ -187,6 +187,21 @@ function migrateDB(d) {
     changed = true;
   }
 
+  // 배송 완료 데모 주문(DM-000003) — 리뷰 플로우 즉시 테스트용, 1회 주입
+  if (d?.settings && d.settings.demoDeliveredSeedVersion !== 1 && Array.isArray(d.opsOrders)) {
+    if (!d.opsOrders.some((o) => o.id === "DM-000003")) {
+      const fresh = seed();
+      const demoOrder = fresh.opsOrders.find((o) => o.id === "DM-000003");
+      const demoIntake = fresh.intakes.find((i) => i.id === "IN-000003");
+      if (demoOrder && demoIntake) {
+        d.opsOrders.push(demoOrder);
+        d.intakes.push(demoIntake);
+      }
+    }
+    d.settings.demoDeliveredSeedVersion = 1;
+    changed = true;
+  }
+
   // 결제 채널 설정 — 구버전 저장 DB에 시드 기본값 주입
   if (d?.settings && !d.settings.payment) {
     d.settings.payment = { zelle: "pay@beloved.co", venmo: "@BeloveD-Fine", note: "" };

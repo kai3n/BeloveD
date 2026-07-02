@@ -67,6 +67,11 @@ export function seed() {
       { id: "IN-000002", orderId: "DM-000002", name: "Noah Lee", contact: "+1 213-555-0188", productLine: "multi", category: "necklace",
         styleId: "NECK-001", budget: 2600, metal: "18ky", conditional: { chainStyle: "cable", chainLength: "18in", clasp: "lobster" },
         stonePrefs: null, requiredDate: "2026-07-30", country: "USA", termsAccepted: true, referenceMedia: [], createdAt: "2026-06-05T10:00:00.000Z" },
+      // 리뷰 플로우 테스트용 — 배송 완료 데모 주문
+      { id: "IN-000003", orderId: "DM-000003", name: "Mina Choi", contact: "mina@demo.com", productLine: "solitaire", category: "ring",
+        styleId: "RING-001", metal: "18kw", conditional: { ringSize: "6" },
+        stonePrefs: { shape: "round", carat: 1.2, color: "E", clarity: "VS1", growth: "CVD", lab: "IGI India", colorTreatment: "disclosed", fluorescence: "none", lwRatio: "" },
+        requiredDate: "2026-06-20", country: "USA", termsAccepted: true, referenceMedia: [], createdAt: "2026-05-10T09:00:00.000Z" },
     ],
     opsOrders: [
       { id: "DM-000001", intakeId: "IN-000001", customerId: "u-customer", customerName: "Jiwon Kim", styleId: "RING-001",
@@ -75,6 +80,9 @@ export function seed() {
       { id: "DM-000002", intakeId: "IN-000002", customerId: null, customerName: "Noah Lee", styleId: "NECK-001",
         status: "CAD", owner: "Operations", queryCode: "H3WT-8RVK", selectedDiamondId: null,
         requiredDate: "2026-07-30", internalNotes: "Multi-stone — melee spec confirmed", createdAt: "2026-06-05T10:20:00.000Z" },
+      { id: "DM-000003", intakeId: "IN-000003", customerId: null, customerName: "Mina Choi", styleId: "RING-001",
+        status: "DELIVERED", owner: "Operations", queryCode: "RV4D-7TQ2", selectedDiamondId: null,
+        requiredDate: "2026-06-20", internalNotes: "Delivered demo — review flow testing", createdAt: "2026-05-10T09:10:00.000Z" },
     ],
     opsStyles: styleSeedData,
     styleSpecs: [
@@ -236,6 +244,7 @@ export function seed() {
       // 디파짓/잔금 수동 확인 결제 채널 — 어드민 설정에서 편집
       payment: { zelle: "pay@beloved.co", venmo: "@BeloveD-Fine", note: "" },
       reviewsSeedVersion: 2,
+      demoDeliveredSeedVersion: 1,
     },
   };
 }
