@@ -3782,10 +3782,15 @@ html[data-theme="day"] .coll-noir-ph {
   inset: auto;
   width: 100%;
   height: 188px;
+  /* 사각 프레임 + 다크 주얼 윈도우 — day 스톤 카드와 같은 패턴.
+     keyBlack 키잉은 검은 배경을 투명하게 뚫어 프레임과 공존할 수 없고,
+     다크 윈도우가 화이트 다이아를 훨씬 또렷하게 보여준다 */
+  border: 1px solid rgba(70, 64, 54, 0.24);
+  background-color: #050607;
   background-size: contain;
   background-position: center;
-  background-color: transparent;
-  filter: url(#keyBlack) brightness(1.04) contrast(1.03);
+  box-shadow: 0 14px 30px rgba(24, 22, 18, 0.08);
+  filter: brightness(1.08) contrast(1.03);
   transform: none;
 }
 
