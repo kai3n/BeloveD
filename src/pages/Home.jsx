@@ -187,11 +187,6 @@ function Hero({ t, p }) {
     }
   }, [playing]);
 
-  const specs = (t.hero.sub2 || "")
-    .split("·")
-    .map((part) => part.trim())
-    .filter(Boolean);
-
   return (
     <section className={`hero-noir ${playing ? "is-playing" : "is-paused"}`} id="top">
       <div className="hero-noir-media" aria-hidden="true">
@@ -202,16 +197,10 @@ function Hero({ t, p }) {
           loop
           playsInline
           preload="auto"
-          poster={withBase("/assets/diamond-hero-white-poster.webp")}
         >
-          <source src={withBase("/assets/diamond-hero-white.mp4")} type="video/mp4" />
+          <source src={withBase("/assets/hero-main.mp4")} type="video/mp4" />
         </video>
       </div>
-
-      <div className="hero-noir-frame" aria-hidden="true">
-        <i /><i /><i /><i />
-      </div>
-      <span className="hero-noir-vlabel" aria-hidden="true">Est. 2026</span>
 
       <div className="hero-noir-mid">
         <p className="hero-noir-kicker">{t.hero.kicker}</p>
@@ -221,25 +210,14 @@ function Hero({ t, p }) {
             <em>{t.hero.title[1]}</em>
           </span>
         </h1>
-        <span className="hero-noir-rule" aria-hidden="true" />
         <p className="hero-noir-lede">{t.hero.sub}</p>
       </div>
 
       <div className="hero-noir-foot">
-        {specs.length > 0 && (
-          <div className="hero-noir-spec">
-            {specs.map((spec) => (
-              <span key={spec}>{spec}</span>
-            ))}
-          </div>
-        )}
         <div className="hero-noir-ctas">
           <Link className="noir-btn" to="/custom/new">
             {t.hero.cta ?? p.nav.startCustom}
             <ArrowRight size={15} strokeWidth={1.6} />
-          </Link>
-          <Link className="noir-link" to="/designs">
-            {t.collections.link}
           </Link>
         </div>
       </div>
