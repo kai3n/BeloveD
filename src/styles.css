@@ -3769,10 +3769,16 @@ html[data-theme="day"] .coll-noir-piece {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  border: 0 !important;
+  /* 다크 모드처럼 이미지+텍스트를 모두 감싸는 사각 박스 — 배경은 페이지 그대로 */
+  border: 1px solid rgba(70, 64, 54, 0.2) !important;
   background: transparent;
   overflow: visible;
-  padding: 16px 14px 26px;
+  padding: 22px 18px 28px;
+}
+
+/* 풀 보더 카드가 서로 붙지 않도록 간격 확보 (모바일 세로 스택) */
+html[data-theme="day"] .coll-noir-gallery {
+  gap: 18px;
 }
 
 html[data-theme="day"] .coll-noir-piece::after { display: none; }
@@ -3780,17 +3786,13 @@ html[data-theme="day"] .coll-noir-piece::after { display: none; }
 html[data-theme="day"] .coll-noir-ph {
   position: relative;
   inset: auto;
+  display: block;
   width: 100%;
   height: 188px;
-  /* 사각 프레임 + 다크 주얼 윈도우 — day 스톤 카드와 같은 패턴.
-     keyBlack 키잉은 검은 배경을 투명하게 뚫어 프레임과 공존할 수 없고,
-     다크 윈도우가 화이트 다이아를 훨씬 또렷하게 보여준다 */
-  border: 1px solid rgba(70, 64, 54, 0.24);
-  background-color: #050607;
   background-size: contain;
   background-position: center;
-  box-shadow: 0 14px 30px rgba(24, 22, 18, 0.08);
-  filter: brightness(1.08) contrast(1.03);
+  background-color: transparent;
+  filter: url(#keyBlack) brightness(1.04) contrast(1.03);
   transform: none;
 }
 
