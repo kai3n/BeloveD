@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Day Mode Palettes — BeloveD</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #edecea; color: #1a1814; font-family: "Outfit", -apple-system, sans-serif; }
+  main { width: min(100%, 1240px); margin: 0 auto; padding: 44px 22px 90px; }
+  h1 { font-family: Georgia, "Bodoni 72", serif; font-weight: 500; font-size: clamp(30px, 5vw, 46px); margin: 0 0 6px; }
+  .sub { color: #6b665c; margin: 0 0 30px; max-width: 640px; line-height: 1.6; font-size: 14px; }
+  .row { display: grid; gap: 30px; }
+  .card { background: #fff; border: 1px solid rgba(30,28,24,0.12); overflow: hidden; }
+  .card.reco { border: 2px solid #8f7d54; }
+  .card img { display: block; width: 100%; }
+  .card .meta { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 18px; flex-wrap: wrap; }
+  .card h2 { margin: 0; font-size: 17px; }
+  .card h2 small { display: block; font-size: 12px; color: #6b665c; font-weight: 400; margin-top: 2px; }
+  .chips { display: flex; gap: 6px; }
+  .chips i { width: 26px; height: 26px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.12); }
+  .tag { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: #8f7d54; font-weight: 700; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Day Mode — White Palette Candidates</h1>
+  <p class="sub">현재(맨 위) 대비 3가지 화이트 계열 후보. 전부 실제 Designs 페이지에 토큰만 바꿔 입힌 실사 스크린샷입니다. 확대해서 헤더·카드·칩 색을 비교해 보세요.</p>
+  <div class="row">
+    <div class="card">
+      <div class="meta"><h2>현재 — Porcelain Ivory<small>크림 아이보리 배경 + 브라운 골드 · 살짝 노란 기운</small></h2>
+        <div class="chips"><i style="background:#f3f0e9"></i><i style="background:#fffdf8"></i><i style="background:#9d7a37"></i></div></div>
+      <img src="./day-0-current.png" alt="current" />
+    </div>
+    <div class="card reco">
+      <div class="meta"><h2>A — Gallery White · Stone Champagne <span class="tag">추천</span><small>순백 갤러리 화이트 + 채도 뺀 샴페인 뉴트럴 — 노란기 제거, 럭셔리 유지</small></h2>
+        <div class="chips"><i style="background:#f7f6f4"></i><i style="background:#ffffff"></i><i style="background:#8f7d54"></i></div></div>
+      <img src="./day-A.png" alt="palette A" />
+    </div>
+    <div class="card">
+      <div class="meta"><h2>B — Icy Porcelain · Platinum<small>쿨 화이트 + 플래티넘 실버 — 가장 아이시, 대신 골드 시그니처가 사라짐</small></h2>
+        <div class="chips"><i style="background:#f5f6f7"></i><i style="background:#ffffff"></i><i style="background:#77808e"></i></div></div>
+      <img src="./day-B.png" alt="palette B" />
+    </div>
+    <div class="card">
+      <div class="meta"><h2>C — White Marble · Soft Gold<small>배경만 화이트로, 기존 골드 악센트 유지 — 가장 보수적인 변화</small></h2>
+        <div class="chips"><i style="background:#faf9f7"></i><i style="background:#ffffff"></i><i style="background:#9c7f42"></i></div></div>
+      <img src="./day-C.png" alt="palette C" />
+    </div>
+  </div>
+</main>
+</body>
+</html>
