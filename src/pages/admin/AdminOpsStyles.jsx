@@ -384,6 +384,7 @@ function StyleMediaManager({ media, onChange, copy }) {
         maxItems={MAX_STYLE_MEDIA}
         showSamples={false}
         previewMode="list"
+        scope="style"
         onChange={(nextMedia) => onChange(nextMedia.slice(0, MAX_STYLE_MEDIA))}
       />
     </div>

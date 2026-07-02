@@ -17,7 +17,7 @@ export default function ReviewForm({ orderId, rc, onDone }) {
   return (
     <div className="form-stack review-form">
       <div className="field"><span>{rc.mediaLbl}</span>
-        <MediaPicker value={media} onChange={setMedia} maxItems={5} showSamples={false} previewMode="list" />
+        <MediaPicker value={media} onChange={setMedia} maxItems={5} showSamples={false} previewMode="list" scope="review" />
       </div>
       <div className="field"><span>{rc.rating}</span>
         <div className="review-stars" role="radiogroup" aria-label={rc.rating}>

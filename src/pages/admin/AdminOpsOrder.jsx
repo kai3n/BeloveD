@@ -198,7 +198,7 @@ function ProposalComposer({ quote, order, locale, onSaved }) {
       <p className="admin-kicker">{c.title} — {quote.id}</p>
       <p className="form-hint">{c.help}</p>
       <div className="field"><span>{c.media}</span>
-        <MediaPicker value={media} onChange={setMedia} maxItems={5} showSamples={false} previewMode="list" />
+        <MediaPicker value={media} onChange={setMedia} maxItems={5} showSamples={false} previewMode="list" scope="proposal" />
       </div>
       <p className="form-hint">{c.spec}</p>
       <div className="filter-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
@@ -765,7 +765,7 @@ function ProxyDesignForm({ orderId, copy }) {
       </div>
       <div className="ops-proxy-form-body">
         <label className="field"><span>{copy.media}</span>
-          <MediaPicker value={media} onChange={(items) => { setSaved(false); setMedia(items); }} maxItems={5} showSamples={false} previewMode="list" />
+          <MediaPicker value={media} onChange={(items) => { setSaved(false); setMedia(items); }} maxItems={5} showSamples={false} previewMode="list" scope="cad" />
         </label>
         <label className="field"><span>{copy.note}</span>
           <textarea value={note} onChange={(e) => { setSaved(false); setNote(e.target.value); }} placeholder={copy.notePh} />
@@ -804,7 +804,7 @@ function ProxyFinalForm({ orderId, copy }) {
       </div>
       <div className="ops-proxy-form-body">
         <label className="field"><span>{copy.media}</span>
-          <MediaPicker value={media} onChange={(items) => { setSaved(false); setMedia(items); }} maxItems={5} showSamples={false} previewMode="list" />
+          <MediaPicker value={media} onChange={(items) => { setSaved(false); setMedia(items); }} maxItems={5} showSamples={false} previewMode="list" scope="qc" />
         </label>
         <label className="field"><span>{copy.note}</span>
           <textarea value={f.note} onChange={(e) => set("note", e.target.value)} placeholder={copy.notePh} />

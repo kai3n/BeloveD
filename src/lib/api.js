@@ -29,3 +29,25 @@ export async function apiFetch(path, { method = "GET", body } = {}) {
   }
   return data;
 }
+
+// R2 미디어 업로드 — 서버는 presigned URL만 발급하고 파일은 브라우저→버킷 직행.
+// 성공 시 영구 publicUrl 반환. 서버 부재 시 ApiUnavailableError가 그대로 전파되어
+// 호출부(MediaPicker)가 base64/blob 프리뷰 폴백을 탄다.
+export async function uploadMedia(blob, { scope, contentType }) {
+  const { uploadUrl, publicUrl } = await apiFetch("/media/upload-url", {
+    method: "POST",
+    body: { scope, contentType, size: blob.size },
+  });
+  let res;
+  try {
+    res = await fetch(uploadUrl, {
+      method: "PUT",
+      headers: { "Content-Type": contentType },
+      body: blob,
+    });
+  } catch {
+    throw new ApiRequestError("UPLOAD_FAILED", 0);
+  }
+  if (!res.ok) throw new ApiRequestError("UPLOAD_FAILED", res.status);
+  return publicUrl;
+}

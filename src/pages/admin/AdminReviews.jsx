@@ -50,7 +50,7 @@ export default function AdminReviews() {
           <label className="field"><span>{c.quote}</span><input value={draft.quote} onChange={(e) => set({ quote: e.target.value })} /></label>
           <label className="field"><span>{c.body}</span><textarea rows={2} value={draft.body} onChange={(e) => set({ body: e.target.value })} /></label>
           <div className="field"><span>{c.media}</span>
-            <MediaPicker value={draft.media} onChange={(m) => set({ media: m })} maxItems={5} showSamples={false} previewMode="list" />
+            <MediaPicker value={draft.media} onChange={(m) => set({ media: m })} maxItems={5} showSamples={false} previewMode="list" scope="review" />
           </div>
           <label className="field" style={{ maxWidth: 220 }}><span>{c.status}</span>
             <select value={draft.status} onChange={(e) => set({ status: e.target.value })}>

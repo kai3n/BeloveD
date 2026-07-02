@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Eye, X } from "lucide-react";
 import { useLocale } from "../i18n.jsx";
 import { getSettings } from "../lib/store.js";
+import { uploadMedia } from "../lib/api.js";
 
 // 신규 화면 공통 빌딩블록. 라벨은 전부 useLocale().p 사전에서 — 4개 언어 지원.
 // 샘플 사진은 jewelry-lineup.png 크롭(pos) 또는 단일 이미지(src).
@@ -526,8 +527,9 @@ export function LuxuryDatePicker({
   );
 }
 
-// 샘플 라이브러리(영구 저장) + 파일 업로드. 이미지는 브라우저에서 리사이즈/압축하고,
-// 영상은 base64로 localStorage를 터뜨리지 않도록 blob URL preview로 다룬다.
+// 샘플 라이브러리(영구 저장) + 파일 업로드. 이미지는 브라우저에서 리사이즈/압축한 뒤
+// R2로 직행 업로드해 publicUrl을 저장한다. 서버가 없으면(정적 데모) 기존 로컬 경로로
+// 폴백: 이미지는 base64, 영상은 localStorage를 터뜨리지 않도록 blob URL preview.
 const SAMPLE_LIBRARY = [
   { kind: "image", src: "/assets/lineup-ring.png", labelKey: "sol" },
   { kind: "image", src: "/assets/lineup-band.png", labelKey: "band" },
@@ -593,7 +595,17 @@ function loadImageFromFile(file) {
   }));
 }
 
-async function optimizeImageFile(file) {
+// 업로드 실패는 종류를 불문하고 로컬 프리뷰 폴백 — 기존(업로드 이전) 동작보다
+// 나빠지지 않게 하고, 데모(서버 부재)와 일시 장애를 같은 경로로 흡수한다.
+async function uploadOrNull(blob, scope, contentType) {
+  try {
+    return await uploadMedia(blob, { scope, contentType });
+  } catch {
+    return null;
+  }
+}
+
+async function optimizeImageFile(file, scope) {
   const image = await loadImageFromFile(file);
   const originalWidth = image.width;
   const originalHeight = image.height;
@@ -625,7 +637,7 @@ async function optimizeImageFile(file) {
   }
   image.close();
   if (!blob) throw new Error("imageOptimizeFailed");
-  const src = await readBlobAsDataURL(blob);
+  const src = (await uploadOrNull(blob, scope, "image/jpeg")) || (await readBlobAsDataURL(blob));
   return {
     kind: "image",
     src,
@@ -638,21 +650,34 @@ async function optimizeImageFile(file) {
   };
 }
 
-function optimizeVideoFile(file) {
+// 서버(media.js)가 받는 영상 형식만 업로드 시도 — 브라우저가 type을 비워 보내는
+// 파일은 확장자로 보정하고, 매칭이 없으면 업로드 없이 로컬 프리뷰로 남긴다.
+const VIDEO_UPLOAD_TYPES = new Set(["video/mp4", "video/quicktime", "video/webm"]);
+const VIDEO_EXT_TYPES = { mp4: "video/mp4", m4v: "video/mp4", mov: "video/quicktime", webm: "video/webm" };
+function videoContentType(file) {
+  const type = (file.type || "").toLowerCase();
+  if (VIDEO_UPLOAD_TYPES.has(type)) return type;
+  const ext = (file.name || "").toLowerCase().match(/\.([a-z0-9]+)$/)?.[1];
+  return VIDEO_EXT_TYPES[ext] || null;
+}
+
+async function prepareVideoFile(file, scope) {
   const limit = MAX_VIDEO_MB * 1024 * 1024;
   if (file.size > limit) throw new Error("videoTooLarge");
-  return {
+  const base = {
     kind: "video",
-    src: URL.createObjectURL(file),
     name: file.name || "reference-video",
     size: file.size,
     originalSize: file.size,
     optimized: true,
-    transient: true,
   };
+  const contentType = videoContentType(file);
+  const uploaded = contentType ? await uploadOrNull(file, scope, contentType) : null;
+  if (uploaded) return { ...base, src: uploaded };
+  return { ...base, src: URL.createObjectURL(file), transient: true };
 }
 
-export function MediaPicker({ value, onChange, maxItems = Infinity, showSamples = true, previewMode = "thumb" }) {
+export function MediaPicker({ value, onChange, maxItems = Infinity, showSamples = true, previewMode = "thumb", scope = "reference" }) {
   const { p } = useLocale();
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -684,11 +709,11 @@ export function MediaPicker({ value, onChange, maxItems = Infinity, showSamples 
   async function prepareFile(file) {
     const kind = mediaKindFromFile(file);
     if (!kind) throw new Error("unsupportedType");
-    if (kind === "video") return optimizeVideoFile(file);
-    return optimizeImageFile(file);
+    if (kind === "video") return prepareVideoFile(file, scope);
+    return optimizeImageFile(file, scope);
   }
 
-  // 이미지·영상 모두 허용. 이미지는 작게 압축하고, 영상은 가벼운 preview URL로 처리한다.
+  // 이미지·영상 모두 허용. 이미지는 작게 압축해 R2로, 영상은 원본을 R2로 올린다.
   async function addFiles(fileList) {
     const files = Array.from(fileList || []);
     if (files.length === 0) return;
@@ -713,11 +738,12 @@ export function MediaPicker({ value, onChange, maxItems = Infinity, showSamples 
       if (added.length) {
         onChange([...items, ...added]);
         const compressed = added.filter((item) => item.kind === "image" && item.optimized).length;
-        const videoCount = added.filter((item) => item.kind === "video").length;
+        // videoNotice("가벼운 미리보기로 첨부")는 업로드 실패로 로컬 blob에 남은 영상에만 해당
+        const previewVideos = added.filter((item) => item.kind === "video" && item.transient).length;
         setNotice(
           compressed > 0
             ? p.picker.optimizedNotice(compressed)
-            : videoCount > 0
+            : previewVideos > 0
               ? p.picker.videoNotice
               : "",
         );
