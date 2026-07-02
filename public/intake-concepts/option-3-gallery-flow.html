@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Option 3 — Gallery Flow · BeloveD Intake Concepts</title>
+<link rel="stylesheet" href="./intake-concepts.css" />
+<style>
+  body { overflow: hidden; }
+  .flow-stage {
+    height: calc(100svh - 69px);
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+  }
+
+  /* progress dots */
+  .flow-progress { display: flex; justify-content: center; gap: 8px; padding: 18px 0 4px; }
+  .flow-progress i { width: 22px; height: 2px; background: rgba(232,240,255,0.14); transition: background 0.2s; }
+  .flow-progress i.done { background: var(--gold-dim); }
+  .flow-progress i.now { background: var(--gold); }
+
+  .flow-body { position: relative; overflow: hidden; }
+  .flow-q {
+    position: absolute; inset: 0;
+    display: grid; align-content: center; justify-items: center;
+    gap: 26px; padding: 20px;
+    opacity: 0; transform: translateX(40px); pointer-events: none;
+    transition: opacity 0.32s ease, transform 0.32s ease;
+  }
+  .flow-q.is-active { opacity: 1; transform: none; pointer-events: auto; }
+  .flow-q.is-left { transform: translateX(-40px); }
+
+  .flow-q .q-kicker { font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--gold); margin: 0; }
+  .flow-q h2 { font-family: var(--serif); font-size: clamp(26px, 5vw, 40px); font-weight: 500; margin: 0; text-align: center; line-height: 1.1; }
+  .flow-q .q-hint { color: var(--quiet); font-size: 13px; margin: -12px 0 0; }
+
+  .answers { display: grid; gap: 14px; width: min(100%, 760px); }
+  .answers.cols-4 { grid-template-columns: repeat(4, 1fr); }
+  .answers.cols-3 { grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: 640px) { .answers.cols-4, .answers.cols-3 { grid-template-columns: repeat(2, 1fr); } }
+  .answers.shapes { grid-template-columns: repeat(5, 1fr); width: min(100%, 620px); gap: 10px; }
+  @media (max-width: 640px) { .answers.shapes { grid-template-columns: repeat(3, 1fr); } }
+  .answers.shapes .a-media { aspect-ratio: auto; padding: 18px 0 6px; }
+  .answers.shapes .a-media svg { width: 40px; height: 40px; }
+  .answers.shapes .a-label { padding: 8px 4px 12px; font-size: 10px; }
+
+  .answer-card {
+    border: 1px solid var(--line); background: var(--surface); padding: 0; overflow: hidden;
+    transition: border-color 0.18s, transform 0.18s;
+  }
+  .answer-card:hover { border-color: var(--gold); transform: translateY(-3px); }
+  .answer-card .a-media { aspect-ratio: 1 / 1; background: #0b0b0d; overflow: hidden; display: grid; place-items: center; }
+  .answer-card .a-media img { width: 100%; height: 100%; object-fit: cover; }
+  .answer-card .a-media svg { width: 54px; height: 54px; stroke: rgba(247,245,239,0.85); fill: none; stroke-width: 1.4; }
+  .answer-card .a-label { display: block; padding: 11px 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; text-align: center; }
+  .answer-card .a-sub { display: block; margin-top: -8px; padding-bottom: 10px; font-size: 10px; color: var(--quiet); text-align: center; }
+
+  .metal-answers { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+  .metal-answers .metal-chip { padding: 12px 20px 12px 12px; }
+  .metal-answers .dot { width: 34px; height: 34px; }
+
+  .flow-footer { display: flex; justify-content: space-between; align-items: center; padding: 14px clamp(16px, 4vw, 40px) 22px; }
+  .flow-footer .ghost { background: none; border: none; color: var(--quiet); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; }
+  .flow-footer .ghost:hover { color: var(--gold-strong); }
+
+  /* carat slide */
+  .carat-wrap { width: min(100%, 480px); display: grid; gap: 20px; }
+
+  /* review sheet */
+  .sheet { width: min(100%, 620px); border: 1px solid var(--line); background: var(--surface); padding: 26px; display: grid; gap: 4px; }
+  .sheet .spec-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(232,240,255,0.07); font-size: 14px; }
+  .sheet .spec-row span:first-child { color: var(--quiet); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; align-self: center; }
+  .sheet .spec-row span:last-child { font-weight: 600; }
+</style>
+</head>
+<body>
+<header class="concept-topbar">
+  <span class="brand">BeloveD</span>
+  <span class="tag">Concept 3 · Gallery Flow</span>
+  <nav><a href="./option-2-atelier-configurator.html">← Prev</a><a href="./index.html">All concepts</a></nav>
+</header>
+
+<div class="flow-stage">
+  <div class="flow-progress" id="progress"></div>
+
+  <div class="flow-body" id="body">
+
+    <!-- Q1 category -->
+    <section class="flow-q is-active">
+      <p class="q-kicker">01 — The Piece</p>
+      <h2>어떤 주얼리를 만들까요?</h2>
+      <div class="answers cols-4" data-advance>
+        <button class="answer-card" data-set="category:Ring"><span class="a-media"><img src="/assets/lineup-ring.png" alt=""/></span><span class="a-label">Ring</span></button>
+        <button class="answer-card" data-set="category:Necklace"><span class="a-media"><img src="/assets/lineup-pendant.png" alt=""/></span><span class="a-label">Necklace</span></button>
+        <button class="answer-card" data-set="category:Earrings"><span class="a-media"><img src="/assets/lineup-studs.png" alt=""/></span><span class="a-label">Earrings</span></button>
+        <button class="answer-card" data-set="category:Bracelet"><span class="a-media"><img src="/assets/lineup-bracelet.png" alt=""/></span><span class="a-label">Bracelet</span></button>
+      </div>
+    </section>
+
+    <!-- Q2 design -->
+    <section class="flow-q">
+      <p class="q-kicker">02 — The Design</p>
+      <h2>끌리는 디자인을 골라주세요</h2>
+      <p class="q-hint">정확하지 않아도 괜찮아요 — 방향만 알려주세요</p>
+      <div class="answers cols-4" data-advance>
+        <button class="answer-card" data-set="design:Solitaire"><span class="a-media"><img src="/assets/lineup-ring.png" alt=""/></span><span class="a-label">Solitaire</span><span class="a-sub">Timeless single stone</span></button>
+        <button class="answer-card" data-set="design:Hidden Halo"><span class="a-media"><img src="/assets/hero-diamond-ring-crisp.png" alt=""/></span><span class="a-label">Hidden Halo</span><span class="a-sub">Secret sparkle</span></button>
+        <button class="answer-card" data-set="design:Eternity"><span class="a-media"><img src="/assets/lineup-band.png" alt=""/></span><span class="a-label">Eternity</span><span class="a-sub">Stones all around</span></button>
+        <button class="answer-card" data-set="design:Three-Stone"><span class="a-media"><img src="/assets/lab-diamond-tweezers.webp" alt=""/></span><span class="a-label">Three-Stone</span><span class="a-sub">Past · present · future</span></button>
+      </div>
+    </section>
+
+    <!-- Q3 metal -->
+    <section class="flow-q">
+      <p class="q-kicker">03 — The Metal</p>
+      <h2>메탈 톤을 골라주세요</h2>
+      <div class="metal-answers" data-advance>
+        <button class="metal-chip" data-set="metal:18K White Gold"><span class="dot m-18kw"></span><span>18K White<small>Gold</small></span></button>
+        <button class="metal-chip" data-set="metal:18K Yellow Gold"><span class="dot m-18ky"></span><span>18K Yellow<small>Gold</small></span></button>
+        <button class="metal-chip" data-set="metal:18K Rose Gold"><span class="dot m-18kr"></span><span>18K Rose<small>Gold</small></span></button>
+        <button class="metal-chip" data-set="metal:Platinum"><span class="dot m-pt"></span><span>Platinum<small>950</small></span></button>
+      </div>
+    </section>
+
+    <!-- Q4 shape -->
+    <section class="flow-q">
+      <p class="q-kicker">04 — The Stone</p>
+      <h2>다이아몬드 셰입은?</h2>
+      <div class="answers shapes" id="shape-answers" data-advance></div>
+    </section>
+
+    <!-- Q5 carat -->
+    <section class="flow-q">
+      <p class="q-kicker">05 — The Presence</p>
+      <h2>얼마나 존재감 있게?</h2>
+      <div class="carat-wrap">
+        <div class="carat-visual">
+          <div class="carat-stone" id="carat-stone" style="width:52px;height:52px"></div>
+          <div class="carat-readout"><strong id="carat-num">1.50</strong><span>carat</span></div>
+        </div>
+        <input class="carat-range" type="range" min="0.5" max="4" step="0.1" value="1.5" id="carat-range" />
+        <button class="btn primary" data-next>Continue</button>
+      </div>
+    </section>
+
+    <!-- Q6 review -->
+    <section class="flow-q">
+      <p class="q-kicker">06 — Almost There</p>
+      <h2>이렇게 준비할까요?</h2>
+      <div class="sheet">
+        <div class="spec-row"><span>Piece</span><span id="rv-category">Ring</span></div>
+        <div class="spec-row"><span>Design</span><span id="rv-design">Solitaire</span></div>
+        <div class="spec-row"><span>Metal</span><span id="rv-metal">18K White Gold</span></div>
+        <div class="spec-row"><span>Stone</span><span id="rv-stone">Round · 1.50ct</span></div>
+        <div class="spec-row" style="border-bottom:none"><span>Quality</span><span>E · VS1 · CVD · IGI</span></div>
+      </div>
+      <button class="btn primary">Submit Request</button>
+      <p class="q-hint">세부 퀄리티(컬러·클래리티)는 기본 추천값으로 제출되고, 견적 단계에서 조정할 수 있어요</p>
+    </section>
+
+  </div>
+
+  <div class="flow-footer">
+    <button class="ghost" id="btn-back">← Back</button>
+    <button class="ghost" id="btn-skip">Skip →</button>
+  </div>
+</div>
+
+<script src="./shapes.js"></script>
+<script>
+  const answers = document.getElementById("shape-answers");
+  Object.entries(window.DIAMOND_SHAPES).forEach(([key, svg]) => {
+    const b = document.createElement("button");
+    b.className = "answer-card";
+    b.dataset.set = "shape:" + window.SHAPE_LABELS[key];
+    b.innerHTML = '<span class="a-media">' + svg + '</span><span class="a-label">' + window.SHAPE_LABELS[key] + "</span>";
+    answers.appendChild(b);
+  });
+
+  const qs = [...document.querySelectorAll(".flow-q")];
+  const state = { category: "Ring", design: "Solitaire", metal: "18K White Gold", shape: "Round", carat: "1.50" };
+  let idx = 0;
+
+  const progress = document.getElementById("progress");
+  qs.forEach(() => progress.appendChild(document.createElement("i")));
+
+  function render() {
+    qs.forEach((q, i) => {
+      q.classList.toggle("is-active", i === idx);
+      q.classList.toggle("is-left", i < idx);
+    });
+    [...progress.children].forEach((dot, i) => {
+      dot.className = i < idx ? "done" : i === idx ? "now" : "";
+    });
+    document.getElementById("rv-category").textContent = state.category;
+    document.getElementById("rv-design").textContent = state.design;
+    document.getElementById("rv-metal").textContent = state.metal;
+    document.getElementById("rv-stone").textContent = state.shape + " · " + state.carat + "ct";
+  }
+
+  document.getElementById("body").addEventListener("click", (e) => {
+    const card = e.target.closest("[data-set]");
+    if (card) {
+      const [k, v] = card.dataset.set.split(":");
+      state[k] = v;
+      setTimeout(() => { if (idx < qs.length - 1) { idx++; render(); } }, 160);
+      return;
+    }
+    if (e.target.closest("[data-next]")) { if (idx < qs.length - 1) { idx++; render(); } }
+  });
+  document.getElementById("btn-back").addEventListener("click", () => { if (idx > 0) { idx--; render(); } });
+  document.getElementById("btn-skip").addEventListener("click", () => { if (idx < qs.length - 1) { idx++; render(); } });
+
+  const range = document.getElementById("carat-range");
+  range.addEventListener("input", () => {
+    const ct = Number(range.value);
+    state.carat = ct.toFixed(2);
+    document.getElementById("carat-num").textContent = state.carat;
+    const px = Math.round(34 + Math.sqrt(ct) * 22);
+    const stone = document.getElementById("carat-stone");
+    stone.style.width = px + "px"; stone.style.height = px + "px";
+  });
+
+  render();
+</script>
+</body>
+</html>

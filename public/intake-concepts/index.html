@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>BeloveD Intake Form Concepts</title>
+<link rel="stylesheet" href="./intake-concepts.css" />
+<style>
+  main { width: min(100%, 1020px); margin: 0 auto; padding: 54px 22px 90px; }
+  h1 { font-family: var(--serif); font-size: clamp(38px, 8vw, 68px); font-weight: 600; line-height: 0.95; margin: 0 0 10px; }
+  .intro { max-width: 620px; color: var(--muted); line-height: 1.65; margin: 0 0 34px; font-size: 14px; }
+  .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+  @media (max-width: 820px) { .grid { grid-template-columns: 1fr; } }
+  .concept-link {
+    display: flex; flex-direction: column; gap: 14px;
+    min-height: 300px; padding: 24px;
+    border: 1px solid var(--line); background: var(--surface);
+    transition: border-color 0.18s, background 0.18s;
+  }
+  .concept-link:hover { border-color: var(--gold-dim); background: rgba(214, 197, 160, 0.06); }
+  .concept-link .no { color: var(--gold); font-size: 11px; letter-spacing: 0.26em; text-transform: uppercase; }
+  .concept-link h2 { font-family: var(--serif); font-size: 27px; font-weight: 600; margin: 0; }
+  .concept-link p { color: var(--muted); font-size: 13px; line-height: 1.6; margin: 0; flex: 1; }
+  .concept-link ul { margin: 0; padding: 0 0 0 16px; color: var(--quiet); font-size: 12px; line-height: 1.7; }
+  .concept-link .go { color: var(--gold-strong); font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase; }
+  .note { margin-top: 30px; border: 1px solid var(--line); background: var(--surface); padding: 20px 24px; color: var(--muted); font-size: 13px; line-height: 1.7; }
+  .note strong { color: var(--gold-strong); }
+</style>
+</head>
+<body>
+<header class="concept-topbar">
+  <span class="brand">BeloveD</span>
+  <span class="tag">Intake Form · Image-First Concepts</span>
+  <nav><a href="/">← Back to app</a></nav>
+</header>
+
+<main>
+  <p class="kicker">Customer Request Form</p>
+  <h1>Image-First<br/>Intake Concepts</h1>
+  <p class="intro">드롭다운·텍스트 입력 대신 사진 타일, 다이아 실루엣, 메탈 스와치로 고르는 3가지 방향.
+  공통 요소(카테고리 포토타일 · 셰입 SVG · 메탈 스와치 · 캐럿 슬라이더 · 컬러/클래리티 스케일)는 동일하고, <em>구조와 페이스</em>가 다릅니다.</p>
+
+  <div class="grid">
+    <a class="concept-link" href="./option-1-visual-wizard.html">
+      <span class="no">Option 1</span>
+      <h2>Visual Wizard</h2>
+      <p>지금의 4단계 위저드 구조를 유지하고, 모든 드롭다운을 이미지 선택으로 교체. 리뷰 단계도 이미지 요약 카드로.</p>
+      <ul>
+        <li>가장 적은 구조 변경 — 기존 검증/드래프트 로직 재사용</li>
+        <li>교육 사이드패널·견적 비교 그대로 유지</li>
+        <li>구현 리스크 최소</li>
+      </ul>
+      <span class="go">열어보기 →</span>
+    </a>
+
+    <a class="concept-link" href="./option-2-atelier-configurator.html">
+      <span class="no">Option 2</span>
+      <h2>Atelier Configurator</h2>
+      <p>단계를 없앤 원페이지 빌더. 왼쪽 라이브 프리뷰에 선택이 실시간으로 쌓이고, 완성되면 제출 버튼이 활성화.</p>
+      <ul>
+        <li>"폼 작성"이 아니라 "내 주얼리 조립" 경험</li>
+        <li>전체 그림이 한눈에 — 뒤로가기 없이 수정</li>
+        <li>데스크톱 최강 / 모바일은 프리뷰 축소 필요</li>
+      </ul>
+      <span class="go">열어보기 →</span>
+    </a>
+
+    <a class="concept-link" href="./option-3-gallery-flow.html">
+      <span class="no">Option 3</span>
+      <h2>Gallery Flow</h2>
+      <p>풀스크린에 한 번에 한 질문. 큰 이미지를 탭하면 자동으로 다음 질문으로. 세부 스펙은 추천 기본값으로 제출.</p>
+      <ul>
+        <li>모바일 · 인스타 유입 고객에 최적</li>
+        <li>질문을 6개로 압축 — 이탈률 최소화</li>
+        <li>상세 조정은 견적 단계로 미룸 (운영 흐름과 일치)</li>
+      </ul>
+      <span class="go">열어보기 →</span>
+    </a>
+  </div>
+
+  <div class="note" style="margin-top:14px">
+    <strong>+ 주문 Flow 간소화 컨셉</strong> — 확정 제안 1장(총액만 공개) → 컨펌 → Zelle/Venmo 디파짓.
+    <a href="./order-flow-concept.html" style="color:var(--gold-strong); text-decoration:underline">order-flow-concept.html 열어보기 →</a>
+  </div>
+
+  <div class="note">
+    <strong>추천: Option 3 (Gallery Flow) 베이스 + Option 1의 리뷰 카드.</strong>
+    고객 유입이 인스타·모바일 중심이고, 실제 스펙 확정은 어차피 어드민-벤더 상담 후 최종 견적에서 이뤄지므로,
+    폼 단계에서 세부 스펙을 다 받을 필요가 없습니다. 폼은 "방향 전달"에 집중하고 질문 수를 줄이는 쪽이
+    간소화하려는 주문 flow(확정 스펙 + 총액 견적 → 컨펌 → Zelle/Venmo 디파짓)와도 맞아떨어집니다.
+  </div>
+</main>
+</body>
+</html>

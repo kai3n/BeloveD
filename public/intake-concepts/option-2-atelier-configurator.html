@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Option 2 — Atelier Configurator · BeloveD Intake Concepts</title>
+<link rel="stylesheet" href="./intake-concepts.css" />
+<style>
+  main { width: min(100%, 1160px); margin: 0 auto; padding: 40px 20px 90px; }
+  .page-head { margin-bottom: 30px; }
+  .page-head .serif-title { font-size: clamp(30px, 5vw, 44px); }
+  .page-head p { color: var(--muted); font-size: 14px; line-height: 1.6; max-width: 620px; }
+
+  .builder { display: grid; grid-template-columns: 380px minmax(0, 1fr); gap: 26px; align-items: start; }
+  @media (max-width: 920px) { .builder { grid-template-columns: 1fr; } }
+
+  /* ---- left: live preview ---- */
+  .preview {
+    position: sticky; top: 86px;
+    border: 1px solid var(--line); background: var(--surface);
+    display: grid;
+  }
+  @media (max-width: 920px) { .preview { position: static; } }
+  .preview-media { aspect-ratio: 1 / 1; overflow: hidden; background: #0b0b0d; position: relative; }
+  .preview-media img { width: 100%; height: 100%; object-fit: cover; transition: opacity 0.25s ease; }
+  .preview-media .badge {
+    position: absolute; left: 14px; top: 14px; font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--gold-strong); background: rgba(5,5,6,0.72); border: 1px solid var(--gold-dim); padding: 6px 10px;
+  }
+  .spec-list { padding: 18px 20px 6px; display: grid; gap: 0; }
+  .spec-row { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid rgba(232,240,255,0.07); font-size: 13px; }
+  .spec-row dt { color: var(--quiet); margin: 0; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; align-self: center; }
+  .spec-row dd { margin: 0; font-weight: 600; text-align: right; }
+  .spec-row dd .pending { color: var(--quiet); font-weight: 500; font-style: italic; }
+  .preview-cta { padding: 16px 20px 20px; display: grid; gap: 10px; }
+  .progress-line { height: 2px; background: rgba(232,240,255,0.1); position: relative; margin-bottom: 6px; }
+  .progress-line i { position: absolute; inset: 0 auto 0 0; width: 66%; background: var(--gold); }
+  .preview-cta small { color: var(--quiet); font-size: 11px; text-align: center; }
+
+  /* ---- right: option sections ---- */
+  .sections { display: grid; gap: 34px; }
+  .opt-section { border: 1px solid var(--line); background: var(--surface); padding: clamp(18px, 3vw, 28px); }
+  .opt-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 18px; }
+  .opt-head .num { font-family: var(--serif); font-size: 26px; color: var(--gold); font-weight: 500; }
+  .opt-head h2 { margin: 0; font-size: 13px; letter-spacing: 0.2em; text-transform: uppercase; }
+  .opt-head .state { margin-left: auto; font-size: 11px; color: var(--quiet); }
+  .opt-head .state.done { color: var(--gold); }
+
+  /* horizontal scroll rows */
+  .chip-rail { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: thin; }
+  .chip-rail .pick-card { flex: 0 0 150px; }
+  .chip-rail .pick-card .pick-media { aspect-ratio: 1 / 1; }
+
+  .color-swatch-D { background: radial-gradient(circle at 32% 30%, #ffffff, #e9eef8 60%, #c9d3e6); }
+  .color-swatch-E { background: radial-gradient(circle at 32% 30%, #fdfdfd, #e7ecf4 60%, #c7d0e0); }
+  .color-swatch-F { background: radial-gradient(circle at 32% 30%, #fcfbf9, #e8eaee 60%, #c9cfda); }
+  .color-swatch-G { background: radial-gradient(circle at 32% 30%, #fbfaf5, #ebe9e0 60%, #cfccc0); }
+
+  .stone-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  @media (max-width: 720px) { .stone-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header class="concept-topbar">
+  <span class="brand">BeloveD</span>
+  <span class="tag">Concept 2 · Atelier Configurator</span>
+  <nav><a href="./option-1-visual-wizard.html">← Prev</a><a href="./index.html">All concepts</a><a href="./option-3-gallery-flow.html">Next →</a></nav>
+</header>
+
+<main>
+  <div class="page-head">
+    <p class="kicker">Custom Request</p>
+    <h1 class="serif-title">Compose Your Piece</h1>
+    <p>단계를 없앤 원페이지 빌더. 왼쪽 프리뷰가 선택을 따라 실시간으로 완성되어 가는 걸 보여줍니다 — "폼 작성"이 아니라 "내 주얼리를 조립"하는 경험.</p>
+  </div>
+
+  <div class="builder">
+    <!-- LEFT : live preview -->
+    <aside class="preview">
+      <div class="preview-media">
+        <span class="badge">Your Piece</span>
+        <img id="preview-img" src="/assets/lineup-ring.png" alt="Selected design" />
+      </div>
+      <dl class="spec-list">
+        <div class="spec-row"><dt>Design</dt><dd id="sp-design">Solitaire Ring</dd></div>
+        <div class="spec-row"><dt>Metal</dt><dd id="sp-metal">18K White Gold</dd></div>
+        <div class="spec-row"><dt>Stone</dt><dd id="sp-stone">Round · 1.50ct</dd></div>
+        <div class="spec-row"><dt>Quality</dt><dd id="sp-quality">E · VS1 · CVD</dd></div>
+        <div class="spec-row"><dt>Size</dt><dd><span class="pending" id="sp-size">아직 선택 전</span></dd></div>
+      </dl>
+      <div class="preview-cta">
+        <div class="progress-line"><i id="progress-fill"></i></div>
+        <button class="btn primary">Request This Piece</button>
+        <small>제출 후 24시간 내에 확정 스펙과 견적을 보내드립니다</small>
+      </div>
+    </aside>
+
+    <!-- RIGHT : sections -->
+    <div class="sections">
+
+      <section class="opt-section">
+        <div class="opt-head"><span class="num">01</span><h2>Design</h2><span class="state done" >✓ Solitaire Ring</span></div>
+        <div class="chip-rail" data-group="design">
+          <button class="pick-card is-selected" data-img="/assets/lineup-ring.png" data-label="Solitaire Ring"><span class="pick-media"><img src="/assets/lineup-ring.png" alt=""/></span><span class="pick-label">Solitaire<span class="pick-check"></span></span></button>
+          <button class="pick-card" data-img="/assets/hero-diamond-ring-crisp.png" data-label="Hidden Halo"><span class="pick-media"><img src="/assets/hero-diamond-ring-crisp.png" alt=""/></span><span class="pick-label">Hidden Halo<span class="pick-check"></span></span></button>
+          <button class="pick-card" data-img="/assets/lineup-band.png" data-label="Eternity Band"><span class="pick-media"><img src="/assets/lineup-band.png" alt=""/></span><span class="pick-label">Eternity<span class="pick-check"></span></span></button>
+          <button class="pick-card" data-img="/assets/lineup-pendant.png" data-label="Pendant"><span class="pick-media"><img src="/assets/lineup-pendant.png" alt=""/></span><span class="pick-label">Pendant<span class="pick-check"></span></span></button>
+          <button class="pick-card" data-img="/assets/lineup-studs.png" data-label="Studs"><span class="pick-media"><img src="/assets/lineup-studs.png" alt=""/></span><span class="pick-label">Studs<span class="pick-check"></span></span></button>
+          <button class="pick-card" data-img="/assets/lineup-bracelet.png" data-label="Tennis Bracelet"><span class="pick-media"><img src="/assets/lineup-bracelet.png" alt=""/></span><span class="pick-label">Tennis<span class="pick-check"></span></span></button>
+        </div>
+      </section>
+
+      <section class="opt-section">
+        <div class="opt-head"><span class="num">02</span><h2>Metal</h2><span class="state done">✓ 18K White Gold</span></div>
+        <div class="metal-row" data-group="metal">
+          <button class="metal-chip is-selected" data-label="18K White Gold"><span class="dot m-18kw"></span><span>18K White<small>Gold</small></span></button>
+          <button class="metal-chip" data-label="18K Yellow Gold"><span class="dot m-18ky"></span><span>18K Yellow<small>Gold</small></span></button>
+          <button class="metal-chip" data-label="18K Rose Gold"><span class="dot m-18kr"></span><span>18K Rose<small>Gold</small></span></button>
+          <button class="metal-chip" data-label="14K Yellow Gold"><span class="dot m-14ky"></span><span>14K Yellow<small>Gold</small></span></button>
+          <button class="metal-chip" data-label="14K Rose Gold"><span class="dot m-14kr"></span><span>14K Rose<small>Gold</small></span></button>
+          <button class="metal-chip" data-label="Platinum"><span class="dot m-pt"></span><span>Platinum<small>950</small></span></button>
+        </div>
+      </section>
+
+      <section class="opt-section">
+        <div class="opt-head"><span class="num">03</span><h2>Center Stone</h2><span class="state done">✓ Round 1.50ct</span></div>
+        <div class="stone-grid">
+          <div>
+            <div class="field-label"><h3>Shape</h3></div>
+            <div class="shape-row" id="shape-row" style="grid-template-columns: repeat(3, 1fr);"></div>
+          </div>
+          <div style="display:grid; gap:22px; align-content:start">
+            <div class="carat-block">
+              <div class="field-label"><h3>Carat</h3></div>
+              <div class="carat-visual">
+                <div class="carat-stone" id="carat-stone" style="width:52px;height:52px"></div>
+                <div class="carat-readout"><strong id="carat-num">1.50</strong><span>carat</span></div>
+              </div>
+              <input class="carat-range" type="range" min="0.5" max="4" step="0.1" value="1.5" id="carat-range" />
+            </div>
+            <div>
+              <div class="field-label"><h3>Color</h3></div>
+              <div class="scale-bar" data-group="color">
+                <button class="scale-step"><span class="swatch color-swatch-D"></span><strong>D</strong></button>
+                <button class="scale-step is-selected"><span class="swatch color-swatch-E"></span><strong>E</strong></button>
+                <button class="scale-step"><span class="swatch color-swatch-F"></span><strong>F</strong></button>
+                <button class="scale-step"><span class="swatch color-swatch-G"></span><strong>G</strong></button>
+              </div>
+            </div>
+            <div>
+              <div class="field-label"><h3>Clarity</h3></div>
+              <div class="scale-bar" data-group="clarity">
+                <button class="scale-step"><strong>IF</strong></button>
+                <button class="scale-step"><strong>VVS1</strong></button>
+                <button class="scale-step"><strong>VVS2</strong></button>
+                <button class="scale-step is-selected"><strong>VS1</strong></button>
+                <button class="scale-step"><strong>VS2</strong></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="opt-section">
+        <div class="opt-head"><span class="num">04</span><h2>Size</h2><span class="state" id="size-state">선택해 주세요</span></div>
+        <div class="scale-bar" data-group="ringsize" style="max-width:520px">
+          <button class="scale-step" data-label="US 5"><strong>5</strong></button>
+          <button class="scale-step" data-label="US 5.5"><strong>5.5</strong></button>
+          <button class="scale-step" data-label="US 6"><strong>6</strong></button>
+          <button class="scale-step" data-label="US 6.5"><strong>6.5</strong></button>
+          <button class="scale-step" data-label="US 7"><strong>7</strong></button>
+          <button class="scale-step" data-label="US 7.5"><strong>7.5</strong></button>
+        </div>
+      </section>
+
+      <section class="opt-section">
+        <div class="opt-head"><span class="num">05</span><h2>Inspiration</h2><span class="state">선택 사항</span></div>
+        <div style="border:1px dashed var(--gold-dim); padding:34px 20px; text-align:center; color:var(--muted); font-size:13px;">
+          레퍼런스 사진·영상을 끌어다 놓으세요 (최대 5개)
+        </div>
+      </section>
+
+    </div>
+  </div>
+</main>
+
+<script src="./shapes.js"></script>
+<script>
+  const row = document.getElementById("shape-row");
+  Object.entries(window.DIAMOND_SHAPES).forEach(([key, svg], i) => {
+    const b = document.createElement("button");
+    b.className = "shape-tile" + (i === 0 ? " is-selected" : "");
+    b.dataset.shape = window.SHAPE_LABELS[key];
+    b.innerHTML = svg + "<span>" + window.SHAPE_LABELS[key] + "</span>";
+    row.appendChild(b);
+  });
+
+  const state = { design: "Solitaire Ring", metal: "18K White Gold", shape: "Round", carat: "1.50", color: "E", clarity: "VS1", size: null };
+
+  function syncPreview() {
+    document.getElementById("sp-design").textContent = state.design;
+    document.getElementById("sp-metal").textContent = state.metal;
+    document.getElementById("sp-stone").textContent = state.shape + " · " + state.carat + "ct";
+    document.getElementById("sp-quality").textContent = state.color + " · " + state.clarity + " · CVD";
+    const sizeEl = document.getElementById("sp-size");
+    if (state.size) { sizeEl.textContent = state.size; sizeEl.classList.remove("pending"); document.getElementById("size-state").textContent = "✓ " + state.size; document.getElementById("size-state").classList.add("done"); }
+    const filled = 4 + (state.size ? 1 : 0);
+    document.getElementById("progress-fill").style.width = (filled / 5) * 100 + "%";
+  }
+
+  document.querySelectorAll("[data-group]").forEach((group) => {
+    group.addEventListener("click", (e) => {
+      const item = e.target.closest("button");
+      if (!item || !group.contains(item)) return;
+      group.querySelectorAll("button").forEach((el) => el.classList.remove("is-selected"));
+      item.classList.add("is-selected");
+      const g = group.dataset.group;
+      if (g === "design") { state.design = item.dataset.label; document.getElementById("preview-img").src = item.dataset.img; }
+      if (g === "metal") state.metal = item.dataset.label;
+      if (g === "color") state.color = item.querySelector("strong").textContent;
+      if (g === "clarity") state.clarity = item.querySelector("strong").textContent;
+      if (g === "ringsize") state.size = item.dataset.label;
+      syncPreview();
+    });
+  });
+  row.addEventListener("click", (e) => {
+    const item = e.target.closest(".shape-tile");
+    if (!item) return;
+    row.querySelectorAll(".shape-tile").forEach((el) => el.classList.remove("is-selected"));
+    item.classList.add("is-selected");
+    state.shape = item.dataset.shape;
+    syncPreview();
+  });
+
+  const range = document.getElementById("carat-range");
+  range.addEventListener("input", () => {
+    const ct = Number(range.value);
+    state.carat = ct.toFixed(2);
+    document.getElementById("carat-num").textContent = state.carat;
+    const px = Math.round(34 + Math.sqrt(ct) * 22);
+    const stone = document.getElementById("carat-stone");
+    stone.style.width = px + "px"; stone.style.height = px + "px";
+    syncPreview();
+  });
+  syncPreview();
+</script>
+</body>
+</html>

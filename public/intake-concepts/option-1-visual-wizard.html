@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Option 1 — Visual Wizard · BeloveD Intake Concepts</title>
+<link rel="stylesheet" href="./intake-concepts.css" />
+<style>
+  main { width: min(100%, 880px); margin: 0 auto; padding: 40px 20px 90px; }
+  .page-head { margin-bottom: 26px; }
+  .page-head .serif-title { font-size: clamp(30px, 5vw, 44px); }
+  .page-head p { color: var(--muted); font-size: 14px; line-height: 1.6; max-width: 560px; }
+
+  /* stepper — 기존 위저드 구조 유지 */
+  .stepper { display: flex; gap: 0; list-style: none; margin: 0 0 30px; padding: 0; }
+  .stepper li {
+    flex: 1; text-align: center; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--quiet); padding: 10px 4px; border-bottom: 1px solid var(--line); position: relative;
+  }
+  .stepper li.current { color: var(--gold-strong); border-bottom-color: var(--gold); }
+  .stepper li.done { color: var(--muted); }
+  .stepper li.done::after { content: " ✓"; color: var(--gold); }
+
+  .wizard-panel { border: 1px solid var(--line); background: var(--surface); padding: clamp(20px, 4vw, 34px); display: grid; gap: 30px; }
+  .step-view { display: none; }
+  .step-view.is-active { display: grid; gap: 30px; }
+
+  .wizard-nav { display: flex; justify-content: space-between; gap: 12px; margin-top: 34px; }
+
+  .color-swatch-D { background: radial-gradient(circle at 32% 30%, #ffffff, #e9eef8 60%, #c9d3e6); }
+  .color-swatch-E { background: radial-gradient(circle at 32% 30%, #fdfdfd, #e7ecf4 60%, #c7d0e0); }
+  .color-swatch-F { background: radial-gradient(circle at 32% 30%, #fcfbf9, #e8eaee 60%, #c9cfda); }
+  .color-swatch-G { background: radial-gradient(circle at 32% 30%, #fbfaf5, #ebe9e0 60%, #cfccc0); }
+
+  .growth-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .growth-cards .pick-card { padding: 16px; }
+  .growth-cards h4 { margin: 0 0 6px; font-family: var(--serif); font-size: 20px; font-weight: 600; }
+  .growth-cards p { margin: 0; font-size: 12px; color: var(--muted); line-height: 1.55; }
+
+  .upload-zone {
+    border: 1px dashed var(--gold-dim); padding: 44px 20px; text-align: center; color: var(--muted); font-size: 13px;
+    background: rgba(214, 197, 160, 0.03);
+  }
+  .upload-zone strong { display: block; color: var(--gold-strong); font-size: 15px; margin-bottom: 6px; }
+
+  /* review — 텍스트 나열 대신 이미지 요약 카드 */
+  .review-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  @media (max-width: 640px) { .review-cards { grid-template-columns: 1fr; } }
+  .review-card { border: 1px solid var(--line); background: var(--surface-strong); }
+  .review-card .rc-media { aspect-ratio: 16 / 10; overflow: hidden; background: #0b0b0d; display: grid; place-items: center; }
+  .review-card .rc-media img { width: 100%; height: 100%; object-fit: cover; }
+  .review-card .rc-media svg { width: 64px; height: 64px; stroke: var(--gold-strong); fill: none; stroke-width: 1.3; }
+  .review-card .rc-body { padding: 12px 14px; }
+  .review-card .rc-body span { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--quiet); }
+  .review-card .rc-body strong { display: block; font-family: var(--serif); font-size: 18px; font-weight: 600; margin-top: 3px; }
+  .review-card .rc-body small { display: block; font-size: 12px; color: var(--muted); margin-top: 3px; }
+</style>
+</head>
+<body>
+<header class="concept-topbar">
+  <span class="brand">BeloveD</span>
+  <span class="tag">Concept 1 · Visual Wizard</span>
+  <nav><a href="./index.html">← All concepts</a><a href="./option-2-atelier-configurator.html">Next →</a></nav>
+</header>
+
+<main>
+  <div class="page-head">
+    <p class="kicker">Custom Request</p>
+    <h1 class="serif-title">Begin Your Piece</h1>
+    <p>기존 4단계 위저드 구조는 그대로. 모든 드롭다운을 사진 타일 · 실루엣 · 스와치로 교체합니다. 읽는 폼이 아니라 <em>보고 고르는</em> 폼.</p>
+  </div>
+
+  <ol class="stepper" id="stepper">
+    <li class="current">Piece</li><li>Center Stone</li><li>Inspiration</li><li>Review</li>
+  </ol>
+
+  <div class="wizard-panel">
+
+    <!-- STEP 1 : 제품 -->
+    <section class="step-view is-active" data-step="0">
+      <div>
+        <div class="field-label"><h3>Category <span class="req">*</span></h3><span class="hint">사진을 눌러 선택</span></div>
+        <div class="pick-grid cols-4" data-group="category">
+          <button class="pick-card is-selected"><span class="pick-media"><img src="/assets/lineup-ring.png" alt="Ring"/></span><span class="pick-label">Ring<span class="pick-check"></span></span></button>
+          <button class="pick-card"><span class="pick-media"><img src="/assets/lineup-pendant.png" alt="Necklace"/></span><span class="pick-label">Necklace<span class="pick-check"></span></span></button>
+          <button class="pick-card"><span class="pick-media"><img src="/assets/lineup-studs.png" alt="Earrings"/></span><span class="pick-label">Earrings<span class="pick-check"></span></span></button>
+          <button class="pick-card"><span class="pick-media"><img src="/assets/lineup-bracelet.png" alt="Bracelet"/></span><span class="pick-label">Bracelet<span class="pick-check"></span></span></button>
+        </div>
+      </div>
+
+      <div>
+        <div class="field-label"><h3>Design <span class="req">*</span></h3><span class="hint">Style Library 사진이 그대로 카드가 됩니다</span></div>
+        <div class="pick-grid cols-4" data-group="style">
+          <button class="pick-card is-selected"><span class="pick-media"><img src="/assets/lineup-ring.png" alt=""/></span><span class="pick-label">Solitaire<span class="pick-sub">Classic 6-prong</span><span class="pick-check"></span></span></button>
+          <button class="pick-card"><span class="pick-media"><img src="/assets/hero-diamond-ring-crisp.png" alt=""/></span><span class="pick-label">Hidden Halo<span class="pick-sub">Pavé detail</span><span class="pick-check"></span></span></button>
+          <button class="pick-card"><span class="pick-media"><img src="/assets/lineup-band.png" alt=""/></span><span class="pick-label">Eternity Band<span class="pick-sub">Multi-stone</span><span class="pick-check"></span></span></button>
+          <button class="pick-card"><span class="pick-media"><img src="/assets/lab-diamond-tweezers.webp" alt=""/></span><span class="pick-label">Three-Stone<span class="pick-sub">Trellis</span><span class="pick-check"></span></span></button>
+        </div>
+      </div>
+
+      <div>
+        <div class="field-label"><h3>Metal <span class="req">*</span></h3></div>
+        <div class="metal-row" data-group="metal">
+          <button class="metal-chip is-selected"><span class="dot m-18kw"></span><span>18K White<small>Gold</small></span></button>
+          <button class="metal-chip"><span class="dot m-18ky"></span><span>18K Yellow<small>Gold</small></span></button>
+          <button class="metal-chip"><span class="dot m-18kr"></span><span>18K Rose<small>Gold</small></span></button>
+          <button class="metal-chip"><span class="dot m-14ky"></span><span>14K Yellow<small>Gold</small></span></button>
+          <button class="metal-chip"><span class="dot m-14kr"></span><span>14K Rose<small>Gold</small></span></button>
+          <button class="metal-chip"><span class="dot m-pt"></span><span>Platinum<small>950</small></span></button>
+        </div>
+      </div>
+
+      <div>
+        <div class="field-label"><h3>Ring Size <span class="req">*</span></h3><span class="hint">US 기준 · 사이즈 가이드 보기</span></div>
+        <div class="scale-bar" data-group="ringsize" style="max-width:520px">
+          <button class="scale-step"><strong>5</strong></button>
+          <button class="scale-step"><strong>5.5</strong></button>
+          <button class="scale-step is-selected"><strong>6</strong></button>
+          <button class="scale-step"><strong>6.5</strong></button>
+          <button class="scale-step"><strong>7</strong></button>
+          <button class="scale-step"><strong>7.5</strong></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- STEP 2 : 센터스톤 -->
+    <section class="step-view" data-step="1">
+      <div>
+        <div class="field-label"><h3>Shape</h3><span class="hint">실루엣으로 선택</span></div>
+        <div class="shape-row" id="shape-row"></div>
+      </div>
+
+      <div class="carat-block">
+        <div class="field-label"><h3>Carat</h3><span class="hint">실제 비율 미리보기</span></div>
+        <div class="carat-visual">
+          <div class="carat-stone" id="carat-stone" style="width:52px;height:52px"></div>
+          <div class="carat-readout"><strong id="carat-num">1.50</strong><span>carat</span></div>
+        </div>
+        <input class="carat-range" type="range" min="0.5" max="4" step="0.1" value="1.5" id="carat-range" />
+      </div>
+
+      <div>
+        <div class="field-label"><h3>Color</h3><span class="hint">D가 가장 무색 · 아이시</span></div>
+        <div class="scale-bar" data-group="color">
+          <button class="scale-step"><span class="swatch color-swatch-D"></span><strong>D</strong><span>Icy white</span></button>
+          <button class="scale-step is-selected"><span class="swatch color-swatch-E"></span><strong>E</strong><span>Colorless</span></button>
+          <button class="scale-step"><span class="swatch color-swatch-F"></span><strong>F</strong><span>Colorless</span></button>
+          <button class="scale-step"><span class="swatch color-swatch-G"></span><strong>G</strong><span>Near-colorless</span></button>
+        </div>
+      </div>
+
+      <div>
+        <div class="field-label"><h3>Clarity</h3><span class="hint">10× 확대 기준</span></div>
+        <div class="scale-bar" data-group="clarity">
+          <button class="scale-step"><strong>IF</strong><span>Flawless</span></button>
+          <button class="scale-step"><strong>VVS1</strong><span>Invisible</span></button>
+          <button class="scale-step"><strong>VVS2</strong><span>Invisible</span></button>
+          <button class="scale-step is-selected"><strong>VS1</strong><span>Eye-clean</span></button>
+          <button class="scale-step"><strong>VS2</strong><span>Eye-clean</span></button>
+        </div>
+      </div>
+
+      <div>
+        <div class="field-label"><h3>Growth</h3></div>
+        <div class="growth-cards" data-group="growth">
+          <button class="pick-card is-selected" style="display:block"><h4>CVD</h4><p>고순도 결정 성장 · 대부분의 화이트 스톤에 권장</p></button>
+          <button class="pick-card" style="display:block"><h4>HPHT</h4><p>고압·고온 성장 · 특정 컷에서 선호</p></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- STEP 3 : 레퍼런스 -->
+    <section class="step-view" data-step="2">
+      <div>
+        <div class="field-label"><h3>Inspiration</h3><span class="hint">최대 5개 · 선택 사항</span></div>
+        <div class="upload-zone"><strong>사진·영상을 끌어다 놓으세요</strong>원하는 무드의 레퍼런스가 있다면 함께 보내주세요</div>
+      </div>
+    </section>
+
+    <!-- STEP 4 : 리뷰 -->
+    <section class="step-view" data-step="3">
+      <div>
+        <div class="field-label"><h3>Review</h3><span class="hint">텍스트 나열 대신, 고른 것들을 이미지로 다시 확인</span></div>
+        <div class="review-cards">
+          <div class="review-card"><div class="rc-media"><img src="/assets/lineup-ring.png" alt=""/></div><div class="rc-body"><span>Piece</span><strong>Solitaire Ring</strong><small>18K White Gold · US 6</small></div></div>
+          <div class="review-card"><div class="rc-media" id="review-shape"></div><div class="rc-body"><span>Center Stone</span><strong>Round 1.50ct</strong><small>E · VS1 · CVD · IGI</small></div></div>
+          <div class="review-card"><div class="rc-media"><img src="/assets/lab-diamond-tweezers.webp" alt=""/></div><div class="rc-body"><span>Inspiration</span><strong>2 photos</strong><small>Reference attached</small></div></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="wizard-nav">
+      <button class="btn" id="btn-back" disabled>Back</button>
+      <button class="btn primary" id="btn-next">Continue</button>
+    </div>
+  </div>
+</main>
+
+<script src="./shapes.js"></script>
+<script>
+  // shape tiles
+  const row = document.getElementById("shape-row");
+  Object.entries(window.DIAMOND_SHAPES).forEach(([key, svg], i) => {
+    const b = document.createElement("button");
+    b.className = "shape-tile" + (i === 0 ? " is-selected" : "");
+    b.innerHTML = svg + "<span>" + window.SHAPE_LABELS[key] + "</span>";
+    b.addEventListener("click", () => {
+      row.querySelectorAll(".shape-tile").forEach((el) => el.classList.remove("is-selected"));
+      b.classList.add("is-selected");
+    });
+    row.appendChild(b);
+  });
+  document.getElementById("review-shape").innerHTML = window.DIAMOND_SHAPES.round;
+
+  // generic single-select groups
+  document.querySelectorAll("[data-group]").forEach((group) => {
+    group.addEventListener("click", (e) => {
+      const item = e.target.closest("button");
+      if (!item || !group.contains(item)) return;
+      group.querySelectorAll("button").forEach((el) => el.classList.remove("is-selected"));
+      item.classList.add("is-selected");
+    });
+  });
+
+  // carat slider
+  const range = document.getElementById("carat-range");
+  range.addEventListener("input", () => {
+    const ct = Number(range.value);
+    document.getElementById("carat-num").textContent = ct.toFixed(2);
+    const px = Math.round(34 + Math.sqrt(ct) * 22);
+    const stone = document.getElementById("carat-stone");
+    stone.style.width = px + "px"; stone.style.height = px + "px";
+  });
+
+  // wizard nav
+  let step = 0;
+  const views = [...document.querySelectorAll(".step-view")];
+  const dots = [...document.querySelectorAll("#stepper li")];
+  function render() {
+    views.forEach((v, i) => v.classList.toggle("is-active", i === step));
+    dots.forEach((d, i) => { d.className = i === step ? "current" : i < step ? "done" : ""; });
+    document.getElementById("btn-back").disabled = step === 0;
+    document.getElementById("btn-next").textContent = step === 3 ? "Submit Request" : "Continue";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  document.getElementById("btn-next").addEventListener("click", () => { if (step < 3) { step++; render(); } });
+  document.getElementById("btn-back").addEventListener("click", () => { if (step > 0) { step--; render(); } });
+</script>
+</body>
+</html>

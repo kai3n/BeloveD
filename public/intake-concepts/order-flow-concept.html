@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Order Flow — Proposal & Deposit Concept · BeloveD</title>
+<link rel="stylesheet" href="./intake-concepts.css" />
+<style>
+  main { width: min(100%, 760px); margin: 0 auto; padding: 40px 20px 90px; display: grid; gap: 26px; }
+  .page-head .serif-title { font-size: clamp(28px, 5vw, 40px); }
+  .page-head p { color: var(--muted); font-size: 14px; line-height: 1.6; }
+
+  /* 3-step rail — 고객이 보는 전체 여정 */
+  .journey { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .journey div { border-top: 2px solid rgba(232,240,255,0.12); padding-top: 10px; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--quiet); }
+  .journey div.done { border-top-color: var(--gold-dim); color: var(--muted); }
+  .journey div.now { border-top-color: var(--gold); color: var(--gold-strong); }
+  .journey small { display: block; text-transform: none; letter-spacing: 0; font-size: 11px; margin-top: 3px; color: var(--quiet); }
+
+  .stage-card { border: 1px solid var(--line); background: var(--surface); }
+  .stage-card.active { border-color: var(--gold-dim); }
+  .stage-head { display: flex; align-items: center; gap: 12px; padding: 18px 22px; border-bottom: 1px solid rgba(232,240,255,0.08); }
+  .stage-head .idx { font-family: var(--serif); font-size: 22px; color: var(--gold); }
+  .stage-head h2 { margin: 0; font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase; }
+  .stage-head .badge { margin-left: auto; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; padding: 5px 10px; border: 1px solid var(--gold-dim); color: var(--gold-strong); }
+  .stage-body { padding: 22px; display: grid; gap: 18px; }
+
+  /* proposal */
+  .proposal { display: grid; grid-template-columns: 260px 1fr; gap: 20px; }
+  @media (max-width: 620px) { .proposal { grid-template-columns: 1fr; } }
+
+  /* 제안 미디어 캐러셀 — 사진·영상 여러 개를 화살표로 */
+  .ph { position: relative; border: 1px solid var(--line); background: #0b0b0d; }
+  .ph .ph-frame { aspect-ratio: 1/1; overflow: hidden; }
+  .ph .ph-frame img, .ph .ph-frame video { width: 100%; height: 100%; object-fit: cover; }
+  .ph .nav {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    width: 34px; height: 34px; border-radius: 50%;
+    border: 1px solid var(--gold-dim); background: rgba(5,5,6,0.65); backdrop-filter: blur(6px);
+    color: var(--gold-strong); font-size: 14px; line-height: 1;
+    display: grid; place-items: center; transition: background 0.15s, border-color 0.15s;
+  }
+  .ph .nav:hover { background: rgba(214,197,160,0.2); border-color: var(--gold); }
+  .ph .nav.prev { left: 8px; }
+  .ph .nav.next { right: 8px; }
+  .ph .ph-count {
+    position: absolute; right: 10px; top: 10px;
+    font-size: 10px; letter-spacing: 0.14em; color: var(--gold-strong);
+    background: rgba(5,5,6,0.72); border: 1px solid var(--gold-dim); padding: 4px 8px;
+  }
+  .ph .ph-tag {
+    position: absolute; left: 10px; top: 10px;
+    font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted);
+    background: rgba(5,5,6,0.72); padding: 4px 8px;
+  }
+  .ph .ph-dots { display: flex; justify-content: center; gap: 6px; padding: 10px 0; }
+  .ph .ph-dots i { width: 16px; height: 2px; background: rgba(232,240,255,0.16); transition: background 0.15s; }
+  .ph .ph-dots i.on { background: var(--gold); }
+  .spec-lines { display: grid; gap: 0; align-content: start; }
+  .spec-lines .row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(232,240,255,0.07); font-size: 13px; }
+  .spec-lines .row span:first-child { color: var(--quiet); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; align-self: center; }
+  .spec-lines .row span:last-child { font-weight: 600; }
+
+  .swap-note { border: 1px solid rgba(232,240,255,0.1); background: rgba(255,255,255,0.02); padding: 12px 16px; font-size: 12px; color: var(--muted); line-height: 1.6; }
+  .swap-note strong { color: var(--gold-strong); font-weight: 600; }
+
+  /* total-only quote */
+  .quote-total { text-align: center; padding: 10px 0 4px; }
+  .quote-total .label { font-size: 11px; letter-spacing: 0.26em; text-transform: uppercase; color: var(--gold); }
+  .quote-total .amount { font-family: var(--serif); font-size: 52px; font-weight: 600; line-height: 1.1; }
+  .quote-total .meta { color: var(--quiet); font-size: 12px; margin-top: 4px; }
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .split div { border: 1px solid var(--line); padding: 12px 16px; text-align: center; }
+  .split div span { display: block; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--quiet); }
+  .split div strong { font-family: var(--serif); font-size: 22px; font-weight: 600; }
+
+  /* payment */
+  .pay-methods { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 560px) { .pay-methods { grid-template-columns: 1fr; } }
+  .pay-method { border: 1px solid var(--line); padding: 16px; display: grid; gap: 6px; }
+  .pay-method.is-selected { border-color: var(--gold); background: rgba(214,197,160,0.06); }
+  .pay-method h4 { margin: 0; font-size: 15px; }
+  .pay-method code { font-size: 13px; color: var(--gold-strong); background: none; }
+  .pay-method small { color: var(--quiet); font-size: 11px; }
+  .copy-btn { justify-self: start; border: 1px solid var(--gold-dim); background: none; color: var(--gold-strong); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; padding: 5px 10px; }
+  .memo-line { border: 1px dashed var(--gold-dim); padding: 12px 16px; font-size: 13px; color: var(--muted); }
+  .memo-line code { color: var(--gold-strong); }
+
+  .muted-step { opacity: 0.5; }
+</style>
+</head>
+<body>
+<header class="concept-topbar">
+  <span class="brand">BeloveD</span>
+  <span class="tag">Order Flow · Proposal → Deposit Concept</span>
+  <nav><a href="./index.html">← All concepts</a></nav>
+</header>
+
+<main>
+  <div class="page-head">
+    <p class="kicker">Client Portal — Simplified</p>
+    <h1 class="serif-title">One Proposal. One Confirm. One Deposit.</h1>
+    <p>후보 여러 개 → 셀렉션 제출 → 재고확인 → 항목별 견적 수락… 대신, 어드민이 벤더 상담 후 <strong>확정 제안 1장</strong>(다이아 스펙 + 총액)을 보내고,
+    고객은 <strong>컨펌 → Zelle/Venmo 디파짓</strong> 두 번의 행동만 하면 제작이 시작됩니다. Breakdown은 어드민 전용.</p>
+  </div>
+
+  <div class="journey">
+    <div class="done">Request<small>제출 완료</small></div>
+    <div class="now">Proposal<small>확정 제안 · 지금 여기</small></div>
+    <div>Deposit<small>Zelle / Venmo</small></div>
+    <div>Production<small>CAD → 완성 → 배송</small></div>
+  </div>
+
+  <!-- STAGE 1 : 확정 제안 -->
+  <section class="stage-card active">
+    <div class="stage-head"><span class="idx">01</span><h2>Your Final Proposal</h2><span class="badge">Confirm Now</span></div>
+    <div class="stage-body">
+      <div class="proposal">
+        <div class="ph" id="proposal-media">
+          <div class="ph-frame"></div>
+          <span class="ph-tag"></span>
+          <span class="ph-count"></span>
+          <button class="nav prev" aria-label="Previous media">‹</button>
+          <button class="nav next" aria-label="Next media">›</button>
+          <div class="ph-dots"></div>
+        </div>
+        <div class="spec-lines">
+          <div class="row"><span>Stone</span><span>Round Brilliant · 1.52ct</span></div>
+          <div class="row"><span>Grade</span><span>E · VS1 · Excellent</span></div>
+          <div class="row"><span>Certificate</span><span>IGI LG5871234</span></div>
+          <div class="row"><span>Setting</span><span>Solitaire · 18K White Gold · US 6</span></div>
+          <div class="row" style="border-bottom:none"><span>Lead Time</span><span>4–5 weeks</span></div>
+        </div>
+      </div>
+
+      <div class="quote-total">
+        <p class="label">Total, All-Inclusive</p>
+        <div class="amount">$4,820</div>
+        <p class="meta">세팅 · 스톤 · 세공 · 배송 · 보험 포함 — 숨은 비용 없음 · 유효기간 7월 8일까지</p>
+      </div>
+
+      <div class="split">
+        <div><span>Deposit — Today</span><strong>$1,450</strong></div>
+        <div><span>Balance — Before Ship</span><strong>$3,370</strong></div>
+      </div>
+
+      <p class="swap-note"><strong>동급 대체 안내.</strong> 확보 시점에 따라 위 스톤이 <em>동일 또는 상위 스펙</em>(캐럿 ±0.03, 같은 컬러·클래리티 등급 이상)의
+      다른 인증 스톤으로 대체될 수 있습니다. 대체 시 IGI 번호와 실물 영상을 먼저 보내드리고, 동의 후에만 진행합니다.</p>
+
+      <button class="btn primary" style="justify-self:stretch">Confirm This Proposal</button>
+    </div>
+  </section>
+
+  <!-- STAGE 2 : 디파짓 -->
+  <section class="stage-card">
+    <div class="stage-head"><span class="idx">02</span><h2>Reserve With Deposit</h2><span class="badge" style="opacity:.6">After Confirm</span></div>
+    <div class="stage-body">
+      <div class="pay-methods">
+        <div class="pay-method is-selected">
+          <h4>Zelle</h4>
+          <code>pay@beloved.co</code>
+          <small>수수료 없음 · 즉시 확인</small>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <div class="pay-method">
+          <h4>Venmo</h4>
+          <code>@BeloveD-Fine</code>
+          <small>Friends &amp; Family · 당일 확인</small>
+          <button class="copy-btn">Copy</button>
+        </div>
+      </div>
+      <p class="memo-line">송금 메모에 주문번호 <code>BLV-2093</code> 를 꼭 적어주세요 — 입금 확인이 빨라집니다.</p>
+      <button class="btn" style="justify-self:stretch">I've Sent the Deposit →</button>
+      <p style="margin:0; font-size:12px; color:var(--quiet); text-align:center">영업일 기준 24시간 내에 입금을 확인하고 스톤을 락합니다. 확인 즉시 이메일로 알려드려요.</p>
+    </div>
+  </section>
+
+  <!-- STAGE 3 : 이후 단계 (기존 체크포인트 유지) -->
+  <section class="stage-card muted-step">
+    <div class="stage-head"><span class="idx">03</span><h2>Production Checkpoints</h2><span class="badge" style="opacity:.5">Locked Until Deposit</span></div>
+    <div class="stage-body">
+      <p style="margin:0; color:var(--muted); font-size:13px; line-height:1.7">
+        디파짓 확인 후 기존 3단계 컨펌이 이어집니다 — <strong>디자인 승인</strong>(CAD·렌더) → <strong>완성품 컨펌</strong>(QC 영상)
+        → 잔금(동일한 Zelle/Venmo 카드 재사용) → 배송. 고객이 보는 화면 구조는 지금과 동일, 스톤 선택 단계만 사라집니다.
+      </p>
+    </div>
+  </section>
+</main>
+
+<script>
+  // 제안 미디어 캐러셀 — 다이아 사진·영상 + 세팅/제품 사진을 화살표로 순환
+  const MEDIA = [
+    { kind: "image", src: "/assets/lab-diamond-tweezers.webp", tag: "Diamond" },
+    { kind: "video", src: "/assets/diamond-noir-white.mp4", tag: "Diamond · 360°" },
+    { kind: "image", src: "/assets/hero-diamond-ring-crisp.png", tag: "Setting" },
+    { kind: "image", src: "/assets/lineup-ring.png", tag: "Finished Look" },
+  ];
+  const root = document.getElementById("proposal-media");
+  const frame = root.querySelector(".ph-frame");
+  const tag = root.querySelector(".ph-tag");
+  const count = root.querySelector(".ph-count");
+  const dots = root.querySelector(".ph-dots");
+  MEDIA.forEach(() => dots.appendChild(document.createElement("i")));
+  let cur = 0;
+  function show(i) {
+    cur = (i + MEDIA.length) % MEDIA.length;
+    const m = MEDIA[cur];
+    frame.innerHTML = m.kind === "video"
+      ? `<video src="${m.src}" autoplay muted loop playsinline></video>`
+      : `<img src="${m.src}" alt="${m.tag}" />`;
+    tag.textContent = m.tag;
+    count.textContent = (cur + 1) + " / " + MEDIA.length;
+    [...dots.children].forEach((d, di) => d.classList.toggle("on", di === cur));
+  }
+  root.querySelector(".nav.prev").addEventListener("click", () => show(cur - 1));
+  root.querySelector(".nav.next").addEventListener("click", () => show(cur + 1));
+  show(0);
+</script>
+</body>
+</html>
