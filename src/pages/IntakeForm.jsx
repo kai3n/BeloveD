@@ -150,12 +150,18 @@ export default function IntakeForm() {
     };
   });
   const [screen, setScreen] = useState(() => {
-    // URL 프리필이 있으면 해당 질문은 건너뛴 위치에서 시작
+    // URL 프리필이 있으면 해당 질문은 건너뛴 위치에서 시작.
+    // 드래프트가 있어도 항상 첫 질문부터 — 저장 화면으로의 자동 점프는 "중간부터 시작"처럼 보인다.
     if (styleFromParam) return "metal";
     if (categoryFromParam) return "design";
-    if (draft?.screen && draft.screen !== "review") return draft.screen;
     return "category";
   });
+  // 드래프트 이어하기는 배너로 명시적 선택 (답변은 이미 프리필되어 있어 새로 시작해도 빠르다)
+  const [resumeTarget, setResumeTarget] = useState(() => (
+    !styleFromParam && !categoryFromParam && draft?.screen && draft.screen !== "category"
+      ? draft.screen
+      : ""
+  ));
   const [done, setDone] = useState(null);
   const [refs, setRefs] = useState(() => sanitizeReferenceMedia(draft?.refs));
   const [stepError, setStepError] = useState("");
@@ -195,8 +201,22 @@ export default function IntakeForm() {
     setStepError("");
   }, [screen]);
 
+  // 드래프트 이어하기 / 새로 시작
+  function resumeDraft() {
+    setScreen(screens.includes(resumeTarget) ? resumeTarget : "review");
+    setResumeTarget("");
+  }
+  function startFresh() {
+    window.localStorage.removeItem(DRAFT_KEY);
+    setForm(baseForm);
+    setRefs([]);
+    setResumeTarget("");
+    setScreen("category");
+  }
+
   // 이미지 답변 탭 → 짧은 선택 피드백 후 자동 진행
   function selectAndAdvance(patch, currentName) {
+    setResumeTarget("");
     setF(patch);
     const nextLine = patch.productLine || form.productLine;
     const list = screenList(nextLine, isGuest);
@@ -281,6 +301,15 @@ export default function IntakeForm() {
 
   return (
     <div className="page gflow-page">
+      {resumeTarget && (
+        <div className="gflow-resume" role="status">
+          <span>{g.resumeTitle}</span>
+          <div className="gflow-resume-actions">
+            <button className="button primary small" type="button" onClick={resumeDraft}>{g.resumeCta}</button>
+            <button className="button secondary small" type="button" onClick={startFresh}>{g.startOver}</button>
+          </div>
+        </div>
+      )}
       {activeScreen === "category" && stepShell(g.qCategory, null, (
         <ImageOptionGrid
           columns={4}
