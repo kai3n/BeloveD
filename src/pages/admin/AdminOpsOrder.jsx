@@ -6,7 +6,8 @@ import {
   createProcurement, createQuote, getIntake, getOpsOrder, getOpsStyle, listAudit,
   listCandidates, listCadReviews, listCustomerActions, listMilestones, listOrderMessages, listProcurements, listQuotes,
   lockCandidate, markBalanceReceived, markDepositReceived, markOrderDelivered, publishCandidate,
-  publishFinalMedia, recordActualWeight, reviewCandidate, sendQuote, updateQuoteProposal,
+  publishFinalMedia, recordActualWeight, reviewCandidate, sendQuote, submitDiamondSelection,
+  toggleShortlist, updateQuoteProposal,
   setCandidateAvailability, unpublishCandidate, updateOpsOrder, upsertMilestone, getSettings,
   getDB, reviewReferenceMedia, createProxyDiamondCandidate, ORDER_MESSAGE_CHANNELS, sendOrderMessage, isShippingAddressComplete, getQuoteDiamondCandidate,
 } from "../../lib/store.js";
@@ -102,6 +103,8 @@ const PROPOSAL_COMPOSER_COPY = {
     save: "Save proposal",
     reportedShort: "customer reported sent",
     reportedAt: (when) => `Customer reported the deposit sent · ${when}`,
+    useForProposal: "Use for proposal",
+    proposalStone: "Proposal stone",
   },
   ko: {
     title: "확정 제안 (고객 노출)",
@@ -113,6 +116,8 @@ const PROPOSAL_COMPOSER_COPY = {
     save: "제안 저장",
     reportedShort: "고객 송금 보고됨",
     reportedAt: (when) => `고객이 디파짓 송금을 보고했습니다 · ${when}`,
+    useForProposal: "제안 스톤으로 지정",
+    proposalStone: "제안 스톤",
   },
   zh: {
     title: "最终方案（客户可见）",
@@ -124,6 +129,8 @@ const PROPOSAL_COMPOSER_COPY = {
     save: "保存方案",
     reportedShort: "客户已报告转账",
     reportedAt: (when) => `客户报告已转定金 · ${when}`,
+    useForProposal: "用于最终方案",
+    proposalStone: "方案钻石",
   },
   es: {
     title: "Propuesta final (visible al cliente)",
@@ -135,6 +142,8 @@ const PROPOSAL_COMPOSER_COPY = {
     save: "Guardar propuesta",
     reportedShort: "cliente reportó envío",
     reportedAt: (when) => `El cliente reportó el depósito enviado · ${when}`,
+    useForProposal: "Usar en la propuesta",
+    proposalStone: "Piedra de la propuesta",
   },
 };
 
@@ -1385,8 +1394,21 @@ export default function AdminOpsOrder() {
                     </select>
                   </td>
                   <td>
-                    {c.locked ? <span className="status-badge cst-REPLACED">{t.locked}</span> :
-                      c.clientSelection === "selected" && depositDone && <button className="button primary small" onClick={() => { lockCandidate(c.id, "ops"); notify(notice.candidateUpdated); }}>{t.lock}</button>}
+                    {c.locked ? <span className="status-badge cst-REPLACED">{t.locked}</span>
+                      : c.clientSelection === "selected" ? (
+                        depositDone
+                          ? <button className="button primary small" onClick={() => { lockCandidate(c.id, "ops"); notify(notice.candidateUpdated); }}>{t.lock}</button>
+                          : <span className="status-badge mst-inProgress">{proposalComposerCopy(locale).proposalStone}</span>
+                      )
+                      : (c.published && c.availability === "available" && !order.selectedDiamondId
+                        && !candidates.some((x) => x.clientSelection === "selected")) ? (
+                          // 새 flow: 고객 후보 선택 대신 어드민이 제안 스톤을 지정 → 견적 자동 발송
+                          <button className="button secondary small" onClick={() => {
+                            toggleShortlist(c.id, "ops");
+                            submitDiamondSelection(order.id, "ops");
+                            notify(notice.candidateUpdated);
+                          }}>{proposalComposerCopy(locale).useForProposal}</button>
+                        ) : null}
                   </td>
                 </tr>
               ))}
