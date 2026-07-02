@@ -198,7 +198,7 @@ function Hero({ t, p }) {
           playsInline
           preload="auto"
         >
-          <source src={withBase("/assets/hero-main.mp4")} type="video/mp4" />
+          <source src={withBase("/assets/hero-main-2.mp4")} type="video/mp4" />
         </video>
       </div>
 
