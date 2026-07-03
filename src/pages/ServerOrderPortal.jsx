@@ -37,7 +37,7 @@ const COPY = {
       DEPOSIT: "Reserved — deposit", CAD: "Designing", PRODUCTION: "Crafting", FINAL_QC: "Final quality check",
       BALANCE: "Balance", SHIPPING: "Shipping", DELIVERED: "Delivered", CANCELLED: "Cancelled",
     },
-    phases: { DEFINE: "Define your piece", APPROVE_DESIGN: "Approve the design", MAKING: "We make it", DELIVERY: "Deliver" },
+    phases: { DEFINE: "Define your piece", MAKING: "We make it", DELIVERY: "Deliver" },
     nextTitle: "Your confirmation",
     kinds: {
       QUOTE_ACCEPTANCE: "Review and confirm your proposal",
@@ -89,7 +89,7 @@ const COPY = {
       DEPOSIT: "예약 — 디파짓", CAD: "디자인 중", PRODUCTION: "제작 중", FINAL_QC: "최종 품질 확인",
       BALANCE: "잔금", SHIPPING: "배송 중", DELIVERED: "배송 완료", CANCELLED: "취소됨",
     },
-    phases: { DEFINE: "피스 확정", APPROVE_DESIGN: "디자인 승인", MAKING: "제작", DELIVERY: "배송" },
+    phases: { DEFINE: "피스 확정", MAKING: "제작", DELIVERY: "배송" },
     nextTitle: "고객 컨펌",
     kinds: {
       QUOTE_ACCEPTANCE: "제안을 확인하고 컨펌해 주세요",
@@ -141,7 +141,7 @@ const COPY = {
       DEPOSIT: "已预订 — 定金", CAD: "设计中", PRODUCTION: "制作中", FINAL_QC: "最终质检",
       BALANCE: "尾款", SHIPPING: "配送中", DELIVERED: "已送达", CANCELLED: "已取消",
     },
-    phases: { DEFINE: "确定作品", APPROVE_DESIGN: "确认设计", MAKING: "制作", DELIVERY: "交付" },
+    phases: { DEFINE: "确定作品", MAKING: "制作", DELIVERY: "交付" },
     nextTitle: "待您确认",
     kinds: {
       QUOTE_ACCEPTANCE: "请查看并确认方案",
@@ -193,7 +193,7 @@ const COPY = {
       DEPOSIT: "Reservado — depósito", CAD: "Diseñando", PRODUCTION: "Fabricando", FINAL_QC: "Control final",
       BALANCE: "Saldo", SHIPPING: "En camino", DELIVERED: "Entregado", CANCELLED: "Cancelado",
     },
-    phases: { DEFINE: "Define tu pieza", APPROVE_DESIGN: "Aprueba el diseño", MAKING: "La fabricamos", DELIVERY: "Entrega" },
+    phases: { DEFINE: "Define tu pieza", MAKING: "La fabricamos", DELIVERY: "Entrega" },
     nextTitle: "Tu confirmación",
     kinds: {
       QUOTE_ACCEPTANCE: "Revisa y confirma tu propuesta",
@@ -436,6 +436,37 @@ export default function ServerOrderPortal({ orderCode }) {
         ))}
       </section>
 
+      {/* 발행된 아티팩트 — 타입별 최신 버전만 (재발송분은 구버전으로 취급, 중복 카드 방지) */}
+      {Object.values((order.publishedArtifacts || []).reduce((acc, a) => {
+        const prev = acc[a.type];
+        if (!prev || new Date(a.publishedAt) > new Date(prev.publishedAt)) acc[a.type] = a;
+        return acc;
+      }, {})).map((a) => {
+        const pay = a.payload || {};
+        // 제안(QUOTE)은 오더 시트 카드로 — 세팅/메탈/스톤/등급/총액/디파짓 분할까지
+        if (a.type === "QUOTE") {
+          return (
+            <section className="panel form-stack" key={a.id}>
+              <p className="section-label">{t.proposalTitle}</p>
+              <ServerProposalCard pay={pay} media={a.media} fc={fc} t={t} shapes={p.shapes} />
+            </section>
+          );
+        }
+        const hasContent = a.media?.length || pay.note;
+        if (!hasContent) return null;
+        return (
+          <section className="panel form-stack" key={a.id}>
+            <p className="section-label">{t.artifactsTitle}</p>
+            {a.media?.length > 0 && (
+              <div className="card-grid cols-3">
+                {a.media.map((m, i) => <MediaThumb key={i} media={m} alt={a.versionLabel} ratio="1 / 1" />)}
+              </div>
+            )}
+            {pay.note && <p className="form-hint" style={{ margin: 0 }}>{pay.note}</p>}
+          </section>
+        );
+      })}
+
       {/* 열린 고객 컨펌 */}
       {action && (
         <section className="panel checkpoint client-stage-section active">
@@ -493,37 +524,6 @@ export default function ServerOrderPortal({ orderCode }) {
         </section>
       )}
       {respondedId && !action && <p className="client-action-notice" role="status">{t.responded}</p>}
-
-      {/* 발행된 아티팩트 — 타입별 최신 버전만 (재발송분은 구버전으로 취급, 중복 카드 방지) */}
-      {Object.values((order.publishedArtifacts || []).reduce((acc, a) => {
-        const prev = acc[a.type];
-        if (!prev || new Date(a.publishedAt) > new Date(prev.publishedAt)) acc[a.type] = a;
-        return acc;
-      }, {})).map((a) => {
-        const pay = a.payload || {};
-        // 제안(QUOTE)은 오더 시트 카드로 — 세팅/메탈/스톤/등급/총액/디파짓 분할까지
-        if (a.type === "QUOTE") {
-          return (
-            <section className="panel form-stack" key={a.id}>
-              <p className="section-label">{t.proposalTitle}</p>
-              <ServerProposalCard pay={pay} media={a.media} fc={fc} t={t} shapes={p.shapes} />
-            </section>
-          );
-        }
-        const hasContent = a.media?.length || pay.note;
-        if (!hasContent) return null;
-        return (
-          <section className="panel form-stack" key={a.id}>
-            <p className="section-label">{t.artifactsTitle}</p>
-            {a.media?.length > 0 && (
-              <div className="card-grid cols-3">
-                {a.media.map((m, i) => <MediaThumb key={i} media={m} alt={a.versionLabel} ratio="1 / 1" />)}
-              </div>
-            )}
-            {pay.note && <p className="form-hint" style={{ margin: 0 }}>{pay.note}</p>}
-          </section>
-        );
-      })}
 
       {/* 디파짓/잔금 — 제안 승인 즉시 Zelle/Venmo 결제 카드 + (디파짓 단계) 배송지 수집 */}
       {(showDeposit || showBalance) && (

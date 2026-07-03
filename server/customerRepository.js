@@ -88,24 +88,22 @@ function timelineView(row) {
   };
 }
 
+// 3단계 여정 — 디자인 승인 스텝은 제품 flow에서 제거됨(초안 수락=디자인 승인)이라 별도 단계로 두지 않는다
 function phaseViews(stage) {
   const keys = [
     ["DEFINE", "Define your piece"],
-    ["APPROVE_DESIGN", "Approve the design"],
     ["MAKING", "We are making it"],
     ["DELIVERY", "Complete and deliver"],
   ];
   const activeIndex = stage === "CANCELLED"
     ? -1
     : stage === "DELIVERED"
-      ? 3
-      : stage === "DEPOSIT" || stage === "CAD"
+      ? 2
+      : ["DEPOSIT", "CAD", "PRODUCTION", "FINAL_QC"].includes(stage)
         ? 1
-        : stage === "PRODUCTION" || stage === "FINAL_QC"
+        : stage === "BALANCE" || stage === "SHIPPING"
           ? 2
-          : stage === "BALANCE" || stage === "SHIPPING"
-            ? 3
-            : 0;
+          : 0;
 
   return keys.map(([key, title], index) => ({
     key,
