@@ -223,7 +223,10 @@ function ProposalComposer({ quote, order, locale, p, onSaved, notice }) {
   };
   const [media, setMedia] = useState(quote.proposalMedia?.length ? quote.proposalMedia : defaultMedia);
   const [spec, setSpec] = useState(quote.stoneSpec || {
-    shape: dia?.shape || "round", carat: dia?.carat || "", color: dia?.color || "E",
+    shape: dia?.shape || "round", carat: dia?.carat || "",
+    // 캐럿은 확정 전 범위로 제시 (기본 상한 +0.05ct) — 등급은 보장값으로 고정
+    caratMax: dia?.carat ? Math.round((Number(dia.carat) + 0.05) * 100) / 100 : "",
+    color: dia?.color || "E",
     clarity: dia?.clarity || "VS1", growth: dia?.growth || "CVD", lab: dia?.lab || "IGI", igiNo: dia?.igiNo || "",
   });
   const [settingSummary, setSettingSummary] = useState(quote.settingSummary || "");
@@ -238,7 +241,7 @@ function ProposalComposer({ quote, order, locale, p, onSaved, notice }) {
   function payload() {
     return {
       proposalMedia: media,
-      stoneSpec: { ...spec, carat: Number(spec.carat) || null },
+      stoneSpec: { ...spec, carat: Number(spec.carat) || null, caratMax: Number(spec.caratMax) || null },
       substitutionNote: subNote.trim(),
       settingSummary: settingSummary.trim(),
       settingNote: settingNote.trim(),
@@ -277,8 +280,10 @@ function ProposalComposer({ quote, order, locale, p, onSaved, notice }) {
           <select value={spec.shape} onChange={(e) => setS({ shape: e.target.value })}>
             {BENCHMARK_SHAPES.map((sh) => <option key={sh} value={sh}>{sh}</option>)}
           </select></label>
-        <label className="field"><span>carat</span>
+        <label className="field"><span>carat (min)</span>
           <input type="number" step="0.01" value={spec.carat} onChange={(e) => setS({ carat: e.target.value })} /></label>
+        <label className="field"><span>carat (max)</span>
+          <input type="number" step="0.01" value={spec.caratMax ?? ""} onChange={(e) => setS({ caratMax: e.target.value })} /></label>
         <label className="field"><span>color</span>
           <select value={spec.color} onChange={(e) => setS({ color: e.target.value })}>
             {DIAMOND_COLORS.map((v) => <option key={v} value={v}>{v}</option>)}

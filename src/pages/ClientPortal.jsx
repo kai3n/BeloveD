@@ -91,7 +91,7 @@ const PROPOSAL_FLOW_COPY = {
     subBody: "Depending on availability, this stone may be replaced with another certified stone of equal or better specs (±0.03 ct, same color/clarity grade or higher). If that happens, we send the new IGI number and video first and proceed only after your OK.",
     confirmCta: "Confirm this proposal", confirmedBadge: "Confirmed",
     payTitle: "Reserve with deposit", payAfter: "After you confirm",
-    payMemo: (id) => `Add order number ${id} to the payment memo — it speeds up confirmation.`,
+    memoLabel: "Payment memo", payMemoHint: "Paste this message into the payment memo — it speeds up confirmation.",
     zelleHint: "No fee · fast confirmation", venmoHint: "Same-day confirmation",
     copyBtn: "Copy", copiedBtn: "Copied ✓",
     depositSentCta: "I've sent the deposit", balanceSentCta: "I've sent the balance",
@@ -123,7 +123,7 @@ const PROPOSAL_FLOW_COPY = {
     subBody: "확보 시점에 따라 이 스톤은 동일 또는 상위 스펙(캐럿 ±0.03, 같은 컬러·클래리티 등급 이상)의 다른 인증 스톤으로 대체될 수 있습니다. 대체 시 새 IGI 번호와 실물 영상을 먼저 보내드리고, 동의 후에만 진행합니다.",
     confirmCta: "이 제안으로 확정", confirmedBadge: "컨펌 완료",
     payTitle: "디파짓으로 예약 확정", payAfter: "컨펌 후 진행",
-    payMemo: (id) => `송금 메모에 주문번호 ${id}를 적어주세요 — 입금 확인이 빨라집니다.`,
+    memoLabel: "송금 메모", payMemoHint: "이 메시지를 송금 메모에 붙여넣어 주세요 — 입금 확인이 빨라집니다.",
     zelleHint: "수수료 없음 · 빠른 확인", venmoHint: "당일 확인",
     copyBtn: "복사", copiedBtn: "복사됨 ✓",
     depositSentCta: "디파짓 보냈어요", balanceSentCta: "잔금 보냈어요",
@@ -155,7 +155,7 @@ const PROPOSAL_FLOW_COPY = {
     subBody: "视库存情况，此钻石可能替换为规格相同或更优（±0.03 克拉，同级或更高颜色/净度）的其他认证钻石。如有替换，我们会先发送新的 IGI 编号与实物视频，征得您同意后才继续。",
     confirmCta: "确认此方案", confirmedBadge: "已确认",
     payTitle: "支付定金锁定", payAfter: "确认后开放",
-    payMemo: (id) => `请在转账备注中填写订单号 ${id} — 有助于更快确认。`,
+    memoLabel: "转账备注", payMemoHint: "请将此消息粘贴到转账备注 — 可加快确认。",
     zelleHint: "免手续费 · 快速确认", venmoHint: "当日确认",
     copyBtn: "复制", copiedBtn: "已复制 ✓",
     depositSentCta: "我已转定金", balanceSentCta: "我已转尾款",
@@ -187,7 +187,7 @@ const PROPOSAL_FLOW_COPY = {
     subBody: "Según disponibilidad, esta piedra puede sustituirse por otra certificada de especificaciones iguales o mejores (±0.03 ct, mismo grado de color/claridad o superior). Si ocurre, primero enviamos el nuevo número IGI y un video, y avanzamos solo con tu OK.",
     confirmCta: "Confirmar esta propuesta", confirmedBadge: "Confirmada",
     payTitle: "Reserva con depósito", payAfter: "Después de confirmar",
-    payMemo: (id) => `Agrega el número de pedido ${id} en la nota del pago — acelera la confirmación.`,
+    memoLabel: "Nota del pago", payMemoHint: "Pega este mensaje en la nota del pago — acelera la confirmación.",
     zelleHint: "Sin comisión · confirmación rápida", venmoHint: "Confirmación el mismo día",
     copyBtn: "Copiar", copiedBtn: "Copiado ✓",
     depositSentCta: "Ya envié el depósito", balanceSentCta: "Ya envié el saldo",
@@ -421,7 +421,8 @@ function buildOrderBriefRows({ order, intake, style, selected, quote, p, locale,
 // 카테고리 조건부 사이즈 요약 (제안 카드 Setting 라인)
 function conditionalSizeSummary(intake, t) {
   const cond = intake?.conditional || {};
-  if (cond.ringSize) return `US ${cond.ringSize}`;
+  // 시드/구버전 데이터는 "6 US"처럼 단위를 이미 포함할 수 있다 — "US 6 US" 중복 방지
+  if (cond.ringSize) return /us/i.test(cond.ringSize) ? cond.ringSize : `US ${cond.ringSize}`;
   if (cond.chainLength) return chainLengthLabel(cond.chainLength);
   if (cond.wristSize) return optionLabel(t, "braceletWrist", cond.wristSize);
   if (cond.earringDetails) return optionLabel(t, "earringPairing", cond.earringDetails);
@@ -463,7 +464,11 @@ function ProposalCard({ quote, intake, style, fc, t, p, locale, shippingProps, o
             {metalSummary && <div><dt>{fc.specMetal}</dt><dd>{metalSummary}</dd></div>}
             {spec && (
               <>
-                <div><dt>{fc.specStone}</dt><dd>{p.shapes[spec.shape] || spec.shape} · {Number(spec.carat).toFixed(2)}ct</dd></div>
+                {/* 캐럿은 확정 전 범위 표기 (1.50–1.55ct) — 등급은 보장값으로 고정 표기 */}
+                <div><dt>{fc.specStone}</dt><dd>
+                  {p.shapes[spec.shape] || spec.shape} · {Number(spec.carat).toFixed(2)}
+                  {Number(spec.caratMax) > Number(spec.carat) ? `–${Number(spec.caratMax).toFixed(2)}` : ""}ct
+                </dd></div>
                 <div><dt>{fc.specGrade}</dt><dd>{[spec.color, spec.clarity, spec.growth].filter(Boolean).join(" · ")}</dd></div>
                 {spec.igiNo && <div><dt>{fc.specCert}</dt><dd>{spec.lab || "IGI"} {spec.igiNo}</dd></div>}
               </>
@@ -497,7 +502,8 @@ function ProposalCard({ quote, intake, style, fc, t, p, locale, shippingProps, o
 }
 
 // Zelle/Venmo 결제 내용 — 디파짓·잔금 공용. 스테이지 안 콘텐츠 전용 (reported면 안내문, 아니면 셀프리포트 버튼)
-function PaymentCard({ amountUsd, orderId, reported, fc, sentCta, reportedNote, onReport }) {
+// memoText: 송금 앱 메모에 그대로 붙여넣는 완성 메시지 (예: "BeloveD DM-000009 · Deposit")
+function PaymentCard({ amountUsd, memoText, reported, fc, sentCta, reportedNote, onReport }) {
   const payment = getSettings().payment || {};
   const [copiedKey, setCopiedKey] = useState("");
   const methods = [
@@ -511,27 +517,45 @@ function PaymentCard({ amountUsd, orderId, reported, fc, sentCta, reportedNote, 
   }
   return (
     <div className="payment-card">
-      <div className="payment-amount">{usd(amountUsd)}</div>
+      {/* 금액 히어로 + 복사 가능한 메모 필 — "얼마를, 어떤 메모로"가 한눈에 */}
+      <div className="payment-hero">
+        <div className="payment-amount">{usd(amountUsd)}</div>
+        <button
+          className={`payment-memo-pill ${copiedKey === "memo" ? "is-copied" : ""}`}
+          type="button"
+          onClick={() => copyHandle("memo", memoText)}
+        >
+          <span>{fc.memoLabel}</span>
+          <strong>{memoText}</strong>
+          <em>{copiedKey === "memo" ? fc.copiedBtn : fc.copyBtn}</em>
+        </button>
+        <p className="payment-memo-hint">{fc.payMemoHint}</p>
+      </div>
       <div className="payment-methods">
         {methods.map((m) => (
           <div className="payment-method" key={m.key}>
-            <h4>{m.name}</h4>
+            <div className="payment-method-head">
+              <h4>{m.name}</h4>
+              <small>{m.hint}</small>
+            </div>
             {/* QR은 스캔 대비를 위해 다크 모드에서도 흰 바탕 유지 */}
             <img className="payment-qr" src={m.qr} alt={`${m.name} QR`} loading="lazy" />
-            <code>{m.handle}</code>
-            <small>{m.hint}</small>
-            <button className="button secondary small" type="button" onClick={() => copyHandle(m.key, m.handle)}>
-              {copiedKey === m.key ? fc.copiedBtn : fc.copyBtn}
+            <button
+              className={`payment-handle ${copiedKey === m.key ? "is-copied" : ""}`}
+              type="button"
+              onClick={() => copyHandle(m.key, m.handle)}
+            >
+              <code>{m.handle}</code>
+              <span>{copiedKey === m.key ? fc.copiedBtn : fc.copyBtn}</span>
             </button>
           </div>
         ))}
       </div>
-      <p className="payment-memo">{fc.payMemo(orderId)}</p>
       {payment.note && <p className="form-hint">{payment.note}</p>}
       {reported
-        ? <p className="warn-note">{reportedNote}</p>
+        ? <p className="payment-reported" role="status">{reportedNote}</p>
         : <button className="button primary payment-sent" type="button" onClick={onReport}>{sentCta}</button>}
-      <p className="form-hint">{fc.sentHelp}</p>
+      <p className="payment-sent-help">{fc.sentHelp}</p>
     </div>
   );
 }
@@ -962,7 +986,7 @@ export default function ClientPortal() {
         {quote && (
           <PaymentCard
             amountUsd={quote.depositUsd}
-            orderId={order.id}
+            memoText={`BeloveD ${order.id} · Deposit`}
             reported={depositCardState === "reported"}
             fc={fc}
             sentCta={fc.depositSentCta}
@@ -1000,7 +1024,7 @@ export default function ClientPortal() {
         {order.status === "BALANCE" && quote && (
           <PaymentCard
             amountUsd={quote.balanceUsd}
-            orderId={order.id}
+            memoText={`BeloveD ${order.id} · Balance`}
             reported={false}
             fc={fc}
             sentCta={fc.balanceSentCta}

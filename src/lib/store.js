@@ -1465,8 +1465,10 @@ export function sendQuote(quoteId) {
   const order = getOpsOrder(q.orderId);
   const dia = getQuoteDiamondCandidate(q.orderId);
   if (dia && !q.stoneSpec) {
+    // 캐럿은 확정 전이라 범위로 제시 (기본 +0.05ct) — 등급(color/clarity/growth)은 보장값으로 고정
     q.stoneSpec = {
-      shape: dia.shape, carat: dia.carat, color: dia.color, clarity: dia.clarity,
+      shape: dia.shape, carat: dia.carat, caratMax: Math.round((Number(dia.carat) + 0.05) * 100) / 100,
+      color: dia.color, clarity: dia.clarity,
       growth: dia.growth, lab: dia.lab, igiNo: dia.igiNo,
     };
   }

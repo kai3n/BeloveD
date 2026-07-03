@@ -235,7 +235,8 @@ async function main() {
     // ───── ACT 1 · 고객: 홈 → 커스텀 요청 위저드 ─────
     await go("customer", "/", "A new customer lands on the homepage");
     await wait(2000);
-    await tap("customer", customerPage.getByRole("link", { name: /Begin your piece/i }));
+    // 히어로 CTA — 카피가 바뀌어도 /custom/new로 가는 첫 링크를 잡는다
+    await tap("customer", customerPage.locator('main a[href*="/custom/new"]').first());
     await banner(customerPage, "customer", "Custom request — piece, design, metal, stone");
     await wait(400);
 
