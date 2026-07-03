@@ -45,6 +45,7 @@ const COPY = {
       proposal_sent: "Send the proposal", deposit_confirmed: "Deposit received",
       diamond_locked: "Diamond secured", production_started: "Production started",
       qc_ready: "Send finished-piece QC", balance_requested: "Request the balance",
+      balance_confirmed: "Balance received",
       shipped: "Shipped", delivered: "Delivered",
     },
     sent: "Event sent — the customer has been emailed.",
@@ -76,6 +77,7 @@ const COPY = {
       proposal_sent: "제안 발송", deposit_confirmed: "디파짓 수령",
       diamond_locked: "다이아 확보", production_started: "제작 시작",
       qc_ready: "완성품 QC 발송", balance_requested: "잔금 요청",
+      balance_confirmed: "잔금 수령",
       shipped: "발송됨", delivered: "수령 완료",
     },
     sent: "이벤트가 반영됐습니다 — 고객에게 메일이 발송됩니다.",
@@ -107,6 +109,7 @@ const COPY = {
       proposal_sent: "发送方案", deposit_confirmed: "已收定金",
       diamond_locked: "钻石已锁定", production_started: "开始制作",
       qc_ready: "发送成品质检", balance_requested: "请求尾款",
+      balance_confirmed: "已收尾款",
       shipped: "已发货", delivered: "已送达",
     },
     sent: "事件已生效 — 已向客户发送邮件。",
@@ -138,6 +141,7 @@ const COPY = {
       proposal_sent: "Enviar la propuesta", deposit_confirmed: "Depósito recibido",
       diamond_locked: "Diamante asegurado", production_started: "Producción iniciada",
       qc_ready: "Enviar QC de la pieza", balance_requested: "Solicitar el saldo",
+      balance_confirmed: "Saldo recibido",
       shipped: "Enviado", delivered: "Entregado",
     },
     sent: "Evento aplicado — se envió el correo al cliente.",
@@ -152,8 +156,9 @@ const FLOW = [
   { type: "production_started", num: "2-2", reaches: "PRODUCTION" },
   { type: "qc_ready", num: "2-3", reaches: "FINAL_QC", media: "qc", artifactType: "QC", fields: ["note"], action: { kind: "FINAL_QC_CONFIRMATION", allowedResponses: ["CONFIRM", "REQUEST_CHANGES"] } },
   { type: "balance_requested", num: "3-1", reaches: "BALANCE" },
-  { type: "shipped", num: "3-2", reaches: "SHIPPING", fields: ["tracking"] },
-  { type: "delivered", num: "3-3", reaches: "DELIVERED" },
+  { type: "balance_confirmed", num: "3-2", reaches: "BALANCE" },
+  { type: "shipped", num: "3-3", reaches: "SHIPPING", fields: ["tracking"] },
+  { type: "delivered", num: "3-4", reaches: "DELIVERED" },
 ];
 const STAGE_ORDER = ["OPS_REVIEW", "STONE_SELECTION", "QUOTE", "DEPOSIT", "CAD", "PRODUCTION", "FINAL_QC", "BALANCE", "SHIPPING", "DELIVERED"];
 

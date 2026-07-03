@@ -605,6 +605,7 @@ export const EVENT_TRANSITIONS = {
   production_started: { stage: "PRODUCTION", phase: "MAKING", waitingOn: "BELOVEDIAMOND" },
   qc_ready: { stage: "FINAL_QC", phase: "MAKING", waitingOn: "CUSTOMER" },
   balance_requested: { stage: "BALANCE", phase: "DELIVERY", waitingOn: "CUSTOMER" },
+  balance_confirmed: { stage: "BALANCE", phase: "DELIVERY", waitingOn: "BELOVEDIAMOND" },
   shipped: { stage: "SHIPPING", phase: "DELIVERY", waitingOn: "EXTERNAL" },
   delivered: { stage: "DELIVERED", phase: "CLOSED", waitingOn: "NONE" },
 };

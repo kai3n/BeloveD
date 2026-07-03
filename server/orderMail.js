@@ -61,6 +61,12 @@ export const ORDER_MAIL = {
     zh: { subject: (o) => `请支付尾款 — ${o}`, line: () => "成品已通过最终质检，请在订单页面支付尾款后我们将安排发货。" },
     es: { subject: (o) => `Saldo pendiente — ${o}`, line: () => "Tu pieza pasó el control final. Paga el saldo restante en tu portal para iniciar el envío." },
   },
+  balance_confirmed: {
+    en: { subject: (o) => `Balance received — ${o}`, line: () => "Your balance is confirmed. We are preparing your insured shipment and will send tracking shortly." },
+    ko: { subject: (o) => `잔금 확인 완료 — ${o}`, line: () => "잔금 입금이 확인되었습니다. 보험 배송을 준비 중이며 곧 운송장 번호를 보내드립니다." },
+    zh: { subject: (o) => `尾款已确认 — ${o}`, line: () => "已确认您的尾款。我们正在准备全程保险配送，运单号稍后发送。" },
+    es: { subject: (o) => `Saldo recibido — ${o}`, line: () => "Tu saldo está confirmado. Estamos preparando tu envío asegurado y enviaremos la guía en breve." },
+  },
   shipped: {
     en: { subject: (o) => `Your order is on its way — ${o}`, line: (o, d) => `Your piece has shipped${d.tracking ? ` — tracking ${d.tracking}` : ""}. Delivery is fully insured.` },
     ko: { subject: (o) => `발송되었습니다 — ${o}`, line: (o, d) => `주문하신 제품이 발송되었습니다${d.tracking ? ` — 운송장 ${d.tracking}` : ""}. 전 구간 보험이 적용됩니다.` },

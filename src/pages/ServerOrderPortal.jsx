@@ -64,6 +64,7 @@ const COPY = {
       proposal_sent: "Proposal sent", deposit_confirmed: "Deposit confirmed",
       diamond_locked: "Your diamond is secured", production_started: "Production started",
       qc_ready: "Finished piece ready for your review", balance_requested: "Balance requested",
+      balance_confirmed: "Balance received — preparing your shipment",
       shipped: "Shipped", delivered: "Delivered",
       shipping_address_confirmed: "Shipping address confirmed", payment_reported: "Payment reported — confirming transfer",
       "Request received": "Request received", "Response received": "Response received",
@@ -118,6 +119,7 @@ const COPY = {
       proposal_sent: "제안 발송됨", deposit_confirmed: "디파짓 확인됨",
       diamond_locked: "다이아몬드 확보됨", production_started: "제작 시작",
       qc_ready: "완성품 확인 요청", balance_requested: "잔금 안내",
+      balance_confirmed: "잔금 확인 완료 — 배송 준비 중",
       shipped: "발송됨", delivered: "배송 완료",
       shipping_address_confirmed: "배송지 확인됨", payment_reported: "송금 보고 접수 — 입금 확인 중",
       "Request received": "요청 접수됨", "Response received": "응답 접수됨",
@@ -172,6 +174,7 @@ const COPY = {
       proposal_sent: "方案已发送", deposit_confirmed: "定金已确认",
       diamond_locked: "钻石已锁定", production_started: "开始制作",
       qc_ready: "成品待您确认", balance_requested: "已发送尾款说明",
+      balance_confirmed: "尾款已确认 — 准备发货",
       shipped: "已发货", delivered: "已送达",
       shipping_address_confirmed: "收货地址已确认", payment_reported: "已报告付款 — 核对到账中",
       "Request received": "已收到请求", "Response received": "已收到回复",
@@ -226,6 +229,7 @@ const COPY = {
       proposal_sent: "Propuesta enviada", deposit_confirmed: "Depósito confirmado",
       diamond_locked: "Diamante asegurado", production_started: "Producción iniciada",
       qc_ready: "Pieza lista para tu revisión", balance_requested: "Saldo solicitado",
+      balance_confirmed: "Saldo recibido — preparando el envío",
       shipped: "Enviado", delivered: "Entregado",
       shipping_address_confirmed: "Dirección de envío confirmada", payment_reported: "Pago reportado — confirmando transferencia",
       "Request received": "Solicitud recibida", "Response received": "Respuesta recibida",
@@ -430,7 +434,10 @@ export default function ServerOrderPortal({ orderCode }) {
   const proposalState = quoteAction ? "active" : !quoteArt ? "waiting" : (quoteApproved || pastQuote) ? "done" : "waiting";
   const depositState = !payTotal ? null : showDeposit ? (depositReported ? "waiting" : "active") : pastQuote ? "done" : "upcoming";
   const balanceVisible = Boolean(payTotal) && stageIdx >= STAGE_SEQ.indexOf("BALANCE");
-  const balanceState = showBalance ? (balanceReported ? "waiting" : "active") : "done";
+  const balanceConfirmed = order.timeline.some((e) => e.payload?.type === "balance_confirmed");
+  const balanceState = balanceConfirmed || stageIdx > STAGE_SEQ.indexOf("BALANCE")
+    ? "done"
+    : balanceReported ? "waiting" : "active";
   // 컨펌 버튼 ↔ 수정요청 폼 (메시지+첨부) — 제안·완성품 QC 공용
   const renderDecision = (act) => (changeMode ? (
     <div className="form-stack" style={{ marginTop: 12 }}>
@@ -480,7 +487,7 @@ export default function ServerOrderPortal({ orderCode }) {
 
   const waitingLine = showDeposit && !depositReported
     ? t.waitingDeposit
-    : showBalance && !balanceReported
+    : showBalance && !balanceReported && !balanceConfirmed
       ? t.waitingBalance
       : t.waiting[order.waitingOn] || "";
 
