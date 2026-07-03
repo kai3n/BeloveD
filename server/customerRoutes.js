@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { ApiError } from "./errors.js";
 import { rateLimit } from "./rateLimit.js";
-import { query } from "./db.js";
+import { withTransaction } from "./db.js";
 import { createDraftIntake, submitIntake, requestHash } from "./customerRepository.js";
 import { sendOrderEventMail } from "./orderMail.js";
 
@@ -26,25 +26,36 @@ export function customerRouter() {
         if (!EMAIL_RE.test(email)) throw new ApiError("VALIDATION_ERROR", 400, "contact email required");
         const idemKey = req.get("Idempotency-Key") || null;
         if (idemKey) {
-          const { rows } = await query(
-            "select request_hash, status_code, response_json from idempotency_keys where route = $1 and idempotency_key = $2",
-            ["/v1/intakes", idemKey],
-          );
-          if (rows[0]) {
-            if (rows[0].request_hash !== requestHash(payload)) throw new ApiError("IDEMPOTENCY_KEY_REUSED", 409);
-            return res.status(rows[0].status_code).json(rows[0].response_json); // 재생 — 메일 재발송 없음
+          // 같은 키의 동시 요청 직렬화 — check-then-act 레이스로 주문·메일이 중복 생성되는 것을 막는다
+          const outcome = await withTransaction(async (client) => {
+            await client.query("select pg_advisory_xact_lock(hashtext($1))", [`/v1/intakes:${idemKey}`]);
+            const { rows } = await client.query(
+              "select request_hash, status_code, response_json from idempotency_keys where route = $1 and idempotency_key = $2",
+              ["/v1/intakes", idemKey],
+            );
+            if (rows[0]) {
+              if (rows[0].request_hash !== requestHash(payload)) throw new ApiError("IDEMPOTENCY_KEY_REUSED", 409);
+              return { replay: true, status: rows[0].status_code, body: rows[0].response_json };
+            }
+            const draft = await createDraftIntake(payload);
+            const result = await submitIntake(draft.intakeId);
+            const body = { ok: true, orderCode: result.orderCode, stage: result.stage };
+            await client.query(
+              `insert into idempotency_keys (route, idempotency_key, request_hash, status_code, response_json)
+               values ($1, $2, $3, 201, $4)`,
+              ["/v1/intakes", idemKey, requestHash(payload), body],
+            );
+            return { replay: false, status: 201, body, result };
+          });
+          res.status(outcome.status).json(outcome.body);
+          if (!outcome.replay && outcome.result.created && outcome.result.notify?.email) {
+            fireMail(sendOrderEventMail({ ...outcome.result.notify, orderCode: outcome.result.orderCode, type: "received" }), "received");
           }
+          return;
         }
         const draft = await createDraftIntake(payload);
         const result = await submitIntake(draft.intakeId);
         const body = { ok: true, orderCode: result.orderCode, stage: result.stage };
-        if (idemKey) {
-          await query(
-            `insert into idempotency_keys (route, idempotency_key, request_hash, status_code, response_json)
-             values ($1, $2, $3, 201, $4) on conflict do nothing`,
-            ["/v1/intakes", idemKey, requestHash(payload), body],
-          );
-        }
         res.status(201).json(body);
         if (result.created && result.notify?.email) {
           fireMail(sendOrderEventMail({ ...result.notify, orderCode: result.orderCode, type: "received" }), "received");
