@@ -410,6 +410,8 @@ export function PaymentCard({ amountUsd, amountLabel = "", amountContext = "", m
           </div>
         ))}
       </div>
+      {/* 파일럿 안내 — 지금은 Zelle/Venmo, 카드 결제는 곧 추가 */}
+      {fc.pilotNote && <p className="payment-pilot-note">{fc.pilotNote}</p>}
 
       {/* 2 · 메모 — 주문번호가 있어야만 입금 매칭이 가능하다는 걸 강조 */}
       <div className="payment-step"><span className="payment-step-no">2</span><p>{fc.payStep2}</p></div>

@@ -4974,6 +4974,12 @@ button.text-link:hover {
 }
 .payment-sent { width: 100%; }
 .payment-sent-help { margin: 0; font-size: 12px; color: var(--quiet); text-align: center; }
+/* 파일럿 결제 안내 — Zelle/Venmo 우선, 카드 결제 예고 */
+.payment-pilot-note {
+  margin: 0; padding: 10px 14px; text-align: center;
+  border: 1px solid var(--hair); background: var(--bg-2);
+  font-size: 12px; line-height: 1.6; color: var(--muted);
+}
 @media (max-width: 560px) {
   .payment-methods { grid-template-columns: 1fr; }
 }
