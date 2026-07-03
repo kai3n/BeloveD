@@ -13,6 +13,7 @@ export default function Admin() {
     { to: "/admin/designs", key: "styles", ops: true },
     { to: "/admin/benchmark", key: "benchmark", ops: true },
     { to: "/admin/reviews", key: "reviews", ops: true },
+    { to: "/admin/members", key: "members", ops: true },
   ];
   return (
     <div className={`page admin-page ${isOrderDetail ? "admin-page-detail" : ""}`}>

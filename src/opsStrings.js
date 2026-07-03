@@ -318,7 +318,21 @@ const en = {
     chipTitle: "Annotation chips (tap to enable/disable)",
   },
   opsA: {
-    menu: { orders: "Order Control", styles: "Style Library", benchmark: "Diamond Pricing", reviews: "Reviews", checklist: "Daily Checklist" },
+    menu: { orders: "Order Control", styles: "Style Library", benchmark: "Diamond Pricing", reviews: "Reviews", members: "Members", checklist: "Daily Checklist" },
+    members: {
+      title: "Members & Activity",
+      kpi: { today: "Sessions today", sessions7d: "Sessions · 7d", pageViews7d: "Page views · 7d", active: "Active members · 7d" },
+      funnel: { title: "Conversion · 30d", views: "Style views", starts: "Intake started", submits: "Intake submitted" },
+      topStyles: "Top styles · 30d", views: "views", clicks: "clicks", trend: "Page views · 14d",
+      table: { name: "Name", email: "Email", joined: "Joined", lastActive: "Last active", events: "Events", orders: "Orders" },
+      timelineTitle: (name) => `${name} — activity`, back: "All members", emptyTimeline: "No activity yet.",
+      emptyMembers: "No members yet.", demoUnavailable: "This screen needs the live API server (not available in the demo build).",
+      eventLabels: {
+        page_view: "Viewed page", style_click: "Clicked style card", style_view: "Viewed style detail",
+        option_select: "Selected option", media_zoom: "Zoomed media", intake_start: "Started intake",
+        intake_submit: "Submitted intake", review_submit: "Submitted review", login: "Signed in", signup: "Signed up",
+      },
+    },
     orders: {
       title: "Orders", owner: "Owner", required: "Required", nextAction: "Open actions", queryCode: "Query code",
       detail: "Workbench", intake: "Intake", internalNotes: "Internal notes (never shown to customer)",
@@ -725,7 +739,21 @@ const ko = {
     chipTitle: "주석 칩 관리 (탭하여 활성/비활성)",
   },
   opsA: {
-    menu: { orders: "주문 관제", styles: "스타일 라이브러리", benchmark: "다이아 벤치마크", reviews: "리뷰 관리", checklist: "데일리 체크" },
+    menu: { orders: "주문 관제", styles: "스타일 라이브러리", benchmark: "다이아 벤치마크", reviews: "리뷰 관리", members: "회원", checklist: "데일리 체크" },
+    members: {
+      title: "회원·활동",
+      kpi: { today: "오늘 세션", sessions7d: "세션 · 7일", pageViews7d: "페이지뷰 · 7일", active: "활성 회원 · 7일" },
+      funnel: { title: "전환 · 30일", views: "스타일 조회", starts: "인테이크 시작", submits: "인테이크 제출" },
+      topStyles: "인기 스타일 · 30일", views: "조회", clicks: "클릭", trend: "페이지뷰 · 14일",
+      table: { name: "이름", email: "이메일", joined: "가입일", lastActive: "최근 활동", events: "이벤트", orders: "주문" },
+      timelineTitle: (name) => `${name} — 활동 기록`, back: "전체 회원", emptyTimeline: "아직 활동 기록이 없습니다.",
+      emptyMembers: "아직 회원이 없습니다.", demoUnavailable: "실서버 API가 필요한 화면입니다 (데모 빌드에서는 제공되지 않습니다).",
+      eventLabels: {
+        page_view: "페이지 조회", style_click: "스타일 카드 클릭", style_view: "스타일 상세 조회",
+        option_select: "옵션 선택", media_zoom: "미디어 확대", intake_start: "인테이크 시작",
+        intake_submit: "인테이크 제출", review_submit: "리뷰 작성", login: "로그인", signup: "가입",
+      },
+    },
     orders: {
       title: "주문", owner: "오너", required: "희망일", nextAction: "열린 액션", queryCode: "조회 코드",
       detail: "워크벤치", intake: "인테이크", internalNotes: "내부 노트 (고객에게 절대 미노출)",
@@ -1132,7 +1160,21 @@ const zh = {
     chipTitle: "标注标签管理（点按启用/停用）",
   },
   opsA: {
-    menu: { orders: "订单管控", styles: "款式库", benchmark: "钻石基准价", reviews: "评价管理", checklist: "每日检查" },
+    menu: { orders: "订单管控", styles: "款式库", benchmark: "钻石基准价", reviews: "评价管理", members: "会员", checklist: "每日检查" },
+    members: {
+      title: "会员·行为",
+      kpi: { today: "今日会话", sessions7d: "会话 · 7天", pageViews7d: "页面浏览 · 7天", active: "活跃会员 · 7天" },
+      funnel: { title: "转化 · 30天", views: "款式浏览", starts: "开始定制", submits: "提交定制" },
+      topStyles: "热门款式 · 30天", views: "浏览", clicks: "点击", trend: "页面浏览 · 14天",
+      table: { name: "姓名", email: "邮箱", joined: "注册", lastActive: "最近活跃", events: "事件", orders: "订单" },
+      timelineTitle: (name) => `${name} — 行为记录`, back: "全部会员", emptyTimeline: "暂无行为记录。",
+      emptyMembers: "暂无会员。", demoUnavailable: "该页面需要正式 API 服务（演示版不可用）。",
+      eventLabels: {
+        page_view: "浏览页面", style_click: "点击款式卡", style_view: "查看款式详情",
+        option_select: "选择选项", media_zoom: "放大媒体", intake_start: "开始定制",
+        intake_submit: "提交定制", review_submit: "提交评价", login: "登录", signup: "注册",
+      },
+    },
     orders: {
       title: "订单", owner: "负责人", required: "需要日期", nextAction: "待办", queryCode: "查询码",
       detail: "工作台", intake: "需求表", internalNotes: "内部备注（绝不向客户展示）",
@@ -1539,7 +1581,21 @@ const es = {
     chipTitle: "Etiquetas de anotación (toca para activar/desactivar)",
   },
   opsA: {
-    menu: { orders: "Control de Pedidos", styles: "Biblioteca de Estilos", benchmark: "Precios de Diamante", reviews: "Reseñas", checklist: "Checklist Diario" },
+    menu: { orders: "Control de Pedidos", styles: "Biblioteca de Estilos", benchmark: "Precios de Diamante", reviews: "Reseñas", members: "Miembros", checklist: "Checklist Diario" },
+    members: {
+      title: "Miembros y actividad",
+      kpi: { today: "Sesiones hoy", sessions7d: "Sesiones · 7d", pageViews7d: "Vistas · 7d", active: "Miembros activos · 7d" },
+      funnel: { title: "Conversión · 30d", views: "Vistas de estilo", starts: "Intake iniciado", submits: "Intake enviado" },
+      topStyles: "Estilos top · 30d", views: "vistas", clicks: "clics", trend: "Vistas · 14d",
+      table: { name: "Nombre", email: "Email", joined: "Alta", lastActive: "Última actividad", events: "Eventos", orders: "Pedidos" },
+      timelineTitle: (name) => `${name} — actividad`, back: "Todos los miembros", emptyTimeline: "Sin actividad aún.",
+      emptyMembers: "Sin miembros aún.", demoUnavailable: "Esta pantalla requiere el API en vivo (no disponible en la demo).",
+      eventLabels: {
+        page_view: "Vio página", style_click: "Clic en estilo", style_view: "Vio detalle de estilo",
+        option_select: "Seleccionó opción", media_zoom: "Amplió media", intake_start: "Inició intake",
+        intake_submit: "Envió intake", review_submit: "Envió reseña", login: "Inició sesión", signup: "Se registró",
+      },
+    },
     orders: {
       title: "Pedidos", owner: "Responsable", required: "Requerido", nextAction: "Acciones abiertas", queryCode: "Código",
       detail: "Mesa de trabajo", intake: "Solicitud", internalNotes: "Notas internas (nunca visibles al cliente)",
