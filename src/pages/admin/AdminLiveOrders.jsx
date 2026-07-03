@@ -30,7 +30,7 @@ const COPY = {
     back: "← Live orders", intake: "Request", budget: "Budget", requiredDate: "Requested date",
     referenceMedia: "Customer references", console: "Move the order forward",
     consoleHint: "Each step advances the stage and emails the customer in their language.",
-    artifacts: "Published to customer", actions: "Customer confirmations", timeline: "Timeline",
+    artifacts: "Published to customer", actions: "Customer confirmations", timeline: "Timeline", shippingAddr: "Shipping address",
     note: "Customer note", total: "Total ($)", igi: "IGI No.", tracking: "Tracking no.",
     stoneSpec: "Stone spec", metalSpec: "Metal spec",
     settingSummary: "Setting & design summary", estWeight: "Est. metal weight (g)", leadDays: "Production lead (business days)",
@@ -61,7 +61,7 @@ const COPY = {
     back: "← 실주문 목록", intake: "요청 내용", budget: "예산", requiredDate: "희망일",
     referenceMedia: "고객 레퍼런스", console: "주문 진행",
     consoleHint: "각 단계는 stage를 전이시키고 고객 언어로 상태 메일을 보냅니다.",
-    artifacts: "고객에게 발행됨", actions: "고객 컨펌", timeline: "타임라인",
+    artifacts: "고객에게 발행됨", actions: "고객 컨펌", timeline: "타임라인", shippingAddr: "배송지",
     note: "고객 노트", total: "총액 ($)", igi: "IGI 번호", tracking: "운송장 번호",
     stoneSpec: "스톤 스펙", metalSpec: "메탈 스펙",
     settingSummary: "세팅·디자인 요약", estWeight: "예상 메탈 중량 (g)", leadDays: "제작 기간 (영업일)",
@@ -92,7 +92,7 @@ const COPY = {
     back: "← 实时订单", intake: "请求内容", budget: "预算", requiredDate: "期望日期",
     referenceMedia: "客户参考图", console: "推进订单",
     consoleHint: "每一步都会推进阶段，并以客户语言发送状态邮件。",
-    artifacts: "已向客户发布", actions: "客户确认", timeline: "时间线",
+    artifacts: "已向客户发布", actions: "客户确认", timeline: "时间线", shippingAddr: "收货地址",
     note: "客户备注", total: "总价 ($)", igi: "IGI 编号", tracking: "运单号",
     stoneSpec: "钻石规格", metalSpec: "金属规格",
     settingSummary: "镶嵌·设计摘要", estWeight: "预估金属重量 (g)", leadDays: "制作周期（工作日）",
@@ -123,7 +123,7 @@ const COPY = {
     back: "← Pedidos en vivo", intake: "Solicitud", budget: "Presupuesto", requiredDate: "Fecha deseada",
     referenceMedia: "Referencias del cliente", console: "Avanzar el pedido",
     consoleHint: "Cada paso avanza la etapa y envía un correo al cliente en su idioma.",
-    artifacts: "Publicado al cliente", actions: "Confirmaciones del cliente", timeline: "Cronología",
+    artifacts: "Publicado al cliente", actions: "Confirmaciones del cliente", timeline: "Cronología", shippingAddr: "Dirección de envío",
     note: "Nota al cliente", total: "Total ($)", igi: "N.º IGI", tracking: "N.º de guía",
     stoneSpec: "Especif. de piedra", metalSpec: "Especif. de metal",
     settingSummary: "Resumen de engaste y diseño", estWeight: "Peso est. del metal (g)", leadDays: "Plazo de producción (días hábiles)",
@@ -514,6 +514,18 @@ export function AdminLiveOrderDetail() {
           </>
         )}
       </div>
+
+      {order.summary?.shippingAddress?.addressLine1 && (
+        <div className="panel form-stack">
+          <p className="admin-kicker">{t.shippingAddr}</p>
+          <p style={{ margin: 0, lineHeight: 1.7 }}>
+            <strong>{order.summary.shippingAddress.recipientName}</strong> · {order.summary.shippingAddress.phone}<br />
+            {[order.summary.shippingAddress.addressLine1, order.summary.shippingAddress.addressLine2].filter(Boolean).join(", ")}<br />
+            {[order.summary.shippingAddress.city, order.summary.shippingAddress.region, order.summary.shippingAddress.postalCode, order.summary.shippingAddress.country].filter(Boolean).join(", ")}
+            {order.summary.shippingAddress.notes && <><br /><span className="form-hint">{order.summary.shippingAddress.notes}</span></>}
+          </p>
+        </div>
+      )}
 
       <div className="panel form-stack">
         <p className="admin-kicker">{t.console}</p>

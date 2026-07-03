@@ -5,6 +5,7 @@ import { withTransaction, query } from "./db.js";
 import {
   createDraftIntake, submitIntake, requestHash, recordOrderEvent, EVENT_TRANSITIONS,
   listCustomerOrders, getCustomerOrder, respondToAction, listServerOrders,
+  updateOrderShippingAddress, reportOrderPayment,
 } from "./customerRepository.js";
 import { sendOrderEventMail } from "./orderMail.js";
 import { requireAdmin, requireCustomer } from "./middleware.js";
@@ -122,6 +123,28 @@ export function customerRouter() {
       try {
         const order = await getCustomerOrder(req.params.orderCode, await principalEmail(req));
         res.json({ ok: true, order });
+      } catch (e) { next(e); }
+    });
+
+  // 디파짓 단계 배송지 — summary.shippingAddress에 저장, 어드민 상세에 그대로 노출
+  r.post("/orders/:orderCode/shipping-address",
+    rateLimit({ limit: 20, windowMs: MINUTE }),
+    requireCustomer,
+    async (req, res, next) => {
+      try {
+        const result = await updateOrderShippingAddress(req.params.orderCode, await principalEmail(req), req.body || {});
+        res.json(result);
+      } catch (e) { next(e); }
+    });
+
+  // 송금 셀프 리포트 (deposit|balance) — 타임라인 기록 + waiting_on을 BeloveD로
+  r.post("/orders/:orderCode/payment-reported",
+    rateLimit({ limit: 10, windowMs: MINUTE }),
+    requireCustomer,
+    async (req, res, next) => {
+      try {
+        const result = await reportOrderPayment(req.params.orderCode, await principalEmail(req), req.body?.kind);
+        res.json(result);
       } catch (e) { next(e); }
     });
 

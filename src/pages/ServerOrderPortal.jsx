@@ -6,7 +6,14 @@ import { apiFetch, ApiUnavailableError } from "../lib/api.js";
 import { useAuth, LOGIN_FOR } from "../lib/auth.jsx";
 import { MediaPicker, MediaThumb, usd } from "../components/ui.jsx";
 import { PROPOSAL_FLOW_COPY } from "../lib/proposalFlowCopy.js";
+import { PaymentCard, ShippingAddressPanel } from "./ClientPortal.jsx";
+import { isShippingAddressComplete } from "../lib/store.js";
 import { useLocale } from "../i18n.jsx";
+
+const EMPTY_ADDRESS = {
+  recipientName: "", phone: "", addressLine1: "", addressLine2: "",
+  city: "", region: "", postalCode: "", country: "", notes: "",
+};
 
 const COPY = {
   en: {
@@ -56,6 +63,7 @@ const COPY = {
       diamond_locked: "Your diamond is secured", production_started: "Production started",
       qc_ready: "Finished piece ready for your review", balance_requested: "Balance requested",
       shipped: "Shipped", delivered: "Delivered",
+      shipping_address_confirmed: "Shipping address confirmed", payment_reported: "Payment reported — confirming transfer",
       "Request received": "Request received", "Response received": "Response received",
     },
     emailTail: "Questions? Reply to any of our order emails — they reach the same team.",
@@ -107,6 +115,7 @@ const COPY = {
       diamond_locked: "다이아몬드 확보됨", production_started: "제작 시작",
       qc_ready: "완성품 확인 요청", balance_requested: "잔금 안내",
       shipped: "발송됨", delivered: "배송 완료",
+      shipping_address_confirmed: "배송지 확인됨", payment_reported: "송금 보고 접수 — 입금 확인 중",
       "Request received": "요청 접수됨", "Response received": "응답 접수됨",
     },
     emailTail: "궁금한 점은 주문 메일에 회신해 주세요 — 같은 팀에게 바로 전달됩니다.",
@@ -158,6 +167,7 @@ const COPY = {
       diamond_locked: "钻石已锁定", production_started: "开始制作",
       qc_ready: "成品待您确认", balance_requested: "已发送尾款说明",
       shipped: "已发货", delivered: "已送达",
+      shipping_address_confirmed: "收货地址已确认", payment_reported: "已报告付款 — 核对到账中",
       "Request received": "已收到请求", "Response received": "已收到回复",
     },
     emailTail: "如有疑问，直接回复订单邮件即可 — 同一团队为您服务。",
@@ -209,6 +219,7 @@ const COPY = {
       diamond_locked: "Diamante asegurado", production_started: "Producción iniciada",
       qc_ready: "Pieza lista para tu revisión", balance_requested: "Saldo solicitado",
       shipped: "Enviado", delivered: "Entregado",
+      shipping_address_confirmed: "Dirección de envío confirmada", payment_reported: "Pago reportado — confirmando transferencia",
       "Request received": "Solicitud recibida", "Response received": "Respuesta recibida",
     },
     emailTail: "¿Preguntas? Responde a cualquiera de nuestros correos del pedido.",
@@ -309,6 +320,29 @@ export default function ServerOrderPortal({ orderCode }) {
   const [changeMode, setChangeMode] = useState(false);
   const [changeMsg, setChangeMsg] = useState("");
   const [changeMedia, setChangeMedia] = useState([]); // 참고 사진·영상 — R2 업로드 후 URL만 전송
+  const [address, setAddress] = useState(null); // null = 주문 로드 전 (로드 시 서버 저장값으로 초기화)
+  const [addressSaved, setAddressSaved] = useState(false);
+
+  useEffect(() => {
+    if (state.status !== "ok" || address !== null) return;
+    const saved = state.order.summary?.shippingAddress || null;
+    setAddress({ ...EMPTY_ADDRESS, ...(saved || {}) });
+    setAddressSaved(Boolean(saved && isShippingAddressComplete(saved)));
+  }, [state, address]);
+
+  async function saveAddress() {
+    try {
+      await apiFetch(`/orders/${orderCode}/shipping-address`, { method: "POST", body: address });
+      setAddressSaved(true);
+    } catch { /* 실패 시 편집 상태 유지 — 재시도 가능 */ }
+  }
+
+  async function reportPayment(kind) {
+    try {
+      await apiFetch(`/orders/${orderCode}/payment-reported`, { method: "POST", body: { kind } });
+    } catch { /* refetch가 진실을 보여준다 */ }
+    setRespondedId(`paid-${kind}-${Date.now()}`); // refetch 트리거
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -363,6 +397,21 @@ export default function ServerOrderPortal({ orderCode }) {
   const order = state.order;
   const waitingLine = t.waiting[order.waitingOn] || "";
   const action = order.nextAction && order.nextAction.status === "OPEN" ? order.nextAction : null;
+
+  // 결제 단계 도출 — 제안 승인 후(stage QUOTE)엔 디파짓, stage BALANCE면 잔금 카드
+  const quoteArt = (order.publishedArtifacts || [])
+    .filter((a) => a.type === "QUOTE")
+    .sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt))[0] || null;
+  const qp = quoteArt?.payload || {};
+  const payTotal = qp.totalUsd > 0 ? qp.totalUsd : null;
+  const payDeposit = payTotal ? Math.min(payTotal, qp.depositUsd > 0 ? qp.depositUsd : Math.round(payTotal * 0.3)) : null;
+  const latestQuoteAction = (order.actions || []).find((a) => a.kind === "QUOTE_ACCEPTANCE");
+  const quoteApproved = latestQuoteAction?.status === "RESPONDED" && latestQuoteAction.response === "APPROVE";
+  const reportedKinds = new Set(
+    order.timeline.filter((e) => e.payload?.type === "payment_reported").map((e) => e.payload?.data?.kind || "deposit"),
+  );
+  const showDeposit = Boolean(payTotal && quoteApproved && order.stage === "QUOTE");
+  const showBalance = Boolean(payTotal && order.stage === "BALANCE");
 
   return (
     <div className="page client-portal-page">
@@ -475,6 +524,32 @@ export default function ServerOrderPortal({ orderCode }) {
           </section>
         );
       })}
+
+      {/* 디파짓/잔금 — 제안 승인 즉시 Zelle/Venmo 결제 카드 + (디파짓 단계) 배송지 수집 */}
+      {(showDeposit || showBalance) && (
+        <section className="panel form-stack">
+          <p className="section-label">{showBalance ? fc.balanceTitle : fc.payTitle}</p>
+          <PaymentCard
+            amountUsd={showBalance ? payTotal - payDeposit : payDeposit}
+            memoText={`BeloveD ${order.orderCode} ${showBalance ? "Balance" : "Deposit"}`}
+            reported={reportedKinds.has(showBalance ? "balance" : "deposit")}
+            fc={fc}
+            sentCta={showBalance ? fc.balanceSentCta : fc.depositSentCta}
+            reportedNote={showBalance ? fc.balanceReportedNote : fc.reportedNote}
+            onReport={() => reportPayment(showBalance ? "balance" : "deposit")}
+          />
+          {showDeposit && address && (
+            <ShippingAddressPanel
+              value={address}
+              onChange={setAddress}
+              t={p.portal}
+              locked={addressSaved}
+              canSave={!addressSaved}
+              onSave={saveAddress}
+            />
+          )}
+        </section>
+      )}
 
       {/* 타임라인 */}
       <section className="panel">

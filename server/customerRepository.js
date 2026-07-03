@@ -398,7 +398,67 @@ export async function getCustomerOrder(orderCode, email) {
       phases: phaseViews(order.stage),
       publishedArtifacts: artifacts.rows.map(artifactView),
       timeline: timeline.rows.map(timelineView),
+      // 응답 이력 요약 — 포털이 "승인됨 → 디파짓 단계" 같은 상태를 도출하는 데 쓴다 (created_at desc)
+      actions: actions.rows.map((row) => ({
+        kind: row.kind,
+        status: row.status,
+        response: row.response_payload?.response || null,
+        respondedAt: row.responded_at,
+      })),
     };
+  });
+}
+
+// 고객 배송지 저장 — customer_orders.summary.shippingAddress (어드민 상세에도 그대로 노출)
+const SHIPPING_FIELDS = ["recipientName", "phone", "addressLine1", "addressLine2", "city", "region", "postalCode", "country", "notes"];
+export async function updateOrderShippingAddress(orderCode, email, address = {}) {
+  return withTransaction(async (client) => {
+    const customer = await requireCustomerByEmail(client, email);
+    const { rows } = await client.query(
+      "select id, summary from customer_orders where order_code = $1 and customer_id = $2 for update",
+      [orderCode, customer.id],
+    );
+    const order = rows[0];
+    if (!order) throw new ApiError("ORDER_ACCESS_DENIED", 403);
+    const clean = {};
+    for (const key of SHIPPING_FIELDS) clean[key] = String(address[key] || "").slice(0, 200);
+    await client.query(
+      "update customer_orders set summary = coalesce(summary, '{}'::jsonb) || $2::jsonb, updated_at = now() where id = $1",
+      [order.id, JSON.stringify({ shippingAddress: clean })],
+    );
+    // 타임라인은 최초 저장에만 — 주소 수정 반복이 이벤트 스팸이 되지 않게
+    if (!order.summary?.shippingAddress) {
+      await client.query(
+        `insert into customer_timeline_events (event_code, order_id, title, body, payload)
+         values ($1, $2, $3, $4, $5)`,
+        [await nextCode(client, "TL"), order.id, "shipping_address_confirmed", null, { type: "shipping_address_confirmed" }],
+      );
+    }
+    return { ok: true, shippingAddress: clean };
+  });
+}
+
+// 고객 송금 셀프 리포트 (deposit|balance) — 타임라인 기록 + 공은 BeloveD로
+export async function reportOrderPayment(orderCode, email, kind) {
+  const paymentKind = kind === "balance" ? "balance" : "deposit";
+  return withTransaction(async (client) => {
+    const customer = await requireCustomerByEmail(client, email);
+    const { rows } = await client.query(
+      "select id, stage from customer_orders where order_code = $1 and customer_id = $2 for update",
+      [orderCode, customer.id],
+    );
+    const order = rows[0];
+    if (!order) throw new ApiError("ORDER_ACCESS_DENIED", 403);
+    await client.query(
+      `insert into customer_timeline_events (event_code, order_id, title, body, payload)
+       values ($1, $2, $3, $4, $5)`,
+      [await nextCode(client, "TL"), order.id, "payment_reported", null, { type: "payment_reported", data: { kind: paymentKind } }],
+    );
+    await client.query(
+      "update customer_orders set waiting_on = 'BELOVEDIAMOND', updated_at = now() where id = $1",
+      [order.id],
+    );
+    return { ok: true, kind: paymentKind };
   });
 }
 
