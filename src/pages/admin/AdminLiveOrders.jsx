@@ -4,7 +4,18 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { apiFetch, ApiUnavailableError } from "../../lib/api.js";
 import { MediaPicker, MediaThumb, usd } from "../../components/ui.jsx";
-import { useLocale } from "../../i18n.jsx";
+import { getOpsStyle } from "../../lib/store.js";
+import { pickI18n, useLocale } from "../../i18n.jsx";
+
+// 견적 컴포저 셀렉트 옵션 · 메탈 코드 → 라벨 (인테이크 프리필용)
+const SHAPES = ["round", "oval", "cushion", "princess", "emerald", "pear", "marquise", "radiant", "asscher", "heart"];
+const COLORS = ["D", "E", "F", "G", "H", "I"];
+const CLARITIES = ["IF", "VVS1", "VVS2", "VS1", "VS2", "SI1", "SI2"];
+const METAL_LABELS = {
+  "18kw": "18K White Gold", "18ky": "18K Yellow Gold", "18kr": "18K Rose Gold",
+  "14kw": "14K White Gold", "14ky": "14K Yellow Gold", "14kr": "14K Rose Gold",
+  pt950: "Platinum 950",
+};
 
 const COPY = {
   en: {
@@ -22,6 +33,10 @@ const COPY = {
     artifacts: "Published to customer", actions: "Customer confirmations", timeline: "Timeline",
     note: "Customer note", total: "Total ($)", igi: "IGI No.", tracking: "Tracking no.",
     stoneSpec: "Stone spec", metalSpec: "Metal spec",
+    settingSummary: "Setting & design summary", estWeight: "Est. metal weight (g)", leadDays: "Production lead (business days)",
+    designNote: "Design adjustment note", centerStone: "Center stone (one component of the piece)",
+    shape: "shape", caratMin: "carat (min)", caratMax: "carat (max)", color: "color", clarity: "clarity", growth: "growth", lab: "lab",
+    subNote: "Stone substitution note (blank = default policy text)", deposit: "Deposit ($, blank = 30%)",
     media: "Media (published to the portal)",
     fire: "Send", done: "Done", current: "Current", sentLabel: "Sent ✓",
     waitingOn: { CUSTOMER: "Customer", BELOVEDIAMOND: "BeloveD", EXTERNAL: "Carrier", NONE: "—" },
@@ -48,6 +63,10 @@ const COPY = {
     artifacts: "고객에게 발행됨", actions: "고객 컨펌", timeline: "타임라인",
     note: "고객 노트", total: "총액 ($)", igi: "IGI 번호", tracking: "운송장 번호",
     stoneSpec: "스톤 스펙", metalSpec: "메탈 스펙",
+    settingSummary: "세팅·디자인 요약", estWeight: "예상 메탈 중량 (g)", leadDays: "제작 기간 (영업일)",
+    designNote: "디자인 조정 노트", centerStone: "센터 스톤 (제품 구성 요소)",
+    shape: "셰이프", caratMin: "캐럿 (min)", caratMax: "캐럿 (max)", color: "컬러", clarity: "클래리티", growth: "성장", lab: "감정기관",
+    subNote: "스톤 대체 안내 (비우면 기본 문구)", deposit: "디파짓 ($, 비우면 30%)",
     media: "미디어 (포털에 공개)",
     fire: "보내기", done: "완료", current: "현재", sentLabel: "보냄 ✓",
     waitingOn: { CUSTOMER: "고객", BELOVEDIAMOND: "BeloveD", EXTERNAL: "운송사", NONE: "—" },
@@ -74,6 +93,10 @@ const COPY = {
     artifacts: "已向客户发布", actions: "客户确认", timeline: "时间线",
     note: "客户备注", total: "总价 ($)", igi: "IGI 编号", tracking: "运单号",
     stoneSpec: "钻石规格", metalSpec: "金属规格",
+    settingSummary: "镶嵌·设计摘要", estWeight: "预估金属重量 (g)", leadDays: "制作周期（工作日）",
+    designNote: "设计调整备注", centerStone: "中心钻石（作品部件之一）",
+    shape: "形状", caratMin: "克拉 (min)", caratMax: "克拉 (max)", color: "颜色", clarity: "净度", growth: "生长方式", lab: "鉴定机构",
+    subNote: "替代说明（留空用默认文案）", deposit: "定金（$，留空按 30%）",
     media: "媒体（发布到订单页面）",
     fire: "发送", done: "完成", current: "当前", sentLabel: "已发送 ✓",
     waitingOn: { CUSTOMER: "客户", BELOVEDIAMOND: "BeloveD", EXTERNAL: "承运商", NONE: "—" },
@@ -100,6 +123,10 @@ const COPY = {
     artifacts: "Publicado al cliente", actions: "Confirmaciones del cliente", timeline: "Cronología",
     note: "Nota al cliente", total: "Total ($)", igi: "N.º IGI", tracking: "N.º de guía",
     stoneSpec: "Especif. de piedra", metalSpec: "Especif. de metal",
+    settingSummary: "Resumen de engaste y diseño", estWeight: "Peso est. del metal (g)", leadDays: "Plazo de producción (días hábiles)",
+    designNote: "Nota de ajuste de diseño", centerStone: "Piedra central (componente de la pieza)",
+    shape: "forma", caratMin: "quilates (min)", caratMax: "quilates (max)", color: "color", clarity: "claridad", growth: "crecimiento", lab: "laboratorio",
+    subNote: "Nota de sustitución (vacío = texto por defecto)", deposit: "Depósito ($, vacío = 30%)",
     media: "Medios (publicados al portal)",
     fire: "Enviar", done: "Hecho", current: "Actual", sentLabel: "Enviado ✓",
     waitingOn: { CUSTOMER: "Cliente", BELOVEDIAMOND: "BeloveD", EXTERNAL: "Transportista", NONE: "—" },
@@ -115,7 +142,7 @@ const COPY = {
 
 // 스테이지 순서 — 각 이벤트가 도달시키는 stage (완료/현재 표시용)
 const FLOW = [
-  { type: "proposal_sent", reaches: "QUOTE", media: "proposal", artifactType: "QUOTE", fields: ["stoneSpec", "metalSpec", "note", "total"], action: { kind: "QUOTE_ACCEPTANCE", allowedResponses: ["APPROVE", "REQUEST_CHANGES"] } },
+  { type: "proposal_sent", reaches: "QUOTE", media: "proposal", artifactType: "QUOTE", composer: "proposal", fields: ["note", "total"], action: { kind: "QUOTE_ACCEPTANCE", allowedResponses: ["APPROVE", "REQUEST_CHANGES"] } },
   { type: "deposit_confirmed", reaches: "CAD" },
   { type: "diamond_locked", reaches: "CAD", fields: ["igi"] },
   { type: "production_started", reaches: "PRODUCTION" },
@@ -220,13 +247,24 @@ export default function AdminLiveOrders() {
 // 이벤트 스텝 카드 — 필요한 입력(미디어/노트/금액/IGI/운송장)만 노출
 function StepCard({ step, order, t, onSent }) {
   const [media, setMedia] = useState([]);
-  // 제안 스펙은 인테이크에서 프리필 — 어드민은 확인·수정만 하고 보낸다
+  // 견적 컴포저는 인테이크에서 프리필 — 어드민은 확인·수정만 하고 보낸다
   const fp = order.intake?.formPayload || {};
   const sp = fp.stonePrefs || {};
+  const style = fp.styleId ? getOpsStyle(fp.styleId) : null;
   const [f, setF] = useState({
     note: "", total: "", igi: "", tracking: "",
-    stoneSpec: [sp.shape, sp.carat && `${sp.carat}ct`, sp.color, sp.clarity, sp.growth].filter(Boolean).join(" · "),
-    metalSpec: fp.metal || "",
+    setting: [
+      style ? pickI18n(style.name, "en") : (order.intake?.category || ""),
+      fp.conditional?.ringSize,
+    ].filter(Boolean).join(" · "),
+    designNote: "",
+    metalSpec: METAL_LABELS[fp.metal] || fp.metal || "",
+    estWeightG: "", leadDays: "10",
+    shape: sp.shape || "round",
+    caratMin: sp.carat ? String(sp.carat) : "",
+    caratMax: sp.carat ? (Number(sp.carat) + 0.05).toFixed(2) : "",
+    color: sp.color || "D", clarity: sp.clarity || "VS1", growth: sp.growth || "CVD",
+    lab: "IGI", igiNo: "", subNote: "", deposit: "",
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -246,12 +284,28 @@ function StepCard({ step, order, t, onSent }) {
         body.artifact = {
           type: step.artifactType,
           media: media.filter((m) => /^https?:\/\//.test(m.src || "")).slice(0, 5),
-          payload: {
-            ...(f.stoneSpec.trim() ? { stoneSpec: f.stoneSpec.trim() } : {}),
-            ...(f.metalSpec.trim() ? { metalSpec: f.metalSpec.trim() } : {}),
-            ...(f.note.trim() ? { note: f.note.trim() } : {}),
-            ...(f.total ? { totalUsd: Number(f.total) } : {}),
-          },
+          payload: step.composer === "proposal"
+            ? {
+              ...(f.setting.trim() ? { settingSummary: f.setting.trim() } : {}),
+              ...(f.designNote.trim() ? { designNote: f.designNote.trim() } : {}),
+              ...(f.metalSpec.trim() ? { metalSpec: f.metalSpec.trim() } : {}),
+              ...(f.estWeightG ? { estWeightG: Number(f.estWeightG) } : {}),
+              ...(f.leadDays ? { leadDays: Number(f.leadDays) } : {}),
+              stone: {
+                shape: f.shape, color: f.color, clarity: f.clarity, growth: f.growth, lab: f.lab,
+                ...(f.caratMin ? { caratMin: Number(f.caratMin) } : {}),
+                ...(f.caratMax ? { caratMax: Number(f.caratMax) } : {}),
+                ...(f.igiNo.trim() ? { igiNo: f.igiNo.trim() } : {}),
+              },
+              ...(f.subNote.trim() ? { substitutionNote: f.subNote.trim() } : {}),
+              ...(f.note.trim() ? { note: f.note.trim() } : {}),
+              ...(f.total ? { totalUsd: Number(f.total) } : {}),
+              ...(f.deposit ? { depositUsd: Number(f.deposit) } : {}),
+            }
+            : {
+              ...(f.note.trim() ? { note: f.note.trim() } : {}),
+              ...(f.total ? { totalUsd: Number(f.total) } : {}),
+            },
         };
       }
       if (step.action) {
@@ -281,13 +335,54 @@ function StepCard({ step, order, t, onSent }) {
               <MediaPicker value={media} onChange={setMedia} maxItems={5} showSamples={false} previewMode="list" scope={step.media} />
             </div>
           )}
-          {step.fields?.includes("stoneSpec") && (
-            <label className="field"><span>{t.stoneSpec}</span>
-              <input value={f.stoneSpec} onChange={(e) => setF({ ...f, stoneSpec: e.target.value })} /></label>
-          )}
-          {step.fields?.includes("metalSpec") && (
-            <label className="field"><span>{t.metalSpec}</span>
-              <input value={f.metalSpec} onChange={(e) => setF({ ...f, metalSpec: e.target.value })} /></label>
+          {step.composer === "proposal" && (
+            <>
+              <div className="filter-grid" style={{ gridTemplateColumns: "2fr 1fr 1fr" }}>
+                <label className="field"><span>{t.settingSummary}</span>
+                  <input value={f.setting} onChange={(e) => setF({ ...f, setting: e.target.value })} /></label>
+                <label className="field"><span>{t.estWeight}</span>
+                  <input type="number" step="0.1" value={f.estWeightG} onChange={(e) => setF({ ...f, estWeightG: e.target.value })} /></label>
+                <label className="field"><span>{t.leadDays}</span>
+                  <input type="number" value={f.leadDays} onChange={(e) => setF({ ...f, leadDays: e.target.value })} /></label>
+              </div>
+              <label className="field"><span>{t.designNote}</span>
+                <input value={f.designNote} onChange={(e) => setF({ ...f, designNote: e.target.value })} /></label>
+              <label className="field"><span>{t.metalSpec}</span>
+                <input value={f.metalSpec} onChange={(e) => setF({ ...f, metalSpec: e.target.value })} /></label>
+              <p className="form-hint" style={{ margin: 0 }}>{t.centerStone}</p>
+              <div className="filter-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
+                <label className="field"><span>{t.shape}</span>
+                  <select value={f.shape} onChange={(e) => setF({ ...f, shape: e.target.value })}>
+                    {SHAPES.map((v) => <option key={v} value={v}>{v}</option>)}
+                  </select></label>
+                <label className="field"><span>{t.caratMin}</span>
+                  <input type="number" step="0.01" value={f.caratMin} onChange={(e) => setF({ ...f, caratMin: e.target.value })} /></label>
+                <label className="field"><span>{t.caratMax}</span>
+                  <input type="number" step="0.01" value={f.caratMax} onChange={(e) => setF({ ...f, caratMax: e.target.value })} /></label>
+                <label className="field"><span>{t.color}</span>
+                  <select value={f.color} onChange={(e) => setF({ ...f, color: e.target.value })}>
+                    {COLORS.map((v) => <option key={v} value={v}>{v}</option>)}
+                  </select></label>
+              </div>
+              <div className="filter-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
+                <label className="field"><span>{t.clarity}</span>
+                  <select value={f.clarity} onChange={(e) => setF({ ...f, clarity: e.target.value })}>
+                    {CLARITIES.map((v) => <option key={v} value={v}>{v}</option>)}
+                  </select></label>
+                <label className="field"><span>{t.growth}</span>
+                  <select value={f.growth} onChange={(e) => setF({ ...f, growth: e.target.value })}>
+                    <option value="CVD">CVD</option><option value="HPHT">HPHT</option>
+                  </select></label>
+                <label className="field"><span>{t.lab}</span>
+                  <select value={f.lab} onChange={(e) => setF({ ...f, lab: e.target.value })}>
+                    <option value="IGI">IGI</option><option value="GIA">GIA</option>
+                  </select></label>
+                <label className="field"><span>{t.igi}</span>
+                  <input value={f.igiNo} onChange={(e) => setF({ ...f, igiNo: e.target.value })} /></label>
+              </div>
+              <label className="field"><span>{t.subNote}</span>
+                <textarea rows={2} value={f.subNote} onChange={(e) => setF({ ...f, subNote: e.target.value })} /></label>
+            </>
           )}
           {step.fields?.includes("note") && (
             <label className="field"><span>{t.note}</span>
@@ -297,6 +392,10 @@ function StepCard({ step, order, t, onSent }) {
             {step.fields?.includes("total") && (
               <label className="field"><span>{t.total}</span>
                 <input type="number" value={f.total} onChange={(e) => setF({ ...f, total: e.target.value })} /></label>
+            )}
+            {step.composer === "proposal" && (
+              <label className="field"><span>{t.deposit}</span>
+                <input type="number" value={f.deposit} onChange={(e) => setF({ ...f, deposit: e.target.value })} /></label>
             )}
             {step.fields?.includes("igi") && (
               <label className="field"><span>{t.igi}</span>

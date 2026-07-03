@@ -5,6 +5,7 @@ import { Link, useLocation } from "react-router-dom";
 import { apiFetch, ApiUnavailableError } from "../lib/api.js";
 import { useAuth, LOGIN_FOR } from "../lib/auth.jsx";
 import { MediaThumb, usd } from "../components/ui.jsx";
+import { PROPOSAL_FLOW_COPY } from "../lib/proposalFlowCopy.js";
 import { useLocale } from "../i18n.jsx";
 
 const COPY = {
@@ -45,6 +46,7 @@ const COPY = {
     artifactsTitle: "Shared with you",
     proposalTitle: "Your proposal",
     specStone: "Stone", specMetal: "Metal", specTotal: "Total, all-inclusive",
+    leadFmt: (d) => `≈ ${d} business days`,
     events: {
       proposal_sent: "Proposal sent", deposit_confirmed: "Deposit confirmed",
       diamond_locked: "Your diamond is secured", production_started: "Production started",
@@ -91,6 +93,7 @@ const COPY = {
     artifactsTitle: "공유된 자료",
     proposalTitle: "제안",
     specStone: "스톤", specMetal: "메탈", specTotal: "총액 (올인클루시브)",
+    leadFmt: (d) => `≈ ${d} 영업일`,
     events: {
       proposal_sent: "제안 발송됨", deposit_confirmed: "디파짓 확인됨",
       diamond_locked: "다이아몬드 확보됨", production_started: "제작 시작",
@@ -137,6 +140,7 @@ const COPY = {
     artifactsTitle: "与您共享",
     proposalTitle: "您的方案",
     specStone: "钻石", specMetal: "金属", specTotal: "总价（全包）",
+    leadFmt: (d) => `约 ${d} 个工作日`,
     events: {
       proposal_sent: "方案已发送", deposit_confirmed: "定金已确认",
       diamond_locked: "钻石已锁定", production_started: "开始制作",
@@ -183,6 +187,7 @@ const COPY = {
     artifactsTitle: "Compartido contigo",
     proposalTitle: "Tu propuesta",
     specStone: "Piedra", specMetal: "Metal", specTotal: "Total, todo incluido",
+    leadFmt: (d) => `≈ ${d} días hábiles`,
     events: {
       proposal_sent: "Propuesta enviada", deposit_confirmed: "Depósito confirmado",
       diamond_locked: "Diamante asegurado", production_started: "Producción iniciada",
@@ -204,6 +209,70 @@ export function serverActionLabel(kind, locale) {
   return t.kinds[kind] || t.nextTitle;
 }
 
+// 실서버 제안 카드 — DM 포털의 ProposalCard와 같은 마크업/클래스(플랫폼 CSS 재사용).
+// 어드민 견적 컴포저의 payload(settingSummary/stone/총액…)를 오더 시트처럼 렌더.
+function ServerProposalCard({ pay, media, fc, t, shapes }) {
+  const stone = pay.stone || null;
+  const total = pay.totalUsd > 0 ? pay.totalUsd : null;
+  const deposit = total ? (pay.depositUsd > 0 ? pay.depositUsd : Math.round(total * 0.3)) : null;
+  const metalSummary = [
+    pay.metalSpec,
+    pay.estWeightG ? fc.weightApprox(pay.estWeightG) : "",
+  ].filter(Boolean).join(" · ");
+  const caratRange = stone && stone.caratMin
+    ? `${Number(stone.caratMin).toFixed(2)}${Number(stone.caratMax) > Number(stone.caratMin) ? `–${Number(stone.caratMax).toFixed(2)}` : ""}ct`
+    : "";
+  const grade = stone ? [stone.color, stone.clarity, stone.growth].filter(Boolean).join(" · ") : "";
+  return (
+    <div className="proposal-card">
+      {media?.length > 0 && (
+        <div className="proposal-hero">
+          <MediaThumb media={media[0]} ratio="16 / 10" alt="" fit="contain" eager />
+        </div>
+      )}
+      {media?.length > 1 && (
+        <div className="card-grid cols-3">
+          {media.slice(1).map((m, i) => <MediaThumb key={i} media={m} alt="" ratio="1 / 1" />)}
+        </div>
+      )}
+      <div className="proposal-card-body">
+        <div className="proposal-piece">
+          <p className="section-label">{fc.pieceTitle}</p>
+          <dl className="proposal-spec">
+            {pay.settingSummary && <div><dt>{fc.specSetting}</dt><dd>{pay.settingSummary}</dd></div>}
+            {pay.designNote && <div className="is-design-note"><dt>{fc.designNote}</dt><dd>{pay.designNote}</dd></div>}
+            {metalSummary && <div><dt>{fc.specMetal}</dt><dd>{metalSummary}</dd></div>}
+            {stone && (
+              <div><dt>{fc.specStone}</dt><dd>{[shapes?.[stone.shape] || stone.shape, caratRange].filter(Boolean).join(" · ")}</dd></div>
+            )}
+            {grade && <div><dt>{fc.specGrade}</dt><dd>{grade}</dd></div>}
+            {stone?.igiNo && <div><dt>{fc.specCert}</dt><dd>{stone.lab || "IGI"} {stone.igiNo}</dd></div>}
+            {pay.leadDays > 0 && <div><dt>{fc.specLead}</dt><dd>{t.leadFmt(pay.leadDays)}</dd></div>}
+            {/* 구버전 payload(자유 텍스트 스펙) 폴백 */}
+            {!stone && pay.stoneSpec && <div><dt>{fc.specStone}</dt><dd>{pay.stoneSpec}</dd></div>}
+          </dl>
+          {pay.note && <p className="form-hint" style={{ marginTop: 10 }}>{pay.note}</p>}
+        </div>
+        {total && (
+          <aside className="proposal-pricing">
+            <p className="section-label">{fc.priceTitle}</p>
+            <div className="proposal-total">
+              <span className="proposal-total-label">{fc.totalLabel}</span>
+              <div className="proposal-amount">{usd(total)}</div>
+              <p className="form-hint">{fc.totalMeta}</p>
+            </div>
+            <div className="proposal-split">
+              <div><span>{fc.depositToday}</span><strong>{usd(deposit)}</strong></div>
+              <div><span>{fc.balanceShip}</span><strong>{usd(total - deposit)}</strong></div>
+            </div>
+          </aside>
+        )}
+      </div>
+      <p className="proposal-sub-note"><strong>{fc.subTitle}.</strong> {pay.substitutionNote || fc.subBody}</p>
+    </div>
+  );
+}
+
 function fmtDate(iso, locale) {
   if (!iso) return "";
   try {
@@ -212,7 +281,8 @@ function fmtDate(iso, locale) {
 }
 
 export default function ServerOrderPortal({ orderCode }) {
-  const { locale } = useLocale();
+  const { locale, p } = useLocale();
+  const fc = PROPOSAL_FLOW_COPY[locale] || PROPOSAL_FLOW_COPY.en;
   const { user } = useAuth();
   const location = useLocation();
   const t = COPY[locale] || COPY.en;
@@ -324,32 +394,23 @@ export default function ServerOrderPortal({ orderCode }) {
         return acc;
       }, {})).map((a) => {
         const pay = a.payload || {};
-        const specs = [
-          [t.specStone, pay.stoneSpec],
-          [t.specMetal, pay.metalSpec],
-        ].filter(([, v]) => v);
-        const hasContent = a.media?.length || pay.note || pay.totalUsd || specs.length;
+        // 제안(QUOTE)은 오더 시트 카드로 — 세팅/메탈/스톤/등급/총액/디파짓 분할까지
+        if (a.type === "QUOTE") {
+          return (
+            <section className="panel form-stack" key={a.id}>
+              <p className="section-label">{t.proposalTitle}</p>
+              <ServerProposalCard pay={pay} media={a.media} fc={fc} t={t} shapes={p.shapes} />
+            </section>
+          );
+        }
+        const hasContent = a.media?.length || pay.note;
         if (!hasContent) return null;
         return (
           <section className="panel form-stack" key={a.id}>
-            <p className="section-label">{a.type === "QUOTE" ? t.proposalTitle : t.artifactsTitle}</p>
+            <p className="section-label">{t.artifactsTitle}</p>
             {a.media?.length > 0 && (
               <div className="card-grid cols-3">
                 {a.media.map((m, i) => <MediaThumb key={i} media={m} alt={a.versionLabel} ratio="1 / 1" />)}
-              </div>
-            )}
-            {(specs.length > 0 || pay.totalUsd) && (
-              <div className="client-brief-list" style={{ display: "grid", gap: 0 }}>
-                {specs.map(([label, value]) => (
-                  <div key={label} style={{ display: "flex", justifyContent: "space-between", gap: 14, padding: "8px 0", borderBottom: "1px solid var(--hair)" }}>
-                    <span className="form-hint">{label}</span><strong style={{ fontSize: 14 }}>{value}</strong>
-                  </div>
-                ))}
-                {pay.totalUsd > 0 && (
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 14, padding: "8px 0" }}>
-                    <span className="form-hint">{t.specTotal}</span><strong style={{ fontSize: 16 }}>{usd(pay.totalUsd)}</strong>
-                  </div>
-                )}
               </div>
             )}
             {pay.note && <p className="form-hint" style={{ margin: 0 }}>{pay.note}</p>}
