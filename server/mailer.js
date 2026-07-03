@@ -24,9 +24,15 @@ async function deliver(to, subject, html, meta) {
   return msg;
 }
 
+// 메일 이미지는 절대 URL 필수 — 프로덕션 도메인 고정 (dev에서도 메일 미리보기가 로고를 로드하도록)
+const MAIL_ASSET_ORIGIN = process.env.PUBLIC_ORIGIN?.startsWith("https://")
+  ? process.env.PUBLIC_ORIGIN
+  : "https://belovediamond.com";
+
 const wrap = (inner) => `
   <div style="font-family:Georgia,serif;max-width:480px;margin:0 auto;padding:32px 24px;color:#15130f">
-    <p style="letter-spacing:.2em;font-size:12px;color:#8f7d54;margin:0 0 18px">BELOVED</p>
+    <img src="${MAIL_ASSET_ORIGIN}/assets/email-logo.png" alt="BELOVED" width="128" height="auto"
+      style="display:block;width:128px;max-width:40%;margin:0 0 20px;border:0" />
     ${inner}
     <p style="font-size:12px;color:#8e897e;margin-top:28px">If you didn't request this, you can ignore this email.</p>
   </div>`;
