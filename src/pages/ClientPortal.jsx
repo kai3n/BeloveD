@@ -305,7 +305,8 @@ function ProposalCard({ quote, intake, style, fc, t, p, locale, shippingProps, o
   return (
     <div className="proposal-card">
       <div className="proposal-hero">
-        <ClientMediaCarousel media={media} alt={quote.id} ratio="16 / 10" fit="contain" />
+        {/* cover — 제품 사진이 프레임을 꽉 채운다 (contain은 아이보리 레터박스가 생김) */}
+        <ClientMediaCarousel media={media} alt={quote.id} ratio="16 / 10" fit="cover" />
       </div>
       <div className="proposal-card-body">
         <div className="proposal-piece">
