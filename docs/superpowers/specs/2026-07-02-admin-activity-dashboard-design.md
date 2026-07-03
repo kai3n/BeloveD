@@ -74,7 +74,8 @@ activity_daily (
 
 ## 4. 클라이언트 추적기 — `src/lib/track.js`
 
-- 익명 세션 UUID를 쿠키(`bd_sid`, SameSite=Lax, 1년)로 유지.
+- 익명 세션 UUID를 쿠키(`bd_aid`, SameSite=Lax, 1년)로 유지.
+  (`bd_sid`는 고객 세션 httpOnly 쿠키로 이미 사용 중 — 충돌 금지.)
 - `track(eventType, fields)` — 큐에 쌓고 **5초 간격 또는 페이지 이탈**(visibilitychange→hidden)에
   `navigator.sendBeacon('/v1/activity', batch)` 전송. fetch keepalive 폴백.
 - fire-and-forget: 실패해도 재시도·사용자 노출 없음.
@@ -93,7 +94,7 @@ activity_daily (
 
 admin 라우트는 기존 어드민 인증 미들웨어(`middleware.js`의 principal 검사) 필수.
 `login`/`signup` 이벤트와 세션→customer 연결은 `authRoutes.js` 성공 핸들러에서 수행
-(클라이언트가 보낸 `bd_sid` 쿠키 사용).
+(클라이언트가 보낸 `bd_aid` 쿠키 사용).
 
 ## 6. 어드민 UI — 새 페이지 "회원" (`src/pages/admin/AdminMembers.jsx`)
 
