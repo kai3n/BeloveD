@@ -25,6 +25,49 @@
   --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
+/* ── 언어별 럭셔리 타이포그래피 ─────────────────────────────
+   CJK 폰트에는 이탤릭 활자가 없다. 브라우저가 기울여 만드는 합성 이탤릭이
+   국문·중문을 싸구려로 보이게 하던 주범 → 굵기 합성만 허용하고 스타일 합성 금지.
+   같은 문장 안에서도 라틴(Bodoni)은 진짜 이탤릭, 한글·한자는 정자로 선다. */
+html { font-synthesis: weight; }
+
+/* 중국어: 한자가 한국어 세리프(KR) 자형으로 그려지지 않도록 SC를 앞으로 */
+html[lang="zh-CN"] {
+  --serif: "Bodoni Moda", "Noto Serif SC", Georgia, serif;
+  --luxury-display: "Bodoni Moda", Didot, "Noto Serif SC", Georgia, serif;
+  --brand-serif: "Bodoni Moda", "Noto Serif SC", Georgia, serif;
+  --sans: "Outfit", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+/* 한국어: 어절 단위 줄바꿈 — 헤드라인이 조사에서 끊기지 않는다 */
+html[lang="ko"] { word-break: keep-all; }
+
+/* CJK 디스플레이 보정: Bodoni용 초압축 행간·음수 자간은 한글·한자를 뭉갠다.
+   명조 200~300 라이트 + 넉넉한 행간 + 미세 양수 자간 = 하이엔드 메종의 국문·중문 문법 */
+html[lang="ko"] h1, html[lang="ko"] h2,
+html[lang="zh-CN"] h1, html[lang="zh-CN"] h2 {
+  font-weight: 300;
+  line-height: 1.28;
+  letter-spacing: 0.01em;
+}
+html[lang="ko"] .hero-noir h1,
+html[lang="zh-CN"] .hero-noir h1 {
+  font-weight: 200;
+  font-size: clamp(34px, 9.4vw, 76px);
+  line-height: 1.18;
+  letter-spacing: 0.02em;
+}
+html[lang="ko"] .hero-noir-lede,
+html[lang="zh-CN"] .hero-noir-lede {
+  font-weight: 300;
+  font-size: 18px;
+  line-height: 1.66;
+  letter-spacing: 0.015em;
+  max-width: 30ch;
+}
+html[lang="zh-CN"] .hero-noir-kicker,
+html[lang="ko"] .hero-noir-kicker { letter-spacing: 0.42em; }
+
 html[data-theme="day"] {
   color-scheme: light;
   /* Beloved Maison — gallery white day palette (노란기 제거 · 스톤 샴페인 악센트) */

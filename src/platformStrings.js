@@ -32,7 +32,7 @@ const en = {
     errors: { rateLimited: "Too many attempts — try again in a minute.", badCredentials: "Invalid email or password. (Demo password: demo1234)", emailExists: "This email is already registered.", wrongPortal: "This account uses a different sign-in.", badCode: "Invalid or inactive access code.", accountSuspended: "This account is suspended." },
   },
   diamonds: {
-    title: "Diamonds", sub: "IGI·GIA certified lab-grown stones, every one inspected by our team.",
+    title: "Diamonds", sub: "IGI·GIA certified lab-grown diamonds — each one passes through our hands before it reaches yours.",
     caratMin: "Carat min", caratMax: "Carat max", maxPrice: "Max price ($)",
     cut: "Cut", color: "Color", clarity: "Clarity", cert: "Certificate", sort: "Sort",
     sortPriceAsc: "Price: low to high", sortPriceDesc: "Price: high to low", sortCaratDesc: "Carat: high to low",
@@ -45,11 +45,11 @@ const en = {
     orderCta: "Custom order with this diamond", back: "Back to list",
   },
   templates: {
-    title: "Design Gallery", sub: "Sample designs by BeloveD. Pick one and make it yours.",
+    title: "Design Gallery", sub: "Signature designs from the BeloveD atelier. Choose one — we make it yours alone.",
     fromPrice: (p) => `Setting from ${p}`, quote: "Quote on request",
   },
   wizard: {
-    title: "Custom Order", sub: "Choose a design and a stone — our atelier shows you proposals (photos & video) first. No payment before you confirm.",
+    title: "Custom Order", sub: "Choose a design and a stone — the atelier presents proposals in photographs and film first. Nothing to pay until you confirm.",
     steps: ["① Design", "② Diamond", "③ Details", "④ Review"],
     skipHint: "Not sure yet? Skip this step — we'll propose stones that fit your budget.",
     nextNoStone: "Continue without a stone",
@@ -173,7 +173,7 @@ const en = {
     hub: {
       kicker: "Diamond guide",
       title: "Choose with confidence.",
-      sub: "Short, practical notes for lab-grown diamond quality, stone preferences, and custom production decisions.",
+      sub: "Quiet, practical notes on lab-grown quality, choosing your stone, and the decisions behind a commission.",
       cards: {
         lab: { kicker: "Lab-grown", title: "Same fire. Smarter origin.", body: "How lab-grown diamonds compare and what disclosures matter." },
         fourc: { kicker: "4C", title: "Cut, color, clarity, carat.", body: "The practical way to prioritize visible brilliance." },
@@ -231,7 +231,7 @@ const ko = {
     errors: { rateLimited: "시도가 너무 많습니다 — 1분 후 다시 시도해주세요.", badCredentials: "이메일 또는 비밀번호가 올바르지 않습니다. (데모 비밀번호: demo1234)", emailExists: "이미 가입된 이메일입니다.", wrongPortal: "이 계정은 다른 로그인 경로를 사용합니다.", badCode: "유효하지 않거나 비활성된 접근 코드입니다.", accountSuspended: "정지된 계정입니다." },
   },
   diamonds: {
-    title: "다이아몬드", sub: "전 스톤 IGI·GIA 인증 랩그로운 다이아몬드. 운영팀이 직접 검수한 미디어로 확인하세요.",
+    title: "다이아몬드", sub: "모든 스톤은 IGI·GIA 인증 랩그로운 다이아몬드. 저희 손으로 직접 검수한 모습 그대로 보여드립니다.",
     caratMin: "캐럿 min", caratMax: "캐럿 max", maxPrice: "최대 가격($)",
     cut: "컷", color: "컬러", clarity: "클래리티", cert: "인증", sort: "정렬",
     sortPriceAsc: "가격 낮은순", sortPriceDesc: "가격 높은순", sortCaratDesc: "캐럿 높은순",
@@ -244,11 +244,11 @@ const ko = {
     orderCta: "이 다이아몬드로 주문제작", back: "목록으로",
   },
   templates: {
-    title: "디자인 갤러리", sub: "BeloveD이 준비한 샘플 디자인. 원하는 디자인을 골라 나만의 주얼리로 주문제작하세요.",
+    title: "디자인 갤러리", sub: "BeloveD 아틀리에의 시그니처 디자인. 마음에 닿는 하나를 고르시면, 오직 당신의 것으로 완성합니다.",
     fromPrice: (p) => `세팅 ${p}~`, quote: "견적 문의",
   },
   wizard: {
-    title: "주문제작", sub: "디자인과 스톤을 고르면 전담 제작팀이 시안(사진·영상)으로 먼저 보여드립니다. 컨펌 전에는 결제가 없습니다.",
+    title: "주문제작", sub: "디자인과 스톤을 고르시면, 아틀리에가 사진과 영상 시안으로 먼저 보여드립니다. 확정 전에는 결제를 청하지 않습니다.",
     steps: ["① 디자인", "② 다이아몬드", "③ 세부사항", "④ 검토·제출"],
     skipHint: "스톤을 아직 못 정하셨다면 건너뛰어도 됩니다 — 예산에 맞는 스톤을 시안과 함께 제안해드립니다.",
     nextNoStone: "스톤 없이 다음",
@@ -371,8 +371,8 @@ const ko = {
   guide: {
     hub: {
       kicker: "다이아몬드 가이드",
-      title: "확신을 가지고 선택하세요.",
-      sub: "랩그로운 다이아몬드 품질, 스톤 선택, 주문제작 결정에 필요한 핵심 가이드입니다.",
+      title: "망설임 없이 고를 수 있도록.",
+      sub: "랩그로운 품질과 스톤 취향, 주문제작의 순간마다 필요한 이야기를 간결하게 담았습니다.",
       cards: {
         lab: { kicker: "랩그로운", title: "같은 광채, 더 합리적인 시작.", body: "랩그로운 다이아몬드의 차이와 꼭 확인해야 할 정보를 정리했습니다." },
         fourc: { kicker: "4C", title: "컷, 컬러, 클래리티, 캐럿.", body: "눈에 보이는 아름다움을 기준으로 우선순위를 잡는 방법입니다." },
@@ -430,7 +430,7 @@ const zh = {
     errors: { badCredentials: "邮箱或密码不正确。（演示密码：demo1234）", emailExists: "该邮箱已注册。", wrongPortal: "该账户使用其他登录入口。", badCode: "访问码无效或已停用。", accountSuspended: "该账户已被停用。" },
   },
   diamonds: {
-    title: "钻石", sub: "全部为 IGI·GIA 认证培育钻石，每颗都经运营团队检验。",
+    title: "钻石", sub: "颗颗均为 IGI·GIA 认证培育钻石，经我们亲手检视，方与你相见。",
     caratMin: "克拉 min", caratMax: "克拉 max", maxPrice: "最高价格($)",
     cut: "切工", color: "颜色", clarity: "净度", cert: "证书", sort: "排序",
     sortPriceAsc: "价格从低到高", sortPriceDesc: "价格从高到低", sortCaratDesc: "克拉从高到低",
@@ -443,11 +443,11 @@ const zh = {
     orderCta: "用这颗钻石定制", back: "返回列表",
   },
   templates: {
-    title: "设计画廊", sub: "BeloveD 准备的样品设计。选择心仪的设计，定制专属于你的珠宝。",
+    title: "设计画廊", sub: "BeloveD 工坊的签名设计。择一心仪，我们为你独家成就。",
     fromPrice: (p) => `镶嵌 ${p} 起`, quote: "询价",
   },
   wizard: {
-    title: "定制订单", sub: "选好设计与钻石后，专属工坊会先以照片·视频方案呈现。确认前无需付款。",
+    title: "定制订单", sub: "选定设计与钻石，工坊先以照片与影像呈上方案。确认之前，分文不取。",
     steps: ["① 设计", "② 钻石", "③ 详情", "④ 确认提交"],
     skipHint: "还没选好钻石？可以跳过 — 我们会按预算随方案推荐钻石。",
     nextNoStone: "暂不选钻石，下一步",
@@ -570,8 +570,8 @@ const zh = {
   guide: {
     hub: {
       kicker: "钻石指南",
-      title: "更有把握地选择。",
-      sub: "关于培育钻石品质、选石偏好与定制制作决策的简明指南。",
+      title: "从容抉择。",
+      sub: "关于培育钻石品质、选石之道与定制决策的简明指南。",
       cards: {
         lab: { kicker: "培育钻石", title: "同样火彩，更聪明的来源。", body: "了解培育钻石的差异，以及哪些披露信息需要关注。" },
         fourc: { kicker: "4C", title: "切工、颜色、净度、克拉。", body: "用实用方式判断哪些因素最影响肉眼美感。" },
@@ -629,7 +629,7 @@ const es = {
     errors: { rateLimited: "Demasiados intentos — prueba en un minuto.", badCredentials: "Correo o contraseña incorrectos. (Contraseña demo: demo1234)", emailExists: "Este correo ya está registrado.", wrongPortal: "Esta cuenta usa otro acceso.", badCode: "Código de acceso inválido o inactivo.", accountSuspended: "Esta cuenta está suspendida." },
   },
   diamonds: {
-    title: "Diamantes", sub: "Diamantes de laboratorio certificados IGI·GIA, todos inspeccionados por nuestro equipo.",
+    title: "Diamantes", sub: "Diamantes de laboratorio certificados IGI·GIA — cada uno pasa por nuestras manos antes de llegar a las tuyas.",
     caratMin: "Quilates mín", caratMax: "Quilates máx", maxPrice: "Precio máx ($)",
     cut: "Talla", color: "Color", clarity: "Pureza", cert: "Certificado", sort: "Ordenar",
     sortPriceAsc: "Precio: menor a mayor", sortPriceDesc: "Precio: mayor a menor", sortCaratDesc: "Quilates: mayor a menor",
@@ -642,11 +642,11 @@ const es = {
     orderCta: "Pedido a medida con este diamante", back: "Volver a la lista",
   },
   templates: {
-    title: "Galería de diseños", sub: "Diseños de muestra de BeloveD. Elige uno y hazlo tuyo.",
+    title: "Galería de diseños", sub: "Diseños firmados por el atelier BeloveD. Elige uno — lo haremos solo tuyo.",
     fromPrice: (p) => `Engaste desde ${p}`, quote: "Cotización a pedido",
   },
   wizard: {
-    title: "Pedido a medida", sub: "Elige diseño y piedra — nuestro taller te muestra propuestas (fotos y video) primero. Sin pago antes de confirmar.",
+    title: "Pedido a medida", sub: "Elige diseño y piedra — el atelier te presenta propuestas en fotos y video primero. No pagas nada hasta confirmar.",
     steps: ["① Diseño", "② Diamante", "③ Detalles", "④ Revisión"],
     skipHint: "¿Aún sin decidir? Omite este paso — propondremos piedras según tu presupuesto.",
     nextNoStone: "Continuar sin piedra",
@@ -769,8 +769,8 @@ const es = {
   guide: {
     hub: {
       kicker: "Guía de diamantes",
-      title: "Elige con confianza.",
-      sub: "Notas breves y prácticas sobre calidad, preferencias de piedra y decisiones de producción a medida.",
+      title: "Elige con serenidad.",
+      sub: "Notas breves y prácticas sobre calidad, elección de piedra y las decisiones de una pieza a medida.",
       cards: {
         lab: { kicker: "Laboratorio", title: "Mismo fuego. Origen más inteligente.", body: "Cómo se comparan los diamantes de laboratorio y qué detalles importan." },
         fourc: { kicker: "4C", title: "Talla, color, pureza, quilates.", body: "Una forma práctica de priorizar el brillo visible." },

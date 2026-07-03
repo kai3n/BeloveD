@@ -21,129 +21,129 @@ const collectionImageClass = {
 const collectionCopy = {
   en: {
     label: "THE ATELIER",
-    title: ["Design yours."],
-    body: "We compose the stone, the metal, and every detail around you.",
+    title: ["Yours to design."],
+    body: "The stone, the metal, every last detail — composed around you.",
     viewAll: "Explore all",
-    shopLabel: (name) => `Shop ${name.toLowerCase()}`,
+    shopLabel: (name) => `Discover ${name.toLowerCase()}`,
     items: {
-      ring: { label: "Rings", short: "ring", body: "Engagement rings and signature settings." },
-      earrings: { label: "Earrings", short: "earrings", body: "Studs, drops, and daily diamonds." },
-      bangle: { label: "Bracelets", short: "bracelet", body: "Tennis bracelets and refined wrist pieces." },
-      necklace: { label: "Necklaces", short: "necklace", body: "Pendants and clean diamond necklaces." },
+      ring: { label: "Rings", short: "rings", body: "Engagement rings and signature settings." },
+      earrings: { label: "Earrings", short: "earrings", body: "Studs, drops, and diamonds for every day." },
+      bangle: { label: "Bracelets", short: "bracelets", body: "Tennis bracelets and quiet lines of light." },
+      necklace: { label: "Necklaces", short: "necklaces", body: "Pendants and pure diamond lines." },
     },
   },
   ko: {
     label: "아틀리에",
-    title: ["당신만의 디자인."],
-    body: "스톤·메탈·디테일은 당신에게 맞춰 완성합니다.",
+    title: ["당신에게서 시작되는 디자인."],
+    body: "스톤과 메탈, 마지막 디테일까지 — 오직 당신을 중심으로 완성합니다.",
     viewAll: "전체 둘러보기",
-    shopLabel: (name) => `${name} 보기`,
+    shopLabel: (name) => `${name} 둘러보기`,
     items: {
       ring: { label: "링", short: "링", body: "프로포즈 링과 시그니처 세팅." },
-      earrings: { label: "이어링", short: "이어링", body: "스터드, 드롭, 데일리 다이아몬드." },
-      bangle: { label: "브레이슬릿", short: "브레이슬릿", body: "테니스 브레이슬릿과 정제된 손목 피스." },
-      necklace: { label: "네크리스", short: "네크리스", body: "펜던트와 클린한 다이아몬드 네크리스." },
+      earrings: { label: "이어링", short: "이어링", body: "스터드와 드롭, 그리고 매일의 다이아몬드." },
+      bangle: { label: "브레이슬릿", short: "브레이슬릿", body: "테니스 브레이슬릿, 손목 위의 가지런한 빛." },
+      necklace: { label: "네크리스", short: "네크리스", body: "펜던트, 목선을 따라 흐르는 빛." },
     },
   },
   zh: {
     label: "工坊",
-    title: ["设计你的专属。"],
-    body: "钻石、金属与每一处细节，皆为你而成。",
+    title: ["由你而始的设计。"],
+    body: "钻石、金属与每一处细节，皆围绕你而成。",
     viewAll: "浏览全部",
-    shopLabel: (name) => `查看${name}`,
+    shopLabel: (name) => `探索${name}`,
     items: {
       ring: { label: "戒指", short: "戒指", body: "订婚戒指与经典主石镶嵌。" },
-      earrings: { label: "耳环", short: "耳环", body: "耳钉、垂坠款与日常钻饰。" },
-      bangle: { label: "手链", short: "手链", body: "网球手链与精致腕间钻饰。" },
-      necklace: { label: "项链", short: "项链", body: "吊坠与简洁钻石项链。" },
+      earrings: { label: "耳环", short: "耳环", body: "耳钉、垂坠，与日常相伴的钻光。" },
+      bangle: { label: "手链", short: "手链", body: "网球手链，腕间一线静光。" },
+      necklace: { label: "项链", short: "项链", body: "吊坠与顺颈而下的纯净钻光。" },
     },
   },
   es: {
     label: "EL ATELIER",
-    title: ["Diseña la tuya."],
-    body: "Componemos la piedra, el metal y cada detalle a tu medida.",
+    title: ["Diseñada por ti."],
+    body: "La piedra, el metal y hasta el último detalle — compuestos a tu alrededor.",
     viewAll: "Explorar todo",
-    shopLabel: (name) => `Ver ${name.toLowerCase()}`,
+    shopLabel: (name) => `Descubrir ${name.toLowerCase()}`,
     items: {
-      ring: { label: "Anillos", short: "anillo", body: "Anillos de compromiso y monturas signature." },
-      earrings: { label: "Aretes", short: "aretes", body: "Studs, caídas y diamantes diarios." },
-      bangle: { label: "Pulseras", short: "pulsera", body: "Pulseras tenis y piezas refinadas de muñeca." },
-      necklace: { label: "Collares", short: "collar", body: "Colgantes y collares de diamante limpios." },
+      ring: { label: "Anillos", short: "anillos", body: "Anillos de compromiso y monturas signature." },
+      earrings: { label: "Aretes", short: "aretes", body: "Studs, caídas y diamantes para cada día." },
+      bangle: { label: "Pulseras", short: "pulseras", body: "Pulseras tenis, una línea serena de luz." },
+      necklace: { label: "Collares", short: "collares", body: "Colgantes y líneas puras de diamante." },
     },
   },
 };
 
 const quoteBoardCopy = {
   en: {
-    label: "PRICE CHECK",
-    stoneTitle: ["Choose the stone.", "See the spread."],
-    boardTitle: ["Retail markup,", "made visible."],
-    body: "Comparable 1ct lab-grown diamond ranges, shown against BeloveD direct custom quotes.",
+    label: "PRICE, IN THE OPEN",
+    stoneTitle: ["Choose the stone.", "See the difference."],
+    boardTitle: ["The same diamond,", "honestly priced."],
+    body: "Comparable one-carat lab-grown ranges, placed beside BeloveD's direct atelier quote.",
     belovedSpec: "Comparable 1.00ct / VS+ / Ideal",
-    browse: "Start a request",
+    browse: "Begin a commission",
     stonePanelAria: "BeloveD diamond pricing reference",
     chipsAria: "Comparison stone specification",
     listAria: "Lab diamond price range comparison",
     chips: ["1.00ct", "VS+", "Ideal", "IGI / GIA"],
-    savingsPill: "BeloveD starts at $320",
+    savingsPill: "BeloveD, from $320",
     saveBadge: "Lowest range",
-    saveLine: "Up to $560 less than Blue Nile",
+    saveLine: "Up to $560 below Blue Nile",
     note: "Example loose-stone ranges. Final quote depends on live inventory, certificate, setting, and metal.",
     stats: [
-      { value: "$320+", label: "Entry loose-stone quote" },
+      { value: "$320+", label: "Loose stones, from" },
       { value: "1.00ct", label: "Comparable lab-grown example" },
-      { value: "VS+", label: "Clean everyday clarity target" },
+      { value: "VS+", label: "Clean everyday clarity" },
     ],
   },
   ko: {
-    label: "가격 비교",
-    stoneTitle: ["스톤을 고르고", "차이를 보세요."],
-    boardTitle: ["리테일 마크업을", "눈에 보이게."],
-    body: "1캐럿 랩다이아몬드 기준 비교 범위를 BeloveD 직접 견적과 나란히 보여드립니다.",
+    label: "가격의 투명함",
+    stoneTitle: ["스톤을 고르고", "차이를 확인하세요."],
+    boardTitle: ["같은 다이아몬드,", "가격은 정직하게."],
+    body: "동급 1캐럿 랩다이아몬드의 시중 가격대와 BeloveD 아틀리에 직접 견적을 나란히 놓았습니다.",
     belovedSpec: "동급 1.00ct / VS+ / Ideal",
-    browse: "요청 시작하기",
+    browse: "주문제작 의뢰하기",
     stonePanelAria: "BeloveD 다이아몬드 가격 비교",
     chipsAria: "비교 스톤 사양",
     listAria: "랩다이아몬드 가격 범위 비교",
     chips: ["1.00ct", "VS+", "Ideal", "IGI / GIA"],
     savingsPill: "BeloveD는 $320부터",
-    saveBadge: "가장 낮은 범위",
-    saveLine: "Blue Nile 대비 최대 $560 낮게",
+    saveBadge: "가장 낮은 가격대",
+    saveLine: "Blue Nile 대비 최대 $560 절약",
     note: "루스 스톤 예시 범위입니다. 최종 견적은 실시간 재고, 인증서, 세팅, 메탈에 따라 달라집니다.",
     stats: [
       { value: "$320+", label: "루스 스톤 시작 견적" },
-      { value: "1.00ct", label: "비교 기준 랩다이아" },
-      { value: "VS+", label: "데일리로 깨끗한 등급" },
+      { value: "1.00ct", label: "비교 기준 랩다이아몬드" },
+      { value: "VS+", label: "일상에 충분히 맑은 등급" },
     ],
   },
   zh: {
-    label: "价格对比",
-    stoneTitle: ["先选主石", "再看差价。"],
-    boardTitle: ["零售溢价", "一眼看清。"],
-    body: "以 1 克拉培育钻石为例，对比 BeloveD 直接定制报价与常见零售区间。",
+    label: "价格透明",
+    stoneTitle: ["先选主石，", "再看分毫。"],
+    boardTitle: ["同样的钻石，", "更诚实的价格。"],
+    body: "以同级 1 克拉培育钻石为例，将市面零售区间与 BeloveD 工坊直接报价并列呈现。",
     belovedSpec: "同级 1.00ct / VS+ / Ideal",
-    browse: "开始需求",
+    browse: "开启定制",
     stonePanelAria: "BeloveD 钻石价格参考",
     chipsAria: "对比钻石规格",
     listAria: "培育钻石价格区间对比",
     chips: ["1.00ct", "VS+", "Ideal", "IGI / GIA"],
     savingsPill: "BeloveD $320 起",
-    saveBadge: "更低区间",
-    saveLine: "比 Blue Nile 最高低 $560",
-    note: "裸石价格为示例区间。最终报价取决于实时库存、证书、镶嵌和金属。",
+    saveBadge: "最优区间",
+    saveLine: "较 Blue Nile 至多节省 $560",
+    note: "裸石价格为示例区间。最终报价取决于实时库存、证书、镶嵌与金属。",
     stats: [
       { value: "$320+", label: "裸石起始报价" },
       { value: "1.00ct", label: "培育钻石对比规格" },
-      { value: "VS+", label: "日常佩戴净度目标" },
+      { value: "VS+", label: "日常佩戴净度之选" },
     ],
   },
   es: {
-    label: "COMPARA PRECIO",
+    label: "PRECIO TRANSPARENTE",
     stoneTitle: ["Elige la piedra.", "Mira la diferencia."],
-    boardTitle: ["El margen retail,", "a la vista."],
-    body: "Rangos comparables de diamantes lab-grown de 1 ct frente a una cotización directa BeloveD.",
+    boardTitle: ["El mismo diamante,", "sin el margen."],
+    body: "Rangos comparables de diamantes lab-grown de 1 ct, junto a la cotización directa del atelier BeloveD.",
     belovedSpec: "Equivalente 1.00ct / VS+ / Ideal",
-    browse: "Iniciar solicitud",
+    browse: "Encargar una pieza",
     stonePanelAria: "Referencia de precio de diamantes BeloveD",
     chipsAria: "Especificación de piedra comparable",
     listAria: "Comparación de rangos de precio lab-grown",
@@ -355,10 +355,10 @@ function HomeCore({ locale }) {
 }
 
 const dockCopy = {
-  en: { title: "Design yours", note: "No payment until you accept the quote" },
-  ko: { title: "당신의 디자인", note: "견적 수락 전까지 결제 없음" },
-  zh: { title: "为你定制", note: "接受报价前无需付款" },
-  es: { title: "Diseña la tuya", note: "Sin pago hasta aceptar la cotización" },
+  en: { title: "Yours to design", note: "Nothing to pay until you approve the quote" },
+  ko: { title: "당신의 디자인", note: "견적을 확인한 뒤에 결제하셔도 됩니다" },
+  zh: { title: "为你定制", note: "确认报价后再付款" },
+  es: { title: "Diseñada por ti", note: "No pagas nada hasta aprobar la cotización" },
 };
 
 function MobileDock({ locale, p }) {
@@ -389,10 +389,10 @@ function MobileDock({ locale, p }) {
 
 // ── Loved & Worn: 고객 리뷰 풀블리드 피드 (4+2 하이브리드: 피드 + 시네마틱 라이트박스) ──
 const lovedCopy = {
-  en: { kicker: "Loved & Worn", title: "See what we're creating", sub: "@beloved — real client moments", verified: "verified reviews", verifiedOne: "Verified order", share: "Share your moment", shareNote: "Delivered orders can leave a review from the order page — photos and video first.", close: "Close" },
-  ko: { kicker: "Loved & Worn", title: "고객들의 순간", sub: "@beloved — 실제 주문 인증샷", verified: "인증 리뷰", verifiedOne: "주문 인증", share: "내 순간 남기기", shareNote: "배송 완료된 주문 페이지에서 사진·영상과 함께 리뷰를 남길 수 있어요.", close: "닫기" },
-  zh: { kicker: "Loved & Worn", title: "客户的真实瞬间", sub: "@beloved — 真实订单晒单", verified: "认证评价", verifiedOne: "订单认证", share: "分享你的瞬间", shareNote: "已送达的订单可在订单页面上传照片或视频留下评价。", close: "关闭" },
-  es: { kicker: "Loved & Worn", title: "Momentos de nuestros clientes", sub: "@beloved — pedidos reales", verified: "reseñas verificadas", verifiedOne: "Pedido verificado", share: "Comparte tu momento", shareNote: "Los pedidos entregados pueden dejar una reseña con fotos y video desde la página del pedido.", close: "Cerrar" },
+  en: { kicker: "Loved & Worn", title: "Already loved, already worn", sub: "@beloved — real client moments", verified: "verified reviews", verifiedOne: "Verified order", share: "Share your moment", shareNote: "Once your order arrives, leave a review from the order page — photos and video first.", close: "Close" },
+  ko: { kicker: "Loved & Worn", title: "이미 누군가의 곁에서", sub: "@beloved — 고객들이 남긴 실제 순간", verified: "인증 리뷰", verifiedOne: "주문 인증", share: "나의 순간 남기기", shareNote: "배송이 완료되면 주문 페이지에서 사진·영상과 함께 리뷰를 남기실 수 있습니다.", close: "닫기" },
+  zh: { kicker: "Loved & Worn", title: "被珍爱的瞬间", sub: "@beloved — 来自真实订单的瞬间", verified: "认证评价", verifiedOne: "订单认证", share: "分享你的瞬间", shareNote: "订单送达后，可在订单页面附照片或视频留下评价。", close: "关闭" },
+  es: { kicker: "Loved & Worn", title: "Momentos de quienes ya la llevan", sub: "@beloved — pedidos reales", verified: "reseñas verificadas", verifiedOne: "Pedido verificado", share: "Comparte tu momento", shareNote: "Cuando llegue tu pedido, podrás dejar una reseña con fotos y video desde la página del pedido.", close: "Cerrar" },
 };
 
 function LovedWorn({ locale }) {
@@ -403,6 +403,7 @@ function LovedWorn({ locale }) {
   const [progress, setProgress] = useState(0);
   const trackRef = useRef(null);
   // ESC 닫기 · ←/→ 미디어 넘기기 (훅은 조기 return 이전에)
+  // 열려 있는 동안 배경 스크롤 잠금 — iOS에서 터치 스크롤이 뒤 페이지로 새는 것 방지
   useEffect(() => {
     if (!open) return undefined;
     function onKey(e) {
@@ -411,7 +412,12 @@ function LovedWorn({ locale }) {
       if (e.key === "ArrowRight") setMIdx((i) => (i + 1) % open.media.length);
     }
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = originalOverflow;
+    };
   }, [open]);
   if (reviews.length === 0) return null;
   const avg = (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1);
