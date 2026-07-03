@@ -195,6 +195,33 @@
   letter-spacing: 0.02em;
   font-variant-numeric: lining-nums tabular-nums;
 }
+.con-pager {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+.con-pager button {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--admin-line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--admin-ink);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+.con-pager button:hover:not(:disabled) { border-color: var(--admin-line-strong); }
+.con-pager button:disabled { opacity: 0.3; cursor: default; }
+.con-pager span {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  color: var(--admin-quiet);
+  font-variant-numeric: tabular-nums;
+}
 
 /* ── 스타일 라이브러리 워크벤치 ──────────────────────────── */
 .con-workbench {

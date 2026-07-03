@@ -12,6 +12,18 @@ export function ConsoleHead({ kicker, title, sub, children }) {
   );
 }
 
+// 테이블 페이저 — 페이지가 1장이면 렌더하지 않는다
+export function Pager({ page, pageCount, onPage }) {
+  if (pageCount <= 1) return null;
+  return (
+    <div className="con-pager">
+      <button type="button" aria-label="Previous page" disabled={page <= 1} onClick={() => onPage(page - 1)}>‹</button>
+      <span>{page} / {pageCount}</span>
+      <button type="button" aria-label="Next page" disabled={page >= pageCount} onClick={() => onPage(page + 1)}>›</button>
+    </div>
+  );
+}
+
 export function StatStrip({ stats }) {
   return (
     <div className="con-stats">

@@ -6,7 +6,7 @@ import { apiFetch, ApiUnavailableError } from "../../lib/api.js";
 import { MediaPicker, MediaThumb, usd } from "../../components/ui.jsx";
 import { getOpsStyle } from "../../lib/store.js";
 import { pickI18n, useLocale } from "../../i18n.jsx";
-import { ConsoleHead, StatStrip } from "./console.jsx";
+import { ConsoleHead, Pager, StatStrip } from "./console.jsx";
 
 // 견적 컴포저 셀렉트 옵션 · 메탈 코드 → 라벨 (인테이크 프리필용)
 const SHAPES = ["round", "oval", "cushion", "princess", "emerald", "pear", "marquise", "radiant", "asscher", "heart"];
@@ -190,6 +190,7 @@ function fetchState(setter) {
 
 // 완료 상태 — Past Orders 섹션으로 분류되는 stage
 const PAST_STAGES = new Set(["DELIVERED", "CANCELLED"]);
+const PAGE_SIZE = 10;
 
 function OrdersTable({ orders, t, navigate, withTotal = false }) {
   return (
@@ -229,9 +230,12 @@ export default function AdminLiveOrders() {
   const t = useCopy();
   const navigate = useNavigate();
   const [state, setState] = useState({ status: "loading", data: null });
+  const [livePage, setLivePage] = useState(1);
+  const [pastPage, setPastPage] = useState(1);
 
   useEffect(() => {
-    apiFetch("/admin/orders")
+    // 매출/파이프라인 스탯이 이 목록으로 계산되므로 서버 캡(500)까지 다 받아온다 — 표시는 10개씩 페이징
+    apiFetch("/admin/orders?limit=500")
       .then((d) => setState({ status: "ok", data: d.orders }))
       .catch(fetchState(setState));
   }, []);
@@ -241,6 +245,11 @@ export default function AdminLiveOrders() {
 
   const live = state.data.filter((o) => !PAST_STAGES.has(o.stage));
   const past = state.data.filter((o) => PAST_STAGES.has(o.stage));
+  // 데이터가 줄어 현재 페이지가 범위를 벗어나면 마지막 페이지로 클램프
+  const livePages = Math.max(1, Math.ceil(live.length / PAGE_SIZE));
+  const pastPages = Math.max(1, Math.ceil(past.length / PAGE_SIZE));
+  const livePageNow = Math.min(livePage, livePages);
+  const pastPageNow = Math.min(pastPage, pastPages);
   const delivered = past.filter((o) => o.stage === "DELIVERED");
   const revenue = delivered.reduce((s, o) => s + (o.totalUsd || 0), 0);
   const pipeline = live.reduce((s, o) => s + (o.totalUsd || 0), 0);
@@ -261,12 +270,22 @@ export default function AdminLiveOrders() {
       <div className="con-section-label"><h3>{t.liveSection}</h3><span className="con-count">{live.length}</span></div>
       {live.length === 0
         ? <div className="con-table-panel"><p className="con-note">{t.empty}</p></div>
-        : <OrdersTable orders={live} t={t} navigate={navigate} />}
+        : (
+          <>
+            <OrdersTable orders={live.slice((livePageNow - 1) * PAGE_SIZE, livePageNow * PAGE_SIZE)} t={t} navigate={navigate} />
+            <Pager page={livePageNow} pageCount={livePages} onPage={setLivePage} />
+          </>
+        )}
 
       <div className="con-section-label"><h3>{t.pastSection}</h3><span className="con-count">{past.length}</span></div>
       {past.length === 0
         ? <div className="con-table-panel"><p className="con-note">{t.emptyPast}</p></div>
-        : <OrdersTable orders={past} t={t} navigate={navigate} withTotal />}
+        : (
+          <>
+            <OrdersTable orders={past.slice((pastPageNow - 1) * PAGE_SIZE, pastPageNow * PAGE_SIZE)} t={t} navigate={navigate} withTotal />
+            <Pager page={pastPageNow} pageCount={pastPages} onPage={setPastPage} />
+          </>
+        )}
     </>
   );
 }

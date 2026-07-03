@@ -773,7 +773,7 @@ export async function listServerOrders({ limit = 100 } = {}) {
      join customers c on c.id = o.customer_id
      order by (o.phase = 'CLOSED' or o.stage = 'CANCELLED'), o.updated_at desc
      limit $1`,
-    [Math.min(Number(limit) || 100, 200)],
+    [Math.min(Number(limit) || 100, 500)],
   );
   return rows.map((r) => ({
     orderCode: r.order_code,
