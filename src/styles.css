@@ -1551,6 +1551,21 @@ html[data-theme="day"] .quality {
   font-size: 12px;
 }
 
+.footer-social-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.footer-social {
+  display: inline-flex;
+  align-items: center;
+  color: var(--quiet);
+  transition: color 0.15s ease;
+}
+
+.footer-social:hover { color: var(--text); }
+
 /* ── Info / 정책·신뢰 페이지 (About·Returns·Warranty·Shipping·Contact·FAQ) ── */
 .info-page {
   width: min(calc(100% - 44px), 760px);

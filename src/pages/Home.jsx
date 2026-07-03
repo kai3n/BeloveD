@@ -10,6 +10,7 @@ import { MediaThumb, withBase } from "../components/ui.jsx";
 import { listReviews } from "../lib/store.js";
 import { useDBVersion } from "../lib/useDB.js";
 import { DESIGN_CATEGORIES } from "../lib/designSlots.js";
+import { social } from "../lib/infoContent.js";
 import { track } from "../lib/track.js";
 
 const collectionImageClass = {
@@ -391,10 +392,10 @@ function MobileDock({ locale, p }) {
 
 // ── Loved & Worn: 고객 리뷰 풀블리드 피드 (4+2 하이브리드: 피드 + 시네마틱 라이트박스) ──
 const lovedCopy = {
-  en: { kicker: "Loved & Worn", title: "Already loved, already worn", sub: "@beloved — real client moments", verified: "verified reviews", verifiedOne: "Verified order", share: "Share your moment", shareNote: "Once your order arrives, leave a review from the order page — photos and video first.", close: "Close" },
-  ko: { kicker: "Loved & Worn", title: "이미 누군가의 곁에서", sub: "@beloved — 고객들이 남긴 실제 순간", verified: "인증 리뷰", verifiedOne: "주문 인증", share: "나의 순간 남기기", shareNote: "배송이 완료되면 주문 페이지에서 사진·영상과 함께 리뷰를 남기실 수 있습니다.", close: "닫기" },
-  zh: { kicker: "Loved & Worn", title: "被珍爱的瞬间", sub: "@beloved — 来自真实订单的瞬间", verified: "认证评价", verifiedOne: "订单认证", share: "分享你的瞬间", shareNote: "订单送达后，可在订单页面附照片或视频留下评价。", close: "关闭" },
-  es: { kicker: "Loved & Worn", title: "Momentos de quienes ya la llevan", sub: "@beloved — pedidos reales", verified: "reseñas verificadas", verifiedOne: "Pedido verificado", share: "Comparte tu momento", shareNote: "Cuando llegue tu pedido, podrás dejar una reseña con fotos y video desde la página del pedido.", close: "Cerrar" },
+  en: { kicker: "Loved & Worn", title: "Already loved, already worn", sub: "real client moments", verified: "verified reviews", verifiedOne: "Verified order", share: "Share your moment", shareNote: "Once your order arrives, leave a review from the order page — photos and video first.", close: "Close" },
+  ko: { kicker: "Loved & Worn", title: "이미 누군가의 곁에서", sub: "고객들이 남긴 실제 순간", verified: "인증 리뷰", verifiedOne: "주문 인증", share: "나의 순간 남기기", shareNote: "배송이 완료되면 주문 페이지에서 사진·영상과 함께 리뷰를 남기실 수 있습니다.", close: "닫기" },
+  zh: { kicker: "Loved & Worn", title: "被珍爱的瞬间", sub: "来自真实订单的瞬间", verified: "认证评价", verifiedOne: "订单认证", share: "分享你的瞬间", shareNote: "订单送达后，可在订单页面附照片或视频留下评价。", close: "关闭" },
+  es: { kicker: "Loved & Worn", title: "Momentos de quienes ya la llevan", sub: "pedidos reales", verified: "reseñas verificadas", verifiedOne: "Pedido verificado", share: "Comparte tu momento", shareNote: "Cuando llegue tu pedido, podrás dejar una reseña con fotos y video desde la página del pedido.", close: "Cerrar" },
 };
 
 function LovedWorn({ locale }) {
@@ -440,7 +441,10 @@ function LovedWorn({ locale }) {
       <div className="lw-head">
         <p className="section-label">{copy.kicker}</p>
         <h2>{copy.title}</h2>
-        <p className="lw-at">{copy.sub}</p>
+        <p className="lw-at">
+          <a href={social.instagram.url} target="_blank" rel="noopener noreferrer">{social.instagram.handle}</a>
+          {" — "}{copy.sub}
+        </p>
         <div className="lw-agg"><strong>{avg}</strong><span className="lw-stars">{"★".repeat(5)}</span><span>{reviews.length} {copy.verified}</span></div>
       </div>
       <div className="lw-feed">

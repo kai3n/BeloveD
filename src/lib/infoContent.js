@@ -1,6 +1,12 @@
 // 신뢰·정책·회사소개(Tier 1) 콘텐츠 — 4개 언어.
 // translations.js 비대화 방지 위해 분리. Info.jsx / Layout(Footer)에서 locale로 조회.
 
+// 소셜 프로필 — 핸들 변경 시 여기 한 곳만 수정 (Footer + Home Loved & Worn에서 참조)
+export const social = {
+  instagram: { handle: "@belovediamondjewelry", url: "https://www.instagram.com/belovediamondjewelry/" },
+  facebook: { handle: "BeloveD Diamond", url: "https://www.facebook.com/profile.php?id=61563629707808" },
+};
+
 export const footerGroups = {
   en: { shop: "Shop", learn: "Learn", care: "Customer Care", company: "Company" },
   ko: { shop: "쇼핑", learn: "가이드", care: "고객 지원", company: "회사" },

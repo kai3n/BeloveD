@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { BadgeCheck, ChevronDown, LogOut, Menu, Moon, RotateCcw, ShieldCheck, Sun, Truck, UserRound, X } from "lucide-react";
+import { BadgeCheck, ChevronDown, Facebook, Instagram, LogOut, Menu, Moon, RotateCcw, ShieldCheck, Sun, Truck, UserRound, X } from "lucide-react";
 import { localeOptions } from "./translations.js";
-import { footerGroups, infoNav, trustStrip } from "./lib/infoContent.js";
+import { footerGroups, infoNav, social, trustStrip } from "./lib/infoContent.js";
 import { useLocale } from "./i18n.jsx";
 import { useAuth } from "./lib/auth.jsx";
 import { pendingCount } from "./lib/store.js";
@@ -267,6 +267,26 @@ export function Footer() {
       </div>
       <div className="footer-bottom">
         <span>{f.copyright}</span>
+        <div className="footer-social-row">
+          <a
+            className="footer-social"
+            href={social.instagram.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`Instagram — ${social.instagram.handle}`}
+          >
+            <Instagram size={18} strokeWidth={1.5} aria-hidden="true" />
+          </a>
+          <a
+            className="footer-social"
+            href={social.facebook.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`Facebook — ${social.facebook.handle}`}
+          >
+            <Facebook size={18} strokeWidth={1.5} aria-hidden="true" />
+          </a>
+        </div>
       </div>
     </footer>
   );
