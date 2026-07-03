@@ -39,6 +39,7 @@ const COPY = {
     subNote: "Stone substitution note (blank = default policy text)", deposit: "Deposit ($, blank = 30%)",
     media: "Media (published to the portal)",
     fire: "Send", done: "Done", current: "Current", sentLabel: "Sent ✓",
+    resend: "Send revised proposal", changesRequested: "Customer requested changes",
     waitingOn: { CUSTOMER: "Customer", BELOVEDIAMOND: "BeloveD", EXTERNAL: "Carrier", NONE: "—" },
     steps: {
       proposal_sent: "Send the proposal", deposit_confirmed: "Deposit received",
@@ -69,6 +70,7 @@ const COPY = {
     subNote: "스톤 대체 안내 (비우면 기본 문구)", deposit: "디파짓 ($, 비우면 30%)",
     media: "미디어 (포털에 공개)",
     fire: "보내기", done: "완료", current: "현재", sentLabel: "보냄 ✓",
+    resend: "수정 제안 보내기", changesRequested: "고객이 수정을 요청했습니다",
     waitingOn: { CUSTOMER: "고객", BELOVEDIAMOND: "BeloveD", EXTERNAL: "운송사", NONE: "—" },
     steps: {
       proposal_sent: "제안 발송", deposit_confirmed: "디파짓 수령",
@@ -99,6 +101,7 @@ const COPY = {
     subNote: "替代说明（留空用默认文案）", deposit: "定金（$，留空按 30%）",
     media: "媒体（发布到订单页面）",
     fire: "发送", done: "完成", current: "当前", sentLabel: "已发送 ✓",
+    resend: "发送修改后的方案", changesRequested: "客户请求修改",
     waitingOn: { CUSTOMER: "客户", BELOVEDIAMOND: "BeloveD", EXTERNAL: "承运商", NONE: "—" },
     steps: {
       proposal_sent: "发送方案", deposit_confirmed: "已收定金",
@@ -129,6 +132,7 @@ const COPY = {
     subNote: "Nota de sustitución (vacío = texto por defecto)", deposit: "Depósito ($, vacío = 30%)",
     media: "Medios (publicados al portal)",
     fire: "Enviar", done: "Hecho", current: "Actual", sentLabel: "Enviado ✓",
+    resend: "Enviar propuesta revisada", changesRequested: "El cliente pidió cambios",
     waitingOn: { CUSTOMER: "Cliente", BELOVEDIAMOND: "BeloveD", EXTERNAL: "Transportista", NONE: "—" },
     steps: {
       proposal_sent: "Enviar la propuesta", deposit_confirmed: "Depósito recibido",
@@ -245,7 +249,7 @@ export default function AdminLiveOrders() {
 }
 
 // 이벤트 스텝 카드 — 필요한 입력(미디어/노트/금액/IGI/운송장)만 노출
-function StepCard({ step, order, t, onSent }) {
+function StepCard({ step, order, changeRequest, t, onSent }) {
   const [media, setMedia] = useState([]);
   // 견적 컴포저는 인테이크에서 프리필 — 어드민은 확인·수정만 하고 보낸다
   const fp = order.intake?.formPayload || {};
@@ -268,10 +272,12 @@ function StepCard({ step, order, t, onSent }) {
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  // 한 번 보낸 스텝은 잠근다 — 중복 발송(중복 메일·중복 컨펌)이 재발송 필요보다 훨씬 흔한 사고다
+  // 한 번 보낸 스텝은 잠근다 — 중복 발송(중복 메일·중복 컨펌)이 재발송 필요보다 훨씬 흔한 사고다.
+  // 단, 고객이 수정을 요청한 상태(changeRequest)면 다시 열어 수정본을 보낼 수 있다.
   const stageIdx = STAGE_ORDER.indexOf(order.stage);
   const reachIdx = STAGE_ORDER.indexOf(step.reaches);
   const done = stageIdx >= reachIdx;
+  const unlocked = done && Boolean(changeRequest);
 
   async function fire() {
     setBusy(true);
@@ -321,13 +327,31 @@ function StepCard({ step, order, t, onSent }) {
   }
 
   return (
-    <div className="panel form-stack" style={done ? { opacity: 0.55 } : undefined}>
+    <div className="panel form-stack" style={done && !unlocked ? { opacity: 0.55 } : undefined}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
         <strong>{t.steps[step.type]}</strong>
-        {done
-          ? <span className="status-badge mst-done">{t.done}</span>
-          : <span className="status-badge mst-pending">{step.reaches}</span>}
+        {unlocked
+          ? <span className="status-badge mst-waitingClient">{t.changesRequested}</span>
+          : done
+            ? <span className="status-badge mst-done">{t.done}</span>
+            : <span className="status-badge mst-pending">{step.reaches}</span>}
       </div>
+      {changeRequest && (
+        <div className="feedback-note" style={{ borderLeft: "2px solid var(--accent)", paddingLeft: 12 }}>
+          <strong>{t.changesRequested}</strong>
+          {changeRequest.responsePayload?.message && (
+            <p style={{ margin: "4px 0 0" }}>“{changeRequest.responsePayload.message}”</p>
+          )}
+          {changeRequest.responsePayload?.media?.length > 0 && (
+            <div className="card-grid cols-3" style={{ marginTop: 8 }}>
+              {changeRequest.responsePayload.media.map((m, i) => <MediaThumb key={i} media={m} alt="" ratio="1 / 1" />)}
+            </div>
+          )}
+          {changeRequest.respondedAt && (
+            <p className="form-hint" style={{ margin: "4px 0 0" }}>{new Date(changeRequest.respondedAt).toLocaleString()}</p>
+          )}
+        </div>
+      )}
       {(
         <>
           {step.media && (
@@ -407,8 +431,13 @@ function StepCard({ step, order, t, onSent }) {
             )}
           </div>
           {error && <p className="form-error">{error}</p>}
-          <button className={`button ${done ? "secondary" : "primary"} small`} type="button" disabled={busy || done} onClick={fire}>
-            {done ? t.sentLabel : t.fire}
+          <button
+            className={`button ${done && !unlocked ? "secondary" : "primary"} small`}
+            type="button"
+            disabled={busy || (done && !unlocked)}
+            onClick={fire}
+          >
+            {unlocked ? t.resend : done ? t.sentLabel : t.fire}
           </button>
         </>
       )}
@@ -484,10 +513,19 @@ export function AdminLiveOrderDetail() {
         <p className="admin-kicker">{t.console}</p>
         <p className="form-hint">{t.consoleHint}</p>
       </div>
-      {FLOW.map((step) => (
-        <StepCard key={step.type} step={step} order={order} t={t}
-          onSent={() => { setNotice(t.sent); load(); }} />
-      ))}
+      {FLOW.map((step) => {
+        // 고객이 수정 요청한 컨펌 종류는 해당 스텝을 다시 연다 (새 OPEN 액션이 생기면 다시 잠김)
+        const openKinds = new Set(actions.filter((a) => a.status === "OPEN").map((a) => a.kind));
+        const changeRequest = step.action && !openKinds.has(step.action.kind)
+          ? actions
+            .filter((a) => a.kind === step.action.kind && a.status === "RESPONDED" && a.responsePayload?.response === "REQUEST_CHANGES")
+            .sort((x, y) => new Date(y.respondedAt) - new Date(x.respondedAt))[0] || null
+          : null;
+        return (
+          <StepCard key={step.type} step={step} order={order} t={t} changeRequest={changeRequest}
+            onSent={() => { setNotice(t.sent); load(); }} />
+        );
+      })}
 
       {artifacts.length > 0 && (
         <div className="panel form-stack">
@@ -514,6 +552,12 @@ export function AdminLiveOrderDetail() {
               <strong>{a.kind}</strong> · <span className={`status-badge ${a.status === "OPEN" ? "mst-waitingClient" : a.status === "RESPONDED" ? "mst-done" : "mst-pending"}`}>{a.status}</span>
               {a.responsePayload?.response && ` · ${a.responsePayload.response}`}
               {a.respondedAt && ` · ${new Date(a.respondedAt).toLocaleString()}`}
+              {a.responsePayload?.message && <p style={{ margin: "4px 0 0" }}>“{a.responsePayload.message}”</p>}
+              {a.responsePayload?.media?.length > 0 && (
+                <div className="card-grid cols-3" style={{ marginTop: 8 }}>
+                  {a.responsePayload.media.map((m, i) => <MediaThumb key={i} media={m} alt="" ratio="1 / 1" />)}
+                </div>
+              )}
             </div>
           ))}
         </div>

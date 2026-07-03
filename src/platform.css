@@ -40,6 +40,11 @@
   outline: none;
   border-color: rgba(214, 197, 160, 0.6);
 }
+/* 실서버 제안 카드 미디어 — 항상 정사각 (단일이면 중앙 460px, 여러 장이면 3열 그리드) */
+.server-proposal-media { display: grid; gap: 10px; grid-template-columns: repeat(3, 1fr); }
+.server-proposal-media.is-single { grid-template-columns: minmax(0, 460px); justify-content: center; }
+.server-proposal-media .media-thumb { width: 100%; object-fit: cover; background: var(--surface); }
+
 /* 클릭 가능한 테이블 행 — 행 전체가 상세로 이동 */
 .data-table tr.row-clickable { cursor: pointer; }
 .data-table tr.row-clickable:hover td { background: var(--bg-2); }

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { apiFetch, ApiUnavailableError } from "../lib/api.js";
 import { useAuth, LOGIN_FOR } from "../lib/auth.jsx";
-import { MediaThumb, usd } from "../components/ui.jsx";
+import { MediaPicker, MediaThumb, usd } from "../components/ui.jsx";
 import { PROPOSAL_FLOW_COPY } from "../lib/proposalFlowCopy.js";
 import { useLocale } from "../i18n.jsx";
 
@@ -41,6 +41,10 @@ const COPY = {
       DELIVERY_ADDRESS: "Confirm your delivery address",
     },
     respond: { APPROVE: "Approve", ACCEPT: "Accept", CONFIRM: "Confirm", REQUEST_CHANGES: "Request changes", REJECT: "Decline" },
+    changesTitle: "What should we change?",
+    changesPlaceholder: "Tell us what you'd like different — stone, metal, budget, design details…",
+    changesSend: "Send request", changesCancel: "Back",
+    changesAttach: "Photos or videos (optional)",
     responded: "Thank you — your response is in. We'll take it from here.",
     timelineTitle: "Timeline",
     artifactsTitle: "Shared with you",
@@ -88,6 +92,10 @@ const COPY = {
       DELIVERY_ADDRESS: "배송지를 확인해 주세요",
     },
     respond: { APPROVE: "승인", ACCEPT: "수락", CONFIRM: "컨펌", REQUEST_CHANGES: "수정 요청", REJECT: "반려" },
+    changesTitle: "어떤 부분을 바꿔드릴까요?",
+    changesPlaceholder: "스톤, 메탈, 예산, 디자인 디테일 등 원하시는 변경을 적어주세요…",
+    changesSend: "요청 보내기", changesCancel: "뒤로",
+    changesAttach: "사진·영상 첨부 (선택)",
     responded: "감사합니다 — 응답이 접수됐습니다. 이후 진행은 저희가 맡을게요.",
     timelineTitle: "타임라인",
     artifactsTitle: "공유된 자료",
@@ -135,6 +143,10 @@ const COPY = {
       DELIVERY_ADDRESS: "请确认收货地址",
     },
     respond: { APPROVE: "同意", ACCEPT: "接受", CONFIRM: "确认", REQUEST_CHANGES: "请求修改", REJECT: "拒绝" },
+    changesTitle: "需要修改哪些地方？",
+    changesPlaceholder: "请告诉我们想调整的内容 — 钻石、金属、预算、设计细节…",
+    changesSend: "发送请求", changesCancel: "返回",
+    changesAttach: "附上照片或视频（可选）",
     responded: "谢谢 — 已收到您的回复，后续交给我们。",
     timelineTitle: "时间线",
     artifactsTitle: "与您共享",
@@ -182,6 +194,10 @@ const COPY = {
       DELIVERY_ADDRESS: "Confirma tu dirección de entrega",
     },
     respond: { APPROVE: "Aprobar", ACCEPT: "Aceptar", CONFIRM: "Confirmar", REQUEST_CHANGES: "Pedir cambios", REJECT: "Rechazar" },
+    changesTitle: "¿Qué deberíamos cambiar?",
+    changesPlaceholder: "Cuéntanos qué quieres diferente — piedra, metal, presupuesto, detalles…",
+    changesSend: "Enviar solicitud", changesCancel: "Atrás",
+    changesAttach: "Fotos o videos (opcional)",
     responded: "Gracias — recibimos tu respuesta. Nosotros seguimos desde aquí.",
     timelineTitle: "Cronología",
     artifactsTitle: "Compartido contigo",
@@ -214,7 +230,8 @@ export function serverActionLabel(kind, locale) {
 function ServerProposalCard({ pay, media, fc, t, shapes }) {
   const stone = pay.stone || null;
   const total = pay.totalUsd > 0 ? pay.totalUsd : null;
-  const deposit = total ? (pay.depositUsd > 0 ? pay.depositUsd : Math.round(total * 0.3)) : null;
+  // 디파짓은 총액을 넘지 못한다 — 초과 입력 시 잔금이 음수로 보이는 것 방지
+  const deposit = total ? Math.min(total, pay.depositUsd > 0 ? pay.depositUsd : Math.round(total * 0.3)) : null;
   const metalSummary = [
     pay.metalSpec,
     pay.estWeightG ? fc.weightApprox(pay.estWeightG) : "",
@@ -226,13 +243,8 @@ function ServerProposalCard({ pay, media, fc, t, shapes }) {
   return (
     <div className="proposal-card">
       {media?.length > 0 && (
-        <div className="proposal-hero">
-          <MediaThumb media={media[0]} ratio="16 / 10" alt="" fit="contain" eager />
-        </div>
-      )}
-      {media?.length > 1 && (
-        <div className="card-grid cols-3">
-          {media.slice(1).map((m, i) => <MediaThumb key={i} media={m} alt="" ratio="1 / 1" />)}
+        <div className={`server-proposal-media${media.length === 1 ? " is-single" : ""}`}>
+          {media.map((m, i) => <MediaThumb key={i} media={m} alt="" ratio="1 / 1" eager={i === 0} />)}
         </div>
       )}
       <div className="proposal-card-body">
@@ -251,7 +263,9 @@ function ServerProposalCard({ pay, media, fc, t, shapes }) {
             {/* 구버전 payload(자유 텍스트 스펙) 폴백 */}
             {!stone && pay.stoneSpec && <div><dt>{fc.specStone}</dt><dd>{pay.stoneSpec}</dd></div>}
           </dl>
-          {pay.note && <p className="form-hint" style={{ marginTop: 10 }}>{pay.note}</p>}
+          {pay.note && (
+            <p style={{ margin: "12px 0 0", color: "var(--muted)", fontSize: 13.5, lineHeight: 1.65 }}>{pay.note}</p>
+          )}
         </div>
         {total && (
           <aside className="proposal-pricing">
@@ -276,7 +290,10 @@ function ServerProposalCard({ pay, media, fc, t, shapes }) {
 function fmtDate(iso, locale) {
   if (!iso) return "";
   try {
-    return new Date(iso).toLocaleDateString(locale === "zh" ? "zh-CN" : locale, { month: "short", day: "numeric" });
+    // 분 단위까지 — 같은 날 여러 이벤트(제안 발송→수정 요청→재발송)를 구분할 수 있어야 한다
+    return new Date(iso).toLocaleString(locale === "zh" ? "zh-CN" : locale, {
+      month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+    });
   } catch { return ""; }
 }
 
@@ -288,6 +305,10 @@ export default function ServerOrderPortal({ orderCode }) {
   const t = COPY[locale] || COPY.en;
   const [state, setState] = useState({ status: "loading", order: null });
   const [respondedId, setRespondedId] = useState("");
+  // 수정 요청은 무엇을 바꿀지 적을 수 있어야 어드민이 반영한다 — 클릭 시 텍스트 입력 단계로
+  const [changeMode, setChangeMode] = useState(false);
+  const [changeMsg, setChangeMsg] = useState("");
+  const [changeMedia, setChangeMedia] = useState([]); // 참고 사진·영상 — R2 업로드 후 URL만 전송
 
   useEffect(() => {
     let cancelled = false;
@@ -303,14 +324,17 @@ export default function ServerOrderPortal({ orderCode }) {
     return () => { cancelled = true; };
   }, [orderCode, user?.id, respondedId]);
 
-  async function respond(action, response) {
+  async function respond(action, response, extra = {}) {
     try {
       await apiFetch(`/actions/${action.id}/respond`, {
         method: "POST",
-        body: { response, expectedSubjectVersionId: action.subjectVersionId },
+        body: { response, expectedSubjectVersionId: action.subjectVersionId, ...extra },
       });
       setRespondedId(action.id); // refetch로 최신 상태 반영
     } catch { /* 이미 응답됨(409) 등 — refetch가 진실을 보여준다 */ setRespondedId(action.id); }
+    setChangeMode(false);
+    setChangeMsg("");
+    setChangeMedia([]);
   }
 
   if (state.status === "loading") {
@@ -371,18 +395,52 @@ export default function ServerOrderPortal({ orderCode }) {
             <div><h3>{t.kinds[action.kind] || action.title || t.nextTitle}</h3>{action.description && <p>{action.description}</p>}</div>
             <span className="status-badge mst-waitingClient">{t.nextTitle}</span>
           </div>
-          <div className="customer-decision-actions" style={{ marginTop: 12 }}>
-            {(action.allowedResponses.length ? action.allowedResponses : ["CONFIRM"]).map((response, i) => (
-              <button
-                key={response}
-                className={`button ${i === 0 ? "primary" : "secondary"}`}
-                type="button"
-                onClick={() => respond(action, response)}
-              >
-                {t.respond[response] || response}
-              </button>
-            ))}
-          </div>
+          {changeMode ? (
+            <div className="form-stack" style={{ marginTop: 12 }}>
+              <label className="field"><span>{t.changesTitle}</span>
+                <textarea
+                  rows={3}
+                  value={changeMsg}
+                  placeholder={t.changesPlaceholder}
+                  onChange={(e) => setChangeMsg(e.target.value)}
+                  autoFocus
+                />
+              </label>
+              <div className="field"><span>{t.changesAttach}</span>
+                <MediaPicker value={changeMedia} onChange={setChangeMedia} maxItems={3} showSamples={false} previewMode="list" />
+              </div>
+              <div className="customer-decision-actions">
+                <button
+                  className="button primary"
+                  type="button"
+                  disabled={!changeMsg.trim()}
+                  onClick={() => respond(action, "REQUEST_CHANGES", {
+                    message: changeMsg.trim(),
+                    // base64/blob 프리뷰 제외 — R2 publicUrl만 (jsonb·바디 한도 보호)
+                    media: changeMedia.filter((m) => /^https?:\/\//.test(m.src || "")).slice(0, 3),
+                  })}
+                >
+                  {t.changesSend}
+                </button>
+                <button className="button secondary" type="button" onClick={() => { setChangeMode(false); setChangeMsg(""); setChangeMedia([]); }}>
+                  {t.changesCancel}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="customer-decision-actions" style={{ marginTop: 12 }}>
+              {(action.allowedResponses.length ? action.allowedResponses : ["CONFIRM"]).map((response, i) => (
+                <button
+                  key={response}
+                  className={`button ${i === 0 ? "primary" : "secondary"}`}
+                  type="button"
+                  onClick={() => (response === "REQUEST_CHANGES" ? setChangeMode(true) : respond(action, response))}
+                >
+                  {t.respond[response] || response}
+                </button>
+              ))}
+            </div>
+          )}
         </section>
       )}
       {respondedId && !action && <p className="client-action-notice" role="status">{t.responded}</p>}
