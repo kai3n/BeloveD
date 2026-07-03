@@ -42,7 +42,8 @@ export default function App() {
           <Route index element={<Home />} />
           <Route path="login" element={<Login />} />
           <Route path="sign-in" element={<Login />} />
-          {WITH_BACKOFFICE && <Route path="staff" element={<StaffLogin />} />}
+          {/* 어드민 게이트 — 추측 불가 경로. 어디에도 링크하지 않는다(직접 접속/북마크 전용). */}
+          {WITH_BACKOFFICE && <Route path="gate-7f3k9x" element={<StaffLogin />} />}
           <Route path="designs" element={<StyleCatalog />} />
           <Route path="designs/:id" element={<StyleDetail />} />
           <Route path="styles" element={<Navigate to="/designs" replace />} />

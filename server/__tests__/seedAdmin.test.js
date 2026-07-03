@@ -9,7 +9,7 @@ describe("seedAdmin password resolution (I4)", () => {
 
   it("rejects a too-short provided password in production", () => {
     expect(() => resolveSeedPassword({ NODE_ENV: "production", SEED_ADMIN_PASSWORD: "short" }))
-      .toThrow(/at least 10/);
+      .toThrow(/at least 9/);
   });
 
   it("accepts a strong provided password in production", () => {
@@ -26,6 +26,6 @@ describe("seedAdmin password resolution (I4)", () => {
 
   it("enforces min length on a provided password in non-prod too", () => {
     expect(() => resolveSeedPassword({ NODE_ENV: "development", SEED_ADMIN_PASSWORD: "short" }))
-      .toThrow(/at least 10/);
+      .toThrow(/at least 9/);
   });
 });

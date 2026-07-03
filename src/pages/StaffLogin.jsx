@@ -1,10 +1,18 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth.jsx";
 import { useLocale } from "../i18n.jsx";
 
 // 스태프 로그인 — 현재 앱에서는 admin만 허용한다. Vendor/dealer 포털은 별도 앱에서 다룬다.
+// 게이트 경로는 어디에도 링크하지 않으며 검색엔진 색인도 막는다.
 export default function StaffLogin() {
+  useEffect(() => {
+    const meta = document.createElement("meta");
+    meta.name = "robots";
+    meta.content = "noindex, nofollow";
+    document.head.appendChild(meta);
+    return () => meta.remove();
+  }, []);
   const { p } = useLocale();
   const { login, loginServer } = useAuth();
   const navigate = useNavigate();

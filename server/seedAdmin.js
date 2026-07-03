@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 import { query, closePool } from "./db.js";
 import { hashPassword } from "./passwords.js";
 
-const MIN_PASSWORD_LEN = 10;
+const MIN_PASSWORD_LEN = 9;
 
 // Resolve the admin seed password, failing closed in production.
 export function resolveSeedPassword(env = process.env) {

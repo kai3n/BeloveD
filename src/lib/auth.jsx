@@ -8,7 +8,9 @@ const AuthContext = createContext(null);
 const DEMO_PASSWORD = "demo1234"; // mock: 이메일 로그인 데모 공통 비밀번호
 
 // Customer Web scope with an admin-only back office. Vendor/dealer portals live elsewhere.
-export const LOGIN_FOR = { customer: "/sign-in", admin: "/staff" };
+// 어드민 게이트 경로는 비밀 유지 대상 — 미인증 /admin 접근을 여기로 리다이렉트하면 경로가
+// 노출되므로 RequireRole은 admin에 한해 홈으로 보낸다.
+export const LOGIN_FOR = { customer: "/sign-in", admin: "/gate-7f3k9x" };
 
 export function AuthProvider({ children }) {
   const [userId, setUserId] = useState(() => localStorage.getItem(SESSION_KEY));
@@ -115,7 +117,11 @@ export function useAuth() {
 export function RequireRole({ role, children }) {
   const { user } = useAuth();
   const location = useLocation();
-  if (!user) return <Navigate to={LOGIN_FOR[role] || "/sign-in"} state={{ from: location.pathname }} replace />;
+  // admin은 로그인 페이지로 리다이렉트하지 않는다 — 게이트 경로 노출 방지 (직접 접속만 허용)
+  if (!user) {
+    if (role === "admin") return <Navigate to="/" replace />;
+    return <Navigate to={LOGIN_FOR[role] || "/sign-in"} state={{ from: location.pathname }} replace />;
+  }
   if (role && user.role !== role) return <Navigate to="/" replace />;
   return children;
 }

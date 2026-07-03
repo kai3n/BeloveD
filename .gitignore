@@ -18,6 +18,8 @@ demo-video/
 /*.webp
 /*.mp4
 /*.mov
-.claude/
+# .claude는 로컬 상태(설정·워크트리)만 제외하고 프로젝트 스킬은 추적한다
+.claude/*
+!.claude/skills/
 .vercel
 .env*
