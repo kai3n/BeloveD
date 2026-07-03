@@ -71,7 +71,8 @@ export function customerRouter() {
     async (req, res, next) => {
       try {
         const { type, data } = req.body || {};
-        if (!EVENT_TRANSITIONS[type] || type === "received") {
+        // 왜: EVENT_TRANSITIONS[type]는 상속된 Object.prototype 속성명("toString" 등)도 truthy로 통과시킨다 — own-property로만 검사
+        if (!Object.hasOwn(EVENT_TRANSITIONS, type) || type === "received") {
           throw new ApiError("VALIDATION_ERROR", 400, "unknown event type");
         }
         const result = await recordOrderEvent(req.params.orderCode, type, data || {});

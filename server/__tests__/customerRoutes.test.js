@@ -1,11 +1,15 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import request from "supertest";
+import express from "express";
+import cookieParser from "cookie-parser";
 import { createApp } from "../app.js";
 import { truncateCustomerCore } from "./helpers.js";
 import { drainMail } from "../mailer.js";
 import { __resetRateLimit } from "../rateLimit.js";
 import { query } from "../db.js";
 import { hashPassword } from "../passwords.js";
+import { attachPrincipal } from "../middleware.js";
+import { customerRouter } from "../customerRoutes.js";
 
 const app = createApp();
 const intakeBody = { email: "new@test.com", name: "Jiwon", locale: "ko", category: "ring", termsAccepted: true };
@@ -80,18 +84,40 @@ describe("POST /v1/admin/orders/:orderCode/events", () => {
     const res = await agent.post(`/v1/admin/orders/${intake.body.orderCode}/events`)
       .send({ type: "shipped", data: { tracking: "1Z999" } });
     expect(res.status).toBe(201);
+    expect(res.body.ok).toBe(true);
     expect(res.body.stage).toBe("SHIPPING");
+    expect(res.body.eventId).toMatch(/^TL-\d{6}$/);
     const mails = drainMail();
     expect(mails).toHaveLength(1);
     expect(mails[0].type).toBe("order_shipped");
     expect(mails[0].subject).toContain("발송"); // intakeBody locale=ko
+
+    // 같은 type 재호출도 허용 — 재발송 = 어드민 의도 (스펙 §2)
+    const res2 = await agent.post(`/v1/admin/orders/${intake.body.orderCode}/events`)
+      .send({ type: "shipped", data: { tracking: "1Z999" } });
+    expect(res2.status).toBe(201);
+    const mails2 = drainMail();
+    expect(mails2).toHaveLength(1);
+    expect(mails2[0].type).toBe("order_shipped");
   });
 
-  it("received·미지원 type은 400", async () => {
+  it("received·미지원 type·프로토타입 속성명은 400 VALIDATION_ERROR", async () => {
     const agent = await adminAgent();
-    for (const type of ["received", "bogus"]) {
+    for (const type of ["received", "bogus", "toString", "__proto__"]) {
       const res = await agent.post("/v1/admin/orders/BD-000001/events").send({ type });
       expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe("VALIDATION_ERROR");
     }
+  });
+
+  it("이벤트 라우트 자체의 requireAdmin — 상류 라우터 없이도 401", async () => {
+    const bare = express();
+    bare.use(express.json());
+    bare.use(cookieParser());
+    bare.use(attachPrincipal);
+    bare.use("/v1", customerRouter());
+    bare.use((err, _req, res, _next) => res.status(err.status || 500).json({ error: { code: err.code || "INTERNAL_ERROR" } }));
+    const res = await request(bare).post("/v1/admin/orders/BD-000001/events").send({ type: "shipped" });
+    expect(res.status).toBe(401);
   });
 });

@@ -536,7 +536,8 @@ export const EVENT_TRANSITIONS = {
 };
 
 export async function recordOrderEvent(orderCode, type, data = {}) {
-  const transition = EVENT_TRANSITIONS[type];
+  // 왜: EVENT_TRANSITIONS[type]는 상속된 Object.prototype 속성명("toString" 등)도 truthy로 통과시킨다 — own-property로만 검사
+  const transition = Object.hasOwn(EVENT_TRANSITIONS, type) ? EVENT_TRANSITIONS[type] : null;
   if (!transition) throw new ApiError("VALIDATION_ERROR", 400, `unknown event type: ${type}`);
   return withTransaction(async (client) => {
     const { rows } = await client.query(

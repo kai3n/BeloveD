@@ -46,4 +46,9 @@ describe("recordOrderEvent", () => {
     const order = await makeOrder();
     await expect(recordOrderEvent(order.orderCode, "nope", {})).rejects.toMatchObject({ code: "VALIDATION_ERROR" });
   });
+
+  it("프로토타입 상속 속성명(toString)은 own-property가 아니므로 400", async () => {
+    const order = await makeOrder();
+    await expect(recordOrderEvent(order.orderCode, "toString", {})).rejects.toMatchObject({ code: "VALIDATION_ERROR" });
+  });
 });
