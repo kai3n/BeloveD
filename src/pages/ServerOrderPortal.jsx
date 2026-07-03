@@ -36,7 +36,7 @@ const COPY = {
     waitingBalance: "Your turn — settle the balance below to start shipping.",
     stages: {
       OPS_REVIEW: "Reviewing your request", STONE_SELECTION: "Selecting your stone", QUOTE: "Review your proposal",
-      DEPOSIT: "Reserved — deposit", CAD: "Designing", PRODUCTION: "Crafting", FINAL_QC: "Final quality check",
+      DEPOSIT: "Awaiting your deposit", CAD: "Designing", PRODUCTION: "Crafting", FINAL_QC: "Final quality check",
       BALANCE: "Balance", SHIPPING: "Shipping", DELIVERED: "Delivered", CANCELLED: "Cancelled",
     },
     phases: { DEFINE: "Define your piece", MAKING: "We make it", DELIVERY: "Deliver" },
@@ -90,7 +90,7 @@ const COPY = {
     waitingBalance: "지금은 고객님 차례예요 — 아래에서 잔금을 보내주시면 배송 준비가 시작됩니다.",
     stages: {
       OPS_REVIEW: "요청 검토 중", STONE_SELECTION: "스톤 선정 중", QUOTE: "제안 확인 대기",
-      DEPOSIT: "예약 — 디파짓", CAD: "디자인 중", PRODUCTION: "제작 중", FINAL_QC: "최종 품질 확인",
+      DEPOSIT: "디파짓 대기", CAD: "디자인 중", PRODUCTION: "제작 중", FINAL_QC: "최종 품질 확인",
       BALANCE: "잔금", SHIPPING: "배송 중", DELIVERED: "배송 완료", CANCELLED: "취소됨",
     },
     phases: { DEFINE: "피스 확정", MAKING: "제작", DELIVERY: "배송" },
@@ -144,7 +144,7 @@ const COPY = {
     waitingBalance: "轮到您了 — 请在下方支付尾款以安排发货。",
     stages: {
       OPS_REVIEW: "审核请求中", STONE_SELECTION: "挑选钻石中", QUOTE: "待您确认方案",
-      DEPOSIT: "已预订 — 定金", CAD: "设计中", PRODUCTION: "制作中", FINAL_QC: "最终质检",
+      DEPOSIT: "等待定金", CAD: "设计中", PRODUCTION: "制作中", FINAL_QC: "最终质检",
       BALANCE: "尾款", SHIPPING: "配送中", DELIVERED: "已送达", CANCELLED: "已取消",
     },
     phases: { DEFINE: "确定作品", MAKING: "制作", DELIVERY: "交付" },
@@ -198,7 +198,7 @@ const COPY = {
     waitingBalance: "Tu turno — envía el saldo abajo para iniciar el envío.",
     stages: {
       OPS_REVIEW: "Revisando tu solicitud", STONE_SELECTION: "Seleccionando tu piedra", QUOTE: "Revisa tu propuesta",
-      DEPOSIT: "Reservado — depósito", CAD: "Diseñando", PRODUCTION: "Fabricando", FINAL_QC: "Control final",
+      DEPOSIT: "Depósito pendiente", CAD: "Diseñando", PRODUCTION: "Fabricando", FINAL_QC: "Control final",
       BALANCE: "Saldo", SHIPPING: "En camino", DELIVERED: "Entregado", CANCELLED: "Cancelado",
     },
     phases: { DEFINE: "Define tu pieza", MAKING: "La fabricamos", DELIVERY: "Entrega" },
@@ -417,7 +417,7 @@ export default function ServerOrderPortal({ orderCode }) {
   const reportedKinds = new Set(
     order.timeline.filter((e) => e.payload?.type === "payment_reported").map((e) => e.payload?.data?.kind || "deposit"),
   );
-  const showDeposit = Boolean(payTotal && quoteApproved && order.stage === "QUOTE");
+  const showDeposit = Boolean(payTotal && (order.stage === "DEPOSIT" || (quoteApproved && order.stage === "QUOTE")));
   const showBalance = Boolean(payTotal && order.stage === "BALANCE");
   const STAGE_SEQ = ["OPS_REVIEW", "STONE_SELECTION", "QUOTE", "DEPOSIT", "CAD", "PRODUCTION", "FINAL_QC", "BALANCE", "SHIPPING", "DELIVERED"];
   const stageIdx = STAGE_SEQ.indexOf(order.stage);

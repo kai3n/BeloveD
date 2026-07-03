@@ -99,7 +99,8 @@ function phaseViews(stage) {
     ? -1
     : stage === "DELIVERED"
       ? 2
-      : ["DEPOSIT", "CAD", "PRODUCTION", "FINAL_QC"].includes(stage)
+      // DEPOSIT(디파짓 대기)은 아직 '피스 확정' 단계 — 제작은 입금 확인부터
+      : ["CAD", "PRODUCTION", "FINAL_QC"].includes(stage)
         ? 1
         : stage === "BALANCE" || stage === "SHIPPING"
           ? 2
@@ -501,16 +502,27 @@ export async function respondToAction(actionCode, email, payload = {}) {
       `,
       [action.id, payload],
     );
-    // 제안 승인 → 다음 수는 고객의 디파짓. 그 외 응답(수정요청 등)은 BeloveD 차례.
-    const nextWaitingOn = action.kind === "QUOTE_ACCEPTANCE" && response === "APPROVE" ? "CUSTOMER" : "BELOVEDIAMOND";
-    await client.query(
-      `
-        update customer_orders
-        set waiting_on = $2, next_action_id = null, updated_at = now()
-        where id = $1
-      `,
-      [action.order_id, nextWaitingOn],
-    );
+    // 제안 승인 → stage QUOTE→DEPOSIT 전이(디파짓 대기), 다음 수는 고객. 그 외 응답은 BeloveD 차례.
+    const quoteApproved = action.kind === "QUOTE_ACCEPTANCE" && response === "APPROVE";
+    if (quoteApproved) {
+      await client.query(
+        `
+          update customer_orders
+          set stage = 'DEPOSIT', waiting_on = 'CUSTOMER', next_action_id = null, updated_at = now()
+          where id = $1
+        `,
+        [action.order_id],
+      );
+    } else {
+      await client.query(
+        `
+          update customer_orders
+          set waiting_on = 'BELOVEDIAMOND', next_action_id = null, updated_at = now()
+          where id = $1
+        `,
+        [action.order_id],
+      );
+    }
     await client.query(
       `
         insert into customer_timeline_events (event_code, order_id, title, body)
