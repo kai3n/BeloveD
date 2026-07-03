@@ -12,6 +12,7 @@ import { customerRouter } from "./customerRoutes.js";
 import { activityRouter } from "./activityRoutes.js";
 import { adminActivityRouter } from "./adminActivityRoutes.js";
 import { adminOrderRouter } from "./adminOrderRoutes.js";
+import { reviewRouter } from "./reviewRoutes.js";
 import { runActivityMaintenance } from "./activityMaintenance.js";
 
 const distDir = join(dirname(fileURLToPath(import.meta.url)), "..", "dist");
@@ -54,6 +55,7 @@ export function createApp() {
     } catch (e) { next(e); }
   });
 
+  app.use("/v1", reviewRouter());
   app.use("/v1", customerRouter());
 
   // Any unmatched /v1 route returns the JSON error contract (never the SPA).

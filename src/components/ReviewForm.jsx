@@ -4,17 +4,28 @@ import { MediaPicker } from "./ui.jsx";
 import { submitReview } from "../lib/store.js";
 import { track } from "../lib/track.js";
 
-// 리뷰 작성 — 미디어 퍼스트: 인증샷부터, 별점, 한 줄
-export default function ReviewForm({ orderId, rc, onDone }) {
+// submit prop이 있으면 그쪽(실서버 API)으로, 없으면 레거시 데모 스토어로 제출
+export default function ReviewForm({ orderId, rc, onDone, submit: submitOverride }) {
   const [media, setMedia] = useState([]);
   const [rating, setRating] = useState(5);
   const [quote, setQuote] = useState("");
   const [body, setBody] = useState("");
-  function submit() {
-    if (!quote.trim()) return;
-    submitReview(orderId, { rating, quote, body, media });
-    track("review_submit", { meta: { rating } });
-    onDone?.();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  async function submit() {
+    if (!quote.trim() || busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      if (submitOverride) await submitOverride({ rating, quote, body, media });
+      else submitReview(orderId, { rating, quote, body, media });
+      track("review_submit", { meta: { rating } });
+      onDone?.();
+    } catch {
+      setError(rc.error || "Could not submit — please try again.");
+    } finally {
+      setBusy(false);
+    }
   }
   return (
     <div className="form-stack review-form">
@@ -35,7 +46,8 @@ export default function ReviewForm({ orderId, rc, onDone }) {
         <textarea rows={3} value={body} onChange={(e) => setBody(e.target.value)} />
       </label>
       <p className="form-hint">{rc.note}</p>
-      <button className="button primary" type="button" disabled={!quote.trim()} onClick={submit}>{rc.submit}</button>
+      {error && <p className="form-error">{error}</p>}
+      <button className="button primary" type="button" disabled={!quote.trim() || busy} onClick={submit}>{rc.submit}</button>
     </div>
   );
 }

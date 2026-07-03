@@ -699,6 +699,14 @@ export async function recordOrderEvent(orderCode, type, data = {}, extras = {}) 
        where id = $1`,
       [order.id, transition.stage, transition.phase, transition.waitingOn],
     );
+    // 운송장은 타임라인 payload에만 두면 조회가 어렵다 — 리뷰 인증(주문번호+운송장)이 summary에서 읽는다
+    if (type === "shipped" && data.tracking) {
+      await client.query(
+        `update customer_orders set summary = coalesce(summary, '{}'::jsonb) || jsonb_build_object('tracking', $2::text)
+         where id = $1`,
+        [order.id, String(data.tracking).trim()],
+      );
+    }
 
     let artifactCode = null;
     if (extras.artifact) {

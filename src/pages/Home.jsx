@@ -8,6 +8,7 @@ import {
 import { useLocale } from "../i18n.jsx";
 import { MediaThumb, withBase } from "../components/ui.jsx";
 import { listReviews } from "../lib/store.js";
+import { apiFetch } from "../lib/api.js";
 import { useDBVersion } from "../lib/useDB.js";
 import { DESIGN_CATEGORIES } from "../lib/designSlots.js";
 import { social } from "../lib/infoContent.js";
@@ -400,7 +401,16 @@ const lovedCopy = {
 
 function LovedWorn({ locale }) {
   const copy = lovedCopy[locale] || lovedCopy.en;
-  const reviews = listReviews({ publishedOnly: true });
+  // 실서버(Postgres) 게시 리뷰 우선 — 서버 부재(정적 데모)면 시드 스토어 폴백
+  const [serverReviews, setServerReviews] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    apiFetch("/reviews")
+      .then((d) => { if (!cancelled) setServerReviews(d.reviews || []); })
+      .catch(() => { /* 데모 — 로컬 시드 유지 */ });
+    return () => { cancelled = true; };
+  }, []);
+  const reviews = serverReviews ?? listReviews({ publishedOnly: true });
   const [open, setOpen] = useState(null); // review | null
   const [mIdx, setMIdx] = useState(0);
   const [progress, setProgress] = useState(0);

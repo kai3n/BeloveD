@@ -1,33 +1,63 @@
-import { useState } from "react";
-import { deleteReview, listReviews, setReviewStatus, upsertReviewManual } from "../../lib/store.js";
-import { useDBVersion } from "../../lib/useDB.js";
+import { useCallback, useEffect, useState } from "react";
+import { apiFetch } from "../../lib/api.js";
 import { MediaPicker, MediaThumb } from "../../components/ui.jsx";
 import { useLocale } from "../../i18n.jsx";
 import { ConsoleHead } from "./console.jsx";
 
-// 홈 "Loved & Worn" 리뷰 큐레이션 — 운영자가 전부 수동 추가/수정/삭제/게시 제어
+// 홈 "Loved & Worn" 리뷰 큐레이션 — 실서버(Postgres) CRUD.
+// 고객 제출은 pending으로 들어오고, 여기서 게시해야 홈에 노출된다.
 const COPY = {
-  en: { title: "Customer Reviews", sub: "Everything shown on the home feed. Add, edit, hide or delete manually.", add: "Add review", edit: "Edit", del: "Delete", delAsk: "Delete this review permanently?", publish: "Publish", hide: "Hide", save: "Save", cancel: "Cancel", name: "Name", location: "Location", rating: "Rating (1–5)", quote: "One line", body: "Story", media: "Media (max 5)", order: "Order no. (optional)", status: "Status" },
-  ko: { title: "고객 리뷰", sub: "홈 피드에 노출되는 리뷰 전체입니다. 수동으로 추가·수정·숨김·삭제할 수 있어요.", add: "리뷰 추가", edit: "수정", del: "삭제", delAsk: "이 리뷰를 완전히 삭제할까요?", publish: "게시", hide: "숨김", save: "저장", cancel: "취소", name: "이름", location: "지역", rating: "별점 (1–5)", quote: "한 줄", body: "본문", media: "미디어 (최대 5)", order: "주문번호 (선택)", status: "상태" },
-  zh: { title: "客户评价", sub: "首页展示的全部评价，可手动添加、编辑、隐藏或删除。", add: "添加评价", edit: "编辑", del: "删除", delAsk: "确定永久删除该评价？", publish: "发布", hide: "隐藏", save: "保存", cancel: "取消", name: "姓名", location: "地区", rating: "评分 (1–5)", quote: "一句话", body: "正文", media: "媒体（最多 5）", order: "订单号（可选）", status: "状态" },
-  es: { title: "Reseñas de clientes", sub: "Todo lo que aparece en el feed del inicio. Agrega, edita, oculta o elimina manualmente.", add: "Agregar reseña", edit: "Editar", del: "Eliminar", delAsk: "¿Eliminar esta reseña permanentemente?", publish: "Publicar", hide: "Ocultar", save: "Guardar", cancel: "Cancelar", name: "Nombre", location: "Ubicación", rating: "Calificación (1–5)", quote: "Una línea", body: "Historia", media: "Medios (máx. 5)", order: "N.º de pedido (opcional)", status: "Estado" },
+  en: { title: "Customer Reviews", sub: "Everything shown on the home feed. Customer submissions arrive as pending — publish to show them.", add: "Add review", edit: "Edit", del: "Delete", delAsk: "Delete this review permanently?", publish: "Publish", hide: "Hide", save: "Save", cancel: "Cancel", name: "Name", location: "Location", rating: "Rating (1–5)", quote: "One line", body: "Story", media: "Media (max 5)", order: "Order no. (optional)", status: "Status", empty: "No reviews yet." },
+  ko: { title: "고객 리뷰", sub: "홈 피드에 노출되는 리뷰 전체입니다. 고객 제출은 pending으로 들어오고, 게시해야 노출돼요.", add: "리뷰 추가", edit: "수정", del: "삭제", delAsk: "이 리뷰를 완전히 삭제할까요?", publish: "게시", hide: "숨김", save: "저장", cancel: "취소", name: "이름", location: "지역", rating: "별점 (1–5)", quote: "한 줄", body: "본문", media: "미디어 (최대 5)", order: "주문번호 (선택)", status: "상태", empty: "아직 리뷰가 없어요." },
+  zh: { title: "客户评价", sub: "首页展示的全部评价。客户提交为 pending，发布后才会展示。", add: "添加评价", edit: "编辑", del: "删除", delAsk: "确定永久删除该评价？", publish: "发布", hide: "隐藏", save: "保存", cancel: "取消", name: "姓名", location: "地区", rating: "评分 (1–5)", quote: "一句话", body: "正文", media: "媒体（最多 5）", order: "订单号（可选）", status: "状态", empty: "还没有评价。" },
+  es: { title: "Reseñas de clientes", sub: "Todo lo que aparece en el feed del inicio. Los envíos de clientes llegan como pendientes — publícalos para mostrarlos.", add: "Agregar reseña", edit: "Editar", del: "Eliminar", delAsk: "¿Eliminar esta reseña permanentemente?", publish: "Publicar", hide: "Ocultar", save: "Guardar", cancel: "Cancelar", name: "Nombre", location: "Ubicación", rating: "Calificación (1–5)", quote: "Una línea", body: "Historia", media: "Medios (máx. 5)", order: "N.º de pedido (opcional)", status: "Estado", empty: "Aún no hay reseñas." },
 };
 
-const EMPTY = { id: "", orderId: "", name: "", location: "", rating: 5, quote: "", body: "", media: [], status: "published" };
+const EMPTY = { id: "", orderCode: "", name: "", location: "", rating: 5, quote: "", body: "", media: [], status: "published" };
 
 export default function AdminReviews() {
-  useDBVersion();
   const { locale } = useLocale();
   const c = COPY[locale] || COPY.en;
+  const [reviews, setReviews] = useState([]);
   const [draft, setDraft] = useState(null); // null | 편집중 객체
-  const reviews = listReviews();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
   const set = (patch) => setDraft((d) => ({ ...d, ...patch }));
 
-  function save() {
-    if (!draft.quote.trim()) return;
-    upsertReviewManual({ ...draft, orderId: draft.orderId || null });
-    setDraft(null);
+  const load = useCallback(async () => {
+    try {
+      const d = await apiFetch("/admin/reviews");
+      setReviews(d.reviews || []);
+      setError("");
+    } catch (e) {
+      setError(e.code || e.message);
+    }
+  }, []);
+  useEffect(() => { load(); }, [load]);
+
+  async function call(fn) {
+    setBusy(true);
+    try { await fn(); await load(); } catch (e) { setError(e.code || e.message); } finally { setBusy(false); }
   }
+
+  function save() {
+    if (!draft.quote.trim() || busy) return;
+    const body = {
+      name: draft.name, location: draft.location, rating: Number(draft.rating) || 5,
+      quote: draft.quote, body: draft.body,
+      // 절대 URL + 루트 상대(/assets/.. 시드 미디어) 허용 — base64 프리뷰만 제외
+      media: draft.media.filter((m) => /^(https?:\/\/|\/(?!\/))/.test(m.src || "")).slice(0, 5),
+      status: draft.status,
+    };
+    call(async () => {
+      if (draft.id) await apiFetch(`/admin/reviews/${draft.id}`, { method: "PATCH", body });
+      else await apiFetch("/admin/reviews", { method: "POST", body: { ...body, orderCode: draft.orderCode || "" } });
+      setDraft(null);
+    });
+  }
+
+  const setStatus = (id, status) => call(() => apiFetch(`/admin/reviews/${id}`, { method: "PATCH", body: { status } }));
+  const remove = (id) => { if (window.confirm(c.delAsk)) call(() => apiFetch(`/admin/reviews/${id}`, { method: "DELETE" })); };
 
   return (
     <>
@@ -35,13 +65,17 @@ export default function AdminReviews() {
         <button className="button primary small" onClick={() => setDraft({ ...EMPTY })}>{c.add}</button>
       </ConsoleHead>
 
+      {error && <p className="form-error" style={{ marginBottom: 12 }}>{error}</p>}
+
       {draft && (
         <div className="panel form-stack" style={{ marginBottom: 18 }}>
           <div className="filter-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
             <label className="field"><span>{c.name}</span><input value={draft.name} onChange={(e) => set({ name: e.target.value })} /></label>
             <label className="field"><span>{c.location}</span><input value={draft.location} onChange={(e) => set({ location: e.target.value })} /></label>
             <label className="field"><span>{c.rating}</span><input type="number" min="1" max="5" value={draft.rating} onChange={(e) => set({ rating: e.target.value })} /></label>
-            <label className="field"><span>{c.order}</span><input value={draft.orderId || ""} onChange={(e) => set({ orderId: e.target.value })} placeholder="DM-000001" /></label>
+            <label className="field"><span>{c.order}</span>
+              <input value={draft.orderCode || ""} onChange={(e) => set({ orderCode: e.target.value })} placeholder="BD-100001" disabled={Boolean(draft.id)} />
+            </label>
           </div>
           <label className="field"><span>{c.quote}</span><input value={draft.quote} onChange={(e) => set({ quote: e.target.value })} /></label>
           <label className="field"><span>{c.body}</span><textarea rows={2} value={draft.body} onChange={(e) => set({ body: e.target.value })} /></label>
@@ -54,12 +88,13 @@ export default function AdminReviews() {
             </select>
           </label>
           <div className="row-actions">
-            <button className="button primary small" disabled={!draft.quote.trim()} onClick={save}>{c.save}</button>
+            <button className="button primary small" disabled={!draft.quote.trim() || busy} onClick={save}>{c.save}</button>
             <button className="button secondary small" onClick={() => setDraft(null)}>{c.cancel}</button>
           </div>
         </div>
       )}
 
+      {reviews.length === 0 && !draft && <p className="form-hint">{c.empty}</p>}
       <div className="card-grid cols-3">
         {reviews.map((r) => (
           <div className="item-card" key={r.id}>
@@ -67,17 +102,17 @@ export default function AdminReviews() {
             <div className="card-body">
               <div className="row-actions" style={{ justifyContent: "space-between" }}>
                 <span className={`status-badge ${r.status === "published" ? "mst-done" : r.status === "pending" ? "mst-inProgress" : "mst-pending"}`}>{r.status}</span>
-                <span className="form-hint">{r.id}{r.orderId ? ` · ${r.orderId}` : ""}</span>
+                <span className="form-hint">{r.id}{r.orderCode ? ` · ${r.orderCode}` : ""}</span>
               </div>
               <h3 style={{ margin: "8px 0 2px" }}>“{r.quote}”</h3>
               <p className="spec">{"★".repeat(r.rating)} · {r.name}{r.location ? ` · ${r.location}` : ""}</p>
               {r.body && <p className="form-hint">{r.body}</p>}
               <div className="row-actions" style={{ marginTop: 10 }}>
-                <button className="button secondary small" onClick={() => setDraft({ ...EMPTY, ...r })}>{c.edit}</button>
+                <button className="button secondary small" disabled={busy} onClick={() => setDraft({ ...EMPTY, ...r })}>{c.edit}</button>
                 {r.status !== "published"
-                  ? <button className="button secondary small" onClick={() => setReviewStatus(r.id, "published")}>{c.publish}</button>
-                  : <button className="button secondary small" onClick={() => setReviewStatus(r.id, "hidden")}>{c.hide}</button>}
-                <button className="button danger small" onClick={() => { if (window.confirm(c.delAsk)) deleteReview(r.id); }}>{c.del}</button>
+                  ? <button className="button secondary small" disabled={busy} onClick={() => setStatus(r.id, "published")}>{c.publish}</button>
+                  : <button className="button secondary small" disabled={busy} onClick={() => setStatus(r.id, "hidden")}>{c.hide}</button>}
+                <button className="button danger small" disabled={busy} onClick={() => remove(r.id)}>{c.del}</button>
               </div>
             </div>
           </div>
