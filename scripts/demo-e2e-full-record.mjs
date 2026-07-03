@@ -272,12 +272,17 @@ async function main() {
     log(`order created: ${orderId} (${queryCode})`);
     await wait(3000);
 
-    // ───── ACT 2 · 어드민: 새 요청 확인 → 확정 제안 발송 ─────
+    // ───── ACT 2 · 어드민: 새 요청 확인 → 제품 초안 구성 → 발송 ─────
     await go("admin", `/admin/orders/${orderId}`, "New request in — auto-matched stones ready");
     await wait(900);
-    // 자동 매칭된 후보 중 추천 스톤을 제안 스톤으로 지정 → 견적(확정 제안) 자동 발송
+    // 자동 매칭된 후보 중 추천 스톤을 제안 스톤으로 지정 → 견적 초안 자동 생성
     await tap("admin", adminPage.getByRole("button", { name: /Use for proposal/i }));
-    await banner(adminPage, "admin", "Proposal sent automatically — spec + stone + price");
+    await banner(adminPage, "admin", "Compose the product draft — design, setting, stone, timeline");
+    // 제품 초안 컴포저: 디자인 미디어는 카탈로그 렌더로 프리필 — 세팅 노트만 손보고 발송
+    await fillField("admin", adminPage.locator(".ops-proposal-composer input[placeholder*='Basket'], .ops-proposal-composer input[placeholder*='reference']").first(),
+      "Basket lowered slightly per your inspiration photo.");
+    await tap("admin", adminPage.getByRole("button", { name: /Send proposal to customer/i }));
+    await banner(adminPage, "admin", "Product draft sent — design + stone + price in one proposal");
     await wait(1500);
 
     // ───── ACT 3 · 고객: 초안(확정 제안) 검토 → 배송지 → 수락 → 디파짓 ─────
@@ -300,31 +305,24 @@ async function main() {
     await tap("customer", customerPage.locator("#pay-stage .payment-sent"));
     await wait(1200);
 
-    // ───── ACT 4 · 어드민: 디파짓 수령 확인 → CAD 진행 ─────
+    // ───── ACT 4 · 어드민: 디파짓 수령 확인 → 제작 자동 진행 ─────
     await go("admin", `/admin/orders/${orderId}`, "Touchpoint 1 — confirm the deposit");
     await tap("admin", adminPage.getByRole("button", { name: /Deposit received/i }));
     await wait(1200);
 
-    // ───── ACT 5 · 어드민: 디자인(CAD) 초안 발송 → 고객 승인 ─────
-    await go("admin", `/admin/orders/${orderId}`, "Send the CAD design draft for approval");
-    const proxyEditor = adminPage.locator(".ops-proxy-editor");
-    await tap("admin", adminPage.locator(".ops-proxy-stage-card", { hasText: /Design approval/i }));
-    await point("admin", proxyEditor.locator(".drop-zone").first());
-    await proxyEditor.locator('input[type="file"]').first().setInputFiles([ASSET("lineup-ring.png"), ASSET("lineup-band.png")]);
-    await proxyEditor.locator(".picker-list-item").first().waitFor({ timeout: 10000 });
-    await wait(650);
-    await fillField("admin", proxyEditor.locator("textarea"), "CAD render and side view for your approval.");
-    await tap("admin", adminPage.getByRole("button", { name: /Send design for approval/i }));
-    await wait(1000);
+    // 디자인 승인 스텝 없음 — 초안 수락이 디자인 승인을 겸한다. 벤더 CAD는 기록으로만.
+    await banner(adminPage, "admin", "Vendor CAD recorded — production started (design approved with the draft)");
+    await storeEval(adminPage, (store, { id }) => {
+      const pr = store.listProcurements({ orderId: id })
+        .find((item) => item.type === "cad" && item.status === "open");
+      if (!pr) throw new Error("open cad procurement missing");
+      store.submitCadForPr(pr.id, "/assets/lineup-ring.png");
+    }, { id: orderId });
+    await wait(1600);
 
-    await go("customer", `/orders/${orderId}?code=${queryCode}`, "Review the design draft — approve it");
-    await point("customer", customerPage.locator("#design-stage").first());
-    await tap("customer", customerPage.locator("#design-stage .customer-decision-actions .button.primary"));
-    await wait(1400);
-
-    // ───── ACT 6 · 어드민: 완성품 QC 발송 → 고객 최종 컨펌 ─────
+    // ───── ACT 5 · 어드민: 완성품 QC 발송 → 고객 최종 컨펌 ─────
     await go("admin", `/admin/orders/${orderId}`, "Finished piece — send QC for final confirmation");
-    await tap("admin", adminPage.locator(".ops-proxy-stage-card", { hasText: /Finished-piece/i }));
+    const proxyEditor = adminPage.locator(".ops-proxy-editor");
     await point("admin", proxyEditor.locator(".drop-zone").first());
     await proxyEditor.locator('input[type="file"]').first().setInputFiles([ASSET("hero-diamond-ring.png"), ASSET("lineup-ring.png")]);
     await proxyEditor.locator(".picker-list-item").first().waitFor({ timeout: 10000 });

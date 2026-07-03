@@ -94,13 +94,22 @@ const LABS = ["IGI", "GIA", "GCAL"];
 // 확정 제안 컴포저 카피 — 고객에게 보이는 제안 카드의 미디어/스펙/대체 안내를 어드민이 구성
 const PROPOSAL_COMPOSER_COPY = {
   en: {
-    title: "Final proposal (customer-facing)",
-    help: "The customer sees these media, the stone spec, and the total only — the cost breakdown below stays admin-only.",
-    media: "Proposal media (max 5 — diamond, setting, finished look)",
-    spec: "Stone spec shown to the customer",
+    title: "Product draft (customer-facing)",
+    help: "The customer receives the whole piece — design media, setting, metal, stone, and timeline. Cost breakdown stays admin-only.",
+    media: "Design draft media (max 5 — renders, setting, stone)",
+    spec: "Center stone (one component of the piece)",
     igiNo: "IGI No.",
-    subNote: "Substitution note (leave blank for the default policy text)",
-    save: "Save proposal",
+    subNote: "Stone substitution note (leave blank for the default policy text)",
+    save: "Save draft",
+    send: "Send proposal to customer",
+    sentTag: "Sent — edits update the live proposal",
+    setting: "Setting & design summary",
+    settingPh: "e.g. Four-prong solitaire, knife-edge band — 18K White Gold",
+    settingNote: "Design adjustment note (shown when the setting departs from the catalog style)",
+    settingNotePh: "e.g. Basket lowered per your reference photos",
+    metalWeight: "Est. metal weight (g)",
+    metalWeightHint: "Comes from the quote — edit in the quote builder to reprice.",
+    leadDays: "Production lead (business days)",
     reportedShort: "customer reported sent",
     autoSave: "Changes save automatically.",
     reportedAt: (when) => `Customer reported the deposit sent · ${when}`,
@@ -113,13 +122,22 @@ const PROPOSAL_COMPOSER_COPY = {
     groupInternal: "Internal ops (milestones · vendors · audit)",
   },
   ko: {
-    title: "확정 제안 (고객 노출)",
-    help: "고객에게는 이 미디어·스톤 스펙·총액만 보입니다 — 아래 원가 breakdown은 어드민 전용입니다.",
-    media: "제안 미디어 (최대 5 — 다이아·세팅·완성 예시)",
-    spec: "고객에게 보여줄 스톤 스펙",
+    title: "제품 초안 (고객 노출)",
+    help: "고객은 완성 제품 전체를 받습니다 — 디자인 미디어·세팅·메탈·스톤·타임라인. 원가 breakdown은 어드민 전용입니다.",
+    media: "디자인 초안 미디어 (최대 5 — 렌더·세팅·스톤)",
+    spec: "센터 스톤 (제품의 부품 중 하나)",
     igiNo: "IGI 번호",
-    subNote: "대체 안내문 (비우면 기본 정책 문구 사용)",
-    save: "제안 저장",
+    subNote: "스톤 대체 안내문 (비우면 기본 정책 문구 사용)",
+    save: "초안 저장",
+    send: "고객에게 제안 발송",
+    sentTag: "발송됨 — 수정하면 라이브 제안에 반영됩니다",
+    setting: "세팅·디자인 요약",
+    settingPh: "예: 4프롱 솔리테어, 나이프엣지 밴드 — 18K 화이트골드",
+    settingNote: "디자인 조정 안내 (카탈로그 스타일과 달라질 때 표시)",
+    settingNotePh: "예: 레퍼런스 사진에 맞춰 바스켓을 낮췄습니다",
+    metalWeight: "예상 메탈 중량 (g)",
+    metalWeightHint: "견적에서 가져옵니다 — 가격 변경은 견적 빌더에서.",
+    leadDays: "제작 리드타임 (영업일)",
     reportedShort: "고객 송금 보고됨",
     autoSave: "변경하면 즉시 자동 저장됩니다.",
     reportedAt: (when) => `고객이 디파짓 송금을 보고했습니다 · ${when}`,
@@ -132,13 +150,22 @@ const PROPOSAL_COMPOSER_COPY = {
     groupInternal: "내부 관리 (마일스톤·벤더·감사)",
   },
   zh: {
-    title: "最终方案（客户可见）",
-    help: "客户只能看到这些媒体、钻石规格与总价 — 下方成本明细仅管理员可见。",
-    media: "方案媒体（最多 5 个 — 钻石、镶嵌、成品示例）",
-    spec: "向客户展示的钻石规格",
+    title: "产品草案（客户可见）",
+    help: "客户收到的是完整作品 — 设计媒体、镶嵌、金属、钻石与时间线。成本明细仅管理员可见。",
+    media: "设计草案媒体（最多 5 个 — 渲染图、镶嵌、钻石）",
+    spec: "中心钻石（作品的一个部件）",
     igiNo: "IGI 编号",
-    subNote: "替换说明（留空则使用默认政策文本）",
-    save: "保存方案",
+    subNote: "钻石替换说明（留空则使用默认政策文本）",
+    save: "保存草案",
+    send: "向客户发送方案",
+    sentTag: "已发送 — 修改会实时更新方案",
+    setting: "镶嵌与设计摘要",
+    settingPh: "例：四爪单钻、刀刃戒臂 — 18K 白金",
+    settingNotePh: "例：按您的参考照片降低了篮座",
+    settingNote: "设计调整说明（与目录款式不同时展示）",
+    metalWeight: "预计金属重量（g）",
+    metalWeightHint: "来自报价 — 如需改价请在报价生成器中修改。",
+    leadDays: "制作周期（工作日）",
     reportedShort: "客户已报告转账",
     autoSave: "更改后自动保存。",
     reportedAt: (when) => `客户报告已转定金 · ${when}`,
@@ -151,13 +178,22 @@ const PROPOSAL_COMPOSER_COPY = {
     groupInternal: "内部管理（里程碑·供应商·审计）",
   },
   es: {
-    title: "Propuesta final (visible al cliente)",
-    help: "El cliente solo ve estos medios, la especificación de la piedra y el total — el desglose de costos queda solo para admin.",
-    media: "Medios de la propuesta (máx. 5 — diamante, montura, pieza terminada)",
-    spec: "Especificación de la piedra mostrada al cliente",
+    title: "Borrador del producto (visible al cliente)",
+    help: "El cliente recibe la pieza completa — medios de diseño, montura, metal, piedra y plazos. El desglose de costos queda solo para admin.",
+    media: "Medios del borrador de diseño (máx. 5 — renders, montura, piedra)",
+    spec: "Piedra central (un componente de la pieza)",
     igiNo: "N.º IGI",
-    subNote: "Nota de sustitución (vacío = texto de política por defecto)",
-    save: "Guardar propuesta",
+    subNote: "Nota de sustitución de la piedra (vacío = texto de política por defecto)",
+    save: "Guardar borrador",
+    send: "Enviar la propuesta al cliente",
+    sentTag: "Enviada — los cambios actualizan la propuesta en vivo",
+    setting: "Resumen de montura y diseño",
+    settingPh: "p. ej. Solitario de cuatro garras, banda knife-edge — oro blanco 18K",
+    settingNote: "Nota de ajuste de diseño (se muestra si difiere del estilo del catálogo)",
+    settingNotePh: "p. ej. Canasta rebajada según tus fotos de referencia",
+    metalWeight: "Peso estimado del metal (g)",
+    metalWeightHint: "Viene de la cotización — edítalo en el generador para recalcular.",
+    leadDays: "Plazo de producción (días hábiles)",
     reportedShort: "cliente reportó envío",
     autoSave: "Los cambios se guardan automáticamente.",
     reportedAt: (when) => `El cliente reportó el depósito enviado · ${when}`,
@@ -175,23 +211,48 @@ function proposalComposerCopy(locale) {
   return PROPOSAL_COMPOSER_COPY[locale] || PROPOSAL_COMPOSER_COPY.en;
 }
 
-function ProposalComposer({ quote, order, locale, onSaved }) {
+function ProposalComposer({ quote, order, locale, p, onSaved, notice }) {
   const c = proposalComposerCopy(locale);
   const dia = getQuoteDiamondCandidate(order.id);
-  const [media, setMedia] = useState(quote.proposalMedia?.length ? quote.proposalMedia : (dia?.media || []));
+  const intake = getIntake(order.intakeId);
+  const style = order.styleId ? getOpsStyle(order.styleId) : null;
+  // 디자인 초안 기본값: 카탈로그 스타일 렌더 → 스톤 미디어 순 (제품이 주인공, 스톤은 부품)
+  const defaultMedia = () => {
+    const design = style?.media?.length ? style.media : (style?.coverImage ? [{ kind: "image", src: style.coverImage }] : []);
+    return [...design, ...(dia?.media || [])].slice(0, 5);
+  };
+  const [media, setMedia] = useState(quote.proposalMedia?.length ? quote.proposalMedia : defaultMedia);
   const [spec, setSpec] = useState(quote.stoneSpec || {
     shape: dia?.shape || "round", carat: dia?.carat || "", color: dia?.color || "E",
     clarity: dia?.clarity || "VS1", growth: dia?.growth || "CVD", lab: dia?.lab || "IGI", igiNo: dia?.igiNo || "",
   });
+  const [settingSummary, setSettingSummary] = useState(quote.settingSummary || "");
+  const [settingNote, setSettingNote] = useState(quote.settingNote || "");
+  const [leadDays, setLeadDays] = useState(quote.leadDays || "");
   const [subNote, setSubNote] = useState(quote.substitutionNote || "");
   const setS = (patch) => setSpec((s) => ({ ...s, ...patch }));
-  function save() {
-    updateQuoteProposal(quote.id, {
+  const settingDefault = [
+    style ? pickI18n(style.name, locale) : (p.opsCategories?.[intake?.category] || ""),
+    p.opsMetals?.[intake?.metal] || "",
+  ].filter(Boolean).join(" · ");
+  function payload() {
+    return {
       proposalMedia: media,
       stoneSpec: { ...spec, carat: Number(spec.carat) || null },
       substitutionNote: subNote.trim(),
-    });
+      settingSummary: settingSummary.trim(),
+      settingNote: settingNote.trim(),
+      leadDays: Number(leadDays) || undefined,
+    };
+  }
+  function save() {
+    updateQuoteProposal(quote.id, payload());
     onSaved?.();
+  }
+  function send() {
+    updateQuoteProposal(quote.id, payload());
+    sendQuote(quote.id);
+    onSaved?.(notice.quoteSent);
   }
   return (
     <div className="form-stack ops-proposal-composer">
@@ -200,6 +261,16 @@ function ProposalComposer({ quote, order, locale, onSaved }) {
       <div className="field"><span>{c.media}</span>
         <MediaPicker value={media} onChange={setMedia} maxItems={5} showSamples={false} previewMode="list" scope="proposal" />
       </div>
+      <div className="filter-grid" style={{ gridTemplateColumns: "minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr)" }}>
+        <label className="field"><span>{c.setting}</span>
+          <input value={settingSummary} placeholder={settingDefault || c.settingPh} onChange={(e) => setSettingSummary(e.target.value)} /></label>
+        <label className="field"><span>{c.metalWeight}</span>
+          <input value={quote.estWeightG ?? ""} readOnly title={c.metalWeightHint} /></label>
+        <label className="field"><span>{c.leadDays}</span>
+          <input type="number" min="1" value={leadDays} onChange={(e) => setLeadDays(e.target.value)} /></label>
+      </div>
+      <label className="field"><span>{c.settingNote}</span>
+        <input value={settingNote} placeholder={c.settingNotePh} onChange={(e) => setSettingNote(e.target.value)} /></label>
       <p className="form-hint">{c.spec}</p>
       <div className="filter-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
         <label className="field"><span>shape</span>
@@ -229,7 +300,12 @@ function ProposalComposer({ quote, order, locale, onSaved }) {
       </div>
       <label className="field"><span>{c.subNote}</span>
         <textarea rows={2} value={subNote} onChange={(e) => setSubNote(e.target.value)} /></label>
-      <button className="button secondary small" type="button" onClick={save}>{c.save}</button>
+      <div className="row-actions">
+        <button className="button secondary small" type="button" onClick={save}>{c.save}</button>
+        {quote.status === "draft"
+          ? <button className="button primary small" type="button" onClick={send}>{c.send}</button>
+          : <span className="form-hint">{c.sentTag}</span>}
+      </div>
     </div>
   );
 }
@@ -469,109 +545,56 @@ function ProxyStageCard({ active, done, rejected, title, status, meta, media, em
   );
 }
 
-function defaultProxyStep(order, actions) {
-  if (actions.some((action) => action.status === "open" && action.type === "finalConfirmation")) return "final";
-  if (actions.some((action) => action.status === "open" && ["cadReview", "cadApproval"].includes(action.type))) return "design";
-  if (actions.some((action) => action.status === "open" && action.type === "diamondSelection")) return "diamond";
-  if (["QC", "BALANCE", "SHIPPING", "DELIVERED", "ARCHIVED"].includes(order.status)) return "final";
-  if (["CAD", "PRODUCTION"].includes(order.status)) return "design";
-  return "diamond";
-}
-
+// 고객 확인은 완성품 컨펌 하나 — 스톤·디자인은 제품 초안(스테이지 01)에서 이미 확정됐다.
 function OperatorProxyPanel({ order, t, p, locale }) {
   const copy = t.proxy || FALLBACK_PROXY_COPY;
   const stageCopy = proxyStageCopy(locale);
-  const candidates = listCandidates({ orderId: order.id });
-  const cads = listCadReviews(order.id);
   const actions = listCustomerActions(order.id);
-  const [activeStep, setActiveStep] = useState(() => defaultProxyStep(order, actions));
-  const publishedCandidates = candidates.filter((candidate) => candidate.published);
-  const selectedCandidate = order.selectedDiamondId ? candidates.find((candidate) => candidate.id === order.selectedDiamondId) : null;
-  const latestCad = cads[0] || null;
-  const diamondAction = latestCustomerAction(actions, "diamondSelection");
-  const designAction = latestCustomerAction(actions, "cadReview") || latestCustomerAction(actions, "cadApproval");
   const finalAction = latestCustomerAction(actions, "finalConfirmation");
-  const diamondRejected = isRejectedAction(diamondAction);
-  const designRejected = isRejectedAction(designAction) || latestCad?.decision === "minorRevision";
   const finalRejected = isRejectedAction(finalAction);
   const finalDone = finalAction?.status === "done" || ["BALANCE", "SHIPPING", "DELIVERED", "ARCHIVED"].includes(order.status);
   const openCount = actions.filter((action) => action.status === "open").length;
-  const steps = [
-    {
-      key: "diamond",
-      title: copy.diamondTitle,
-      status: diamondRejected ? stageCopy.rejected : selectedCandidate ? stageCopy.done : publishedCandidates.length ? `${publishedCandidates.length} ${stageCopy.sent}` : stageCopy.notSent,
-      done: Boolean(selectedCandidate),
-      rejected: diamondRejected,
-      meta: stageCopy.diamondMeta,
-      media: publishedCandidates.flatMap((candidate) => adminMediaList(candidate.media, candidate.image || candidate.video)).slice(0, 3),
-      rejectionReason: diamondAction?.rejectionReason || "",
-      rejectionMedia: adminMediaList(diamondAction?.responseAttachments),
-    },
-    {
-      key: "design",
-      title: copy.designTitle,
-      status: designRejected ? stageCopy.rejected : latestCad?.decision === "approved" ? stageCopy.done : latestCad ? stageCopy.open : stageCopy.notSent,
-      done: latestCad?.decision === "approved",
-      rejected: designRejected,
-      meta: stageCopy.designMeta,
-      media: adminMediaList(latestCad?.media, latestCad?.fileUrl),
-      rejectionReason: designAction?.rejectionReason || latestCad?.feedback?.join(" · ") || "",
-      rejectionMedia: adminMediaList(designAction?.responseAttachments || latestCad?.responseAttachments),
-    },
-    {
-      key: "final",
-      title: copy.finalTitle,
-      status: finalRejected ? stageCopy.rejected : finalDone ? stageCopy.done : finalAction ? stageCopy.open : stageCopy.notSent,
-      done: finalDone,
-      rejected: finalRejected,
-      meta: stageCopy.finalMeta,
-      media: adminMediaList(finalAction?.media, finalAction?.link),
-      rejectionReason: finalAction?.rejectionReason || "",
-      rejectionMedia: adminMediaList(finalAction?.responseAttachments),
-    },
-  ];
-  const active = steps.find((step) => step.key === activeStep) || steps[0];
+  const finalStep = {
+    title: copy.finalTitle,
+    status: finalRejected ? stageCopy.rejected : finalDone ? stageCopy.done : finalAction ? stageCopy.open : stageCopy.notSent,
+    done: finalDone,
+    rejected: finalRejected,
+    meta: stageCopy.finalMeta,
+    media: adminMediaList(finalAction?.media, finalAction?.link),
+    rejectionReason: finalAction?.rejectionReason || "",
+    rejectionMedia: adminMediaList(finalAction?.responseAttachments),
+  };
 
   return (
     <section className="panel ops-proxy-workbench">
       <div className="ops-proxy-head">
         <div>
           <p className="admin-kicker">{t.confirmationsTitle}</p>
-          <h3>{copy.title}</h3>
-          <p className="form-hint">{copy.sub}</p>
+          <h3>{copy.finalTitle}</h3>
+          <p className="form-hint">{copy.finalHelp}</p>
         </div>
         <span className="ops-proxy-action-count">
           {openCount} {openCount === 1 ? stageCopy.openActions : stageCopy.openActionsPlural}
         </span>
       </div>
       <div className="ops-proxy-stage-grid">
-        {steps.map((step) => (
-          <ProxyStageCard
-            key={step.key}
-            active={activeStep === step.key}
-            done={step.done}
-            rejected={step.rejected}
-            title={step.title}
-            status={step.status}
-            meta={step.meta}
-            media={step.media}
-            emptyText={stageCopy.noMedia}
-            rejectionReason={step.rejectionReason}
-            rejectionMedia={step.rejectionMedia}
-            copy={stageCopy}
-            onClick={() => setActiveStep(step.key)}
-          />
-        ))}
+        <ProxyStageCard
+          active
+          done={finalStep.done}
+          rejected={finalStep.rejected}
+          title={finalStep.title}
+          status={finalStep.status}
+          meta={finalStep.meta}
+          media={finalStep.media}
+          emptyText={stageCopy.noMedia}
+          rejectionReason={finalStep.rejectionReason}
+          rejectionMedia={finalStep.rejectionMedia}
+          copy={stageCopy}
+          onClick={() => {}}
+        />
       </div>
       <div className="ops-proxy-editor">
-        <div className="ops-proxy-editor-head">
-          <span>{stageCopy.activeEdit}</span>
-          <strong>{active.title}</strong>
-        </div>
-        {activeStep === "diamond" && <ProxyDiamondForm orderId={order.id} copy={copy} p={p} />}
-        {activeStep === "design" && <ProxyDesignForm orderId={order.id} copy={copy} />}
-        {activeStep === "final" && <ProxyFinalForm orderId={order.id} copy={copy} />}
+        <ProxyFinalForm orderId={order.id} copy={copy} />
       </div>
     </section>
   );
@@ -645,137 +668,6 @@ function AdminConversationPanel({ orderId, messages, copy, onSaved, notice }) {
         </div>
       </form>
     </section>
-  );
-}
-
-function ProxyDiamondForm({ orderId, copy, p }) {
-  const [media, setMedia] = useState([]);
-  const [saved, setSaved] = useState(false);
-  const [savedMediaCount, setSavedMediaCount] = useState(0);
-  const [f, setF] = useState({
-    shape: "round",
-    carat: "1",
-    color: "E",
-    clarity: "VS1",
-    growth: "CVD",
-    lab: "IGI",
-    igiNo: "",
-    customerPriceUsd: "390",
-    procurementCostUsd: "",
-    clientNote: "",
-  });
-  function set(key, value) {
-    setSaved(false);
-    setSavedMediaCount(0);
-    setF((current) => ({ ...current, [key]: value }));
-  }
-  function submit(e) {
-    e.preventDefault();
-    const candidate = createProxyDiamondCandidate(orderId, { ...f, media }, "ops");
-    setSaved(true);
-    setSavedMediaCount(candidate?.media?.length || 0);
-    setMedia([]);
-    setF((current) => ({ ...current, igiNo: "", clientNote: "" }));
-  }
-  return (
-    <form className="form-stack ops-proxy-form-card proxy-form" onSubmit={submit}>
-      <div className="ops-proxy-form-head">
-        <div>
-          <h3>{copy.diamondTitle}</h3>
-          <p className="form-hint">{copy.diamondHelp}</p>
-        </div>
-      </div>
-      <div className="ops-proxy-form-body">
-        <div className="filter-grid proxy-field-grid">
-          <label className="field"><span>{p.stoneEdu.shape.title}</span>
-            <select value={f.shape} onChange={(e) => set("shape", e.target.value)}>
-              {BENCHMARK_SHAPES.map((shape) => <option key={shape} value={shape}>{p.shapes?.[shape] || shape}</option>)}
-            </select>
-          </label>
-          <label className="field"><span>{p.stoneEdu.carat.title}</span>
-            <input type="number" min="0.1" step="0.01" value={f.carat} onChange={(e) => set("carat", e.target.value)} required />
-          </label>
-          <label className="field"><span>{p.stoneEdu.color.title}</span>
-            <select value={f.color} onChange={(e) => set("color", e.target.value)}>
-              {DIAMOND_COLORS.map((color) => <option key={color} value={color}>{color}</option>)}
-            </select>
-          </label>
-          <label className="field"><span>{p.stoneEdu.clarity.title}</span>
-            <select value={f.clarity} onChange={(e) => set("clarity", e.target.value)}>
-              {DIAMOND_CLARITIES.map((clarity) => <option key={clarity} value={clarity}>{clarity}</option>)}
-            </select>
-          </label>
-          <label className="field"><span>{p.stoneEdu.growth.title}</span>
-            <select value={f.growth} onChange={(e) => set("growth", e.target.value)}>
-              {GROWTH_METHODS.map((growth) => <option key={growth} value={growth}>{growth}</option>)}
-            </select>
-          </label>
-          <label className="field"><span>{p.stoneEdu.lab.title}</span>
-            <select value={f.lab} onChange={(e) => set("lab", e.target.value)}>
-              {LABS.map((lab) => <option key={lab} value={lab}>{lab}</option>)}
-            </select>
-          </label>
-          <label className="field"><span>{copy.igi}</span>
-            <input value={f.igiNo} onChange={(e) => set("igiNo", e.target.value)} />
-          </label>
-          <label className="field"><span>{copy.price}</span>
-            <input type="number" min="0" value={f.customerPriceUsd} onChange={(e) => set("customerPriceUsd", e.target.value)} required />
-          </label>
-          <label className="field"><span>{copy.cost}</span>
-            <input type="number" min="0" value={f.procurementCostUsd} onChange={(e) => set("procurementCostUsd", e.target.value)} />
-          </label>
-        </div>
-        <label className="field"><span>{copy.note}</span>
-          <textarea value={f.clientNote} onChange={(e) => set("clientNote", e.target.value)} placeholder={copy.notePh} />
-        </label>
-        <label className="field"><span>{copy.media}</span>
-          <MediaPicker value={media} onChange={(items) => { setSaved(false); setSavedMediaCount(0); setMedia(items); }} maxItems={5} showSamples={false} previewMode="list" />
-        </label>
-      </div>
-      <div className="ops-proxy-form-actions">
-        <button className="button primary small" disabled={media.length === 0} type="submit">{copy.publishDiamond}</button>
-        {saved && (
-          <p className="form-hint" role="status">
-            {copy.saved}{savedMediaCount ? ` · ${copy.savedMedia?.(savedMediaCount, 5) || `${savedMediaCount}/5 files published`}` : ""}
-          </p>
-        )}
-      </div>
-    </form>
-  );
-}
-
-function ProxyDesignForm({ orderId, copy }) {
-  const [media, setMedia] = useState([]);
-  const [note, setNote] = useState("");
-  const [saved, setSaved] = useState(false);
-  function submit(e) {
-    e.preventDefault();
-    addCadVersion(orderId, { media, note, supplierId: "ops-proxy" });
-    setMedia([]);
-    setNote("");
-    setSaved(true);
-  }
-  return (
-    <form className="form-stack ops-proxy-form-card proxy-form" onSubmit={submit}>
-      <div className="ops-proxy-form-head">
-        <div>
-          <h3>{copy.designTitle}</h3>
-          <p className="form-hint">{copy.designHelp}</p>
-        </div>
-      </div>
-      <div className="ops-proxy-form-body">
-        <label className="field"><span>{copy.media}</span>
-          <MediaPicker value={media} onChange={(items) => { setSaved(false); setMedia(items); }} maxItems={5} showSamples={false} previewMode="list" scope="cad" />
-        </label>
-        <label className="field"><span>{copy.note}</span>
-          <textarea value={note} onChange={(e) => { setSaved(false); setNote(e.target.value); }} placeholder={copy.notePh} />
-        </label>
-      </div>
-      <div className="ops-proxy-form-actions">
-        <button className="button primary small" disabled={media.length === 0} type="submit">{copy.issueDesign}</button>
-        {saved && <p className="form-hint" role="status">{copy.saved}</p>}
-      </div>
-    </form>
   );
 }
 
@@ -1384,13 +1276,12 @@ export default function AdminOpsOrder() {
                 <strong>{q.id}</strong> · {q.status} · {usd(q.totalUsd)} ({p.portal.deposit} {usd(q.depositUsd)} / {p.portal.balance} {usd(q.balanceUsd)})
                 {intake?.budget && q.totalUsd > intake.budget && <span style={{ color: "#e08585", marginLeft: 6 }}>⚠ {t.overBudget} (${intake.budget})</span>}
                 {q.actualWeightG && ` · actual ${q.actualWeightG}g`}
-                {q.status === "draft" && <button className="button secondary small" style={{ marginLeft: 10 }} onClick={() => { sendQuote(q.id); notify(notice.quoteSent); }}>{t.send}</button>}
               </div>
             ))}
             {(() => {
               const editable = quotes.find((q) => q.status === "draft" || q.status === "sent");
               return editable
-                ? <ProposalComposer key={editable.id} quote={editable} order={order} locale={locale} onSaved={() => notify()} />
+                ? <ProposalComposer key={editable.id} quote={editable} order={order} locale={locale} p={p} notice={notice} onSaved={(msg) => notify(msg)} />
                 : null;
             })()}
             {quoteDiamondCandidate || intake?.productLine === "multi" ? <QuoteBuilder order={order} settings={settings} t={t} onSaved={notify} notice={notice} /> : null}

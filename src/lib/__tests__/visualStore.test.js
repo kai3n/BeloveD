@@ -132,7 +132,9 @@ describe("visual store — 운영자 프록시 업로드", () => {
     const selected = listCandidates({ orderId: "DM-000001" }).find((x) => x.id === c.id);
     expect(selected.clientSelection).toBe("selected");
     expect(selected.selectionSubmittedAt).toBeTruthy();
-    expect(listCustomerActions("DM-000001", true).some((a) => a.type === "quoteAcceptance")).toBe(true);
+    // 견적은 초안까지 자동 — 발송 전에는 고객 액션 없음 (어드민이 제품 초안 완성 후 발송)
+    expect(listCustomerActions("DM-000001", true).some((a) => a.type === "quoteAcceptance")).toBe(false);
+    expect(listQuotes("DM-000001").some((q) => q.status === "draft")).toBe(true);
   });
 
   it("운영자가 올린 디자인과 완성품 미디어는 고객 승인 액션에 보존된다", () => {

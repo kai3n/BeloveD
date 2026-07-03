@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
-  resetDB, createIntake, listProcurements, listQuotes, getOpsOrder, submitCandidates,
+  resetDB, createIntake, listProcurements, listQuotes, getOpsOrder, submitCandidates, sendQuote,
   toggleShortlist, submitDiamondSelection, markDepositReceived, acceptQuote,
   submitCadForPr, decideCad, listCadReviews, submitQcForPr, confirmFinal,
   markBalanceReceived, submitShipment, markOrderDelivered, listMilestones,
@@ -30,18 +30,18 @@ describe("자동 발행 — 인테이크 → 벤더 태스크 (어드민 개입 
     expect(pr.status).toBe("open");
   });
 
-  it("멀티스톤 + 승인 스펙 → 견적 자동 생성·발송 (벤더 태스크 불필요)", () => {
+  it("멀티스톤 + 승인 스펙 → 견적 초안 자동 생성 (발송은 어드민 검토 후)", () => {
     const { order } = createIntake({
       name: "M", contact: "m@x.com", productLine: "multi", category: "necklace", styleId: "NECK-001",
       metal: "18ky", conditional: { chainLength: "18in" }, multiSpec: { meleeSpec: "1.5mm x 20", overallDims: "", arrangement: "", standard: "" }, termsAccepted: true,
     });
     const q = listQuotes(order.id)[0];
-    expect(q.status).toBe("sent"); // SPEC-000001 재사용
+    expect(q.status).toBe("draft"); // SPEC-000001 재사용 — 제품 초안 검토 후 어드민이 발송
     expect(q.nonMetalUsd).toBe(105); // 공임 75 + 부자재 30
     expect(listProcurements({ orderId: order.id }).find((p) => p.type === "weightLabor")).toBeUndefined();
   });
 
-  it("멀티스톤 + 스펙 없음 → weightLabor 태스크 → 벤더 제출 시 스펙 자동 등록 + 견적 자동 발송", () => {
+  it("멀티스톤 + 스펙 없음 → weightLabor 태스크 → 벤더 제출 시 스펙 자동 등록 + 견적 초안 자동 생성", () => {
     const { order } = createIntake({
       name: "E", contact: "e@x.com", productLine: "multi", category: "earrings", styleId: "EARR-001",
       metal: "14ky", conditional: {}, multiSpec: { meleeSpec: "1.2mm x 12", overallDims: "8mm", arrangement: "", standard: "" }, termsAccepted: true,
@@ -52,7 +52,7 @@ describe("자동 발행 — 인테이크 → 벤더 태스크 (어드민 개입 
     submitWeightLabor(pr.id, { estWeightG: 2.4, lossIncluded: true, laborUsd: 70, meleeUsd: 30, leadDays: 9, assumptions: "" });
     expect(listStyleSpecs("EARR-001").some((sp) => sp.metal === "14ky" && sp.status === "approved")).toBe(true);
     const q = listQuotes(order.id)[0];
-    expect(q.status).toBe("sent");
+    expect(q.status).toBe("draft");
     expect(q.nonMetalUsd).toBe(100);
   });
 });
@@ -83,7 +83,7 @@ describe("자동 공개 — 벤치마크 자동가", () => {
 
 });
 
-describe("풀 체인 — 어드민 터치포인트는 입금 확인 ②회 + 수령 ①회뿐", () => {
+describe("풀 체인 — 어드민 터치포인트는 제안 발송 ①·입금 확인 ②·수령 ①", () => {
   it("인테이크 → … → DELIVERED 전 구간 자동 연결", () => {
     const { order } = createIntake(solitaireForm);
     const supplier = getSettings().defaultSupplierId;
@@ -98,8 +98,9 @@ describe("풀 체인 — 어드민 터치포인트는 입금 확인 ②회 + 수
     expect(listProcurements({ orderId: order.id }).some((p) => p.type === "stockConfirm" && p.status === "open")).toBe(false);
     expect(getCandidate(cand.id).locked).toBe(false);
     const quote = listQuotes(order.id)[0];
-    expect(quote.status).toBe("sent"); // SPEC-000002 (RING-001/18kw) 재사용 — 어드민 손 안 거침
+    expect(quote.status).toBe("draft"); // SPEC-000002 (RING-001/18kw) 재사용 — 초안까지 자동
     expect(quote.internal.diamondCostUsd).toBe(500);
+    sendQuote(quote.id); // [어드민 ①] 제품 초안(디자인+스톤+가격) 검토 후 발송
 
     // 고객: 수락 → [어드민 ①] 디파짓 확인 + 다이아 락 → CAD 태스크 자동 발행
     acceptQuote(quote.id, "customer");
@@ -110,18 +111,10 @@ describe("풀 체인 — 어드민 터치포인트는 입금 확인 ②회 + 수
     expect(cadPr1.status).toBe("open");
     expect(cadPr1.supplierId).toBe(supplier);
 
-    // 벤더: CAD 제출 → 고객: 핀 수정 요청 → 새 CAD 태스크 자동 발행 (핀 동봉)
+    // 벤더: CAD 제출 → 고객 게이트 없음 (디자인은 제품 초안 수락에 포함) → 즉시 PRODUCTION + QC 태스크
     submitCadForPr(cadPr1.id, "/cad-v1.png");
     const r1 = listCadReviews(order.id)[0];
-    decideCad(r1.id, { decision: "minorRevision", annotations: [{ pinId: 1, x: 30, y: 60, part: "band", chipKey: "thinner", value: 1.6 }] }, "customer");
-    const cadPr2 = listProcurements({ orderId: order.id }).filter((p) => p.type === "cad").find((p) => p.status === "open");
-    expect(cadPr2).toBeTruthy();
-    expect(cadPr2.brief).toContain("minor revision");
-
-    // 벤더: V2 제출 → 고객: 승인 → PRODUCTION + QC 태스크 자동 발행
-    submitCadForPr(cadPr2.id, "/cad-v2.png");
-    const r2 = listCadReviews(order.id)[0];
-    decideCad(r2.id, { decision: "approved" }, "customer");
+    expect(r1.decision).toBe("approved"); // 자동 승인 기록
     expect(getOpsOrder(order.id).status).toBe("PRODUCTION");
     const qcPr = listProcurements({ orderId: order.id }).find((p) => p.type === "qc");
     expect(qcPr.status).toBe("open");
@@ -153,11 +146,11 @@ describe("풀 체인 — 어드민 터치포인트는 입금 확인 ②회 + 수
 });
 
 describe("모니터링 — 미디어 피드와 숨김", () => {
-  it("CAD 숨김 → 포털에서 제외 + 미결정 버전이면 벤더 태스크 재오픈", () => {
+  it("CAD 숨김 → 포털에서 제외 (기록용 — 고객 게이트가 없어 태스크 재오픈은 없다)", () => {
     expect(portalView("DM-000002", { queryCode: "H3WT-8RVK" }).cad).toBeTruthy();
     hideMedia("cad", "CADR-000001");
     expect(portalView("DM-000002", { queryCode: "H3WT-8RVK" }).cad).toBeNull();
-    expect(getProcurement("PR-000002").status).toBe("open"); // 벤더 재제출 유도
+    expect(getProcurement("PR-000002").status).toBe("submitted"); // 제작은 계속 진행
   });
 
   it("역할별 배지 카운트 — 벤더는 열린 태스크 수", () => {

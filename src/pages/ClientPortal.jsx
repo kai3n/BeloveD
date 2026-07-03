@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "../lib/auth.jsx";
 import {
-  acceptQuote, confirmFinal, decideCad, getSettings, listCustomerActions, listReviews, portalView,
+  acceptQuote, confirmFinal, getSettings, listCustomerActions, listReviews, portalView,
   rejectFinalConfirmation, reportDepositSent, respondCustomerAction, sendOrderMessage,
   updateShippingAddress, isShippingAddressComplete,
 } from "../lib/store.js";
@@ -82,6 +82,8 @@ const PROPOSAL_FLOW_COPY = {
     preparingTitle: "We are preparing your final proposal.",
     preparingBody: "BeloveD is confirming the exact stone and total price with our ateliers. You will review one proposal here — usually within 24–48 hours.",
     specStone: "Stone", specGrade: "Grade", specCert: "Certificate", specSetting: "Setting", specLead: "Lead time",
+    specMetal: "Metal", weightApprox: (g) => `≈ ${g} g`, designNote: "Design adjustment",
+    pieceTitle: "Your piece", priceTitle: "Your price",
     totalLabel: "Total, all-inclusive",
     totalMeta: "Setting, stone, labor, shipping and insurance included — no hidden fees.",
     depositToday: "Deposit — today", balanceShip: "Balance — before shipping",
@@ -112,6 +114,8 @@ const PROPOSAL_FLOW_COPY = {
     preparingTitle: "확정 제안을 준비하고 있습니다.",
     preparingBody: "BeloveD가 아뜰리에와 정확한 스톤·총액을 확정하는 중입니다. 보통 24–48시간 안에 이 화면에서 제안 1건을 확인하실 수 있어요.",
     specStone: "스톤", specGrade: "등급", specCert: "감정서", specSetting: "세팅", specLead: "제작 기간",
+    specMetal: "메탈", weightApprox: (g) => `≈ ${g} g`, designNote: "디자인 조정",
+    pieceTitle: "당신의 피스", priceTitle: "가격",
     totalLabel: "총액 (올인클루시브)",
     totalMeta: "세팅 · 스톤 · 세공 · 배송 · 보험 포함 — 숨은 비용 없음.",
     depositToday: "디파짓 — 지금", balanceShip: "잔금 — 배송 전",
@@ -142,6 +146,8 @@ const PROPOSAL_FLOW_COPY = {
     preparingTitle: "正在准备您的最终方案。",
     preparingBody: "BeloveD 正在与工坊确认具体钻石与总价。通常 24–48 小时内，您将在此确认一份方案。",
     specStone: "钻石", specGrade: "等级", specCert: "证书", specSetting: "镶嵌", specLead: "制作周期",
+    specMetal: "金属", weightApprox: (g) => `≈ ${g} g`, designNote: "设计调整",
+    pieceTitle: "您的作品", priceTitle: "价格",
     totalLabel: "总价（全包）",
     totalMeta: "含镶嵌、钻石、工费、运费与保险 — 无隐藏费用。",
     depositToday: "定金 — 现在", balanceShip: "尾款 — 发货前",
@@ -172,6 +178,8 @@ const PROPOSAL_FLOW_COPY = {
     preparingTitle: "Estamos preparando tu propuesta final.",
     preparingBody: "BeloveD está confirmando la piedra exacta y el precio total con nuestros talleres. Normalmente en 24–48 horas revisarás una propuesta aquí.",
     specStone: "Piedra", specGrade: "Grado", specCert: "Certificado", specSetting: "Montura", specLead: "Tiempo de producción",
+    specMetal: "Metal", weightApprox: (g) => `≈ ${g} g`, designNote: "Ajuste de diseño",
+    pieceTitle: "Tu pieza", priceTitle: "Tu precio",
     totalLabel: "Total, todo incluido",
     totalMeta: "Incluye montura, piedra, trabajo, envío y seguro — sin costos ocultos.",
     depositToday: "Depósito — hoy", balanceShip: "Saldo — antes del envío",
@@ -421,44 +429,61 @@ function conditionalSizeSummary(intake, t) {
 }
 
 // 확정 제안 카드 — 미디어 캐러셀 + 스펙 + 총액(총액만) + 동급 대체 안내 + 컨펌
+// 제품 초안 카드 — 스톤은 부품 중 하나. 디자인 미디어를 히어로로, 세팅·메탈·스톤·
+// 타임라인을 오더 시트처럼 정리하고 가격(총액·디파짓/잔금)을 옆에 붙인다.
 function ProposalCard({ quote, intake, style, fc, t, p, locale, shippingProps, onConfirm, confirmDisabled }) {
   const spec = quote.stoneSpec;
   const media = quote.proposalMedia?.length
     ? quote.proposalMedia
     : mediaList(style?.media, style?.coverImage);
-  const settingSummary = [
+  const sizeSummary = conditionalSizeSummary(intake, p.intake);
+  const settingSummary = quote.settingSummary || [
     style ? pickI18n(style.name, locale) : (p.opsCategories?.[intake?.category] || ""),
+    sizeSummary,
+  ].filter(Boolean).join(" · ");
+  const metalSummary = [
     p.opsMetals?.[intake?.metal] || "",
-    conditionalSizeSummary(intake, p.intake),
+    quote.estWeightG ? fc.weightApprox(quote.estWeightG) : "",
   ].filter(Boolean).join(" · ");
   const confirmed = quote.status === "accepted";
   // 스테이지(Checkpoint) 안에 들어가는 콘텐츠 전용 — 헤더/배지는 스테이지가 담당
   return (
     <div className="proposal-card">
+      <div className="proposal-hero">
+        <ClientMediaCarousel media={media} alt={quote.id} ratio="16 / 10" fit="contain" />
+      </div>
       <div className="proposal-card-body">
-        <div className="proposal-media">
-          <ClientMediaCarousel media={media} alt={quote.id} fit="contain" />
+        <div className="proposal-piece">
+          <p className="section-label">{fc.pieceTitle}</p>
+          <dl className="proposal-spec">
+            {settingSummary && <div><dt>{fc.specSetting}</dt><dd>{settingSummary}</dd></div>}
+            {quote.settingNote && (
+              <div className="is-design-note"><dt>{fc.designNote}</dt><dd>{quote.settingNote}</dd></div>
+            )}
+            {metalSummary && <div><dt>{fc.specMetal}</dt><dd>{metalSummary}</dd></div>}
+            {spec && (
+              <>
+                <div><dt>{fc.specStone}</dt><dd>{p.shapes[spec.shape] || spec.shape} · {Number(spec.carat).toFixed(2)}ct</dd></div>
+                <div><dt>{fc.specGrade}</dt><dd>{[spec.color, spec.clarity, spec.growth].filter(Boolean).join(" · ")}</dd></div>
+                {spec.igiNo && <div><dt>{fc.specCert}</dt><dd>{spec.lab || "IGI"} {spec.igiNo}</dd></div>}
+              </>
+            )}
+            <div><dt>{fc.specLead}</dt><dd>{t.lead(quote.leadDays)}</dd></div>
+          </dl>
         </div>
-        <dl className="proposal-spec">
-          {spec && (
-            <>
-              <div><dt>{fc.specStone}</dt><dd>{p.shapes[spec.shape] || spec.shape} · {Number(spec.carat).toFixed(2)}ct</dd></div>
-              <div><dt>{fc.specGrade}</dt><dd>{[spec.color, spec.clarity, spec.growth].filter(Boolean).join(" · ")}</dd></div>
-              {spec.igiNo && <div><dt>{fc.specCert}</dt><dd>{spec.lab || "IGI"} {spec.igiNo}</dd></div>}
-            </>
-          )}
-          {settingSummary && <div><dt>{fc.specSetting}</dt><dd>{settingSummary}</dd></div>}
-          <div><dt>{fc.specLead}</dt><dd>{t.lead(quote.leadDays)}</dd></div>
-        </dl>
-      </div>
-      <div className="proposal-total">
-        <p className="section-label">{fc.totalLabel}</p>
-        <div className="proposal-amount">{usd(quote.totalUsd)}</div>
-        <p className="form-hint">{fc.totalMeta} · {t.validUntil}: {quote.validUntil}</p>
-      </div>
-      <div className="proposal-split">
-        <div><span>{fc.depositToday}</span><strong>{usd(quote.depositUsd)}</strong></div>
-        <div><span>{fc.balanceShip}</span><strong>{usd(quote.balanceUsd)}</strong></div>
+        <aside className="proposal-pricing">
+          <p className="section-label">{fc.priceTitle}</p>
+          <div className="proposal-total">
+            <span className="proposal-total-label">{fc.totalLabel}</span>
+            <div className="proposal-amount">{usd(quote.totalUsd)}</div>
+            <p className="form-hint">{fc.totalMeta}</p>
+          </div>
+          <div className="proposal-split">
+            <div><span>{fc.depositToday}</span><strong>{usd(quote.depositUsd)}</strong></div>
+            <div><span>{fc.balanceShip}</span><strong>{usd(quote.balanceUsd)}</strong></div>
+          </div>
+          <p className="proposal-validity">{t.validUntil}: {quote.validUntil}</p>
+        </aside>
       </div>
       <p className="proposal-sub-note"><strong>{fc.subTitle}.</strong> {quote.substitutionNote || fc.subBody}</p>
       <ShippingAddressPanel {...shippingProps} />
@@ -476,8 +501,8 @@ function PaymentCard({ amountUsd, orderId, reported, fc, sentCta, reportedNote, 
   const payment = getSettings().payment || {};
   const [copiedKey, setCopiedKey] = useState("");
   const methods = [
-    { key: "zelle", name: "Zelle", handle: payment.zelle, hint: fc.zelleHint },
-    { key: "venmo", name: "Venmo", handle: payment.venmo, hint: fc.venmoHint },
+    { key: "zelle", name: "Zelle", handle: payment.zelle, hint: fc.zelleHint, qr: "/assets/payment/zelle-qr.jpeg" },
+    { key: "venmo", name: "Venmo", handle: payment.venmo, hint: fc.venmoHint, qr: "/assets/payment/venmo-qr.jpeg" },
   ].filter((m) => m.handle);
   function copyHandle(key, value) {
     try { navigator.clipboard?.writeText(value); } catch { /* 클립보드 미지원 브라우저 */ }
@@ -491,6 +516,8 @@ function PaymentCard({ amountUsd, orderId, reported, fc, sentCta, reportedNote, 
         {methods.map((m) => (
           <div className="payment-method" key={m.key}>
             <h4>{m.name}</h4>
+            {/* QR은 스캔 대비를 위해 다크 모드에서도 흰 바탕 유지 */}
+            <img className="payment-qr" src={m.qr} alt={`${m.name} QR`} loading="lazy" />
             <code>{m.handle}</code>
             <small>{m.hint}</small>
             <button className="button secondary small" type="button" onClick={() => copyHandle(m.key, m.handle)}>
@@ -724,76 +751,6 @@ function CustomerDecisionPanel({
 }
 
 // 체크포인트 ② 디자인 — 비교 뷰 + 핀 수정요청. 자유 텍스트 입력 없음.
-function DesignCard({ cad, mineMedia, orderId, actor, revisionsLeft, feeUsd, defaultMeasure, onNotice }) {
-  const { p } = useLocale();
-  const t = p.portal;
-  const t2 = p.visual;
-  const [measure, setMeasure] = useState(defaultMeasure || ""); // 인테이크에서 받은 사이즈로 프리필 — 재입력 불필요
-  const cadMedia = mediaList(cad.media, cad.fileUrl);
-
-  function approveDesign() {
-    decideCad(cad.id, {
-      decision: "approved",
-      confirmedMeasurements: measure,
-    }, actor);
-    const ca = listCustomerActions(orderId, true).find((a) => a.type === "cadReview");
-    if (ca) respondCustomerAction(ca.id, { decision: "approved", value: `CAD V${cad.version} approved` }, actor);
-    onNotice?.(t.noticeDesignApproved);
-  }
-
-  function rejectDesign({ reason, attachments }) {
-    decideCad(cad.id, {
-      decision: "minorRevision",
-      feedback: [reason],
-      confirmedMeasurements: measure,
-      attachments,
-    }, actor);
-    const ca = listCustomerActions(orderId, true).find((a) => a.type === "cadReview");
-    if (ca) respondCustomerAction(ca.id, { decision: "rejected", reason, attachments }, actor);
-    onNotice?.(t.noticeRejectionSent);
-  }
-
-  return (
-    <>
-      <div className="split-compare">
-        <div>
-          <p className="label">{t2.compareMine}</p>
-          <MediaThumb media={mineMedia} ratio="4 / 3" alt={t2.compareMine} fit="contain" />
-        </div>
-        <div>
-          <p className="label">{t2.compareVendor} — {t.cadVersion(cad.version)}</p>
-          <MediaThumb media={cadMedia[0]} ratio="4 / 3" alt={t.cadTitle} fit="contain" />
-        </div>
-      </div>
-      {cadMedia.length > 1 && (
-        <div className="card-grid cols-3 client-cad-media-grid" style={{ marginTop: 10 }}>
-          {cadMedia.map((m, i) => (
-            <div key={`${m.src}-${i}`}>
-              <p className="label">{t2.slots[m.slot] || m.slot}</p>
-              <MediaThumb media={m} alt={m.slot} fit="contain" />
-            </div>
-          ))}
-        </div>
-      )}
-      {cad.clientNote && <p className="feedback-note">{cad.clientNote}</p>}
-      {!cad.decision && (
-        <div className="form-stack" style={{ marginTop: 14 }}>
-          <label className="field"><span>{t.cadMeasure}</span>
-            <input value={measure} onChange={(e) => setMeasure(e.target.value)} /></label>
-          <p className="form-hint">{revisionsLeft > 0 ? t2.revisionsLeft(revisionsLeft) : t2.feeNote(feeUsd)}</p>
-          <CustomerDecisionPanel
-            approveLabel={t2.approveCta || t.cadApprove}
-            rejectLabel={t.rejectDesign || t2.reviseCta || t.cadRevise}
-            onApprove={approveDesign}
-            onReject={rejectDesign}
-          />
-        </div>
-      )}
-      {cad.decision === "minorRevision" && <p className="form-hint" style={{ marginTop: 10 }}>{t.cadDecided.minorRevision}</p>}
-    </>
-  );
-}
-
 export default function ClientPortal() {
   useDBVersion();
   const { p, locale } = useLocale();
@@ -829,7 +786,7 @@ export default function ClientPortal() {
       </div>
     );
   }
-  const { order, intake, style, selected, quote, milestones, cad, freeRevisionsLeft, designChangeFeeUsd, finalAction, actions, messages = [] } = view;
+  const { order, intake, style, selected, quote, milestones, finalAction, actions, messages = [] } = view;
   const shippingAddressDraft = shippingAddress || initialShippingAddress(order, intake);
   const shippingAddressComplete = isShippingAddressComplete(shippingAddressDraft);
   const shippingAddressSaved = isShippingAddressComplete(order.shippingAddress);
@@ -890,17 +847,9 @@ export default function ClientPortal() {
     notify(t.noticeFinalConfirmed);
   }
 
-  // 제작 체크포인트 상태 — 디자인 → 최종 실물 (스톤 선택 단계는 확정 제안으로 대체)
-  const designState = cad?.decision === "approved" ? "done" : cad && !cad.decision ? "active" : "upcoming";
+  // 제작 체크포인트 상태 — 디자인 승인은 제품 초안(확정 제안) 수락에 포함되어 별도 스테이지 없음
   const finalState = finalAction ? "active"
     : ["BALANCE", "SHIPPING", "DELIVERED", "ARCHIVED"].includes(order.status) ? "done" : "upcoming";
-  const approvedRef = intake?.referenceMedia?.find((m) => m.status === "approved");
-  const mineMedia = approvedRef
-    ? { kind: approvedRef.kind, src: approvedRef.src }
-    : style ? { kind: "image", src: style.coverImage } : null;
-  // 인테이크에서 이미 받은 치수 — CAD 승인 화면 "치수 확인"을 프리필해 재입력을 없앤다
-  const cond = intake?.conditional || {};
-  const defaultMeasure = cond.ringSize || cond.chainLength || cond.wristSize || cond.earringDetails || "";
 
   // 디파짓 카드 상태: 컨펌 전 잠금 → 송금 안내 → 확인 중 → 완료
   const depositCardState = depositDone ? "done"
@@ -913,7 +862,6 @@ export default function ClientPortal() {
     : quote.status === "sent" ? fc.nextConfirm
     : depositCardState === "active" ? t.nextDeposit
     : depositCardState === "reported" ? fc.confirmingDeposit
-    : (order.status === "CAD" && cad && !cad.decision) ? t.nextCadReview
     : order.status === "BALANCE" ? fc.nextBalance
       : t.nextStep?.[order.status] || "";
   const activeActionText = proposalPreparing ? fc.preparingBody
@@ -927,10 +875,9 @@ export default function ClientPortal() {
   const activeAnchor = proposalPreparing ? "#conversation"
     : activeAction?.type === "quoteAcceptance" ? "#proposal-stage"
     : depositTurn || depositCardState === "reported" ? "#pay-stage"
-    : ["cadReview", "cadApproval"].includes(activeAction?.type) ? "#design-stage"
-      : activeAction?.type === "finalConfirmation" ? "#final-stage"
-        : order.status === "BALANCE" ? "#balance-stage"
-        : "#conversation";
+    : activeAction?.type === "finalConfirmation" ? "#final-stage"
+      : order.status === "BALANCE" ? "#balance-stage"
+      : "#conversation";
   const briefRows = buildOrderBriefRows({ order, intake, style, selected, quote, p, locale, copy: workspaceCopy });
 
   // 스테이지 상태 매핑 — 한 페이지 = 한 타임라인, 지금 할 일만 펼친다
@@ -1025,15 +972,11 @@ export default function ClientPortal() {
         )}
       </Checkpoint>
 
-      {/* 스테이지 03 — 디자인 승인 */}
-      <Checkpoint id="design-stage" index={3} title={p.visual.checkpoint.design} state={designState}
-        summary={cad?.decision === "approved" ? `${t.cadVersion(cad.version)} ✓` : null}>
-        {cad && <DesignCard cad={cad} mineMedia={mineMedia} orderId={orderId} actor={actor}
-          revisionsLeft={freeRevisionsLeft} feeUsd={designChangeFeeUsd} defaultMeasure={defaultMeasure} onNotice={notify} />}
-      </Checkpoint>
+      {/* 디자인 승인 스테이지 없음 — 제품 초안(확정 제안) 수락이 디자인 승인을 겸한다.
+          고객 여정: 폼 → 제품 초안 → 디파짓 → 완성품 컨펌 → 잔금 → 배송 */}
 
-      {/* 스테이지 04 — 완성품 컨펌 */}
-      <Checkpoint id="final-stage" index={4} title={p.visual.checkpoint.final} state={finalState}
+      {/* 스테이지 03 — 완성품 컨펌 */}
+      <Checkpoint id="final-stage" index={3} title={p.visual.checkpoint.final} state={finalState}
         summary={finalState === "done" ? p.visual.finalConfirmed : null}>
         {finalAction && (
           <div className="form-stack">
@@ -1051,8 +994,8 @@ export default function ClientPortal() {
         )}
       </Checkpoint>
 
-      {/* 스테이지 05 — 잔금 & 배송 */}
-      <Checkpoint id="balance-stage" index={5} title={fc.balanceTitle} state={balanceStageState}
+      {/* 스테이지 04 — 잔금 & 배송 */}
+      <Checkpoint id="balance-stage" index={4} title={fc.balanceTitle} state={balanceStageState}
         summary={balanceStageState === "done" ? statusLabel : null}>
         {order.status === "BALANCE" && quote && (
           <PaymentCard
@@ -1069,7 +1012,7 @@ export default function ClientPortal() {
 
       {/* 리뷰 — 배송 완료 후 인증샷과 함께 */}
       {reviewEligible && (
-        <Checkpoint id="review-stage" index={6} title={rc.title} state={myReview ? "done" : "active"}
+        <Checkpoint id="review-stage" index={5} title={rc.title} state={myReview ? "done" : "active"}
           summary={myReview ? (myReview.status === "published" ? rc.published : rc.done) : null}>
           {!myReview && <ReviewForm orderId={orderId} rc={rc} onDone={() => notify(rc.done)} />}
         </Checkpoint>

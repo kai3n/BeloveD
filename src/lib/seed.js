@@ -78,7 +78,7 @@ export function seed() {
         status: "STONE_SELECTION", owner: "Operations", queryCode: "QX7K-M9P2", selectedDiamondId: null,
         requiredDate: "2026-08-15", internalNotes: "Comfortable lead time. Prefers 1.5ct E/VS1.", createdAt: "2026-06-08T09:10:00.000Z" },
       { id: "DM-000002", intakeId: "IN-000002", customerId: null, customerName: "Noah Lee", styleId: "NECK-001",
-        status: "CAD", owner: "Operations", queryCode: "H3WT-8RVK", selectedDiamondId: null,
+        status: "PRODUCTION", owner: "Operations", queryCode: "H3WT-8RVK", selectedDiamondId: null,
         requiredDate: "2026-07-30", internalNotes: "Multi-stone — melee spec confirmed", createdAt: "2026-06-05T10:20:00.000Z" },
       { id: "DM-000003", intakeId: "IN-000003", customerId: null, customerName: "Mina Choi", styleId: "RING-001",
         status: "DELIVERED", owner: "Operations", queryCode: "RV4D-7TQ2", selectedDiamondId: null,
@@ -131,16 +131,17 @@ export function seed() {
     ],
     milestones: [
       { id: "M-DM-000002-01", orderId: "DM-000002", stage: "depositReceived", status: "done", clientUpdate: "", clientAction: "", link: "", publishToClient: true, at: "2026-06-10T16:00:00.000Z" },
-      { id: "M-DM-000002-03", orderId: "DM-000002", stage: "cadIssued", status: "waitingClient", clientUpdate: "CAD V1 ready for review", clientAction: "Check chain length 18in / pendant connection", link: "", publishToClient: true, at: "2026-06-11T10:00:00.000Z" },
+      // 새 flow: 디자인은 제품 초안에서 승인 — CAD는 기록으로 남고 제작이 바로 진행된다
+      { id: "M-DM-000002-03", orderId: "DM-000002", stage: "cadIssued", status: "done", clientUpdate: "CAD V1", clientAction: "", link: "", publishToClient: true, at: "2026-06-11T10:00:00.000Z" },
+      { id: "M-DM-000002-04", orderId: "DM-000002", stage: "productionStarted", status: "inProgress", clientUpdate: "", clientAction: "", link: "", publishToClient: true, at: "2026-06-11T10:00:00.000Z" },
     ],
     cadReviews: [
       { id: "CADR-000001", orderId: "DM-000002", version: 1, fileUrl: "/assets/concept-lumina-lab.webp",
         supplierUploadedAt: "2026-06-11T09:30:00.000Z", internalReview: "Dimensions check passed", sentAt: "2026-06-11T10:00:00.000Z",
-        decision: null, feedback: [], confirmedMeasurements: "", evidence: "", decidedAt: null },
+        decision: "approved", feedback: [], confirmedMeasurements: "", evidence: "", decidedAt: "2026-06-11T10:00:00.000Z" },
     ],
     customerActions: [
       { id: "CA-000001", orderId: "DM-000001", type: "diamondSelection", prompt: "Select a center stone from candidates", link: "", dueDate: "2026-06-20", status: "open", response: null, respondedAt: null, createdAt: "2026-06-10T12:00:00.000Z" },
-      { id: "CA-000002", orderId: "DM-000002", type: "cadReview", prompt: "CAD V1", link: "", dueDate: "2026-06-15", status: "open", response: null, respondedAt: null, createdAt: "2026-06-11T10:00:00.000Z" },
     ],
     conversations: [
       { id: "CONV-000001", orderId: "DM-000001", channel: "web", externalThreadId: "", sourceLabel: "", status: "waitingOps", createdAt: "2026-06-10T13:00:00.000Z", updatedAt: "2026-06-10T13:00:00.000Z", lastMessageAt: "2026-06-10T13:00:00.000Z" },
@@ -249,8 +250,9 @@ export function seed() {
       poolCaratUnder: 0.05, poolCaratOver: 0.4, poolMatchLimit: 12, // 풀 자동매칭 허용 캐럿범위·후보 캡
       showSampleLibrary: true, // 데모용 샘플 이미지 라이브러리 노출 (실서비스에선 false)
       shipToAddress: "BeloveD Receiving, 550 S Hill St #1100, Los Angeles, CA 90013",
-      // 디파짓/잔금 수동 확인 결제 채널 — 어드민 설정에서 편집
-      payment: { zelle: "pay@beloved.co", venmo: "@BeloveD-Fine", note: "" },
+      // 디파짓/잔금 수동 확인 결제 채널 — 어드민 설정에서 편집 (실계좌: Zelle 수취인명 YICHENG)
+      payment: { zelle: "alan20062006@vip.qq.com", venmo: "@Belove-Dia", note: "" },
+      paymentChannelsVersion: 1,
       reviewsSeedVersion: 3,
       demoDeliveredSeedVersion: 1,
     },

@@ -57,7 +57,8 @@ describe("ops store — 매뉴얼 풀 플로우", () => {
     expect(getOpsOrder("DM-000001").status).toBe("QUOTATION");
     expect(getOpsOrder("DM-000001").selectedDiamondId).toBeNull();
     expect(listCustomerActions("DM-000001", true).some((action) => action.type === "diamondSelection")).toBe(false);
-    expect(listCustomerActions("DM-000001", true).some((action) => action.type === "quoteAcceptance")).toBe(true);
+    // 견적은 초안까지 자동 — 어드민이 발송하기 전에는 고객 액션이 없다
+    expect(listCustomerActions("DM-000001", true).some((action) => action.type === "quoteAcceptance")).toBe(false);
     expect(listCustomerActions("DM-000001").find((action) => action.type === "diamondSelection")).toMatchObject({
       status: "done",
       decision: "submitted",
@@ -70,6 +71,9 @@ describe("ops store — 매뉴얼 풀 플로우", () => {
     submitDiamondSelection("DM-000001", "customer"); // 재요청 — 중복 quote/PR 발행 금지
     const open = listProcurements({ orderId: "DM-000001" }).filter((p) => p.type === "stockConfirm" && p.status === "open");
     expect(open.length).toBe(0);
+    expect(listQuotes("DM-000001").filter((q) => q.status === "draft")).toHaveLength(1);
+    sendQuote(listQuotes("DM-000001")[0].id); // 어드민 발송 → 고객 컨펌 액션 오픈
+    expect(listCustomerActions("DM-000001", true).some((action) => action.type === "quoteAcceptance")).toBe(true);
     expect(listQuotes("DM-000001").filter((q) => q.status === "sent")).toHaveLength(1);
   });
 
@@ -84,11 +88,13 @@ describe("ops store — 매뉴얼 풀 플로우", () => {
     toggleShortlist(cand.id, "customer");
     submitDiamondSelection("DM-000001", "customer");
     expect(listProcurements({ orderId: "DM-000001" }).some((p) => p.type === "stockConfirm" && p.status === "open")).toBe(false);
+    expect(getOpsOrder("DM-000001").selectedDiamondId).toBeNull();
+    const quote = listQuotes("DM-000001")[0];
+    expect(quote.status).toBe("draft");
+    sendQuote(quote.id); // 어드민이 제품 초안 발송
     expect(listCustomerActions("DM-000001", true).find((action) => action.type === "quoteAcceptance")).toMatchObject({
       status: "open",
     });
-    expect(getOpsOrder("DM-000001").selectedDiamondId).toBeNull();
-    const quote = listQuotes("DM-000001")[0];
     acceptQuote(quote.id, "customer");
     markDepositReceived("DM-000001");
     const order = getOpsOrder("DM-000001");
@@ -175,8 +181,12 @@ describe("ops store — 매뉴얼 풀 플로우", () => {
 
   it("데일리 체크리스트 집계", () => {
     const c = dailyChecklist();
-    expect(c.waitingClient).toContain("DM-000002");
+    expect(c.waitingClient).toEqual([]); // 새 flow 시드: 고객 대기 마일스톤 없음
     expect(c.lowCandidates).toContain("DM-000001"); // published 2 < 3
+    // 제안 초안 대기: 스톤 지정 → 초안 생성 → 발송 전이면 집계에 잡힌다
+    toggleShortlist("DIA-DM-000001-01", "ops");
+    submitDiamondSelection("DM-000001", "ops");
+    expect(dailyChecklist().proposalDrafts).toContain("DM-000001");
   });
 
   it("공개된 다이아 후보가 없으면 고객 포털에서 선택 액션을 숨긴다", () => {
@@ -266,13 +276,13 @@ describe("ops store — 운영자 프록시 고객 컨펌 플로우", () => {
     expect(listCandidates({ orderId: order.id }).find((c) => c.id === secondCandidate.id).media).toHaveLength(5);
   });
 
-  it("디자인 초안 재업로드는 이전 CAD 고객 액션을 닫고 최신 버전만 고객에게 대기시킨다", () => {
-    const firstOpen = listCustomerActions("DM-000002", true).filter((a) => a.type === "cadReview");
-    expect(firstOpen).toHaveLength(1);
+  it("디자인(CAD) 업로드는 고객 게이트 없이 기록되고 제작으로 자동 진행된다", () => {
+    // 제품 초안 수락이 디자인 승인을 겸한다 — cadReview 고객 액션은 더 이상 생성되지 않는다
+    expect(listCustomerActions("DM-000002", true).filter((a) => a.type === "cadReview")).toHaveLength(0);
 
     const review = addCadVersion("DM-000002", {
       supplierId: "ops-proxy",
-      note: "Updated setting render for approval.",
+      note: "Updated setting render for the record.",
       media: [
         { kind: "image", src: "/vendor/cad-v2-front.png", name: "cad-v2-front.png" },
         { kind: "video", src: "/vendor/cad-v2-spin.mp4", name: "cad-v2-spin.mp4" },
@@ -281,23 +291,19 @@ describe("ops store — 운영자 프록시 고객 컨펌 플로우", () => {
 
     expect(review.version).toBe(2);
     expect(review.media).toHaveLength(2);
+    expect(review.decision).toBe("approved"); // 자동 승인 — 기록용
 
-    const allCadActions = listCustomerActions("DM-000002").filter((a) => a.type === "cadReview");
-    expect(allCadActions).toHaveLength(2);
-    expect(allCadActions.find((a) => a.id === firstOpen[0].id).status).toBe("cancelled");
-
-    const openCadActions = listCustomerActions("DM-000002", true).filter((a) => a.type === "cadReview");
-    expect(openCadActions).toHaveLength(1);
-    expect(openCadActions[0]).toMatchObject({ prompt: "CAD V2", status: "open" });
-    expect(openCadActions[0].media).toHaveLength(2);
+    expect(listCustomerActions("DM-000002", true).filter((a) => a.type === "cadReview")).toHaveLength(0);
+    expect(getOpsOrder("DM-000002").status).toBe("PRODUCTION");
 
     const view = portalView("DM-000002", { queryCode: "H3WT-8RVK" });
-    expect(view.cad.version).toBe(2);
-    expect(view.actions.filter((a) => a.type === "cadReview")).toHaveLength(1);
+    expect(view.cad.version).toBe(2); // 최신 CAD는 기록으로 포털에 노출
+    expect(view.actions.filter((a) => a.type === "cadReview")).toHaveLength(0);
   });
 
   it("고객 액션 반려는 사유와 최대 5개 첨부를 저장한다", () => {
-    const action = listCustomerActions("DM-000002", true).find((a) => a.type === "cadReview");
+    publishFinalMedia("DM-000002", { media: [{ kind: "image", src: "/final.png" }], note: "", cert: "", actualWeightG: "" });
+    const action = listCustomerActions("DM-000002", true).find((a) => a.type === "finalConfirmation");
     const rejected = respondCustomerAction(action.id, {
       decision: "rejected",
       reason: "Make the prongs lower and soften the side profile.",
@@ -308,7 +314,7 @@ describe("ops store — 운영자 프록시 고객 컨펌 플로우", () => {
     expect(rejected.decision).toBe("rejected");
     expect(rejected.rejectionReason).toBe("Make the prongs lower and soften the side profile.");
     expect(rejected.responseAttachments).toHaveLength(5);
-    expect(listCustomerActions("DM-000002", true).filter((a) => a.type === "cadReview")).toHaveLength(0);
+    expect(listCustomerActions("DM-000002", true).filter((a) => a.type === "finalConfirmation")).toHaveLength(0);
   });
 
   it("고객이 다이아 후보를 반려하면 선택 상태를 비우고 반려 사유를 주문에 남긴다", () => {

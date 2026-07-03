@@ -8,7 +8,7 @@ import {
   autoBrief, candidateAutoPrice, isCandidateComplete, poolStoneMatches,
 } from "./ops.js";
 
-const KEY = "lumina-db-v15"; // v15: 카탈로그 미디어를 셀프호스팅 경로(/assets/designs)로 전환
+const KEY = "lumina-db-v16"; // v16: 제품 초안(product draft) flow — 디자인 승인 스텝 제거, draft-first 견적
 
 // 테스트(node) 환경 폴백
 const memoryStorage = (() => {
@@ -204,7 +204,14 @@ function migrateDB(d) {
 
   // 결제 채널 설정 — 구버전 저장 DB에 시드 기본값 주입
   if (d?.settings && !d.settings.payment) {
-    d.settings.payment = { zelle: "pay@beloved.co", venmo: "@BeloveD-Fine", note: "" };
+    d.settings.payment = { zelle: "alan20062006@vip.qq.com", venmo: "@Belove-Dia", note: "" };
+    changed = true;
+  }
+
+  // 실계좌 전환(2026-07): 데모 플레이스홀더 핸들을 실제 Zelle/Venmo 계정으로 1회 교체 (note는 유지)
+  if (d?.settings && d.settings.paymentChannelsVersion !== 1) {
+    d.settings.payment = { ...d.settings.payment, zelle: "alan20062006@vip.qq.com", venmo: "@Belove-Dia" };
+    d.settings.paymentChannelsVersion = 1;
     changed = true;
   }
 
@@ -771,7 +778,8 @@ export function tryAutoQuote(orderId) {
   const order = getOpsOrder(orderId);
   const intake = order ? getIntake(order.intakeId) : null;
   if (!order?.styleId || !intake) return false;
-  if (listQuotes(orderId).some((q) => q.status === "sent" || q.status === "accepted")) return true; // 이미 진행중
+  // 초안 포함 이미 진행중이면 재생성 금지 — draft-first flow에서 재선택이 초안을 중복 생성하지 않게
+  if (listQuotes(orderId).some((q) => ["draft", "sent", "accepted"].includes(q.status))) return true;
   const spec = findSpec(order.styleId, intake.metal);
   if (!spec) return false;
   const dia = getQuoteDiamondCandidate(orderId);
@@ -782,8 +790,9 @@ export function tryAutoQuote(orderId) {
     lossRatePct: s.defaultLossRatePct, nonMetalUsd: (spec.laborUsd || 0) + (spec.materialsUsd || 0),
     internal: { diamondCostUsd: dia?.procurementCostUsd || 0, laborUsd: spec.laborUsd || 0, multiplier: s.opsMultiplier },
   });
-  sendQuote(q.id);
-  audit("auto", "quote", q.id, "autoSend", null, "sent");
+  // 초안까지만 자동 — 발송은 어드민이 제품 초안(디자인 미디어·세팅·리드타임)을
+  // 완성한 뒤 명시적으로 한다. 고객에게 가는 것은 다이아 단품이 아니라 제품 제안이다.
+  audit("auto", "quote", q.id, "autoDraft", null, "draft");
   return true;
 }
 
@@ -1425,39 +1434,47 @@ export function createQuote(orderId, { estWeightG, metalRefUsdPerG, lossRatePct,
     snapshot: { benchmarkUsdPerCt: bench?.unitUsdPerCt || 0, carat: dia?.carat || 0 }, // 벤치마크 변경이 과거 견적에 영향 없음
     ...computed, validUntil: new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10),
     leadDays: db().settings.productionLeadDays, acceptedAt: null, createdAt: now(),
-    // 확정 제안 필드 — 고객에게는 미디어·스펙·총액만 보인다 (breakdown 미노출)
-    proposalMedia: [], stoneSpec: null, substitutionNote: "", depositReportedAt: null,
+    // 확정 제안 = 제품 단위 초안 — 스톤은 부품 중 하나. 디자인 미디어·세팅·메탈 중량·
+    // 리드타임까지 어드민이 구성해 보낸다 (원가 breakdown은 여전히 미노출).
+    proposalMedia: [], stoneSpec: null, substitutionNote: "",
+    settingSummary: "", settingNote: "", depositReportedAt: null,
   };
   db().quotes.push(quote);
   audit("ops", "quote", quote.id, "create", null, "draft");
   persist();
   return quote;
 }
-// 어드민 제안 컴포저: 고객에게 보여줄 미디어·스톤 스펙·대체 안내문
-export function updateQuoteProposal(quoteId, { proposalMedia, stoneSpec, substitutionNote }) {
+// 어드민 제안 컴포저: 제품 초안 전체 — 디자인 미디어·스톤 스펙·세팅·리드타임·안내문
+export function updateQuoteProposal(quoteId, { proposalMedia, stoneSpec, substitutionNote, settingSummary, settingNote, leadDays }) {
   const q = db().quotes.find((x) => x.id === quoteId);
   if (!q) return null;
   if (proposalMedia !== undefined) q.proposalMedia = normalizeOrderMedia(proposalMedia).slice(0, 5);
   if (stoneSpec !== undefined) q.stoneSpec = stoneSpec;
   if (substitutionNote !== undefined) q.substitutionNote = substitutionNote;
+  if (settingSummary !== undefined) q.settingSummary = String(settingSummary).trim();
+  if (settingNote !== undefined) q.settingNote = String(settingNote).trim();
+  if (leadDays !== undefined && Number(leadDays) > 0) q.leadDays = Number(leadDays);
   persist();
   return q;
 }
 export function sendQuote(quoteId) {
   const q = db().quotes.find((x) => x.id === quoteId);
   q.status = "sent";
-  // 스펙/미디어가 비어 있으면 확정 후보에서 자동 채움 — 자동 견적 경로도 제안 카드가 완성된다
+  // 빈 슬롯은 자동 채움 — 스톤 스펙은 확정 후보에서, 미디어는 디자인(스타일) 우선 + 스톤 보조.
+  // 고객이 받는 것은 완성 제품 초안이지 다이아 단품이 아니다.
+  const order = getOpsOrder(q.orderId);
   const dia = getQuoteDiamondCandidate(q.orderId);
-  if (dia) {
-    if (!q.stoneSpec) {
-      q.stoneSpec = {
-        shape: dia.shape, carat: dia.carat, color: dia.color, clarity: dia.clarity,
-        growth: dia.growth, lab: dia.lab, igiNo: dia.igiNo,
-      };
-    }
-    if (!q.proposalMedia?.length && dia.media?.length) {
-      q.proposalMedia = normalizeOrderMedia(dia.media).slice(0, 5);
-    }
+  if (dia && !q.stoneSpec) {
+    q.stoneSpec = {
+      shape: dia.shape, carat: dia.carat, color: dia.color, clarity: dia.clarity,
+      growth: dia.growth, lab: dia.lab, igiNo: dia.igiNo,
+    };
+  }
+  if (!q.proposalMedia?.length) {
+    const style = order?.styleId ? getOpsStyle(order.styleId) : null;
+    const designMedia = style ? normalizeOrderMedia(style.media?.length ? style.media : (style.coverImage ? [{ kind: "image", src: style.coverImage }] : [])) : [];
+    const stoneMedia = dia?.media?.length ? normalizeOrderMedia(dia.media) : [];
+    q.proposalMedia = [...designMedia, ...stoneMedia].slice(0, 5);
   }
   createCustomerAction(q.orderId, { type: "quoteAcceptance", prompt: q.id, link: "" });
   persist();
@@ -1530,6 +1547,9 @@ export function upsertMilestone(orderId, stage, patch) {
 
 // ---------- CAD reviews (버전당 1레코드 — 히스토리 불변) ----------
 export function listCadReviews(orderId) { return db().cadReviews.filter((c) => c.orderId === orderId).sort((a, b) => b.version - a.version); }
+// 디자인은 확정 제안(제품 초안)에서 이미 승인됐다 — CAD 제출은 고객 게이트 없이
+// 기록으로 보관되고 곧바로 제작(PRODUCTION)으로 진행된다. 고객 여정:
+// 폼 → 제품 초안 → 디파짓 → 완성품 컨펌 → 잔금 → 배송.
 export function addCadVersion(orderId, { fileUrl, media, supplierId, note }) {
   const order = getOpsOrder(orderId);
   const version = listCadReviews(orderId).length + 1;
@@ -1540,17 +1560,20 @@ export function addCadVersion(orderId, { fileUrl, media, supplierId, note }) {
     media: reviewMedia,
     clientNote: maskContacts(note || ""),
     supplierUploadedAt: now(), internalReview: "", sentAt: null,
-    decision: null, feedback: [], annotations: [], confirmedMeasurements: "", evidence: "", decidedAt: null,
+    decision: "approved", feedback: [], annotations: [], confirmedMeasurements: "", evidence: "", decidedAt: now(),
   };
   db().cadReviews.push(review);
-  upsertMilestone(orderId, "cadIssued", { status: "waitingClient", publishToClient: true, clientUpdate: `CAD V${version} ready for review`, link: review.fileUrl });
-  listCustomerActions(orderId, true)
-    .filter((a) => a.type === "cadReview")
-    .forEach((a) => { a.status = "cancelled"; });
-  createCustomerAction(orderId, { type: "cadReview", prompt: `CAD V${version}`, link: review.fileUrl, media: reviewMedia, note: review.clientNote });
-  if (order && ["STYLE_SELECTION", "STONE_SELECTION", "QUOTATION"].includes(order.status)) {
-    updateOpsOrder(orderId, { status: "CAD" }, supplierId || "supplier");
+  upsertMilestone(orderId, "cadIssued", { status: "done", publishToClient: true, clientUpdate: `CAD V${version}`, link: review.fileUrl });
+  upsertMilestone(orderId, "cadApproved", { status: "done", publishToClient: false });
+  upsertMilestone(orderId, "productionStarted", { status: "inProgress", publishToClient: true });
+  if (order && ["STYLE_SELECTION", "STONE_SELECTION", "QUOTATION", "CAD"].includes(order.status)) {
+    updateOpsOrder(orderId, { status: "PRODUCTION" }, supplierId || "supplier");
   }
+  // 제작 완료 시점에 받을 QC 태스크를 미리 발행 (마감 = 제작 리드타임)
+  autoIssuePr(orderId, "qc", {
+    dueDate: plusDays(db().settings.productionLeadDays),
+    brief: "Final QC video · certificate · actual weight evidence",
+  });
   audit(supplierId || "supplier", "cad", review.id, "create", null, `V${version}`);
   persist();
   return review;
@@ -1698,13 +1721,15 @@ export function portalView(orderId, { customerId, queryCode, userRole } = {}) {
     intake: getIntake(order.intakeId),
     style: order.styleId ? getOpsStyle(order.styleId) : null,
     selected: order.selectedDiamondId ? publicDiamondView(getCandidate(order.selectedDiamondId)) : null,
-    // 보안 프로젝션: 총액·디파짓·잔금만 — breakdown(다이아/메탈/패키지/중량)은 어드민 전용
+    // 보안 프로젝션: 원가 breakdown(다이아/메탈 단가·멀티플라이어)은 어드민 전용.
+    // 메탈 예상 중량·세팅·리드타임은 제품 초안의 일부라 고객에게 보인다.
     quote: quote && {
       id: quote.id, status: quote.status,
       totalUsd: quote.totalUsd, depositUsd: quote.depositUsd, balanceUsd: quote.balanceUsd,
-      validUntil: quote.validUntil, leadDays: quote.leadDays,
+      validUntil: quote.validUntil, leadDays: quote.leadDays, estWeightG: quote.estWeightG || null,
       proposalMedia: quote.proposalMedia || [], stoneSpec: quote.stoneSpec || null,
       substitutionNote: quote.substitutionNote || "", depositReportedAt: quote.depositReportedAt || null,
+      settingSummary: quote.settingSummary || "", settingNote: quote.settingNote || "",
     },
     milestones: listMilestones(orderId).filter((m) => m.publishToClient),
     cad: listCadReviews(orderId).find((c) => !c.hidden) || null, // 모니터링 숨김 버전 제외
@@ -1725,6 +1750,10 @@ function checklistCounts() {
     waitingClient: db().milestones.filter((m) => m.status === "waitingClient").map((m) => m.orderId),
     blocked: db().milestones.filter((m) => m.status === "blocked").map((m) => m.orderId),
     quotesExpiring: db().quotes.filter((q) => q.status === "sent" && soon(q.validUntil)).map((q) => q.id),
+    // 제품 초안이 준비됐지만 아직 발송 전 — 어드민이 검토 후 보내야 고객에게 보인다
+    proposalDrafts: db().quotes.filter((q) => q.status === "draft"
+      && !listQuotes(q.orderId).some((x) => x.status === "sent" || x.status === "accepted")
+      && !["DELIVERED", "ARCHIVED", "CANCELLED"].includes(getOpsOrder(q.orderId)?.status)).map((q) => q.orderId),
     lowCandidates: orders.filter((o) => o.status === "STONE_SELECTION" && listCandidates({ orderId: o.id, publishedOnly: true }).length < 3).map((o) => o.id),
     dueSoon: orders.filter((o) => !["DELIVERED", "ARCHIVED", "CANCELLED"].includes(o.status) && soon(o.requiredDate)).map((o) => o.id),
     openProcurements: db().procurementReqs.filter((p) => p.status === "open").map((p) => p.id),

@@ -68,12 +68,12 @@ describe("고객 프로젝션 — breakdown 미노출", () => {
     const allowed = [
       "id", "status", "totalUsd", "depositUsd", "balanceUsd", "validUntil", "leadDays",
       "proposalMedia", "stoneSpec", "substitutionNote", "depositReportedAt",
+      "estWeightG", "settingSummary", "settingNote", // 제품 초안 필드 — 고객에게 보인다
     ].sort();
     expect(Object.keys(view.quote).sort()).toEqual(allowed);
     expect(view.quote.metalAmountUsd).toBeUndefined();
     expect(view.quote.nonMetalUsd).toBeUndefined();
     expect(view.quote.diamondAmountUsd).toBeUndefined();
-    expect(view.quote.estWeightG).toBeUndefined();
     expect(view.quote.internal).toBeUndefined();
     expect(view.candidates).toBeUndefined();
     expect(view.selected).toBeDefined(); // 락된 스톤 표시는 유지 (여기선 null)
