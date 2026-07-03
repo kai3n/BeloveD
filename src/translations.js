@@ -89,7 +89,7 @@ export const translations = {
     },
     footer: {
       links: ["About", "Diamond Guide", "Client Care", "Store Visit"],
-      copyright: "© 2026 BeloveD Maison · Lab-grown diamonds · IGI & GIA certified",
+      copyright: "© 2026 BeloveD Maison",
       tagline: "Bespoke lab-grown diamonds — grown to order, set by hand, priced from the atelier.",
       shop: "Shop",
       maison: "Maison",
@@ -180,7 +180,7 @@ export const translations = {
     },
     footer: {
       links: ["品牌介绍", "钻石指南", "客户服务", "门店预约"],
-      copyright: "© 2026 BeloveD Maison · 培育钻石 · IGI & GIA 认证",
+      copyright: "© 2026 BeloveD Maison",
       tagline: "高级定制培育钻石 —— 应订而育，匠手镶嵌，工坊直达。",
       shop: "选购",
       maison: "品牌",
@@ -271,7 +271,7 @@ export const translations = {
     },
     footer: {
       links: ["브랜드 소개", "다이아몬드 가이드", "고객 서비스", "스토어 안내"],
-      copyright: "© 2026 BeloveD Maison · 랩그로운 다이아몬드 · IGI & GIA 인증",
+      copyright: "© 2026 BeloveD Maison",
       tagline: "주문과 함께 길러지는 비스포크 랩그로운 다이아몬드 — 장인의 세팅, 아틀리에 그대로의 가격.",
       shop: "쇼핑",
       maison: "메종",
@@ -362,7 +362,7 @@ export const translations = {
     },
     footer: {
       links: ["Marca", "Guía de diamantes", "Atención al cliente", "Visita la tienda"],
-      copyright: "© 2026 BeloveD Maison · Diamantes de laboratorio · Certificado IGI & GIA",
+      copyright: "© 2026 BeloveD Maison",
       tagline: "Diamantes de laboratorio a medida — cultivados para ti, engastados a mano, a precio de atelier.",
       shop: "Tienda",
       maison: "Maison",

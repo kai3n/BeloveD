@@ -2466,26 +2466,43 @@ html[data-theme="day"] .quality {
   }
 
   .footer {
-    padding-top: 52px;
+    padding-top: 44px;
   }
 
+  /* 모바일 푸터: 브랜드 블록은 중앙 정렬로 하나의 묶음, 링크는 헤어라인으로 구획 */
   .footer-top {
     grid-template-columns: 1fr;
-    gap: 36px;
-    padding-bottom: 40px;
+    gap: 30px;
+    padding: 38px 0 34px;
   }
+
+  .footer-brand {
+    max-width: none;
+    text-align: center;
+  }
+
+  .footer .brand { font-size: 28px; }
+  .footer-tagline { margin-top: 14px; font-size: 15px; }
+  /* 바로 위 트러스트 스트립과 중복 — 모바일에선 숨김 */
+  .footer-cert { display: none; }
+  .footer-social-row { margin-top: 18px; justify-content: center; }
 
   .footer-cols {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 28px 18px;
+    gap: 30px 24px;
+    border-top: 1px solid var(--hair);
+    padding-top: 32px;
   }
 
-  /* 저작권이 두 줄로 꺾이면 아이콘이 텍스트에 붙어 충돌 → 세로 스택 */
+  .footer-col a { padding: 3px 0; }
+
+  /* 저작권은 중앙 한 줄 + 하단 독(주문제작 시작)에 가리지 않는 바닥 여백 */
   .footer-bottom {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 16px;
-    padding: 20px 0 30px;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 0 108px;
+    text-align: center;
   }
 }
 
