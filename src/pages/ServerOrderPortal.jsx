@@ -6,7 +6,7 @@ import { apiFetch, ApiUnavailableError } from "../lib/api.js";
 import { useAuth, LOGIN_FOR } from "../lib/auth.jsx";
 import { MediaPicker, MediaThumb, usd } from "../components/ui.jsx";
 import { PROPOSAL_FLOW_COPY } from "../lib/proposalFlowCopy.js";
-import { PaymentCard, ShippingAddressPanel } from "./ClientPortal.jsx";
+import { Checkpoint, PaymentCard, ShippingAddressPanel } from "./ClientPortal.jsx";
 import { isShippingAddressComplete } from "../lib/store.js";
 import { useLocale } from "../i18n.jsx";
 
@@ -32,6 +32,8 @@ const COPY = {
       EXTERNAL: "In transit — we'll update you as soon as it moves.",
       NONE: "All done — enjoy your piece.",
     },
+    waitingDeposit: "Your turn — reserve your piece with the deposit below.",
+    waitingBalance: "Your turn — settle the balance below to start shipping.",
     stages: {
       OPS_REVIEW: "Reviewing your request", STONE_SELECTION: "Selecting your stone", QUOTE: "Review your proposal",
       DEPOSIT: "Reserved — deposit", CAD: "Designing", PRODUCTION: "Crafting", FINAL_QC: "Final quality check",
@@ -84,6 +86,8 @@ const COPY = {
       EXTERNAL: "이동 중입니다 — 변동이 생기면 바로 알려드릴게요.",
       NONE: "모든 단계가 끝났습니다 — 마음껏 즐겨주세요.",
     },
+    waitingDeposit: "지금은 고객님 차례예요 — 아래에서 디파짓으로 예약을 확정해 주세요.",
+    waitingBalance: "지금은 고객님 차례예요 — 아래에서 잔금을 보내주시면 배송 준비가 시작됩니다.",
     stages: {
       OPS_REVIEW: "요청 검토 중", STONE_SELECTION: "스톤 선정 중", QUOTE: "제안 확인 대기",
       DEPOSIT: "예약 — 디파짓", CAD: "디자인 중", PRODUCTION: "제작 중", FINAL_QC: "최종 품질 확인",
@@ -136,6 +140,8 @@ const COPY = {
       EXTERNAL: "运输中 — 一有进展我们会立即通知您。",
       NONE: "全部完成 — 愿您喜欢。",
     },
+    waitingDeposit: "轮到您了 — 请在下方支付定金完成预订。",
+    waitingBalance: "轮到您了 — 请在下方支付尾款以安排发货。",
     stages: {
       OPS_REVIEW: "审核请求中", STONE_SELECTION: "挑选钻石中", QUOTE: "待您确认方案",
       DEPOSIT: "已预订 — 定金", CAD: "设计中", PRODUCTION: "制作中", FINAL_QC: "最终质检",
@@ -188,6 +194,8 @@ const COPY = {
       EXTERNAL: "En tránsito — te avisaremos en cuanto avance.",
       NONE: "Todo listo — disfruta tu pieza.",
     },
+    waitingDeposit: "Tu turno — reserva tu pieza con el depósito abajo.",
+    waitingBalance: "Tu turno — envía el saldo abajo para iniciar el envío.",
     stages: {
       OPS_REVIEW: "Revisando tu solicitud", STONE_SELECTION: "Seleccionando tu piedra", QUOTE: "Revisa tu propuesta",
       DEPOSIT: "Reservado — depósito", CAD: "Diseñando", PRODUCTION: "Fabricando", FINAL_QC: "Control final",
@@ -395,7 +403,6 @@ export default function ServerOrderPortal({ orderCode }) {
   }
 
   const order = state.order;
-  const waitingLine = t.waiting[order.waitingOn] || "";
   const action = order.nextAction && order.nextAction.status === "OPEN" ? order.nextAction : null;
 
   // 결제 단계 도출 — 제안 승인 후(stage QUOTE)엔 디파짓, stage BALANCE면 잔금 카드
@@ -412,6 +419,70 @@ export default function ServerOrderPortal({ orderCode }) {
   );
   const showDeposit = Boolean(payTotal && quoteApproved && order.stage === "QUOTE");
   const showBalance = Boolean(payTotal && order.stage === "BALANCE");
+  const STAGE_SEQ = ["OPS_REVIEW", "STONE_SELECTION", "QUOTE", "DEPOSIT", "CAD", "PRODUCTION", "FINAL_QC", "BALANCE", "SHIPPING", "DELIVERED"];
+  const stageIdx = STAGE_SEQ.indexOf(order.stage);
+  const pastQuote = stageIdx > STAGE_SEQ.indexOf("QUOTE");
+  const quoteAction = action?.kind === "QUOTE_ACCEPTANCE" ? action : null;
+  const otherAction = action && !quoteAction ? action : null;
+  const depositReported = reportedKinds.has("deposit");
+  const balanceReported = reportedKinds.has("balance");
+  // 체크포인트 상태 — active(고객 차례) / waiting(BeloveD 차례) / done / upcoming
+  const proposalState = quoteAction ? "active" : !quoteArt ? "waiting" : (quoteApproved || pastQuote) ? "done" : "waiting";
+  const depositState = !payTotal ? null : showDeposit ? (depositReported ? "waiting" : "active") : pastQuote ? "done" : "upcoming";
+  const balanceVisible = Boolean(payTotal) && stageIdx >= STAGE_SEQ.indexOf("BALANCE");
+  const balanceState = showBalance ? (balanceReported ? "waiting" : "active") : "done";
+  // 컨펌 버튼 ↔ 수정요청 폼 (메시지+첨부) — 제안·완성품 QC 공용
+  const renderDecision = (act) => (changeMode ? (
+    <div className="form-stack" style={{ marginTop: 12 }}>
+      <label className="field"><span>{t.changesTitle}</span>
+        <textarea
+          rows={3}
+          value={changeMsg}
+          placeholder={t.changesPlaceholder}
+          onChange={(e) => setChangeMsg(e.target.value)}
+          autoFocus
+        />
+      </label>
+      <div className="field"><span>{t.changesAttach}</span>
+        <MediaPicker value={changeMedia} onChange={setChangeMedia} maxItems={3} showSamples={false} previewMode="list" />
+      </div>
+      <div className="customer-decision-actions">
+        <button
+          className="button primary"
+          type="button"
+          disabled={!changeMsg.trim()}
+          onClick={() => respond(act, "REQUEST_CHANGES", {
+            message: changeMsg.trim(),
+            media: changeMedia.filter((m) => /^https?:\/\//.test(m.src || "")).slice(0, 3),
+          })}
+        >
+          {t.changesSend}
+        </button>
+        <button className="button secondary" type="button" onClick={() => { setChangeMode(false); setChangeMsg(""); setChangeMedia([]); }}>
+          {t.changesCancel}
+        </button>
+      </div>
+    </div>
+  ) : (
+    <div className="customer-decision-actions" style={{ marginTop: 14 }}>
+      {(act.allowedResponses.length ? act.allowedResponses : ["CONFIRM"]).map((response, i) => (
+        <button
+          key={response}
+          className={`button ${i === 0 ? "primary" : "secondary"}`}
+          type="button"
+          onClick={() => (response === "REQUEST_CHANGES" ? setChangeMode(true) : respond(act, response))}
+        >
+          {t.respond[response] || response}
+        </button>
+      ))}
+    </div>
+  ));
+
+  const waitingLine = showDeposit && !depositReported
+    ? t.waitingDeposit
+    : showBalance && !balanceReported
+      ? t.waitingBalance
+      : t.waiting[order.waitingOn] || "";
 
   return (
     <div className="page client-portal-page">
@@ -436,22 +507,85 @@ export default function ServerOrderPortal({ orderCode }) {
         ))}
       </section>
 
-      {/* 발행된 아티팩트 — 타입별 최신 버전만 (재발송분은 구버전으로 취급, 중복 카드 방지) */}
+      {/* 01 제안 — 준비 중 안내 → 오더시트 카드 + 컨펌. 승인되면 접힘(done) */}
+      <Checkpoint id="bd-proposal" index={1} title={fc.proposalKicker} state={proposalState}
+        summary={payTotal ? usd(payTotal) : ""}>
+        {quoteArt ? (
+          <>
+            <ServerProposalCard pay={qp} media={quoteArt.media} fc={fc} t={t} shapes={p.shapes} />
+            {quoteAction && renderDecision(quoteAction)}
+          </>
+        ) : (
+          <div style={{ marginTop: 6 }}>
+            <strong style={{ fontFamily: "var(--serif)", fontSize: 18 }}>{fc.preparingTitle}</strong>
+            <p className="form-hint" style={{ margin: "6px 0 0" }}>{fc.preparingBody}</p>
+          </div>
+        )}
+      </Checkpoint>
+      {respondedId && !action && <p className="client-action-notice" role="status">{t.responded}</p>}
+
+      {/* 02 디파짓 — 승인 즉시 열림: 결제 카드 + 배송지 */}
+      {depositState && (
+        <Checkpoint id="bd-deposit" index={2} title={fc.payTitle} state={depositState} summary={usd(payDeposit)}>
+          <PaymentCard
+            amountUsd={payDeposit}
+            memoText={`BeloveD ${order.orderCode} Deposit`}
+            reported={depositReported}
+            fc={fc}
+            sentCta={fc.depositSentCta}
+            reportedNote={fc.reportedNote}
+            onReport={() => reportPayment("deposit")}
+          />
+          {address && (
+            <ShippingAddressPanel
+              value={address}
+              onChange={setAddress}
+              t={p.portal}
+              locked={addressSaved}
+              canSave={!addressSaved}
+              onSave={saveAddress}
+            />
+          )}
+        </Checkpoint>
+      )}
+
+      {/* 03 잔금 — BALANCE 단계부터 */}
+      {balanceVisible && (
+        <Checkpoint id="bd-balance" index={3} title={fc.balanceTitle} state={balanceState} summary={usd(payTotal - payDeposit)}>
+          <PaymentCard
+            amountUsd={payTotal - payDeposit}
+            memoText={`BeloveD ${order.orderCode} Balance`}
+            reported={balanceReported}
+            fc={fc}
+            sentCta={fc.balanceSentCta}
+            reportedNote={fc.balanceReportedNote}
+            onReport={() => reportPayment("balance")}
+          />
+        </Checkpoint>
+      )}
+
+      {/* 기타 열린 컨펌 (완성품 QC 등) */}
+      {otherAction && (
+        <Checkpoint
+          id="bd-action"
+          index={balanceVisible ? 4 : 3}
+          title={t.kinds[otherAction.kind] || otherAction.title || t.nextTitle}
+          state="active"
+          badgeOverride={t.nextTitle}
+        >
+          {otherAction.description && <p className="form-hint">{otherAction.description}</p>}
+          {renderDecision(otherAction)}
+        </Checkpoint>
+      )}
+
+      {/* 공유 자료 — 비-QUOTE 아티팩트(QC 미디어 등), 타입별 최신만 */}
       {Object.values((order.publishedArtifacts || []).reduce((acc, a) => {
         const prev = acc[a.type];
         if (!prev || new Date(a.publishedAt) > new Date(prev.publishedAt)) acc[a.type] = a;
         return acc;
       }, {})).map((a) => {
+        if (a.type === "QUOTE") return null;
         const pay = a.payload || {};
-        // 제안(QUOTE)은 오더 시트 카드로 — 세팅/메탈/스톤/등급/총액/디파짓 분할까지
-        if (a.type === "QUOTE") {
-          return (
-            <section className="panel form-stack" key={a.id}>
-              <p className="section-label">{t.proposalTitle}</p>
-              <ServerProposalCard pay={pay} media={a.media} fc={fc} t={t} shapes={p.shapes} />
-            </section>
-          );
-        }
         const hasContent = a.media?.length || pay.note;
         if (!hasContent) return null;
         return (
@@ -466,90 +600,6 @@ export default function ServerOrderPortal({ orderCode }) {
           </section>
         );
       })}
-
-      {/* 열린 고객 컨펌 */}
-      {action && (
-        <section className="panel checkpoint client-stage-section active">
-          <div className="client-stage-head">
-            <span className="client-stage-number">!</span>
-            <div><h3>{t.kinds[action.kind] || action.title || t.nextTitle}</h3>{action.description && <p>{action.description}</p>}</div>
-            <span className="status-badge mst-waitingClient">{t.nextTitle}</span>
-          </div>
-          {changeMode ? (
-            <div className="form-stack" style={{ marginTop: 12 }}>
-              <label className="field"><span>{t.changesTitle}</span>
-                <textarea
-                  rows={3}
-                  value={changeMsg}
-                  placeholder={t.changesPlaceholder}
-                  onChange={(e) => setChangeMsg(e.target.value)}
-                  autoFocus
-                />
-              </label>
-              <div className="field"><span>{t.changesAttach}</span>
-                <MediaPicker value={changeMedia} onChange={setChangeMedia} maxItems={3} showSamples={false} previewMode="list" />
-              </div>
-              <div className="customer-decision-actions">
-                <button
-                  className="button primary"
-                  type="button"
-                  disabled={!changeMsg.trim()}
-                  onClick={() => respond(action, "REQUEST_CHANGES", {
-                    message: changeMsg.trim(),
-                    // base64/blob 프리뷰 제외 — R2 publicUrl만 (jsonb·바디 한도 보호)
-                    media: changeMedia.filter((m) => /^https?:\/\//.test(m.src || "")).slice(0, 3),
-                  })}
-                >
-                  {t.changesSend}
-                </button>
-                <button className="button secondary" type="button" onClick={() => { setChangeMode(false); setChangeMsg(""); setChangeMedia([]); }}>
-                  {t.changesCancel}
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="customer-decision-actions" style={{ marginTop: 12 }}>
-              {(action.allowedResponses.length ? action.allowedResponses : ["CONFIRM"]).map((response, i) => (
-                <button
-                  key={response}
-                  className={`button ${i === 0 ? "primary" : "secondary"}`}
-                  type="button"
-                  onClick={() => (response === "REQUEST_CHANGES" ? setChangeMode(true) : respond(action, response))}
-                >
-                  {t.respond[response] || response}
-                </button>
-              ))}
-            </div>
-          )}
-        </section>
-      )}
-      {respondedId && !action && <p className="client-action-notice" role="status">{t.responded}</p>}
-
-      {/* 디파짓/잔금 — 제안 승인 즉시 Zelle/Venmo 결제 카드 + (디파짓 단계) 배송지 수집 */}
-      {(showDeposit || showBalance) && (
-        <section className="panel form-stack">
-          <p className="section-label">{showBalance ? fc.balanceTitle : fc.payTitle}</p>
-          <PaymentCard
-            amountUsd={showBalance ? payTotal - payDeposit : payDeposit}
-            memoText={`BeloveD ${order.orderCode} ${showBalance ? "Balance" : "Deposit"}`}
-            reported={reportedKinds.has(showBalance ? "balance" : "deposit")}
-            fc={fc}
-            sentCta={showBalance ? fc.balanceSentCta : fc.depositSentCta}
-            reportedNote={showBalance ? fc.balanceReportedNote : fc.reportedNote}
-            onReport={() => reportPayment(showBalance ? "balance" : "deposit")}
-          />
-          {showDeposit && address && (
-            <ShippingAddressPanel
-              value={address}
-              onChange={setAddress}
-              t={p.portal}
-              locked={addressSaved}
-              canSave={!addressSaved}
-              onSave={saveAddress}
-            />
-          )}
-        </section>
-      )}
 
       {/* 타임라인 */}
       <section className="panel">

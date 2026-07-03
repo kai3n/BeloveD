@@ -33,8 +33,8 @@ export function TrackEntry() {
   );
 }
 
-// 타임라인 체크포인트 래퍼 — done은 접고, active만 펼친다
-function Checkpoint({ id, index, title, state, summary, children, badgeOverride }) {
+// 타임라인 체크포인트 래퍼 — done은 접고, active만 펼친다 (실서버 포털도 재사용)
+export function Checkpoint({ id, index, title, state, summary, children, badgeOverride }) {
   const { p } = useLocale();
   const t2 = p.visual;
   const badge = badgeOverride || (state === "done" ? t2.doneTag : state === "active" ? t2.nowAction : state === "waiting" ? p.portal.waitingBeloveD : t2.upcoming);

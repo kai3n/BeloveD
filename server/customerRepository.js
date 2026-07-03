@@ -501,13 +501,15 @@ export async function respondToAction(actionCode, email, payload = {}) {
       `,
       [action.id, payload],
     );
+    // 제안 승인 → 다음 수는 고객의 디파짓. 그 외 응답(수정요청 등)은 BeloveD 차례.
+    const nextWaitingOn = action.kind === "QUOTE_ACCEPTANCE" && response === "APPROVE" ? "CUSTOMER" : "BELOVEDIAMOND";
     await client.query(
       `
         update customer_orders
-        set waiting_on = 'BELOVEDIAMOND', next_action_id = null, updated_at = now()
+        set waiting_on = $2, next_action_id = null, updated_at = now()
         where id = $1
       `,
-      [action.order_id],
+      [action.order_id, nextWaitingOn],
     );
     await client.query(
       `

@@ -249,7 +249,7 @@ export default function AdminLiveOrders() {
 }
 
 // 이벤트 스텝 카드 — 필요한 입력(미디어/노트/금액/IGI/운송장)만 노출
-function StepCard({ step, order, changeRequest, t, onSent }) {
+function StepCard({ step, index, order, changeRequest, expanded, onToggle, t, onSent }) {
   const [media, setMedia] = useState([]);
   // 견적 컴포저는 인테이크에서 프리필 — 어드민은 확인·수정만 하고 보낸다
   const fp = order.intake?.formPayload || {};
@@ -326,34 +326,43 @@ function StepCard({ step, order, changeRequest, t, onSent }) {
     }
   }
 
+  const open = Boolean(expanded) || unlocked;
+  const sectionState = done && !unlocked ? "done" : open ? "active" : "upcoming";
   return (
-    <div className="panel form-stack" style={done && !unlocked ? { opacity: 0.55 } : undefined}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
-        <strong>{t.steps[step.type]}</strong>
+    <section className={`panel checkpoint client-stage-section ${sectionState}`}>
+      <div
+        className="client-stage-head"
+        onClick={!open && !done ? onToggle : undefined}
+        style={!open && !done ? { cursor: "pointer" } : undefined}
+      >
+        <span className="client-stage-number">{done && !unlocked ? "✓" : String(index).padStart(2, "0")}</span>
+        <div><h3>{t.steps[step.type]}</h3></div>
         {unlocked
           ? <span className="status-badge mst-waitingClient">{t.changesRequested}</span>
           : done
-            ? <span className="status-badge mst-done">{t.done}</span>
-            : <span className="status-badge mst-pending">{step.reaches}</span>}
+            ? <span className="status-badge mst-done">{t.sentLabel}</span>
+            : open
+              ? <span className="status-badge mst-inProgress">{t.current}</span>
+              : <span className="status-badge mst-pending">{step.reaches}</span>}
       </div>
-      {changeRequest && (
-        <div className="feedback-note" style={{ borderLeft: "2px solid var(--accent)", paddingLeft: 12 }}>
-          <strong>{t.changesRequested}</strong>
-          {changeRequest.responsePayload?.message && (
-            <p style={{ margin: "4px 0 0" }}>“{changeRequest.responsePayload.message}”</p>
-          )}
-          {changeRequest.responsePayload?.media?.length > 0 && (
-            <div className="card-grid cols-3" style={{ marginTop: 8 }}>
-              {changeRequest.responsePayload.media.map((m, i) => <MediaThumb key={i} media={m} alt="" ratio="1 / 1" />)}
+      {open && (
+        <div className="form-stack" style={{ marginTop: 14 }}>
+          {changeRequest && (
+            <div className="feedback-note" style={{ borderLeft: "2px solid var(--accent)", paddingLeft: 12 }}>
+              <strong>{t.changesRequested}</strong>
+              {changeRequest.responsePayload?.message && (
+                <p style={{ margin: "4px 0 0" }}>“{changeRequest.responsePayload.message}”</p>
+              )}
+              {changeRequest.responsePayload?.media?.length > 0 && (
+                <div className="card-grid cols-3" style={{ marginTop: 8 }}>
+                  {changeRequest.responsePayload.media.map((m, i) => <MediaThumb key={i} media={m} alt="" ratio="1 / 1" />)}
+                </div>
+              )}
+              {changeRequest.respondedAt && (
+                <p className="form-hint" style={{ margin: "4px 0 0" }}>{new Date(changeRequest.respondedAt).toLocaleString()}</p>
+              )}
             </div>
           )}
-          {changeRequest.respondedAt && (
-            <p className="form-hint" style={{ margin: "4px 0 0" }}>{new Date(changeRequest.respondedAt).toLocaleString()}</p>
-          )}
-        </div>
-      )}
-      {(
-        <>
           {step.media && (
             <div className="field"><span>{t.media}</span>
               <MediaPicker value={media} onChange={setMedia} maxItems={5} showSamples={false} previewMode="list" scope={step.media} />
@@ -373,7 +382,6 @@ function StepCard({ step, order, changeRequest, t, onSent }) {
                 <input value={f.designNote} onChange={(e) => setF({ ...f, designNote: e.target.value })} /></label>
               <label className="field"><span>{t.metalSpec}</span>
                 <select value={f.metalSpec} onChange={(e) => setF({ ...f, metalSpec: e.target.value })}>
-                  {/* 인테이크 프리필이 표준 목록 밖 값이면 잃지 않게 옵션으로 유지 */}
                   {f.metalSpec && !Object.values(METAL_LABELS).includes(f.metalSpec) && (
                     <option value={f.metalSpec}>{f.metalSpec}</option>
                   )}
@@ -438,16 +446,16 @@ function StepCard({ step, order, changeRequest, t, onSent }) {
           </div>
           {error && <p className="form-error">{error}</p>}
           <button
-            className={`button ${done && !unlocked ? "secondary" : "primary"} small`}
+            className={`button ${done && !unlocked ? "secondary" : "primary"}`}
             type="button"
             disabled={busy || (done && !unlocked)}
             onClick={fire}
           >
             {unlocked ? t.resend : done ? t.sentLabel : t.fire}
           </button>
-        </>
+        </div>
       )}
-    </div>
+    </section>
   );
 }
 
@@ -456,6 +464,7 @@ export function AdminLiveOrderDetail() {
   const { orderCode } = useParams();
   const [state, setState] = useState({ status: "loading", data: null });
   const [notice, setNotice] = useState("");
+  const [expandedStep, setExpandedStep] = useState(null); // 기본은 첫 미완료 스텝만 펼침
 
   function load() {
     apiFetch(`/admin/orders/${orderCode}`)
@@ -531,19 +540,27 @@ export function AdminLiveOrderDetail() {
         <p className="admin-kicker">{t.console}</p>
         <p className="form-hint">{t.consoleHint}</p>
       </div>
-      {FLOW.map((step) => {
-        // 고객이 수정 요청한 컨펌 종류는 해당 스텝을 다시 연다 (새 OPEN 액션이 생기면 다시 잠김)
+      {(() => {
+        const stageIdxNow = STAGE_ORDER.indexOf(order.stage);
+        const firstOpenType = FLOW.find((s2) => stageIdxNow < STAGE_ORDER.indexOf(s2.reaches))?.type || null;
         const openKinds = new Set(actions.filter((a) => a.status === "OPEN").map((a) => a.kind));
-        const changeRequest = step.action && !openKinds.has(step.action.kind)
-          ? actions
-            .filter((a) => a.kind === step.action.kind && a.status === "RESPONDED" && a.responsePayload?.response === "REQUEST_CHANGES")
-            .sort((x, y) => new Date(y.respondedAt) - new Date(x.respondedAt))[0] || null
-          : null;
-        return (
-          <StepCard key={step.type} step={step} order={order} t={t} changeRequest={changeRequest}
-            onSent={() => { setNotice(t.sent); load(); }} />
-        );
-      })}
+        return FLOW.map((step, i) => {
+          // 고객이 수정 요청한 컨펌 종류는 해당 스텝을 다시 연다 (새 OPEN 액션이 생기면 다시 잠김)
+          const changeRequest = step.action && !openKinds.has(step.action.kind)
+            ? actions
+              .filter((a) => a.kind === step.action.kind && a.status === "RESPONDED" && a.responsePayload?.response === "REQUEST_CHANGES")
+              .sort((x, y) => new Date(y.respondedAt) - new Date(x.respondedAt))[0] || null
+            : null;
+          const done = stageIdxNow >= STAGE_ORDER.indexOf(step.reaches);
+          const expanded = !done && (expandedStep ? expandedStep === step.type : step.type === firstOpenType);
+          return (
+            <StepCard key={step.type} step={step} index={i + 1} order={order} t={t}
+              changeRequest={changeRequest} expanded={expanded}
+              onToggle={() => setExpandedStep(step.type)}
+              onSent={() => { setNotice(t.sent); setExpandedStep(null); load(); }} />
+          );
+        });
+      })()}
 
       {artifacts.length > 0 && (
         <div className="panel form-stack">
@@ -585,7 +602,7 @@ export function AdminLiveOrderDetail() {
         <p className="admin-kicker">{t.timeline}</p>
         {timeline.map((e) => (
           <div key={e.id} style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "8px 0", borderBottom: "1px solid var(--hair)" }}>
-            <span><strong>{e.title}</strong>{e.payload?.data?.tracking && ` · ${e.payload.data.tracking}`}{e.payload?.data?.igi && ` · IGI ${e.payload.data.igi}`}</span>
+            <span><strong>{t.steps[e.title] || e.title}</strong>{e.payload?.data?.tracking && ` · ${e.payload.data.tracking}`}{e.payload?.data?.igi && ` · IGI ${e.payload.data.igi}`}</span>
             <span className="form-hint" style={{ whiteSpace: "nowrap" }}>{new Date(e.createdAt).toLocaleString()}</span>
           </div>
         ))}

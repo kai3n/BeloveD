@@ -93,13 +93,13 @@ describe("어드민 실주문 콘솔", () => {
     expect(action.kind).toBe("QUOTE_ACCEPTANCE");
     expect(action.allowedResponses).toEqual(["APPROVE", "REQUEST_CHANGES"]);
 
-    // 고객: 승인 응답 → 액션 닫힘 + waitingOn 회수
+    // 고객: 승인 응답 → 액션 닫힘. 제안 승인의 다음 수는 고객의 디파짓이라 waitingOn은 CUSTOMER 유지
     const respond = await request(app).post(`/v1/actions/${action.id}/respond`).set("Cookie", cust)
       .send({ response: "APPROVE", expectedSubjectVersionId: action.subjectVersionId });
     expect(respond.status).toBe(200);
     const after = await request(app).get(`/v1/orders/${orderCode}`).set("Cookie", cust);
     expect(after.body.order.nextAction?.status ?? "NONE").not.toBe("OPEN");
-    expect(after.body.order.waitingOn).toBe("BELOVEDIAMOND");
+    expect(after.body.order.waitingOn).toBe("CUSTOMER");
 
     // 어드민 상세: 타임라인·발행물·응답된 액션이 모두 보인다
     const detail = await request(app).get(`/v1/admin/orders/${orderCode}`).set("Cookie", adm);
