@@ -45,6 +45,23 @@
 .server-proposal-media.is-single { grid-template-columns: minmax(0, 460px); justify-content: center; }
 .server-proposal-media .media-thumb { width: 100%; object-fit: cover; background: var(--surface); }
 
+/* CRM 회원 펼침 패널 — 주소 블록 + 클릭형 주문 이력 행 */
+.crm-detail { background: var(--bg-2); padding: 16px 18px !important; }
+.crm-detail-grid { display: grid; grid-template-columns: minmax(220px, 320px) minmax(0, 1fr); gap: 26px; align-items: start; }
+@media (max-width: 900px) { .crm-detail-grid { grid-template-columns: 1fr; } }
+.crm-address { margin: 8px 0 0; font-size: 13.5px; line-height: 1.65; }
+.crm-order-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  padding: 10px 12px; margin: 0 -12px;
+  border-bottom: 1px solid var(--hair);
+  cursor: pointer; transition: background 0.15s ease;
+}
+.crm-order-row:last-child { border-bottom: 0; }
+.crm-order-row:hover { background: var(--surface); }
+.crm-order-main { display: flex; align-items: center; gap: 10px; }
+.crm-order-meta { display: flex; align-items: center; gap: 14px; white-space: nowrap; color: var(--quiet); }
+.crm-order-meta strong { color: var(--text); font-variant-numeric: tabular-nums; }
+
 /* 클릭 가능한 테이블 행 — 행 전체가 상세로 이동 */
 .data-table tr.row-clickable { cursor: pointer; }
 .data-table tr.row-clickable:hover td { background: var(--bg-2); }

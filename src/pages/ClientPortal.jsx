@@ -359,7 +359,7 @@ function ProposalCard({ quote, intake, style, fc, t, p, locale, shippingProps, o
 // Zelle/Venmo 결제 내용 — 디파짓·잔금 공용. 스테이지 안 콘텐츠 전용 (reported면 안내문, 아니면 셀프리포트 버튼)
 // memoText: 송금 앱 메모에 그대로 붙여넣는 완성 메시지 (예: "BeloveD DM-000009 · Deposit")
 // 실서버 포털(ServerOrderPortal)도 재사용 — 결제 핸들·QR은 시드 settings에서
-export function PaymentCard({ amountUsd, amountLabel = "", amountContext = "", memoText, reported, fc, sentCta, reportedNote, onReport }) {
+export function PaymentCard({ amountUsd, amountLabel = "", amountContext = "", memoText, reported, fc, sentCta, reportedNote, onReport, reportDisabled = false, reportHint = "" }) {
   const payment = getSettings().payment || {};
   const [copiedKey, setCopiedKey] = useState("");
   const methods = [
@@ -420,7 +420,12 @@ export function PaymentCard({ amountUsd, amountLabel = "", amountContext = "", m
       {payment.note && <p className="form-hint">{payment.note}</p>}
       {reported
         ? <p className="payment-reported" role="status">{reportedNote}</p>
-        : <button className="button primary payment-sent" type="button" onClick={onReport}>{sentCta}</button>}
+        : (
+          <>
+            {reportDisabled && reportHint && <p className="form-error" style={{ textAlign: "center" }}>{reportHint}</p>}
+            <button className="button primary payment-sent" type="button" disabled={reportDisabled} onClick={onReport}>{sentCta}</button>
+          </>
+        )}
       <p className="payment-sent-help">{fc.sentHelp}</p>
     </div>
   );

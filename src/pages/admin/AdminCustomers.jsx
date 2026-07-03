@@ -1,7 +1,8 @@
 // 회원 CRM — 프로필(언어·기본 배송지)과 주문 이력(건수·총구매·진행 금액)을 한 화면에.
 // 활동/전환 지표는 /admin/analytics(구 Members & Activity)로 분리됐다.
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { ChevronRight } from "lucide-react";
 import { apiFetch, ApiUnavailableError } from "../../lib/api.js";
 import { usd } from "../../components/ui.jsx";
 import { useLocale } from "../../i18n.jsx";
@@ -109,7 +110,9 @@ export default function AdminCustomers() {
 }
 
 function MemberRows({ m, t, open, onToggle }) {
+  const navigate = useNavigate();
   const addr = addressLine(m.defaultAddress);
+  const a = m.defaultAddress;
   return (
     <>
       <tr className="row-clickable" onClick={onToggle}>
@@ -123,34 +126,42 @@ function MemberRows({ m, t, open, onToggle }) {
       </tr>
       {open && (
         <tr>
-          <td colSpan={7} style={{ background: "var(--bg-2)" }}>
-            {m.defaultAddress?.addressLine1 && (
-              <p className="form-hint" style={{ margin: "6px 0 10px" }}>
-                {m.defaultAddress.recipientName} · {m.defaultAddress.phone} · {[
-                  m.defaultAddress.addressLine1, m.defaultAddress.addressLine2, m.defaultAddress.city,
-                  m.defaultAddress.region, m.defaultAddress.postalCode, m.defaultAddress.country,
-                ].filter(Boolean).join(", ")}
-              </p>
-            )}
-            {m.orders.length === 0 ? (
-              <p className="form-hint" style={{ margin: "6px 0" }}>{t.noOrders}</p>
-            ) : (
-              <div className="form-stack" style={{ gap: 0 }}>
-                {m.orders.map((o) => (
-                  <div key={o.orderCode} style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "8px 0", borderBottom: "1px solid var(--hair)" }}>
-                    <span>
-                      <Link className="text-link" to={`/admin/live/${o.orderCode}`} onClick={(e) => e.stopPropagation()}>
-                        <strong>{o.orderCode}</strong>
-                      </Link>
-                      {" "}<span className={`status-badge ${o.stage === "DELIVERED" ? "mst-done" : o.stage === "CANCELLED" ? "mst-pending" : "mst-inProgress"}`}>{o.stage}</span>
+          <td colSpan={7} className="crm-detail">
+            <div className="crm-detail-grid">
+              {a?.addressLine1 && (
+                <div>
+                  <p className="admin-kicker">{t.address}</p>
+                  <p className="crm-address">
+                    <strong>{a.recipientName}</strong> · {a.phone}<br />
+                    {[a.addressLine1, a.addressLine2].filter(Boolean).join(", ")}<br />
+                    {[a.city, a.region, a.postalCode, a.country].filter(Boolean).join(", ")}
+                    {a.notes && <><br /><span className="form-hint">{a.notes}</span></>}
+                  </p>
+                </div>
+              )}
+              <div>
+                <p className="admin-kicker">{t.orders}</p>
+                {m.orders.length === 0 ? (
+                  <p className="form-hint" style={{ margin: "6px 0" }}>{t.noOrders}</p>
+                ) : m.orders.map((o) => (
+                  <div
+                    key={o.orderCode}
+                    className="crm-order-row"
+                    onClick={(e) => { e.stopPropagation(); navigate(`/admin/live/${o.orderCode}`); }}
+                  >
+                    <span className="crm-order-main">
+                      <strong>{o.orderCode}</strong>
+                      <span className={`status-badge ${o.stage === "DELIVERED" ? "mst-done" : o.stage === "CANCELLED" ? "mst-pending" : "mst-inProgress"}`}>{o.stage}</span>
                     </span>
-                    <span className="form-hint" style={{ whiteSpace: "nowrap" }}>
-                      {o.totalUsd ? `${t.total} ${usd(Number(o.totalUsd))} · ` : ""}{new Date(o.updatedAt).toLocaleDateString()}
+                    <span className="crm-order-meta">
+                      <strong>{o.totalUsd ? usd(Number(o.totalUsd)) : "—"}</strong>
+                      <span className="form-hint">{new Date(o.updatedAt).toLocaleDateString()}</span>
+                      <ChevronRight size={15} strokeWidth={1.6} aria-hidden="true" />
                     </span>
                   </div>
                 ))}
               </div>
-            )}
+            </div>
           </td>
         </tr>
       )}

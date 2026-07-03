@@ -61,6 +61,7 @@ const COPY = {
     cancelReason: "Reason (optional)", cancelConfirm: "Confirm cancellation", cancelKeep: "Keep my order",
     cancelRequestedNote: "Cancellation requested — we'll contact you within 1 business day.",
     cancelledLine: "This order has been cancelled.",
+    addressGate: "Save your shipping address above before reporting the transfer.",
     shipmentTitle: "Shipment", trackingLabel: "Tracking number",
     shipmentNote: "Fully insured door-to-door — signature required on delivery.",
     timelineTitle: "Timeline",
@@ -125,6 +126,7 @@ const COPY = {
     cancelReason: "사유 (선택)", cancelConfirm: "취소 확정", cancelKeep: "주문 유지",
     cancelRequestedNote: "취소 요청이 접수됐습니다 — 영업일 1일 내 연락드립니다.",
     cancelledLine: "이 주문은 취소되었습니다.",
+    addressGate: "송금 보고 전에 위의 배송지를 저장해 주세요.",
     shipmentTitle: "배송", trackingLabel: "운송장 번호",
     shipmentNote: "전 구간 보험 배송 — 수령 시 서명이 필요합니다.",
     timelineTitle: "타임라인",
@@ -189,6 +191,7 @@ const COPY = {
     cancelReason: "原因（可选）", cancelConfirm: "确认取消", cancelKeep: "保留订单",
     cancelRequestedNote: "已收到取消请求 — 我们将在 1 个工作日内联系您。",
     cancelledLine: "此订单已取消。",
+    addressGate: "报告付款前，请先保存上方的收货地址。",
     shipmentTitle: "配送", trackingLabel: "运单号",
     shipmentNote: "全程保险配送 — 签收时需要签名。",
     timelineTitle: "时间线",
@@ -253,6 +256,7 @@ const COPY = {
     cancelReason: "Motivo (opcional)", cancelConfirm: "Confirmar cancelación", cancelKeep: "Mantener mi pedido",
     cancelRequestedNote: "Cancelación solicitada — te contactaremos en 1 día hábil.",
     cancelledLine: "Este pedido ha sido cancelado.",
+    addressGate: "Guarda tu dirección de envío arriba antes de reportar la transferencia.",
     shipmentTitle: "Envío", trackingLabel: "Número de guía",
     shipmentNote: "Envío asegurado puerta a puerta — se requiere firma al recibir.",
     timelineTitle: "Cronología",
@@ -623,6 +627,8 @@ export default function ServerOrderPortal({ orderCode }) {
             sentCta={fc.depositSentCta}
             reportedNote={fc.reportedNote}
             onReport={() => reportPayment("deposit")}
+            reportDisabled={!addressSaved}
+            reportHint={t.addressGate}
           />
         </Checkpoint>
       )}
@@ -640,8 +646,24 @@ export default function ServerOrderPortal({ orderCode }) {
             sentCta={fc.balanceSentCta}
             reportedNote={fc.balanceReportedNote}
             onReport={() => reportPayment("balance")}
+            reportDisabled={!addressSaved}
+            reportHint={t.addressGate}
           />
         </Checkpoint>
+      )}
+
+      {/* 주소 미저장 사후 회수 — 디파짓 단계가 지나도 배송 전까지는 입력 가능해야 한다 */}
+      {!addressSaved && address && ["CAD", "PRODUCTION", "FINAL_QC", "BALANCE"].includes(order.stage) && (
+        <section className="panel form-stack">
+          <ShippingAddressPanel
+            value={address}
+            onChange={setAddress}
+            t={p.portal}
+            locked={false}
+            canSave
+            onSave={saveAddress}
+          />
+        </section>
       )}
 
       {/* 3-2 배송 — 운송장 번호 (배송 중·수령 완료 모두 표시) */}
