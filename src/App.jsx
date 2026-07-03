@@ -25,6 +25,7 @@ const AdminOpsStyles = WITH_BACKOFFICE ? lazy(() => import("./pages/admin/AdminO
 const AdminReviews = WITH_BACKOFFICE ? lazy(() => import("./pages/admin/AdminReviews.jsx")) : null;
 const AdminBenchmark = WITH_BACKOFFICE ? lazy(() => import("./pages/admin/AdminBenchmark.jsx")) : null;
 const AdminMembers = WITH_BACKOFFICE ? lazy(() => import("./pages/admin/AdminMembers.jsx")) : null;
+const AdminCustomers = WITH_BACKOFFICE ? lazy(() => import("./pages/admin/AdminCustomers.jsx")) : null;
 const AdminMemberTimeline = WITH_BACKOFFICE ? named(() => import("./pages/admin/AdminMembers.jsx"), "AdminMemberTimeline") : null;
 const AdminLiveOrders = WITH_BACKOFFICE ? lazy(() => import("./pages/admin/AdminLiveOrders.jsx")) : null;
 const AdminLiveOrderDetail = WITH_BACKOFFICE ? named(() => import("./pages/admin/AdminLiveOrders.jsx"), "AdminLiveOrderDetail") : null;
@@ -93,7 +94,9 @@ export default function App() {
               <Route path="reviews" element={<AdminReviews />} />
               <Route path="live" element={<AdminLiveOrders />} />
               <Route path="live/:orderCode" element={<AdminLiveOrderDetail />} />
-              <Route path="members" element={<AdminMembers />} />
+              <Route path="members" element={<AdminCustomers />} />
+              <Route path="analytics" element={<AdminMembers />} />
+              <Route path="analytics/:memberId" element={<AdminMemberTimeline />} />
               <Route path="members/:memberId" element={<AdminMemberTimeline />} />
               <Route path="diamonds" element={<Navigate to="/admin/benchmark" replace />} />
               <Route path="settings" element={<Navigate to="/admin/live" replace />} />

@@ -1,4 +1,5 @@
 import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { Activity, CircleDollarSign, Gem, ShoppingBag, Star, Users } from "lucide-react";
 import { dailyChecklist, hideMedia, listOpsOrders, mediaFeed } from "../../lib/store.js";
 import { useDBVersion } from "../../lib/useDB.js";
 import { MediaThumb } from "../../components/ui.jsx";
@@ -9,20 +10,26 @@ export default function Admin() {
   const location = useLocation();
   const isOrderDetail = /^\/admin\/orders\/[^/]+/.test(location.pathname);
   const menu = [
-    { to: "/admin/live", key: "live", ops: true },
-    { to: "/admin/designs", key: "styles", ops: true },
-    { to: "/admin/benchmark", key: "benchmark", ops: true },
-    { to: "/admin/reviews", key: "reviews", ops: true },
-    { to: "/admin/members", key: "members", ops: true },
+    { to: "/admin/live", key: "live", Icon: ShoppingBag },
+    { to: "/admin/designs", key: "styles", Icon: Gem },
+    { to: "/admin/benchmark", key: "benchmark", Icon: CircleDollarSign },
+    { to: "/admin/reviews", key: "reviews", Icon: Star },
+    { to: "/admin/members", key: "members", Icon: Users },
+    { to: "/admin/analytics", key: "analytics", Icon: Activity },
   ];
   return (
     <div className={`page admin-page ${isOrderDetail ? "admin-page-detail" : ""}`}>
-      {!isOrderDetail && <h1 className="page-title">{p.admin.title}</h1>}
+      <h1 className="con-sr">{p.admin.title}</h1>
       <div className="admin-shell">
-        <nav className="admin-side">
-          {menu.map((m) => (
-            <NavLink key={m.to} to={m.to} end={m.end}>
-              {m.ops ? p.opsA.menu[m.key] : p.admin.menu[m.key]}
+        <nav className="admin-side" aria-label={p.admin.title}>
+          <div className="admin-side-head">
+            <span className="admin-side-brand">BeloveD</span>
+            <span className="admin-side-role">{p.admin.title}</span>
+          </div>
+          {menu.map(({ to, key, Icon }) => (
+            <NavLink key={to} to={to}>
+              <Icon size={15} strokeWidth={1.8} aria-hidden="true" />
+              <span>{p.opsA.menu[key]}</span>
             </NavLink>
           ))}
         </nav>

@@ -6,6 +6,13 @@ import { apiFetch, ApiUnavailableError } from "../../lib/api.js";
 import { pickI18n, useLocale } from "../../i18n.jsx";
 import { getOpsStyle } from "../../lib/store.js";
 import { getDesignSlotStyle } from "../../lib/designSlots.js";
+import { ConsoleHead, StatStrip } from "./console.jsx";
+
+// 퍼널 전환율 — 앞 단계 대비 %
+function pct(part, whole) {
+  if (!whole) return null;
+  return `${Math.round((part / whole) * 100)}%`;
+}
 
 function useStyleName() {
   const { locale } = useLocale();
@@ -44,58 +51,76 @@ export default function AdminMembers() {
   const maxTrend = Math.max(...trend.map((t) => t.pageViews), 1);
 
   return (
-    <div>
-      <h2 className="panel-title">{s.title}</h2>
+    <>
+      <ConsoleHead kicker={p.opsA.menu.members} title={s.title} />
 
-      <div className="summary-grid">
-        <div className="summary-card"><div className="num">{kpi.sessionsToday}</div><div className="lbl">{s.kpi.today}</div></div>
-        <div className="summary-card"><div className="num">{kpi.sessions7d}</div><div className="lbl">{s.kpi.sessions7d}</div></div>
-        <div className="summary-card"><div className="num">{kpi.pageViews7d}</div><div className="lbl">{s.kpi.pageViews7d}</div></div>
-        <div className="summary-card"><div className="num">{kpi.activeMembers7d}</div><div className="lbl">{s.kpi.active}</div></div>
-      </div>
+      <StatStrip
+        stats={[
+          { value: kpi.sessionsToday, label: s.kpi.today },
+          { value: kpi.sessions7d, label: s.kpi.sessions7d },
+          { value: kpi.pageViews7d, label: s.kpi.pageViews7d },
+          { value: kpi.activeMembers7d, label: s.kpi.active },
+        ]}
+      />
 
-      <div className="panel" style={{ marginTop: 18 }}>
-        <h3>{s.funnel.title}</h3>
-        <div className="summary-grid" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
-          <div className="summary-card"><div className="num">{funnel.styleViews}</div><div className="lbl">{s.funnel.views}</div></div>
-          <div className="summary-card"><div className="num">{funnel.intakeStarts}</div><div className="lbl">{s.funnel.starts}</div></div>
-          <div className="summary-card"><div className="num">{funnel.intakeSubmits}</div><div className="lbl">{s.funnel.submits}</div></div>
+      <div className="con-section-label"><h3>{s.funnel.title}</h3></div>
+      <div className="con-funnel">
+        <div className="con-funnel-step">
+          <strong>{funnel.styleViews}</strong>
+          <span>{s.funnel.views}</span>
+        </div>
+        <div className="con-funnel-step">
+          <strong>{funnel.intakeStarts}</strong>
+          <span>{s.funnel.starts}</span>
+          {pct(funnel.intakeStarts, funnel.styleViews) && <em>{pct(funnel.intakeStarts, funnel.styleViews)}</em>}
+        </div>
+        <div className="con-funnel-step">
+          <strong>{funnel.intakeSubmits}</strong>
+          <span>{s.funnel.submits}</span>
+          {pct(funnel.intakeSubmits, funnel.intakeStarts) && <em>{pct(funnel.intakeSubmits, funnel.intakeStarts)}</em>}
         </div>
       </div>
 
       {topStyles.length > 0 && (
-        <div className="panel" style={{ marginTop: 18 }}>
-          <h3>{s.topStyles}</h3>
-          <table className="data-table">
-            <tbody>
-              {topStyles.map((row) => (
-                <tr key={row.entityId}>
-                  <td><Link to={`/designs/${row.entityId}`}>{styleName(row.entityId)}</Link></td>
-                  <td>{row.views} {s.views}</td>
-                  <td>{row.clicks} {s.clicks}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <>
+          <div className="con-section-label"><h3>{s.topStyles}</h3></div>
+          <div className="con-table-panel">
+            <table className="data-table">
+              <tbody>
+                {topStyles.map((row) => (
+                  <tr key={row.entityId}>
+                    <td><Link className="text-link" to={`/designs/${row.entityId}`}>{styleName(row.entityId)}</Link></td>
+                    <td>{row.views} {s.views}</td>
+                    <td>{row.clicks} {s.clicks}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       {trend.length > 0 && (
-        <div className="panel" style={{ marginTop: 18 }}>
-          <h3>{s.trend}</h3>
-          <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 72 }} aria-hidden="true">
-            {trend.map((t) => (
-              <div key={t.day} title={`${t.day.slice(0, 10)} · ${t.pageViews}`}
-                style={{ flex: 1, minWidth: 6, background: "var(--accent)", opacity: 0.75,
-                         height: `${Math.max((t.pageViews / maxTrend) * 100, 4)}%` }} />
-            ))}
+        <>
+          <div className="con-section-label"><h3>{s.trend}</h3></div>
+          <div className="con-table-panel" style={{ padding: "18px 18px 14px" }}>
+            <div className="con-trend" aria-hidden="true">
+              {trend.map((t) => (
+                <i key={t.day} title={`${t.day.slice(0, 10)} · ${t.pageViews}`}
+                  style={{ height: `${Math.max((t.pageViews / maxTrend) * 100, 4)}%` }} />
+              ))}
+            </div>
+            <div className="con-trend-range" aria-hidden="true">
+              <span>{trend[0]?.day.slice(5, 10)}</span>
+              <span>{trend[trend.length - 1]?.day.slice(5, 10)}</span>
+            </div>
           </div>
-        </div>
+        </>
       )}
 
-      <div className="panel" style={{ marginTop: 18 }}>
-        <h3>{p.opsA.menu.members}</h3>
-        {members.length === 0 ? <p className="empty-note">{s.emptyMembers}</p> : (
+      <div className="con-section-label"><h3>{p.opsA.menu.members}</h3><span className="con-count">{members.length}</span></div>
+      <div className="con-table-panel">
+        {members.length === 0 ? <p className="con-note">{s.emptyMembers}</p> : (
           <table className="data-table">
             <thead>
               <tr>
@@ -106,7 +131,7 @@ export default function AdminMembers() {
             <tbody>
               {members.map((m) => (
                 <tr key={m.id}>
-                  <td><Link to={`/admin/members/${m.id}`}><b>{m.name}</b></Link></td>
+                  <td><Link className="text-link" to={`/admin/analytics/${m.id}`}><b>{m.name}</b></Link></td>
                   <td>{m.email}</td>
                   <td>{m.createdAt ? new Date(m.createdAt).toLocaleDateString() : "—"}</td>
                   <td>{fmtWhen(m.lastActive)}</td>
@@ -118,7 +143,7 @@ export default function AdminMembers() {
           </table>
         )}
       </div>
-    </div>
+    </>
   );
 }
 
@@ -145,27 +170,32 @@ export function AdminMemberTimeline() {
   if (!events) return <p className="page-sub">…</p>;
 
   return (
-    <div>
-      <p><Link to="/admin/members">← {s.back}</Link></p>
-      <h2 className="panel-title">{s.timelineTitle(member?.name || `#${memberId}`)}</h2>
-      {member && <p className="page-sub">{member.email} · {member.customerCode}</p>}
-      {events.length === 0 ? <p className="empty-note">{s.emptyTimeline}</p> : (
-        <table className="data-table">
-          <tbody>
-            {events.map((e) => (
-              <tr key={e.id}>
-                <td style={{ whiteSpace: "nowrap" }}>{fmtWhen(e.createdAt)}</td>
-                <td>{s.eventLabels[e.type] || e.type}</td>
-                <td>
-                  {e.entityType === "style" && e.entityId
-                    ? <Link to={`/designs/${e.entityId}`}>{styleName(e.entityId)}</Link>
-                    : (e.path || "")}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </div>
+    <>
+      <p style={{ margin: "0 0 14px" }}><Link className="text-link" to="/admin/members">← {s.back}</Link></p>
+      <ConsoleHead
+        kicker={p.opsA.menu.members}
+        title={s.timelineTitle(member?.name || `#${memberId}`)}
+        sub={member ? `${member.email} · ${member.customerCode}` : undefined}
+      />
+      <div className="con-table-panel">
+        {events.length === 0 ? <p className="con-note">{s.emptyTimeline}</p> : (
+          <table className="data-table">
+            <tbody>
+              {events.map((e) => (
+                <tr key={e.id}>
+                  <td style={{ whiteSpace: "nowrap" }}>{fmtWhen(e.createdAt)}</td>
+                  <td>{s.eventLabels[e.type] || e.type}</td>
+                  <td>
+                    {e.entityType === "style" && e.entityId
+                      ? <Link className="text-link" to={`/designs/${e.entityId}`}>{styleName(e.entityId)}</Link>
+                      : (e.path || "")}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </>
   );
 }

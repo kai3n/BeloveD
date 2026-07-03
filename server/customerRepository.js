@@ -394,6 +394,7 @@ export async function getCustomerOrder(orderCode, email) {
 
     return {
       ...orderSummaryView(order, actionView(nextAction)),
+      defaultShippingAddress: customer.default_address || null,
       phases: phaseViews(order.stage),
       publishedArtifacts: artifacts.rows.map(artifactView),
       timeline: timeline.rows.map(timelineView),
@@ -425,6 +426,11 @@ export async function updateOrderShippingAddress(orderCode, email, address = {})
       "update customer_orders set summary = coalesce(summary, '{}'::jsonb) || $2::jsonb, updated_at = now() where id = $1",
       [order.id, JSON.stringify({ shippingAddress: clean })],
     );
+    // 회원 프로필에도 기본 배송지로 저장 — 다음 주문에서 프리필
+    await client.query(
+      "update customers set default_address = $2::jsonb, updated_at = now() where id = $1",
+      [customer.id, JSON.stringify(clean)],
+    );
     // 타임라인은 최초 저장에만 — 주소 수정 반복이 이벤트 스팸이 되지 않게
     if (!order.summary?.shippingAddress) {
       await client.query(
@@ -434,6 +440,49 @@ export async function updateOrderShippingAddress(orderCode, email, address = {})
       );
     }
     return { ok: true, shippingAddress: clean };
+  });
+}
+
+// 고객 주문 취소 — 디파짓 전엔 즉시 취소, 입금 후 제작 중엔 취소 "요청"(환불률은 어드민 정책 판단),
+// 완성(FINAL_QC) 이후엔 불가. 완성품은 환불 대상이 아니다.
+const CANCEL_DIRECT_STAGES = ["OPS_REVIEW", "STONE_SELECTION", "QUOTE", "DEPOSIT"];
+const CANCEL_REQUEST_STAGES = ["CAD", "PRODUCTION"];
+export async function cancelOrder(orderCode, email, reason = "") {
+  return withTransaction(async (client) => {
+    const customer = await requireCustomerByEmail(client, email);
+    const { rows } = await client.query(
+      "select id, stage from customer_orders where order_code = $1 and customer_id = $2 for update",
+      [orderCode, customer.id],
+    );
+    const order = rows[0];
+    if (!order) throw new ApiError("ORDER_ACCESS_DENIED", 403);
+    if (order.stage === "CANCELLED") return { ok: true, cancelled: true };
+    const cleanReason = String(reason || "").slice(0, 500);
+    if (CANCEL_DIRECT_STAGES.includes(order.stage)) {
+      await client.query(
+        "update customer_orders set stage = 'CANCELLED', phase = 'CLOSED', waiting_on = 'NONE', next_action_id = null, updated_at = now() where id = $1",
+        [order.id],
+      );
+      await client.query(
+        `insert into customer_timeline_events (event_code, order_id, title, body, payload)
+         values ($1, $2, $3, $4, $5)`,
+        [await nextCode(client, "TL"), order.id, "order_cancelled", null, { type: "order_cancelled", data: { reason: cleanReason } }],
+      );
+      return { ok: true, cancelled: true, customerEmail: customer.email, locale: customer.locale };
+    }
+    if (CANCEL_REQUEST_STAGES.includes(order.stage)) {
+      await client.query(
+        "update customer_orders set waiting_on = 'BELOVEDIAMOND', updated_at = now() where id = $1",
+        [order.id],
+      );
+      await client.query(
+        `insert into customer_timeline_events (event_code, order_id, title, body, payload)
+         values ($1, $2, $3, $4, $5)`,
+        [await nextCode(client, "TL"), order.id, "cancel_requested", null, { type: "cancel_requested", data: { reason: cleanReason } }],
+      );
+      return { ok: true, requested: true, customerEmail: customer.email, locale: customer.locale };
+    }
+    throw new ApiError("CANCEL_NOT_ALLOWED", 400, "finished pieces are not refundable");
   });
 }
 
@@ -606,6 +655,7 @@ export const EVENT_TRANSITIONS = {
   qc_ready: { stage: "FINAL_QC", phase: "MAKING", waitingOn: "CUSTOMER" },
   balance_requested: { stage: "BALANCE", phase: "DELIVERY", waitingOn: "CUSTOMER" },
   balance_confirmed: { stage: "BALANCE", phase: "DELIVERY", waitingOn: "BELOVEDIAMOND" },
+  order_cancelled: { stage: "CANCELLED", phase: "CLOSED", waitingOn: "NONE" },
   shipped: { stage: "SHIPPING", phase: "DELIVERY", waitingOn: "EXTERNAL" },
   delivered: { stage: "DELIVERED", phase: "CLOSED", waitingOn: "NONE" },
 };

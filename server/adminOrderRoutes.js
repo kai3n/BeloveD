@@ -20,6 +20,60 @@ export function adminOrderRouter() {
       } catch (e) { next(e); }
     });
 
+  // 회원 CRM — 프로필(언어·기본 배송지) + 주문 요약(건수·총구매액·주문 목록, 최신 견적 총액 기준)
+  r.get("/customers",
+    rateLimit({ limit: 60, windowMs: MINUTE }),
+    requireAdmin,
+    async (_req, res, next) => {
+      try {
+        const { rows } = await query(
+          `
+            select
+              c.id, c.customer_code, c.email, c.name, c.phone, c.locale, c.default_address, c.created_at,
+              count(o.id) as order_count,
+              coalesce(sum(case when o.stage = 'DELIVERED' then q.total_usd end), 0) as total_spent,
+              coalesce(sum(case when o.stage not in ('DELIVERED', 'CANCELLED') then q.total_usd end), 0) as open_value,
+              coalesce(
+                json_agg(
+                  json_build_object(
+                    'orderCode', o.order_code, 'stage', o.stage, 'updatedAt', o.updated_at, 'totalUsd', q.total_usd
+                  ) order by o.updated_at desc
+                ) filter (where o.id is not null),
+                '[]'::json
+              ) as orders
+            from customers c
+            left join customer_orders o on o.customer_id = c.id
+            left join lateral (
+              select (pa.payload->>'totalUsd')::numeric as total_usd
+              from published_artifacts pa
+              where pa.order_id = o.id and pa.type = 'QUOTE' and pa.payload ? 'totalUsd'
+              order by pa.published_at desc
+              limit 1
+            ) q on true
+            group by c.id
+            order by c.created_at desc
+          `,
+        );
+        res.json({
+          ok: true,
+          customers: rows.map((r2) => ({
+            id: r2.id,
+            customerCode: r2.customer_code,
+            email: r2.email,
+            name: r2.name,
+            phone: r2.phone,
+            locale: r2.locale,
+            defaultAddress: r2.default_address || null,
+            joinedAt: r2.created_at,
+            orderCount: Number(r2.order_count),
+            totalSpent: Number(r2.total_spent),
+            openValue: Number(r2.open_value),
+            orders: r2.orders || [],
+          })),
+        });
+      } catch (e) { next(e); }
+    });
+
   r.get("/orders/:orderCode",
     rateLimit({ limit: 120, windowMs: MINUTE }),
     requireAdmin,

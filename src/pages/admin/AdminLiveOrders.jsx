@@ -6,6 +6,7 @@ import { apiFetch, ApiUnavailableError } from "../../lib/api.js";
 import { MediaPicker, MediaThumb, usd } from "../../components/ui.jsx";
 import { getOpsStyle } from "../../lib/store.js";
 import { pickI18n, useLocale } from "../../i18n.jsx";
+import { ConsoleHead, StatStrip } from "./console.jsx";
 
 // 견적 컴포저 셀렉트 옵션 · 메탈 코드 → 라벨 (인테이크 프리필용)
 const SHAPES = ["round", "oval", "cushion", "princess", "emerald", "pear", "marquise", "radiant", "asscher", "heart"];
@@ -22,7 +23,7 @@ const COPY = {
     title: "Live orders", kicker: "REAL-SERVER ORDERS",
     liveSection: "Live orders", pastSection: "Past orders", total: "Total",
     emptyPast: "No delivered orders yet — completed orders and revenue land here.",
-    statRevenue: "Total revenue", statDelivered: "Delivered orders", statAvg: "Average order", statPipeline: "Open pipeline (quoted)",
+    statOpen: "Open orders", statRevenue: "Total revenue", statDelivered: "Delivered", statAvg: "Average order", statPipeline: "Pipeline (quoted)",
     empty: "No live orders yet — they appear the moment a customer submits the wizard.",
     needAuth: "This console needs a server admin session. Sign in again through the admin gate.",
     unavailable: "API unreachable — run the local API server or check the deployment.",
@@ -49,12 +50,15 @@ const COPY = {
       shipped: "Shipped", delivered: "Delivered",
     },
     sent: "Event sent — the customer has been emailed.",
+    cancelOrderBtn: "Cancel order", refundNoteLbl: "Refund note to customer (optional — included in the email)",
+    cancelConfirmBtn: "Confirm cancellation", cancelKeepBtn: "Back",
+    cancelRequestedBanner: "Customer requested cancellation",
   },
   ko: {
     title: "실주문", kicker: "실서버 주문",
     liveSection: "진행 중 주문", pastSection: "지난 주문", total: "총액",
     emptyPast: "완료된 주문이 아직 없습니다 — 배송 완료된 주문과 매출이 여기에 쌓입니다.",
-    statRevenue: "총 매출", statDelivered: "완료 주문", statAvg: "평균 주문액", statPipeline: "진행 중 견적 총액",
+    statOpen: "진행 중", statRevenue: "총 매출", statDelivered: "완료 주문", statAvg: "평균 주문액", statPipeline: "견적 파이프라인",
     empty: "아직 실주문이 없습니다 — 고객이 위저드를 제출하면 바로 나타납니다.",
     needAuth: "이 콘솔은 서버 어드민 세션이 필요합니다. 어드민 게이트에서 다시 로그인해 주세요.",
     unavailable: "API에 연결할 수 없습니다 — 로컬 API 서버를 켜거나 배포 상태를 확인하세요.",
@@ -81,12 +85,15 @@ const COPY = {
       shipped: "발송됨", delivered: "수령 완료",
     },
     sent: "이벤트가 반영됐습니다 — 고객에게 메일이 발송됩니다.",
+    cancelOrderBtn: "주문 취소", refundNoteLbl: "환불 안내 문구 (선택 — 고객 메일에 포함)",
+    cancelConfirmBtn: "취소 확정", cancelKeepBtn: "뒤로",
+    cancelRequestedBanner: "고객이 취소를 요청했습니다",
   },
   zh: {
     title: "实时订单", kicker: "真实服务器订单",
     liveSection: "进行中订单", pastSection: "历史订单", total: "总价",
     emptyPast: "暂无已完成订单 — 已交付订单与收入将显示在这里。",
-    statRevenue: "总收入", statDelivered: "已完成订单", statAvg: "平均订单额", statPipeline: "进行中报价总额",
+    statOpen: "进行中", statRevenue: "总收入", statDelivered: "已完成", statAvg: "平均订单额", statPipeline: "报价管道",
     empty: "暂无实时订单 — 客户提交向导后会立即出现。",
     needAuth: "此控制台需要服务器管理员会话，请通过管理入口重新登录。",
     unavailable: "无法连接 API — 请启动本地 API 服务器或检查部署。",
@@ -113,12 +120,15 @@ const COPY = {
       shipped: "已发货", delivered: "已送达",
     },
     sent: "事件已生效 — 已向客户发送邮件。",
+    cancelOrderBtn: "取消订单", refundNoteLbl: "退款说明（可选 — 写入客户邮件）",
+    cancelConfirmBtn: "确认取消", cancelKeepBtn: "返回",
+    cancelRequestedBanner: "客户已申请取消",
   },
   es: {
     title: "Pedidos en vivo", kicker: "PEDIDOS DEL SERVIDOR",
     liveSection: "Pedidos activos", pastSection: "Pedidos pasados", total: "Total",
     emptyPast: "Aún no hay pedidos entregados — los completados y los ingresos aparecerán aquí.",
-    statRevenue: "Ingresos totales", statDelivered: "Pedidos entregados", statAvg: "Pedido promedio", statPipeline: "Pipeline abierto (cotizado)",
+    statOpen: "Activos", statRevenue: "Ingresos totales", statDelivered: "Entregados", statAvg: "Pedido promedio", statPipeline: "Pipeline (cotizado)",
     empty: "Aún no hay pedidos en vivo — aparecen cuando un cliente envía el asistente.",
     needAuth: "Esta consola requiere sesión de administrador del servidor. Inicia sesión de nuevo por la puerta admin.",
     unavailable: "API inalcanzable — inicia el servidor local o revisa el despliegue.",
@@ -145,6 +155,9 @@ const COPY = {
       shipped: "Enviado", delivered: "Entregado",
     },
     sent: "Evento aplicado — se envió el correo al cliente.",
+    cancelOrderBtn: "Cancelar pedido", refundNoteLbl: "Nota de reembolso (opcional — va en el correo)",
+    cancelConfirmBtn: "Confirmar cancelación", cancelKeepBtn: "Atrás",
+    cancelRequestedBanner: "El cliente solicitó la cancelación",
   },
 };
 
@@ -180,7 +193,7 @@ const PAST_STAGES = new Set(["DELIVERED", "CANCELLED"]);
 
 function OrdersTable({ orders, t, navigate, withTotal = false }) {
   return (
-    <div className="panel" style={{ overflowX: "auto" }}>
+    <div className="con-table-panel">
       <table className="data-table">
         <thead>
           <tr>
@@ -196,7 +209,7 @@ function OrdersTable({ orders, t, navigate, withTotal = false }) {
               className="row-clickable"
               onClick={() => navigate(`/admin/live/${o.orderCode}`)}
             >
-              <td><Link className="text-link" to={`/admin/live/${o.orderCode}`} onClick={(e) => e.stopPropagation()}><strong>{o.orderCode}</strong></Link></td>
+              <td><Link className="text-link con-code" to={`/admin/live/${o.orderCode}`} onClick={(e) => e.stopPropagation()}><strong>{o.orderCode}</strong></Link></td>
               <td>{o.customerName || o.customerEmail}<br /><span className="form-hint">{o.customerEmail} · {o.locale}</span></td>
               <td>{o.intake?.category || o.summary?.category || "—"}</td>
               <td><span className={`status-badge ${o.stage === "DELIVERED" ? "mst-done" : "mst-inProgress"}`}>{o.stage}</span></td>
@@ -233,23 +246,28 @@ export default function AdminLiveOrders() {
   const pipeline = live.reduce((s, o) => s + (o.totalUsd || 0), 0);
 
   return (
-    <div className="form-stack">
-      <p className="admin-kicker">{t.kicker} · {t.liveSection}</p>
+    <>
+      <ConsoleHead kicker={t.kicker} title={t.title} />
+      <StatStrip
+        stats={[
+          { value: live.length, label: t.statOpen },
+          { value: usd(pipeline), label: t.statPipeline },
+          { value: usd(revenue), label: t.statRevenue },
+          { value: delivered.length, label: t.statDelivered },
+          { value: delivered.length ? usd(revenue / delivered.length) : "—", label: t.statAvg },
+        ]}
+      />
+
+      <div className="con-section-label"><h3>{t.liveSection}</h3><span className="con-count">{live.length}</span></div>
       {live.length === 0
-        ? <div className="panel"><p className="form-hint">{t.empty}</p></div>
+        ? <div className="con-table-panel"><p className="con-note">{t.empty}</p></div>
         : <OrdersTable orders={live} t={t} navigate={navigate} />}
 
-      <p className="admin-kicker" style={{ marginTop: 18 }}>{t.pastSection}</p>
-      <div className="summary-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))" }}>
-        <div className="summary-card"><div className="num">{usd(revenue)}</div><div className="lbl">{t.statRevenue}</div></div>
-        <div className="summary-card"><div className="num">{delivered.length}</div><div className="lbl">{t.statDelivered}</div></div>
-        <div className="summary-card"><div className="num">{delivered.length ? usd(revenue / delivered.length) : "—"}</div><div className="lbl">{t.statAvg}</div></div>
-        <div className="summary-card"><div className="num">{usd(pipeline)}</div><div className="lbl">{t.statPipeline}</div></div>
-      </div>
+      <div className="con-section-label"><h3>{t.pastSection}</h3><span className="con-count">{past.length}</span></div>
       {past.length === 0
-        ? <div className="panel"><p className="form-hint">{t.emptyPast}</p></div>
+        ? <div className="con-table-panel"><p className="con-note">{t.emptyPast}</p></div>
         : <OrdersTable orders={past} t={t} navigate={navigate} withTotal />}
-    </div>
+    </>
   );
 }
 
@@ -469,6 +487,21 @@ export function AdminLiveOrderDetail() {
   const [state, setState] = useState({ status: "loading", data: null });
   const [notice, setNotice] = useState("");
   const [expandedStep, setExpandedStep] = useState(null); // 기본은 첫 미완료 스텝만 펼침
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [refundNote, setRefundNote] = useState("");
+
+  async function fireCancel() {
+    try {
+      await apiFetch(`/admin/orders/${orderCode}/events`, {
+        method: "POST",
+        body: { type: "order_cancelled", data: refundNote.trim() ? { refundNote: refundNote.trim() } : {} },
+      });
+      setCancelOpen(false);
+      setRefundNote("");
+      setNotice(t.sent);
+      load();
+    } catch { /* 배너/새로고침이 진실 */ }
+  }
 
   function load() {
     apiFetch(`/admin/orders/${orderCode}`)
@@ -507,7 +540,35 @@ export function AdminLiveOrderDetail() {
           <h2 style={{ margin: "2px 0 6px" }}>{order.orderCode} <span className="status-badge mst-inProgress">{order.stage}</span></h2>
           <p className="form-hint">{order.customer?.name} · {order.customer?.email} · {order.customer?.locale} · {t.waiting}: {t.waitingOn[order.waitingOn] || order.waitingOn}</p>
         </div>
+        {!["CANCELLED", "DELIVERED"].includes(order.stage) && (
+          <div style={{ alignSelf: "center", minWidth: cancelOpen ? 320 : "auto" }}>
+            {cancelOpen ? (
+              <div className="form-stack">
+                <label className="field"><span>{t.refundNoteLbl}</span>
+                  <input value={refundNote} onChange={(e) => setRefundNote(e.target.value)} autoFocus /></label>
+                <div className="row-actions">
+                  <button className="button secondary small" type="button" onClick={() => setCancelOpen(false)}>{t.cancelKeepBtn}</button>
+                  <button className="button primary small" type="button" onClick={fireCancel}>{t.cancelConfirmBtn}</button>
+                </div>
+              </div>
+            ) : (
+              <button className="button secondary small" type="button" onClick={() => setCancelOpen(true)}>{t.cancelOrderBtn}</button>
+            )}
+          </div>
+        )}
       </div>
+
+      {(() => {
+        const cancelReq = timeline.find((e) => e.payload?.type === "cancel_requested");
+        if (!cancelReq || order.stage === "CANCELLED") return null;
+        return (
+          <div className="panel form-stack" style={{ borderLeft: "2px solid #e08585" }}>
+            <strong>{t.cancelRequestedBanner}</strong>
+            {cancelReq.payload?.data?.reason && <p style={{ margin: 0 }}>“{cancelReq.payload.data.reason}”</p>}
+            <p className="form-hint" style={{ margin: 0 }}>{new Date(cancelReq.createdAt).toLocaleString()}</p>
+          </div>
+        );
+      })()}
 
       {notice && <p className="admin-save-notice is-saved" role="status">{notice}</p>}
 

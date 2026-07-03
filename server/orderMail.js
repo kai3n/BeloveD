@@ -61,6 +61,18 @@ export const ORDER_MAIL = {
     zh: { subject: (o) => `请支付尾款 — ${o}`, line: () => "成品已通过最终质检，请在订单页面支付尾款后我们将安排发货。" },
     es: { subject: (o) => `Saldo pendiente — ${o}`, line: () => "Tu pieza pasó el control final. Paga el saldo restante en tu portal para iniciar el envío." },
   },
+  order_cancelled: {
+    en: { subject: (o) => `Order cancelled — ${o}`, line: (o, d) => `Your order has been cancelled.${d.refundNote ? ` ${d.refundNote}` : ""} If this wasn't intended, just reply to this email.` },
+    ko: { subject: (o) => `주문 취소 완료 — ${o}`, line: (o, d) => `주문이 취소되었습니다.${d.refundNote ? ` ${d.refundNote}` : ""} 의도치 않은 취소라면 이 메일에 회신해 주세요.` },
+    zh: { subject: (o) => `订单已取消 — ${o}`, line: (o, d) => `您的订单已取消。${d.refundNote ? `${d.refundNote} ` : ""}如非本意，请直接回复此邮件。` },
+    es: { subject: (o) => `Pedido cancelado — ${o}`, line: (o, d) => `Tu pedido ha sido cancelado.${d.refundNote ? ` ${d.refundNote}` : ""} Si no fue intencional, responde a este correo.` },
+  },
+  cancel_requested: {
+    en: { subject: (o) => `Cancellation request received — ${o}`, line: () => "We received your cancellation request. Since production has begun, refunds follow our policy — we will contact you within 1 business day with the details." },
+    ko: { subject: (o) => `취소 요청 접수 — ${o}`, line: () => "취소 요청이 접수되었습니다. 제작이 시작된 주문은 정책에 따라 부분 환불이 적용되며, 영업일 1일 내 환불 내용을 안내드리겠습니다." },
+    zh: { subject: (o) => `已收到取消请求 — ${o}`, line: () => "我们已收到您的取消请求。由于制作已开始，退款将按政策执行 — 我们将在 1 个工作日内与您联系。" },
+    es: { subject: (o) => `Solicitud de cancelación recibida — ${o}`, line: () => "Recibimos tu solicitud de cancelación. Como la producción ya comenzó, los reembolsos siguen nuestra política — te contactaremos en 1 día hábil." },
+  },
   balance_confirmed: {
     en: { subject: (o) => `Balance received — ${o}`, line: () => "Your balance is confirmed. We are preparing your insured shipment and will send tracking shortly." },
     ko: { subject: (o) => `잔금 확인 완료 — ${o}`, line: () => "잔금 입금이 확인되었습니다. 보험 배송을 준비 중이며 곧 운송장 번호를 보내드립니다." },

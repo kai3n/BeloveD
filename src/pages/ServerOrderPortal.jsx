@@ -55,6 +55,12 @@ const COPY = {
     changesSend: "Send request", changesCancel: "Back",
     changesAttach: "Photos or videos (optional)",
     responded: "Thank you — your response is in. We'll take it from here.",
+    cancelLink: "Cancel this order", cancelRequestLink: "Request cancellation",
+    cancelPolicyFree: "Before the deposit, cancellation is free — the order simply closes.",
+    cancelPolicyPartial: "Production has begun, so refunds follow our policy — we'll confirm the exact amount with you before anything is final.",
+    cancelReason: "Reason (optional)", cancelConfirm: "Confirm cancellation", cancelKeep: "Keep my order",
+    cancelRequestedNote: "Cancellation requested — we'll contact you within 1 business day.",
+    cancelledLine: "This order has been cancelled.",
     timelineTitle: "Timeline",
     artifactsTitle: "Shared with you",
     proposalTitle: "Your proposal",
@@ -67,6 +73,7 @@ const COPY = {
       balance_confirmed: "Balance received — preparing your shipment",
       shipped: "Shipped", delivered: "Delivered",
       shipping_address_confirmed: "Shipping address confirmed", payment_reported: "Payment reported — confirming transfer",
+      order_cancelled: "Order cancelled", cancel_requested: "Cancellation requested",
       "Request received": "Request received", "Response received": "Response received",
     },
     emailTail: "Questions? Reply to any of our order emails — they reach the same team.",
@@ -110,6 +117,12 @@ const COPY = {
     changesSend: "요청 보내기", changesCancel: "뒤로",
     changesAttach: "사진·영상 첨부 (선택)",
     responded: "감사합니다 — 응답이 접수됐습니다. 이후 진행은 저희가 맡을게요.",
+    cancelLink: "주문 취소", cancelRequestLink: "취소 요청",
+    cancelPolicyFree: "디파짓 전에는 무료로 취소됩니다 — 주문이 바로 종료돼요.",
+    cancelPolicyPartial: "제작이 시작되어 정책에 따라 부분 환불이 적용됩니다 — 확정 전에 환불 금액을 먼저 안내드려요.",
+    cancelReason: "사유 (선택)", cancelConfirm: "취소 확정", cancelKeep: "주문 유지",
+    cancelRequestedNote: "취소 요청이 접수됐습니다 — 영업일 1일 내 연락드립니다.",
+    cancelledLine: "이 주문은 취소되었습니다.",
     timelineTitle: "타임라인",
     artifactsTitle: "공유된 자료",
     proposalTitle: "제안",
@@ -122,6 +135,7 @@ const COPY = {
       balance_confirmed: "잔금 확인 완료 — 배송 준비 중",
       shipped: "발송됨", delivered: "배송 완료",
       shipping_address_confirmed: "배송지 확인됨", payment_reported: "송금 보고 접수 — 입금 확인 중",
+      order_cancelled: "주문 취소됨", cancel_requested: "취소 요청 접수",
       "Request received": "요청 접수됨", "Response received": "응답 접수됨",
     },
     emailTail: "궁금한 점은 주문 메일에 회신해 주세요 — 같은 팀에게 바로 전달됩니다.",
@@ -165,6 +179,12 @@ const COPY = {
     changesSend: "发送请求", changesCancel: "返回",
     changesAttach: "附上照片或视频（可选）",
     responded: "谢谢 — 已收到您的回复，后续交给我们。",
+    cancelLink: "取消订单", cancelRequestLink: "申请取消",
+    cancelPolicyFree: "支付定金前可免费取消 — 订单将直接关闭。",
+    cancelPolicyPartial: "制作已开始，退款将按政策执行 — 确认前我们会先告知退款金额。",
+    cancelReason: "原因（可选）", cancelConfirm: "确认取消", cancelKeep: "保留订单",
+    cancelRequestedNote: "已收到取消请求 — 我们将在 1 个工作日内联系您。",
+    cancelledLine: "此订单已取消。",
     timelineTitle: "时间线",
     artifactsTitle: "与您共享",
     proposalTitle: "您的方案",
@@ -177,6 +197,7 @@ const COPY = {
       balance_confirmed: "尾款已确认 — 准备发货",
       shipped: "已发货", delivered: "已送达",
       shipping_address_confirmed: "收货地址已确认", payment_reported: "已报告付款 — 核对到账中",
+      order_cancelled: "订单已取消", cancel_requested: "已申请取消",
       "Request received": "已收到请求", "Response received": "已收到回复",
     },
     emailTail: "如有疑问，直接回复订单邮件即可 — 同一团队为您服务。",
@@ -220,6 +241,12 @@ const COPY = {
     changesSend: "Enviar solicitud", changesCancel: "Atrás",
     changesAttach: "Fotos o videos (opcional)",
     responded: "Gracias — recibimos tu respuesta. Nosotros seguimos desde aquí.",
+    cancelLink: "Cancelar este pedido", cancelRequestLink: "Solicitar cancelación",
+    cancelPolicyFree: "Antes del depósito la cancelación es gratuita — el pedido simplemente se cierra.",
+    cancelPolicyPartial: "La producción ya comenzó; los reembolsos siguen nuestra política — confirmaremos el monto contigo antes de finalizar.",
+    cancelReason: "Motivo (opcional)", cancelConfirm: "Confirmar cancelación", cancelKeep: "Mantener mi pedido",
+    cancelRequestedNote: "Cancelación solicitada — te contactaremos en 1 día hábil.",
+    cancelledLine: "Este pedido ha sido cancelado.",
     timelineTitle: "Cronología",
     artifactsTitle: "Compartido contigo",
     proposalTitle: "Tu propuesta",
@@ -232,6 +259,7 @@ const COPY = {
       balance_confirmed: "Saldo recibido — preparando el envío",
       shipped: "Enviado", delivered: "Entregado",
       shipping_address_confirmed: "Dirección de envío confirmada", payment_reported: "Pago reportado — confirmando transferencia",
+      order_cancelled: "Pedido cancelado", cancel_requested: "Cancelación solicitada",
       "Request received": "Solicitud recibida", "Response received": "Respuesta recibida",
     },
     emailTail: "¿Preguntas? Responde a cualquiera de nuestros correos del pedido.",
@@ -338,7 +366,8 @@ export default function ServerOrderPortal({ orderCode }) {
   useEffect(() => {
     if (state.status !== "ok" || address !== null) return;
     const saved = state.order.summary?.shippingAddress || null;
-    setAddress({ ...EMPTY_ADDRESS, ...(saved || {}) });
+    const prefill = saved || state.order.defaultShippingAddress || null; // 회원 프로필 기본 배송지 프리필
+    setAddress({ ...EMPTY_ADDRESS, ...(prefill || {}) });
     setAddressSaved(Boolean(saved && isShippingAddressComplete(saved)));
   }, [state, address]);
 
@@ -347,6 +376,18 @@ export default function ServerOrderPortal({ orderCode }) {
       await apiFetch(`/orders/${orderCode}/shipping-address`, { method: "POST", body: address });
       setAddressSaved(true);
     } catch { /* 실패 시 편집 상태 유지 — 재시도 가능 */ }
+  }
+
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelMsg, setCancelMsg] = useState("");
+
+  async function doCancel(reason) {
+    try {
+      await apiFetch(`/orders/${orderCode}/cancel`, { method: "POST", body: { reason } });
+    } catch { /* refetch가 진실 */ }
+    setCancelOpen(false);
+    setCancelMsg("");
+    setRespondedId(`cancel-${Date.now()}`); // refetch
   }
 
   async function reportPayment(kind) {
@@ -433,6 +474,12 @@ export default function ServerOrderPortal({ orderCode }) {
   // 체크포인트 상태 — active(고객 차례) / waiting(BeloveD 차례) / done / upcoming
   const proposalState = quoteAction ? "active" : !quoteArt ? "waiting" : (quoteApproved || pastQuote) ? "done" : "waiting";
   const depositState = !payTotal ? null : showDeposit ? (depositReported ? "waiting" : "active") : pastQuote ? "done" : "upcoming";
+  // 취소 정책 — 디파짓 확인 전: 즉시 / 제작 중: 요청(정책 환불) / 완성 후: 불가
+  const cancelled = order.stage === "CANCELLED";
+  const cancelRequested = order.timeline.some((e) => e.payload?.type === "cancel_requested");
+  const cancelMode = ["OPS_REVIEW", "STONE_SELECTION", "QUOTE", "DEPOSIT"].includes(order.stage)
+    ? "direct"
+    : ["CAD", "PRODUCTION"].includes(order.stage) ? "request" : null;
   const balanceVisible = Boolean(payTotal) && stageIdx >= STAGE_SEQ.indexOf("BALANCE");
   const balanceConfirmed = order.timeline.some((e) => e.payload?.type === "balance_confirmed");
   const balanceState = balanceConfirmed || stageIdx > STAGE_SEQ.indexOf("BALANCE")
@@ -485,8 +532,10 @@ export default function ServerOrderPortal({ orderCode }) {
     </div>
   ));
 
-  const waitingLine = showDeposit && !depositReported
-    ? t.waitingDeposit
+  const waitingLine = cancelled
+    ? t.cancelledLine
+    : showDeposit && !depositReported
+      ? t.waitingDeposit
     : showBalance && !balanceReported && !balanceConfirmed
       ? t.waitingBalance
       : t.waiting[order.waitingOn] || "";
@@ -514,6 +563,7 @@ export default function ServerOrderPortal({ orderCode }) {
         ))}
       </section>
 
+      {!cancelled && (<>
       {/* 01 제안 — 준비 중 안내 → 오더시트 카드 + 컨펌. 승인되면 접힘(done) */}
       <Checkpoint id="bd-proposal" index="1-1" title={fc.proposalKicker} state={proposalState}
         summary={payTotal ? usd(payTotal) : ""}>
@@ -612,6 +662,38 @@ export default function ServerOrderPortal({ orderCode }) {
           </section>
         );
       })}
+
+      {/* 취소 — 정책 단계별: 즉시 취소 / 취소 요청 / (완성 후엔 노출 안 함) */}
+      {cancelMode && (
+        <section className="panel form-stack">
+          {cancelRequested ? (
+            <p className="form-hint" style={{ margin: 0, textAlign: "center" }}>{t.cancelRequestedNote}</p>
+          ) : cancelOpen ? (
+            <>
+              <p className="form-hint" style={{ margin: 0 }}>
+                {cancelMode === "direct" ? t.cancelPolicyFree : t.cancelPolicyPartial}
+              </p>
+              <label className="field"><span>{t.cancelReason}</span>
+                <textarea rows={2} value={cancelMsg} onChange={(e) => setCancelMsg(e.target.value)} autoFocus />
+              </label>
+              <div className="customer-decision-actions">
+                <button className="button primary" type="button" onClick={() => setCancelOpen(false)}>{t.cancelKeep}</button>
+                <button className="button secondary" type="button" onClick={() => doCancel(cancelMsg.trim())}>{t.cancelConfirm}</button>
+              </div>
+            </>
+          ) : (
+            <button
+              className="text-link"
+              type="button"
+              style={{ justifySelf: "center", margin: "0 auto", color: "var(--quiet)", fontSize: 12.5 }}
+              onClick={() => setCancelOpen(true)}
+            >
+              {cancelMode === "direct" ? t.cancelLink : t.cancelRequestLink}
+            </button>
+          )}
+        </section>
+      )}
+      </>)}
 
       {/* 타임라인 */}
       <section className="panel">

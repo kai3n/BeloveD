@@ -5,7 +5,7 @@ import { withTransaction, query } from "./db.js";
 import {
   createDraftIntake, submitIntake, requestHash, recordOrderEvent, EVENT_TRANSITIONS,
   listCustomerOrders, getCustomerOrder, respondToAction, listServerOrders,
-  updateOrderShippingAddress, reportOrderPayment,
+  updateOrderShippingAddress, reportOrderPayment, cancelOrder,
 } from "./customerRepository.js";
 import { sendOrderEventMail } from "./orderMail.js";
 import { requireAdmin, requireCustomer } from "./middleware.js";
@@ -145,6 +145,23 @@ export function customerRouter() {
       try {
         const result = await reportOrderPayment(req.params.orderCode, await principalEmail(req), req.body?.kind);
         res.json(result);
+      } catch (e) { next(e); }
+    });
+
+  // 주문 취소 — 디파짓 전 즉시 취소 / 제작 중 취소 요청 / 완성 후 400
+  r.post("/orders/:orderCode/cancel",
+    rateLimit({ limit: 10, windowMs: MINUTE }),
+    requireCustomer,
+    async (req, res, next) => {
+      try {
+        const result = await cancelOrder(req.params.orderCode, await principalEmail(req), req.body?.reason);
+        res.json({ ok: true, cancelled: Boolean(result.cancelled), requested: Boolean(result.requested) });
+        if (result.customerEmail) {
+          const type = result.cancelled ? "order_cancelled" : "cancel_requested";
+          fireMail(sendOrderEventMail({
+            email: result.customerEmail, locale: result.locale, orderCode: req.params.orderCode, type, data: {},
+          }), type);
+        }
       } catch (e) { next(e); }
     });
 

@@ -320,7 +320,7 @@ const en = {
     chipTitle: "Annotation chips (tap to enable/disable)",
   },
   opsA: {
-    menu: { live: "Orders", orders: "Order Control", styles: "Style Library", benchmark: "Diamond Pricing", reviews: "Reviews", members: "Members", checklist: "Daily Checklist" },
+    menu: { live: "Orders", analytics: "Analytics", orders: "Order Control", styles: "Style Library", benchmark: "Diamond Pricing", reviews: "Reviews", members: "Members", checklist: "Daily Checklist" },
     members: {
       title: "Members & Activity",
       kpi: { today: "Sessions today", sessions7d: "Sessions · 7d", pageViews7d: "Page views · 7d", active: "Active members · 7d" },
@@ -411,7 +411,7 @@ const en = {
       addStyle: "Add style", leadDays: "Lead (days)", labor: "Labor ($)", estW: "Est. weight (g)",
       subcategory: "Subcategory", media: "Photos & video (1st = cover)", editMedia: "Media", save: "Save",
     },
-    bench: { title: "Diamond Benchmark (9 shapes × 7 tiers)", note: "DEF VVS-VS, CVD, post-growth treatment, IGI India — $/ct. Update price and quote date only.", quoted: "Quoted" },
+    bench: { title: "Diamond Benchmark (9 shapes × 7 tiers)", note: "DEF VVS-VS, CVD, post-growth treatment, IGI India — $/ct. Update price and quote date only.", quoted: "Quoted", saved: "Saved", autoHint: "Prices save automatically when you leave a cell" },
     check: {
       title: "Daily Checklist", waiting: "Waiting-client items", blocked: "Blocked milestones", expiring: "Quotes near expiry",
       lowCand: "Stone-selection orders with <3 published candidates", dueSoon: "Orders near required date", openPr: "Open procurement requests", clear: "All clear",
@@ -743,7 +743,7 @@ const ko = {
     chipTitle: "주석 칩 관리 (탭하여 활성/비활성)",
   },
   opsA: {
-    menu: { live: "주문", orders: "주문 관제", styles: "스타일 라이브러리", benchmark: "다이아 벤치마크", reviews: "리뷰 관리", members: "회원", checklist: "데일리 체크" },
+    menu: { live: "주문", analytics: "애널리틱스", orders: "주문 관제", styles: "스타일 라이브러리", benchmark: "다이아 벤치마크", reviews: "리뷰 관리", members: "회원", checklist: "데일리 체크" },
     members: {
       title: "회원·활동",
       kpi: { today: "오늘 세션", sessions7d: "세션 · 7일", pageViews7d: "페이지뷰 · 7일", active: "활성 회원 · 7일" },
@@ -834,7 +834,7 @@ const ko = {
       addStyle: "스타일 추가", leadDays: "리드 (일)", labor: "공임 ($)", estW: "예상 중량 (g)",
       subcategory: "서브카테고리", media: "사진·영상 (첫 항목 = 커버)", editMedia: "미디어", save: "저장",
     },
-    bench: { title: "다이아 벤치마크 (9 쉐입 × 7 티어)", note: "DEF VVS-VS · CVD · 포스트그로스 처리 · IGI India 기준 — $/ct. 단가와 견적일만 갱신하세요.", quoted: "견적일" },
+    bench: { title: "다이아 벤치마크 (9 쉐입 × 7 티어)", note: "DEF VVS-VS · CVD · 포스트그로스 처리 · IGI India 기준 — $/ct. 단가와 견적일만 갱신하세요.", quoted: "견적일", saved: "저장됨", autoHint: "칸을 벗어나면 자동 저장됩니다" },
     check: {
       title: "데일리 체크리스트", waiting: "고객 응답 대기", blocked: "차단된 마일스톤", expiring: "만료 임박 견적",
       lowCand: "공개 후보 3개 미만인 스톤선택 주문", dueSoon: "희망일 임박 주문", openPr: "미응답 조달 요청", clear: "모두 정상",
@@ -1166,7 +1166,7 @@ const zh = {
     chipTitle: "标注标签管理（点按启用/停用）",
   },
   opsA: {
-    menu: { live: "订单", orders: "订单管控", styles: "款式库", benchmark: "钻石基准价", reviews: "评价管理", members: "会员", checklist: "每日检查" },
+    menu: { live: "订单", analytics: "分析", orders: "订单管控", styles: "款式库", benchmark: "钻石基准价", reviews: "评价管理", members: "会员", checklist: "每日检查" },
     members: {
       title: "会员·行为",
       kpi: { today: "今日会话", sessions7d: "会话 · 7天", pageViews7d: "页面浏览 · 7天", active: "活跃会员 · 7天" },
@@ -1257,7 +1257,7 @@ const zh = {
       addStyle: "新增款式", leadDays: "交期（天）", labor: "工费 ($)", estW: "预估重量 (g)",
       subcategory: "子分类", media: "照片·视频（第一项为封面）", editMedia: "媒体", save: "保存",
     },
-    bench: { title: "钻石基准价（9 形状 × 7 档）", note: "DEF VVS-VS · CVD · 后期处理 · IGI India — $/ct。仅更新单价与报价日期。", quoted: "报价日" },
+    bench: { title: "钻石基准价（9 形状 × 7 档）", note: "DEF VVS-VS · CVD · 后期处理 · IGI India — $/ct。仅更新单价与报价日期。", quoted: "报价日", saved: "已保存", autoHint: "离开单元格后自动保存" },
     check: {
       title: "每日检查", waiting: "等待客户项", blocked: "受阻里程碑", expiring: "临近过期报价",
       lowCand: "已发布候选 <3 的选石订单", dueSoon: "临近需要日期的订单", openPr: "未响应采购任务", clear: "全部正常",
@@ -1589,7 +1589,7 @@ const es = {
     chipTitle: "Etiquetas de anotación (toca para activar/desactivar)",
   },
   opsA: {
-    menu: { live: "Pedidos", orders: "Control de Pedidos", styles: "Biblioteca de Estilos", benchmark: "Precios de Diamante", reviews: "Reseñas", members: "Miembros", checklist: "Checklist Diario" },
+    menu: { live: "Pedidos", analytics: "Analítica", orders: "Control de Pedidos", styles: "Biblioteca de Estilos", benchmark: "Precios de Diamante", reviews: "Reseñas", members: "Miembros", checklist: "Checklist Diario" },
     members: {
       title: "Miembros y actividad",
       kpi: { today: "Sesiones hoy", sessions7d: "Sesiones · 7d", pageViews7d: "Vistas · 7d", active: "Miembros activos · 7d" },
@@ -1680,7 +1680,7 @@ const es = {
       addStyle: "Añadir estilo", leadDays: "Plazo (días)", labor: "Mano de obra ($)", estW: "Peso est. (g)",
       subcategory: "Subcategoría", media: "Fotos y video (1.º = portada)", editMedia: "Medios", save: "Guardar",
     },
-    bench: { title: "Benchmark de Diamantes (9 formas × 7 rangos)", note: "DEF VVS-VS · CVD · tratamiento posterior · IGI India — $/ct. Actualiza solo precio y fecha.", quoted: "Cotizado" },
+    bench: { title: "Benchmark de Diamantes (9 formas × 7 rangos)", note: "DEF VVS-VS · CVD · tratamiento posterior · IGI India — $/ct. Actualiza solo precio y fecha.", quoted: "Cotizado", saved: "Guardado", autoHint: "Se guarda automáticamente al salir de la celda" },
     check: {
       title: "Checklist Diario", waiting: "Esperando al cliente", blocked: "Hitos bloqueados", expiring: "Cotizaciones por vencer",
       lowCand: "Pedidos en selección con <3 candidatos publicados", dueSoon: "Pedidos cerca de la fecha requerida", openPr: "Solicitudes de compra abiertas", clear: "Todo en orden",
