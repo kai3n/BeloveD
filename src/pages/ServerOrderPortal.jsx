@@ -39,7 +39,7 @@ const COPY = {
       DEPOSIT: "Awaiting your deposit", CAD: "Designing", PRODUCTION: "Crafting", FINAL_QC: "Final quality check",
       BALANCE: "Balance", SHIPPING: "Shipping", DELIVERED: "Delivered", CANCELLED: "Cancelled",
     },
-    phases: { DEFINE: "Define your piece", MAKING: "We make it", DELIVERY: "Deliver" },
+    phases: { DEFINE: "Confirm your piece", MAKING: "We make it", DELIVERY: "Deliver" },
     nextTitle: "Your confirmation",
     kinds: {
       QUOTE_ACCEPTANCE: "Review and confirm your proposal",
@@ -147,7 +147,7 @@ const COPY = {
       DEPOSIT: "等待定金", CAD: "设计中", PRODUCTION: "制作中", FINAL_QC: "最终质检",
       BALANCE: "尾款", SHIPPING: "配送中", DELIVERED: "已送达", CANCELLED: "已取消",
     },
-    phases: { DEFINE: "确定作品", MAKING: "制作", DELIVERY: "交付" },
+    phases: { DEFINE: "确认作品", MAKING: "制作", DELIVERY: "交付" },
     nextTitle: "待您确认",
     kinds: {
       QUOTE_ACCEPTANCE: "请查看并确认方案",
@@ -201,7 +201,7 @@ const COPY = {
       DEPOSIT: "Depósito pendiente", CAD: "Diseñando", PRODUCTION: "Fabricando", FINAL_QC: "Control final",
       BALANCE: "Saldo", SHIPPING: "En camino", DELIVERED: "Entregado", CANCELLED: "Cancelado",
     },
-    phases: { DEFINE: "Define tu pieza", MAKING: "La fabricamos", DELIVERY: "Entrega" },
+    phases: { DEFINE: "Confirma tu pieza", MAKING: "La fabricamos", DELIVERY: "Entrega" },
     nextTitle: "Tu confirmación",
     kinds: {
       QUOTE_ACCEPTANCE: "Revisa y confirma tu propuesta",
@@ -508,7 +508,7 @@ export default function ServerOrderPortal({ orderCode }) {
       </section>
 
       {/* 01 제안 — 준비 중 안내 → 오더시트 카드 + 컨펌. 승인되면 접힘(done) */}
-      <Checkpoint id="bd-proposal" index={1} title={fc.proposalKicker} state={proposalState}
+      <Checkpoint id="bd-proposal" index="1-1" title={fc.proposalKicker} state={proposalState}
         summary={payTotal ? usd(payTotal) : ""}>
         {quoteArt ? (
           <>
@@ -526,16 +526,8 @@ export default function ServerOrderPortal({ orderCode }) {
 
       {/* 02 디파짓 — 승인 즉시 열림: 결제 카드 + 배송지 */}
       {depositState && (
-        <Checkpoint id="bd-deposit" index={2} title={fc.payTitle} state={depositState} summary={usd(payDeposit)}>
-          <PaymentCard
-            amountUsd={payDeposit}
-            memoText={`BeloveD ${order.orderCode} Deposit`}
-            reported={depositReported}
-            fc={fc}
-            sentCta={fc.depositSentCta}
-            reportedNote={fc.reportedNote}
-            onReport={() => reportPayment("deposit")}
-          />
+        <Checkpoint id="bd-deposit" index="1-2" title={fc.payTitle} state={depositState} summary={usd(payDeposit)}>
+          {/* 배송지 먼저, 결제는 그 다음 — 주소를 안 적고 송금 보고하는 사고 방지 (체크아웃 관례) */}
           {address && (
             <ShippingAddressPanel
               value={address}
@@ -546,12 +538,21 @@ export default function ServerOrderPortal({ orderCode }) {
               onSave={saveAddress}
             />
           )}
+          <PaymentCard
+            amountUsd={payDeposit}
+            memoText={`BeloveD ${order.orderCode} Deposit`}
+            reported={depositReported}
+            fc={fc}
+            sentCta={fc.depositSentCta}
+            reportedNote={fc.reportedNote}
+            onReport={() => reportPayment("deposit")}
+          />
         </Checkpoint>
       )}
 
       {/* 03 잔금 — BALANCE 단계부터 */}
       {balanceVisible && (
-        <Checkpoint id="bd-balance" index={3} title={fc.balanceTitle} state={balanceState} summary={usd(payTotal - payDeposit)}>
+        <Checkpoint id="bd-balance" index="3-1" title={fc.balanceTitle} state={balanceState} summary={usd(payTotal - payDeposit)}>
           <PaymentCard
             amountUsd={payTotal - payDeposit}
             memoText={`BeloveD ${order.orderCode} Balance`}
@@ -568,7 +569,7 @@ export default function ServerOrderPortal({ orderCode }) {
       {otherAction && (
         <Checkpoint
           id="bd-action"
-          index={balanceVisible ? 4 : 3}
+          index="2-1"
           title={t.kinds[otherAction.kind] || otherAction.title || t.nextTitle}
           state="active"
           badgeOverride={t.nextTitle}

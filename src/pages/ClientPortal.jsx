@@ -566,9 +566,13 @@ export function ShippingAddressPanel({ value, onChange, t, locked = false, onSav
           <input value={value.notes} onChange={(e) => setField("notes", e.target.value)} disabled={locked} />
         </label>
       </div>
-      {!locked && !complete && <p className="form-hint">{t.shippingRequired}</p>}
-      {!locked && canSave && onSave && (
-        <button className="button secondary small" type="button" disabled={!complete} onClick={onSave}>{t.shippingSave}</button>
+      {!locked && (
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginTop: 6 }}>
+          <p className="form-hint" style={{ margin: 0 }}>{complete ? "" : t.shippingRequired}</p>
+          {canSave && onSave && (
+            <button className="button primary small" type="button" disabled={!complete} onClick={onSave}>{t.shippingSave}</button>
+          )}
+        </div>
       )}
     </section>
   );

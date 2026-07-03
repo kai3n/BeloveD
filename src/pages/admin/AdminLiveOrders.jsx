@@ -146,14 +146,14 @@ const COPY = {
 
 // 스테이지 순서 — 각 이벤트가 도달시키는 stage (완료/현재 표시용)
 const FLOW = [
-  { type: "proposal_sent", reaches: "QUOTE", media: "proposal", artifactType: "QUOTE", composer: "proposal", fields: ["note", "total"], action: { kind: "QUOTE_ACCEPTANCE", allowedResponses: ["APPROVE", "REQUEST_CHANGES"] } },
-  { type: "deposit_confirmed", reaches: "CAD" },
-  { type: "diamond_locked", reaches: "CAD", fields: ["igi"] },
-  { type: "production_started", reaches: "PRODUCTION" },
-  { type: "qc_ready", reaches: "FINAL_QC", media: "qc", artifactType: "QC", fields: ["note"], action: { kind: "FINAL_QC_CONFIRMATION", allowedResponses: ["CONFIRM", "REQUEST_CHANGES"] } },
-  { type: "balance_requested", reaches: "BALANCE" },
-  { type: "shipped", reaches: "SHIPPING", fields: ["tracking"] },
-  { type: "delivered", reaches: "DELIVERED" },
+  { type: "proposal_sent", num: "1-1", reaches: "QUOTE", media: "proposal", artifactType: "QUOTE", composer: "proposal", fields: ["note", "total"], action: { kind: "QUOTE_ACCEPTANCE", allowedResponses: ["APPROVE", "REQUEST_CHANGES"] } },
+  { type: "deposit_confirmed", num: "1-2", reaches: "CAD" },
+  { type: "diamond_locked", num: "2-1", reaches: "CAD", fields: ["igi"] },
+  { type: "production_started", num: "2-2", reaches: "PRODUCTION" },
+  { type: "qc_ready", num: "2-3", reaches: "FINAL_QC", media: "qc", artifactType: "QC", fields: ["note"], action: { kind: "FINAL_QC_CONFIRMATION", allowedResponses: ["CONFIRM", "REQUEST_CHANGES"] } },
+  { type: "balance_requested", num: "3-1", reaches: "BALANCE" },
+  { type: "shipped", num: "3-2", reaches: "SHIPPING", fields: ["tracking"] },
+  { type: "delivered", num: "3-3", reaches: "DELIVERED" },
 ];
 const STAGE_ORDER = ["OPS_REVIEW", "STONE_SELECTION", "QUOTE", "DEPOSIT", "CAD", "PRODUCTION", "FINAL_QC", "BALANCE", "SHIPPING", "DELIVERED"];
 
@@ -335,7 +335,7 @@ function StepCard({ step, index, order, changeRequest, expanded, onToggle, t, on
         onClick={!open && !done ? onToggle : undefined}
         style={!open && !done ? { cursor: "pointer" } : undefined}
       >
-        <span className="client-stage-number">{done && !unlocked ? "✓" : String(index).padStart(2, "0")}</span>
+        <span className="client-stage-number">{done && !unlocked ? "✓" : step.num}</span>
         <div><h3>{t.steps[step.type]}</h3></div>
         {unlocked
           ? <span className="status-badge mst-waitingClient">{t.changesRequested}</span>

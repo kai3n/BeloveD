@@ -91,7 +91,7 @@ function timelineView(row) {
 // 3단계 여정 — 디자인 승인 스텝은 제품 flow에서 제거됨(초안 수락=디자인 승인)이라 별도 단계로 두지 않는다
 function phaseViews(stage) {
   const keys = [
-    ["DEFINE", "Define your piece"],
+    ["DEFINE", "Confirm your piece"],
     ["MAKING", "We are making it"],
     ["DELIVERY", "Complete and deliver"],
   ];
