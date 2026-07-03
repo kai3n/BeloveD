@@ -1294,6 +1294,19 @@ export default function AdminOpsOrder() {
         {saveNotice}
       </p>
 
+      {/* 어드민 터치포인트 카드 — 디파짓/잔금/수령 확인은 여기서만 진행된다 */}
+      <NextActionPanel
+        order={order}
+        operatorStep={null}
+        waitingStep={waitingStep}
+        nextAction={nextAction}
+        openActions={openCustomerActions}
+        t={t}
+        p={p}
+        onSaved={notify}
+        notice={notice}
+      />
+
       {/* 워크플로우 스테이지 — 지금 단계만 기본으로 펼친다 (상태 바뀌면 key로 초기화) */}
       <details className="ops-stage" key={`s1-${order.status}-${depositDone}`} open={proposalPhase}>
         <summary>
