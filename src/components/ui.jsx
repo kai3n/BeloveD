@@ -3,6 +3,7 @@ import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Eye, X } from "lu
 import { useLocale } from "../i18n.jsx";
 import { getSettings } from "../lib/store.js";
 import { uploadMedia } from "../lib/api.js";
+import { track } from "../lib/track.js";
 
 // 신규 화면 공통 빌딩블록. 라벨은 전부 useLocale().p 사전에서 — 4개 언어 지원.
 // 샘플 사진은 jewelry-lineup.png 크롭(pos) 또는 단일 이미지(src).
@@ -61,6 +62,7 @@ export function MediaZoomModal({ mediaItems, activeIndex = 0, onActiveIndexChang
   useEffect(() => {
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    track("media_zoom", { path: window.location.pathname });
     return () => {
       document.body.style.overflow = originalOverflow;
     };

@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { MediaPicker } from "./ui.jsx";
 import { submitReview } from "../lib/store.js";
+import { track } from "../lib/track.js";
 
 // 리뷰 작성 — 미디어 퍼스트: 인증샷부터, 별점, 한 줄
 export default function ReviewForm({ orderId, rc, onDone }) {
@@ -12,6 +13,7 @@ export default function ReviewForm({ orderId, rc, onDone }) {
   function submit() {
     if (!quote.trim()) return;
     submitReview(orderId, { rating, quote, body, media });
+    track("review_submit", { meta: { rating } });
     onDone?.();
   }
   return (

@@ -1,9 +1,10 @@
-import { lazy, Suspense } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { lazy, Suspense, useEffect } from "react";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import Layout from "./Layout.jsx";
 import NotFound from "./NotFound.jsx";
 import { RequireRole } from "./lib/auth.jsx";
 import { WITH_BACKOFFICE } from "./lib/flags.js";
+import { track } from "./lib/track.js";
 // 공개 스토어프론트 — 모든 방문자가 즉시 보는 화면은 eager 로드
 import Home from "./pages/Home.jsx";
 import Login from "./pages/Login.jsx";
@@ -34,9 +35,17 @@ const GuideHub = named(() => import("./pages/Guide.jsx"), "GuideHub");
 const GuideLabDiamond = named(() => import("./pages/Guide.jsx"), "GuideLabDiamond");
 const Guide4C = named(() => import("./pages/Guide.jsx"), "Guide4C");
 
+// 라우트 이동마다 page_view 1건 — track.js가 어드민·게이트 경로는 스스로 거른다
+function PageViewTracker() {
+  const location = useLocation();
+  useEffect(() => { track("page_view", { path: location.pathname }); }, [location.pathname]);
+  return null;
+}
+
 export default function App() {
   return (
     <Suspense fallback={<div className="page"><p className="page-sub">…</p></div>}>
+      <PageViewTracker />
       <Routes>
         <Route element={<Layout />}>
           <Route index element={<Home />} />

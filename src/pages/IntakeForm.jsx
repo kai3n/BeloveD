@@ -14,6 +14,7 @@ import { useDBVersion } from "../lib/useDB.js";
 import { pickI18n, useLocale } from "../i18n.jsx";
 import { LuxuryDatePicker, LuxurySelect, MediaPicker, MediaThumb } from "../components/ui.jsx";
 import StoneEduPanel from "../components/StoneEducation.jsx";
+import { track } from "../lib/track.js";
 import QuoteCompare from "../components/QuoteCompare.jsx";
 import GalleryStep from "../components/intake/GalleryStep.jsx";
 import { CaratSlider, ImageOptionGrid, MetalSwatches, ScalePicker, ShapeSilhouette, ShapeTiles } from "../components/intake/pickers.jsx";
@@ -131,6 +132,12 @@ export default function IntakeForm() {
     multiSpec: { meleeSpec: "", overallDims: "", arrangement: "", standard: "" },
     requiredDate: "", termsAccepted: false,
   };
+  // 인테이크 진입 이벤트 — 스타일 프리필 여부 포함 (마운트 1회)
+  useEffect(() => {
+    track("intake_start", { path: "/custom/new", meta: styleParam ? { styleId: styleParam } : undefined });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const [form, setForm] = useState(() => {
     if (!draft?.form) return baseForm;
     const nextCategory = styleFromParam?.category || categoryFromParam || draft.form.category || baseForm.category;
@@ -222,6 +229,13 @@ export default function IntakeForm() {
 
   // 이미지 답변 탭 → 짧은 선택 피드백 후 자동 진행
   function selectAndAdvance(patch, currentName) {
+    // 위저드 옵션 선택 이벤트 — 어떤 단계에서 무엇을 골랐는지 (PII 없는 선택값만)
+    track("option_select", {
+      path: "/custom/new",
+      entityType: form.styleId ? "style" : undefined,
+      entityId: form.styleId || undefined,
+      meta: { step: currentName, ...patch },
+    });
     setResumeTarget("");
     setF(patch);
     const nextLine = patch.productLine || form.productLine;
@@ -255,6 +269,7 @@ export default function IntakeForm() {
       return;
     }
     const { order } = createIntake(buildIntakePayload(form, refs, user), user?.id || null);
+    track("intake_submit", { path: "/custom/new", meta: { orderId: order.id } });
     window.localStorage.removeItem(DRAFT_KEY);
     setDone(order);
   }
