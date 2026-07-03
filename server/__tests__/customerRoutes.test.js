@@ -69,6 +69,17 @@ describe("POST /v1/intakes", () => {
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe("VALIDATION_ERROR");
   });
+
+  // 왜: intakes(limit 5)와 auth/magic-link(limit 5)가 IP 기본 키를 공유하면 서로의 버킷을 소모한다 —
+  // route-scoped 키(intakes:<ip>)로 분리되었는지 회귀 검증. 수정 전에는 6번째 히트(magic-link)가 429였다.
+  it("인테이크 버킷 소모는 magic-link 버킷에 영향을 주지 않는다 (라우트별 격리)", async () => {
+    for (let i = 0; i < 5; i += 1) {
+      const res = await request(app).post("/v1/intakes").send({ ...intakeBody, email: `iso${i}@test.com` });
+      expect(res.status).toBe(201);
+    }
+    const magicLink = await request(app).post("/v1/auth/magic-link").send({ email: "iso@test.com" });
+    expect(magicLink.status).not.toBe(429);
+  });
 });
 
 describe("POST /v1/admin/orders/:orderCode/events", () => {

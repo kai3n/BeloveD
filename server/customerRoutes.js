@@ -21,8 +21,9 @@ export function customerRouter() {
   const r = Router();
 
   // 인테이크 제출 — draft 생성+제출 원샷. 더블클릭/재시도는 Idempotency-Key로 흡수.
+  // 왜: 공유 IP 버킷과 분리 — 브라우징 트래픽(activity/auth)이 인테이크 한도를 소모해 오탐 429가 나는 것을 막는다.
   r.post("/intakes",
-    rateLimit({ limit: 5, windowMs: MINUTE }),
+    rateLimit({ limit: 5, windowMs: MINUTE, keyFn: (req) => `intakes:${req.ip}` }),
     async (req, res, next) => {
       try {
         const payload = req.body || {};
@@ -69,7 +70,7 @@ export function customerRouter() {
 
   // 주문 상태 이벤트 — 어드민 전용. 같은 타입 재호출 허용(재발송 = 어드민 의도, 스펙 §2).
   r.post("/admin/orders/:orderCode/events",
-    rateLimit({ limit: 30, windowMs: MINUTE }),
+    rateLimit({ limit: 30, windowMs: MINUTE, keyFn: (req) => `order-events:${req.ip}` }),
     requireAdmin,
     async (req, res, next) => {
       try {

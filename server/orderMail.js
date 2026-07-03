@@ -2,12 +2,15 @@
 // 발송은 항상 커밋/응답 후 fire-and-forget — 실패는 로그만 남긴다 (스펙 §5).
 import { sendOrderMail } from "./mailer.js";
 
+// 왜: wrap()이 영어 면책 문구를 항상 붙이므로 비영어 로케일에만 현지화 문구를 추가한다 (스펙 §3)
 const CHROME = {
   en: { cta: "VIEW YOUR ORDER", tail: "Questions? Just reply to this email." },
-  ko: { cta: "주문 확인하기", tail: "궁금한 점은 이 메일에 회신해 주세요." },
-  zh: { cta: "查看订单", tail: "如有疑问，直接回复本邮件即可。" },
-  es: { cta: "VER TU PEDIDO", tail: "¿Preguntas? Responde a este correo." },
+  ko: { cta: "주문 확인하기", tail: "궁금한 점은 이 메일에 회신해 주세요.", ignore: "이 주문을 기억하지 못하시면 이 메일을 무시하셔도 됩니다." },
+  zh: { cta: "查看订单", tail: "如有疑问，直接回复本邮件即可。", ignore: "如果您不记得此订单，可以忽略此邮件。" },
+  es: { cta: "VER TU PEDIDO", tail: "¿Preguntas? Responde a este correo.", ignore: "Si no reconoces este pedido, puedes ignorar este correo." },
 };
+
+export { CHROME };
 
 export const ORDER_MAIL = {
   received: {
@@ -84,6 +87,7 @@ export async function sendOrderEventMail({ email, locale, orderCode, type, data 
     <p style="font-size:15px;line-height:1.6">${t.line(orderCode, data)}</p>
     <p style="font-size:13px;color:#8e897e;margin:6px 0 0">Order ${orderCode}</p>
     <p style="margin:24px 0"><a href="${link}" style="background:#16130f;color:#f8f7f5;padding:14px 26px;text-decoration:none;letter-spacing:.12em;font-size:13px">${chrome.cta}</a></p>
-    <p style="font-size:13px;color:#8e897e">${chrome.tail}</p>`;
+    <p style="font-size:13px;color:#8e897e">${chrome.tail}</p>${loc !== "en" ? `
+    <p style="font-size:12px;color:#8e897e">${chrome.ignore}</p>` : ""}`;
   return sendOrderMail(email, t.subject(orderCode, data), inner, { type: `order_${type}`, orderCode });
 }
