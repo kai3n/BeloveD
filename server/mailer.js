@@ -38,11 +38,20 @@ export async function sendMagicLink(email, link) {
   ), { type: "magic_link", link });
 }
 
-export async function sendLoginCode(email, code) {
-  return deliver(email, `${code} — your BeloveD verification code`, wrap(
-    `<p style="font-size:15px;line-height:1.6">Enter this code to sign in. It expires in 10 minutes.</p>
+// OTP 메일 — 고객이 로그인 시점에 쓰던 사이트 언어로 발송 (customers.locale과 동일 소스)
+const LOGIN_CODE_COPY = {
+  en: { subject: (c) => `${c} — your BeloveD verification code`, line: "Enter this code to sign in. It expires in 10 minutes." },
+  ko: { subject: (c) => `${c} — BeloveD 인증번호`, line: "로그인하려면 이 번호를 입력해 주세요. 10분 후 만료됩니다." },
+  zh: { subject: (c) => `${c} — BeloveD 验证码`, line: "请输入此验证码登录，10 分钟后失效。" },
+  es: { subject: (c) => `${c} — tu código de verificación BeloveD`, line: "Ingresa este código para iniciar sesión. Expira en 10 minutos." },
+};
+
+export async function sendLoginCode(email, code, locale = "en") {
+  const t = LOGIN_CODE_COPY[locale] || LOGIN_CODE_COPY.en;
+  return deliver(email, t.subject(code), wrap(
+    `<p style="font-size:15px;line-height:1.6">${t.line}</p>
      <p style="font-size:34px;letter-spacing:.35em;font-weight:700;margin:22px 0">${code}</p>`,
-  ), { type: "login_code", code });
+  ), { type: "login_code", code, locale });
 }
 
 // 주문 알림 등 임의 메일 — wrap 레이아웃 적용 후 발송. meta는 dev sink 검증용.

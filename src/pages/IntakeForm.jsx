@@ -6,6 +6,7 @@ import {
   EARRING_PAIRING_OPTIONS, BRACELET_WRIST_OPTIONS, OPS_CATEGORIES,
 } from "../lib/ops.js";
 import { createIntake, getDiamond, listOpsStyles } from "../lib/store.js";
+import { apiFetch } from "../lib/api.js";
 import {
   MAX_REFERENCE_MEDIA, RING_SIZE_OPTIONS, buildIntakePayload, conditionalComplete,
   accountDisplayName, hasContactDetails, sanitizeReferenceMedia, submissionContact,
@@ -272,8 +273,25 @@ export default function IntakeForm() {
       setStepError(t.requiredError);
       return;
     }
-    const { order } = createIntake(buildIntakePayload(form, refs, user), user?.id || null);
+    const payload = buildIntakePayload(form, refs, user);
+    const { order } = createIntake(payload, user?.id || null);
     track("intake_submit", { path: "/custom/new", meta: { orderId: order.id } });
+
+    // 실서버 새도우 캡처 — Postgres에 인테이크+주문을 기록하고 접수 메일(고객 언어)을 보낸다.
+    // 포털 UI는 아직 로컬 스토어 기준이라 실패해도 흐름은 그대로 (정적 데모 포함).
+    apiFetch("/intakes", {
+      method: "POST",
+      headers: { "Idempotency-Key": order.id },
+      body: {
+        ...payload,
+        email: contactDetails.contact,
+        name: contactDetails.name,
+        locale,
+        // base64/blob 프리뷰는 제외 — R2 publicUrl만 서버로 (jsonb·바디 한도 보호)
+        referenceMedia: refs.filter((m) => /^https?:\/\//.test(m.src || "")).slice(0, 5),
+      },
+    }).catch(() => {});
+
     window.localStorage.removeItem(DRAFT_KEY);
     setDone(order);
   }

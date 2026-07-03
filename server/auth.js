@@ -18,15 +18,33 @@ function normalizeEmail(email) {
   return String(email || "").trim().toLowerCase();
 }
 
-export async function ensureCustomer(client, email, name) {
+// 고객이 사이트에서 쓰는 언어 — 주문 메일·OTP 메일이 이 언어로 발송된다.
+const LOCALES = new Set(["en", "ko", "zh", "es"]);
+export function normalizeLocale(locale) {
+  const l = String(locale || "").trim().toLowerCase();
+  return LOCALES.has(l) ? l : null;
+}
+
+export async function ensureCustomer(client, email, name, locale) {
   const normalized = normalizeEmail(email);
   if (!normalized) throw new ApiError("EMAIL_REQUIRED", 400);
+  const lang = normalizeLocale(locale);
   const existing = await client.query("select * from customers where email=$1", [normalized]);
-  if (existing.rows[0]) return existing.rows[0];
+  if (existing.rows[0]) {
+    // 마지막으로 쓴 언어가 항상 최신 — 로그인 시점의 사이트 언어로 갱신
+    if (lang && existing.rows[0].locale !== lang) {
+      const { rows } = await client.query(
+        "update customers set locale=$1, updated_at=now() where id=$2 returning *",
+        [lang, existing.rows[0].id],
+      );
+      return rows[0];
+    }
+    return existing.rows[0];
+  }
   const code = await nextCode(client, "CUS");
   const { rows } = await client.query(
-    "insert into customers (customer_code, email, name) values ($1,$2,$3) returning *",
-    [code, normalized, name || normalized],
+    "insert into customers (customer_code, email, name, locale) values ($1,$2,$3,$4) returning *",
+    [code, normalized, name || normalized, lang || "en"],
   );
   return rows[0];
 }
@@ -65,7 +83,7 @@ const CODE_TTL_MS = 1000 * 60 * 10; // 10 minutes
 const CODE_MAX_ATTEMPTS = 5;
 
 // 이메일 6자리 인증번호 발급 — 코드 원문은 메일로만, DB에는 해시만 (M2와 동일 원칙)
-export async function createLoginCode(email) {
+export async function createLoginCode(email, locale) {
   const normalized = normalizeEmail(email);
   if (!normalized) throw new ApiError("EMAIL_REQUIRED", 400);
   const code = String(randomInt(0, 1000000)).padStart(6, "0");
@@ -76,11 +94,11 @@ export async function createLoginCode(email) {
     "insert into login_codes (email, code_hash, expires_at) values ($1,$2,$3)",
     [normalized, hashToken(code), expiresAt],
   );
-  await sendLoginCode(normalized, code);
+  await sendLoginCode(normalized, code, normalizeLocale(locale) || "en");
   return { email: normalized, expiresAt, code };
 }
 
-export async function verifyLoginCode(email, code) {
+export async function verifyLoginCode(email, code, locale) {
   const normalized = normalizeEmail(email);
   // 주의: 실패 시 throw가 트랜잭션을 롤백하면 attempts 증가까지 사라져
   // 브루트포스 제한이 무력화된다 — 증가/폐기는 트랜잭션 밖에서 커밋한다.
@@ -106,7 +124,7 @@ export async function verifyLoginCode(email, code) {
   );
   if (used.rowCount === 0) throw new ApiError("CODE_INVALID", 400);
   return withTransaction(async (client) => {
-    const customer = await ensureCustomer(client, normalized);
+    const customer = await ensureCustomer(client, normalized, null, locale);
     const session = await issueSession("customer", customer.id);
     return { session, customer };
   });

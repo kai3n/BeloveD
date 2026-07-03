@@ -48,14 +48,19 @@ export function AuthProvider({ children }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // 사이트 표시 언어 — 서버가 customers.locale에 저장해 OTP·주문 메일을 이 언어로 보낸다
+  const siteLocale = () => {
+    try { return window.localStorage.getItem("lumina-locale") || "en"; } catch { return "en"; }
+  };
+
   // 이메일 6자리 인증번호 — 요청. 서버 없으면 ApiUnavailableError를 그대로 던져 폴백 유도.
   async function requestLoginCode(email) {
-    return apiFetch("/auth/code", { method: "POST", body: { email } }); // { ok, devCode? }
+    return apiFetch("/auth/code", { method: "POST", body: { email, locale: siteLocale() } }); // { ok, devCode? }
   }
 
   // 인증번호 검증 → 서버 세션 + 데모 스토어 브리지
   async function verifyLoginCode(email, code) {
-    const data = await apiFetch("/auth/code/verify", { method: "POST", body: { email, code } });
+    const data = await apiFetch("/auth/code/verify", { method: "POST", body: { email, code, locale: siteLocale() } });
     return commitServerPrincipal(data.principal, email);
   }
 

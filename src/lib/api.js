@@ -8,13 +8,16 @@ export class ApiRequestError extends Error {
   constructor(code, status) { super(code); this.code = code; this.status = status; }
 }
 
-export async function apiFetch(path, { method = "GET", body } = {}) {
+export async function apiFetch(path, { method = "GET", body, headers } = {}) {
   let res;
   try {
     res = await fetch(`/v1${path}`, {
       method,
       credentials: "include",
-      headers: body !== undefined ? { "Content-Type": "application/json" } : undefined,
+      headers: {
+        ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
+        ...(headers || {}),
+      },
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
   } catch {

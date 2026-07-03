@@ -69,9 +69,9 @@ export function authRouter() {
     rateLimit({ limit: 10, windowMs: MINUTE }),
     async (req, res, next) => {
     try {
-      const { email } = req.body || {};
+      const { email, locale } = req.body || {};
       if (typeof email !== "string") throw new ApiError("VALIDATION_ERROR", 400);
-      const { code } = await createLoginCode(email);
+      const { code } = await createLoginCode(email, locale);
       const body = { ok: true };
       if (process.env.NODE_ENV !== "production") body.devCode = code; // dev만 노출
       res.status(201).json(body);
@@ -83,9 +83,9 @@ export function authRouter() {
     rateLimit({ limit: 10, windowMs: MINUTE }),
     async (req, res, next) => {
     try {
-      const { email, code } = req.body || {};
+      const { email, code, locale } = req.body || {};
       if (typeof email !== "string" || typeof code !== "string") throw new ApiError("VALIDATION_ERROR", 400);
-      const { session, customer } = await verifyLoginCode(email, code);
+      const { session, customer } = await verifyLoginCode(email, code, locale);
       setSessionCookie(res, COOKIE_CUSTOMER, session);
       await linkActivity(req, customer?.id);
       res.json({ ok: true, principal: "customer" });
