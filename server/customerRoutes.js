@@ -2,8 +2,9 @@ import { Router } from "express";
 import { ApiError } from "./errors.js";
 import { rateLimit } from "./rateLimit.js";
 import { withTransaction } from "./db.js";
-import { createDraftIntake, submitIntake, requestHash } from "./customerRepository.js";
+import { createDraftIntake, submitIntake, requestHash, recordOrderEvent, EVENT_TRANSITIONS } from "./customerRepository.js";
 import { sendOrderEventMail } from "./orderMail.js";
+import { requireAdmin } from "./middleware.js";
 
 const MINUTE = 60 * 1000;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -59,6 +60,24 @@ export function customerRouter() {
         res.status(201).json(body);
         if (result.created && result.notify?.email) {
           fireMail(sendOrderEventMail({ ...result.notify, orderCode: result.orderCode, type: "received" }), "received");
+        }
+      } catch (e) { next(e); }
+    });
+
+  // 주문 상태 이벤트 — 어드민 전용. 같은 타입 재호출 허용(재발송 = 어드민 의도, 스펙 §2).
+  r.post("/admin/orders/:orderCode/events",
+    rateLimit({ limit: 30, windowMs: MINUTE }),
+    requireAdmin,
+    async (req, res, next) => {
+      try {
+        const { type, data } = req.body || {};
+        if (!EVENT_TRANSITIONS[type] || type === "received") {
+          throw new ApiError("VALIDATION_ERROR", 400, "unknown event type");
+        }
+        const result = await recordOrderEvent(req.params.orderCode, type, data || {});
+        res.status(201).json({ ok: true, orderCode: result.orderCode, stage: result.stage, eventId: result.eventId });
+        if (result.notify?.email) {
+          fireMail(sendOrderEventMail({ ...result.notify, orderCode: result.orderCode, type, data: data || {} }), type);
         }
       } catch (e) { next(e); }
     });
