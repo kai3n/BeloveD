@@ -520,3 +520,49 @@ export async function runIdempotent(route, key, hash, fn) {
     };
   });
 }
+
+// 주문 상태 이벤트 — 스펙 §2 전이 표. received는 인테이크 제출이 자동 기록(라우트는 거부).
+export const EVENT_TRANSITIONS = {
+  received: { stage: "OPS_REVIEW", phase: "DEFINE", waitingOn: "BELOVEDIAMOND" },
+  proposal_sent: { stage: "QUOTE", phase: "DEFINE", waitingOn: "CUSTOMER" },
+  deposit_confirmed: { stage: "CAD", phase: "APPROVE_DESIGN", waitingOn: "BELOVEDIAMOND" },
+  diamond_locked: { stage: "CAD", phase: "APPROVE_DESIGN", waitingOn: "BELOVEDIAMOND" },
+  cad_ready: { stage: "CAD", phase: "APPROVE_DESIGN", waitingOn: "CUSTOMER" },
+  production_started: { stage: "PRODUCTION", phase: "MAKING", waitingOn: "BELOVEDIAMOND" },
+  qc_ready: { stage: "FINAL_QC", phase: "MAKING", waitingOn: "CUSTOMER" },
+  balance_requested: { stage: "BALANCE", phase: "DELIVERY", waitingOn: "CUSTOMER" },
+  shipped: { stage: "SHIPPING", phase: "DELIVERY", waitingOn: "EXTERNAL" },
+  delivered: { stage: "DELIVERED", phase: "CLOSED", waitingOn: "NONE" },
+};
+
+export async function recordOrderEvent(orderCode, type, data = {}) {
+  const transition = EVENT_TRANSITIONS[type];
+  if (!transition) throw new ApiError("VALIDATION_ERROR", 400, `unknown event type: ${type}`);
+  return withTransaction(async (client) => {
+    const { rows } = await client.query(
+      `select o.*, c.email, c.locale from customer_orders o
+       join customers c on c.id = o.customer_id
+       where o.order_code = $1 for update of o`,
+      [orderCode],
+    );
+    const order = rows[0];
+    if (!order) throw new ApiError("NOT_FOUND", 404);
+    const eventCode = await nextCode(client, "TL");
+    await client.query(
+      `insert into customer_timeline_events (event_code, order_id, title, body, payload)
+       values ($1, $2, $3, $4, $5)`,
+      [eventCode, order.id, type, null, { type, data }],
+    );
+    await client.query(
+      `update customer_orders set stage = $2, phase = $3, waiting_on = $4, updated_at = now()
+       where id = $1`,
+      [order.id, transition.stage, transition.phase, transition.waitingOn],
+    );
+    await client.query(
+      `insert into audit_log (actor_type, actor_ref, entity_type, entity_ref, action, before_json, after_json)
+       values ('admin', null, 'order', $1, $2, $3, $4)`,
+      [orderCode, `event:${type}`, { stage: order.stage }, { stage: transition.stage, data }],
+    );
+    return { orderCode, stage: transition.stage, eventId: eventCode, notify: { email: order.email, locale: order.locale } };
+  });
+}
