@@ -21,12 +21,22 @@ export function TrackEntry() {
   const navigate = useNavigate();
   const [orderId, setOrderId] = useState("");
   const [code, setCode] = useState("");
+  // 실주문(BD-)은 이메일 로그인으로 열린다 — 조회 코드는 구 데모(DM-) 주문 전용 레거시
+  const isLegacy = /^\s*dm-/i.test(orderId);
+  function open(e) {
+    e.preventDefault();
+    const id = orderId.trim().toUpperCase();
+    navigate(isLegacy ? `/orders/${id}?code=${code.trim().toUpperCase()}` : `/orders/${id}`);
+  }
   return (
     <div className="page page-narrow">
       <h1 className="page-title">{t.guestTitle}</h1>
-      <form className="panel form-stack" onSubmit={(e) => { e.preventDefault(); navigate(`/orders/${orderId.trim().toUpperCase()}?code=${code.trim().toUpperCase()}`); }}>
-        <label className="field"><span>{t.orderId}</span><input value={orderId} onChange={(e) => setOrderId(e.target.value)} placeholder="DM-000001" required /></label>
-        <label className="field"><span>{t.code}</span><input value={code} onChange={(e) => setCode(e.target.value)} placeholder="XXXX-XXXX" required /></label>
+      <form className="panel form-stack" onSubmit={open}>
+        <label className="field"><span>{t.orderId}</span><input value={orderId} onChange={(e) => setOrderId(e.target.value)} placeholder="BD-100001" required /></label>
+        {isLegacy && (
+          <label className="field"><span>{t.code}</span><input value={code} onChange={(e) => setCode(e.target.value)} placeholder="XXXX-XXXX" required /></label>
+        )}
+        <p className="form-hint" style={{ margin: 0 }}>{t.trackHint}</p>
         <button className="button primary" type="submit">{t.open}</button>
       </form>
     </div>

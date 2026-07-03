@@ -208,6 +208,7 @@ const en = {
   },
   portal: {
     title: "Order Status", guestTitle: "Track your order", orderId: "Order ID", code: "Tracking code",
+    trackHint: "Enter your order number (BD-…). We\u2019ll ask you to sign in with the email you used at checkout.",
     open: "Open", notFound: "Order not found or code incorrect.",
     statusLbl: "Current status", style: "Style", requiredDate: "Required date",
     candidatesTitle: "Your diamond candidates", batchNote: "Candidates are reserved for this order until the batch expiry.",
@@ -631,6 +632,7 @@ const ko = {
   },
   portal: {
     title: "주문 현황", guestTitle: "주문 조회", orderId: "Order ID", code: "조회 코드",
+    trackHint: "주문번호(BD-…)를 입력하세요. 주문에 사용한 이메일로 로그인하면 열립니다.",
     open: "조회", notFound: "주문이 없거나 코드가 올바르지 않습니다.",
     statusLbl: "현재 상태", style: "스타일", requiredDate: "희망일",
     candidatesTitle: "내 다이아몬드 후보", batchNote: "후보는 배치 만료일까지 이 주문 전용으로 확보됩니다.",
@@ -1054,6 +1056,7 @@ const zh = {
   },
   portal: {
     title: "订单状态", guestTitle: "查询订单", orderId: "Order ID", code: "查询码",
+    trackHint: "输入订单号（BD-…）。使用下单时的邮箱登录即可查看。",
     open: "查询", notFound: "订单不存在或查询码错误。",
     statusLbl: "当前状态", style: "款式", requiredDate: "需要日期",
     candidatesTitle: "您的钻石候选", batchNote: "候选在批次有效期内为本订单专属保留。",
@@ -1477,6 +1480,7 @@ const es = {
   },
   portal: {
     title: "Estado del Pedido", guestTitle: "Rastrea tu pedido", orderId: "Order ID", code: "Código",
+    trackHint: "Ingresa tu número de pedido (BD-…). Te pediremos iniciar sesión con el correo de la compra.",
     open: "Abrir", notFound: "Pedido no encontrado o código incorrecto.",
     statusLbl: "Estado actual", style: "Estilo", requiredDate: "Fecha requerida",
     candidatesTitle: "Tus diamantes candidatos", batchNote: "Los candidatos quedan reservados para este pedido hasta el vencimiento del lote.",

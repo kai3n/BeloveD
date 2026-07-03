@@ -505,7 +505,8 @@ export default function IntakeForm() {
             </div>
             <div className="gflow-review-card">
               <div className="rc-media">
-                {solitaire ? <ShapeSilhouette shape={form.stonePrefs.shape} /> : <MediaThumb media={styleMedia(selectedStyle) || categoryOptions.find((c) => c.value === cat)?.media} alt="" ratio="1 / 1" />}
+                {/* 스톤 카드는 항상 다이아 비주얼 — 제품 사진 폴백은 PIECE 카드와 중복돼 보인다 */}
+                <ShapeSilhouette shape={solitaire ? form.stonePrefs.shape : "round"} />
               </div>
               <div className="rc-body">
                 <span>{g.stoneCard}</span>
