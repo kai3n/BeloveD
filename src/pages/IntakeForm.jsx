@@ -169,6 +169,7 @@ export default function IntakeForm() {
   const [done, setDone] = useState(null);
   const [refs, setRefs] = useState(() => sanitizeReferenceMedia(draft?.refs));
   const [stepError, setStepError] = useState("");
+  const [termsError, setTermsError] = useState(false); // 제출 시 약관 미동의 — 체크박스 줄 빨간 강조
   const [adjustQuality, setAdjustQuality] = useState(false);
 
   const setF = (patch) => setForm((f) => ({ ...f, ...patch }));
@@ -270,7 +271,9 @@ export default function IntakeForm() {
       return;
     }
     if (!form.termsAccepted) {
-      setStepError(t.requiredError);
+      setTermsError(true);
+      setStepError(t.termsError);
+      document.getElementById("gflow-terms")?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
     const payload = buildIntakePayload(form, refs, user);
@@ -629,13 +632,19 @@ export default function IntakeForm() {
           <div className="panel" style={{ background: "var(--bg-2)" }}>
             {t.termsBlocks.map((b, i) => <p key={i} className="form-hint" style={{ margin: "4px 0" }}>· {b}</p>)}
           </div>
-          <label className="field" style={{ flexDirection: "row", display: "flex", gap: 10, alignItems: "center" }}>
-            <input type="checkbox" checked={form.termsAccepted} onChange={(e) => setF({ termsAccepted: e.target.checked })} style={{ width: "auto" }} />
+          <label id="gflow-terms" className={`field gflow-terms${termsError && !form.termsAccepted ? " is-invalid" : ""}`} style={{ flexDirection: "row", display: "flex", gap: 10, alignItems: "center" }}>
+            <input
+              type="checkbox" checked={form.termsAccepted} style={{ width: "auto" }}
+              onChange={(e) => {
+                setF({ termsAccepted: e.target.checked });
+                if (e.target.checked) { setTermsError(false); setStepError(""); }
+              }}
+            />
             <span>{t.terms}</span>
           </label>
           <p className="form-hint">{p.ftc}</p>
           {stepError && <p className="form-error">{stepError}</p>}
-          <button className="button primary gflow-submit" type="button" disabled={!form.termsAccepted} onClick={submit}>{t.submit}</button>
+          <button className="button primary gflow-submit" type="button" onClick={submit}>{t.submit}</button>
         </div>
       ))}
 

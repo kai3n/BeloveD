@@ -5398,6 +5398,10 @@ button.text-link:hover {
 .gflow-quality-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .gflow-quality-row strong { font-family: var(--serif); font-size: 18px; font-weight: 600; }
 .gflow-submit { width: 100%; }
+/* 약관 미동의 상태로 제출 시 — 체크박스 줄을 빨간 테두리·글씨로 짚어준다 */
+.gflow-terms { border: 1px solid transparent; padding: 10px 12px; transition: border-color 0.15s ease; }
+.gflow-terms.is-invalid { border-color: #e08585; }
+.gflow-terms.is-invalid span { color: #e08585; }
 .gflow-edu-toggle { margin-top: 4px; width: min(100%, 620px); }
 .gflow-edu-toggle summary {
   cursor: pointer; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--quiet);
