@@ -50,11 +50,11 @@ export default function AdminSettings() {
         <p className="form-hint">{payCopy.note}</p>
         <label className="field"><span>Zelle</span>
           <input defaultValue={payment.zelle} key={`zelle-${payment.zelle}`}
-            onBlur={(e) => setPayment({ zelle: e.target.value.trim() })} placeholder="pay@beloved.co" />
+            onBlur={(e) => setPayment({ zelle: e.target.value.trim() })} placeholder="alan20062006@vip.qq.com" />
         </label>
         <label className="field"><span>Venmo</span>
           <input defaultValue={payment.venmo} key={`venmo-${payment.venmo}`}
-            onBlur={(e) => setPayment({ venmo: e.target.value.trim() })} placeholder="@BeloveD-Fine" />
+            onBlur={(e) => setPayment({ venmo: e.target.value.trim() })} placeholder="@Belove-Dia" />
         </label>
         <label className="field"><span>{payCopy.extraNote}</span>
           <input defaultValue={payment.note} key={`paynote-${payment.note}`}
