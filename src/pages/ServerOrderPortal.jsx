@@ -61,6 +61,8 @@ const COPY = {
     cancelReason: "Reason (optional)", cancelConfirm: "Confirm cancellation", cancelKeep: "Keep my order",
     cancelRequestedNote: "Cancellation requested — we'll contact you within 1 business day.",
     cancelledLine: "This order has been cancelled.",
+    shipmentTitle: "Shipment", trackingLabel: "Tracking number",
+    shipmentNote: "Fully insured door-to-door — signature required on delivery.",
     timelineTitle: "Timeline",
     artifactsTitle: "Shared with you",
     proposalTitle: "Your proposal",
@@ -123,6 +125,8 @@ const COPY = {
     cancelReason: "사유 (선택)", cancelConfirm: "취소 확정", cancelKeep: "주문 유지",
     cancelRequestedNote: "취소 요청이 접수됐습니다 — 영업일 1일 내 연락드립니다.",
     cancelledLine: "이 주문은 취소되었습니다.",
+    shipmentTitle: "배송", trackingLabel: "운송장 번호",
+    shipmentNote: "전 구간 보험 배송 — 수령 시 서명이 필요합니다.",
     timelineTitle: "타임라인",
     artifactsTitle: "공유된 자료",
     proposalTitle: "제안",
@@ -185,6 +189,8 @@ const COPY = {
     cancelReason: "原因（可选）", cancelConfirm: "确认取消", cancelKeep: "保留订单",
     cancelRequestedNote: "已收到取消请求 — 我们将在 1 个工作日内联系您。",
     cancelledLine: "此订单已取消。",
+    shipmentTitle: "配送", trackingLabel: "运单号",
+    shipmentNote: "全程保险配送 — 签收时需要签名。",
     timelineTitle: "时间线",
     artifactsTitle: "与您共享",
     proposalTitle: "您的方案",
@@ -247,6 +253,8 @@ const COPY = {
     cancelReason: "Motivo (opcional)", cancelConfirm: "Confirmar cancelación", cancelKeep: "Mantener mi pedido",
     cancelRequestedNote: "Cancelación solicitada — te contactaremos en 1 día hábil.",
     cancelledLine: "Este pedido ha sido cancelado.",
+    shipmentTitle: "Envío", trackingLabel: "Número de guía",
+    shipmentNote: "Envío asegurado puerta a puerta — se requiere firma al recibir.",
     timelineTitle: "Cronología",
     artifactsTitle: "Compartido contigo",
     proposalTitle: "Tu propuesta",
@@ -380,6 +388,13 @@ export default function ServerOrderPortal({ orderCode }) {
 
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelMsg, setCancelMsg] = useState("");
+  const [copiedTracking, setCopiedTracking] = useState(false);
+
+  function copyTracking(value) {
+    try { navigator.clipboard?.writeText(value); } catch { /* 클립보드 미지원 */ }
+    setCopiedTracking(true);
+    window.setTimeout(() => setCopiedTracking(false), 1600);
+  }
 
   async function doCancel(reason) {
     try {
@@ -480,6 +495,9 @@ export default function ServerOrderPortal({ orderCode }) {
   const cancelMode = ["OPS_REVIEW", "STONE_SELECTION", "QUOTE", "DEPOSIT"].includes(order.stage)
     ? "direct"
     : ["CAD", "PRODUCTION"].includes(order.stage) ? "request" : null;
+  // 배송 단계 — shipped 이벤트에 실린 운송장 번호를 꺼내 보여준다
+  const trackingNo = order.timeline.find((e) => e.payload?.type === "shipped" && e.payload?.data?.tracking)?.payload.data.tracking || null;
+  const shipmentVisible = stageIdx >= STAGE_SEQ.indexOf("SHIPPING");
   const balanceVisible = Boolean(payTotal) && stageIdx >= STAGE_SEQ.indexOf("BALANCE");
   const balanceConfirmed = order.timeline.some((e) => e.payload?.type === "balance_confirmed");
   const balanceState = balanceConfirmed || stageIdx > STAGE_SEQ.indexOf("BALANCE")
@@ -623,6 +641,32 @@ export default function ServerOrderPortal({ orderCode }) {
             reportedNote={fc.balanceReportedNote}
             onReport={() => reportPayment("balance")}
           />
+        </Checkpoint>
+      )}
+
+      {/* 3-2 배송 — 운송장 번호 (배송 중·수령 완료 모두 표시) */}
+      {shipmentVisible && (
+        <Checkpoint
+          id="bd-shipment"
+          index="3-2"
+          title={t.shipmentTitle}
+          state="active"
+          badgeOverride={t.stages[order.stage] || order.stage}
+        >
+          {trackingNo && (
+            <div className="payment-memo-block" style={{ marginTop: 12 }}>
+              <span className="payment-memo-label">{t.trackingLabel}</span>
+              <button
+                className={`payment-memo-pill ${copiedTracking ? "is-copied" : ""}`}
+                type="button"
+                onClick={() => copyTracking(trackingNo)}
+              >
+                <strong>{trackingNo}</strong>
+                <em>{copiedTracking ? fc.copiedBtn : fc.copyBtn}</em>
+              </button>
+            </div>
+          )}
+          <p className="form-hint" style={{ margin: "10px 0 0", textAlign: "center" }}>{t.shipmentNote}</p>
         </Checkpoint>
       )}
 
