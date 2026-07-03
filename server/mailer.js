@@ -45,6 +45,11 @@ export async function sendLoginCode(email, code) {
   ), { type: "login_code", code });
 }
 
+// 주문 알림 등 임의 메일 — wrap 레이아웃 적용 후 발송. meta는 dev sink 검증용.
+export async function sendOrderMail(to, subject, innerHtml, meta = {}) {
+  return deliver(to, subject, wrap(innerHtml), { ...meta, subject });
+}
+
 export function drainMail() {
   return sink.splice(0);
 }
