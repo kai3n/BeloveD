@@ -91,7 +91,11 @@ const PROPOSAL_FLOW_COPY = {
     subBody: "Depending on availability, this stone may be replaced with another certified stone of equal or better specs (±0.03 ct, same color/clarity grade or higher). If that happens, we send the new IGI number and video first and proceed only after your OK.",
     confirmCta: "Confirm this proposal", confirmedBadge: "Confirmed",
     payTitle: "Reserve with deposit", payAfter: "After you confirm",
-    memoLabel: "Payment memo", payMemoHint: "Paste this message into the payment memo — it speeds up confirmation.",
+    memoLabel: "Payment memo", memoRequired: "Required",
+    payStep1: "Scan a QR — or copy the recipient and send from your app.",
+    payStep2: "Paste this memo with your payment. We can only confirm transfers that include your order number.",
+    payStep3: "Sent it? Let us know below.",
+    copyRecipient: "Copy recipient",
     zelleHint: "No fee · fast confirmation", venmoHint: "Same-day confirmation",
     copyBtn: "Copy", copiedBtn: "Copied ✓",
     depositSentCta: "I've sent the deposit", balanceSentCta: "I've sent the balance",
@@ -123,7 +127,11 @@ const PROPOSAL_FLOW_COPY = {
     subBody: "확보 시점에 따라 이 스톤은 동일 또는 상위 스펙(캐럿 ±0.03, 같은 컬러·클래리티 등급 이상)의 다른 인증 스톤으로 대체될 수 있습니다. 대체 시 새 IGI 번호와 실물 영상을 먼저 보내드리고, 동의 후에만 진행합니다.",
     confirmCta: "이 제안으로 확정", confirmedBadge: "컨펌 완료",
     payTitle: "디파짓으로 예약 확정", payAfter: "컨펌 후 진행",
-    memoLabel: "송금 메모", payMemoHint: "이 메시지를 송금 메모에 붙여넣어 주세요 — 입금 확인이 빨라집니다.",
+    memoLabel: "송금 메모", memoRequired: "필수",
+    payStep1: "QR을 스캔하거나, 받는 계정을 복사해 앱에서 보내세요.",
+    payStep2: "송금 메시지에 이 메모를 붙여넣어 주세요. 주문번호가 있어야 입금을 확인할 수 있습니다.",
+    payStep3: "보내셨으면 아래 버튼으로 알려주세요.",
+    copyRecipient: "받는 계정 복사",
     zelleHint: "수수료 없음 · 빠른 확인", venmoHint: "당일 확인",
     copyBtn: "복사", copiedBtn: "복사됨 ✓",
     depositSentCta: "디파짓 보냈어요", balanceSentCta: "잔금 보냈어요",
@@ -155,7 +163,11 @@ const PROPOSAL_FLOW_COPY = {
     subBody: "视库存情况，此钻石可能替换为规格相同或更优（±0.03 克拉，同级或更高颜色/净度）的其他认证钻石。如有替换，我们会先发送新的 IGI 编号与实物视频，征得您同意后才继续。",
     confirmCta: "确认此方案", confirmedBadge: "已确认",
     payTitle: "支付定金锁定", payAfter: "确认后开放",
-    memoLabel: "转账备注", payMemoHint: "请将此消息粘贴到转账备注 — 可加快确认。",
+    memoLabel: "转账备注", memoRequired: "必填",
+    payStep1: "扫描二维码，或复制收款账号后在应用中转账。",
+    payStep2: "付款时请粘贴此备注。备注中必须包含订单号，我们才能确认到账。",
+    payStep3: "已转账？请点击下方按钮告知我们。",
+    copyRecipient: "复制收款账号",
     zelleHint: "免手续费 · 快速确认", venmoHint: "当日确认",
     copyBtn: "复制", copiedBtn: "已复制 ✓",
     depositSentCta: "我已转定金", balanceSentCta: "我已转尾款",
@@ -187,7 +199,11 @@ const PROPOSAL_FLOW_COPY = {
     subBody: "Según disponibilidad, esta piedra puede sustituirse por otra certificada de especificaciones iguales o mejores (±0.03 ct, mismo grado de color/claridad o superior). Si ocurre, primero enviamos el nuevo número IGI y un video, y avanzamos solo con tu OK.",
     confirmCta: "Confirmar esta propuesta", confirmedBadge: "Confirmada",
     payTitle: "Reserva con depósito", payAfter: "Después de confirmar",
-    memoLabel: "Nota del pago", payMemoHint: "Pega este mensaje en la nota del pago — acelera la confirmación.",
+    memoLabel: "Nota del pago", memoRequired: "Obligatoria",
+    payStep1: "Escanea un QR — o copia el destinatario y envía desde tu app.",
+    payStep2: "Pega esta nota con tu pago. Solo podemos confirmar transferencias que incluyan tu número de pedido.",
+    payStep3: "¿Ya lo enviaste? Avísanos abajo.",
+    copyRecipient: "Copiar destinatario",
     zelleHint: "Sin comisión · confirmación rápida", venmoHint: "Confirmación el mismo día",
     copyBtn: "Copiar", copiedBtn: "Copiado ✓",
     depositSentCta: "Ya envié el depósito", balanceSentCta: "Ya envié el saldo",
@@ -517,20 +533,12 @@ function PaymentCard({ amountUsd, memoText, reported, fc, sentCta, reportedNote,
   }
   return (
     <div className="payment-card">
-      {/* 금액 히어로 + 복사 가능한 메모 필 — "얼마를, 어떤 메모로"가 한눈에 */}
       <div className="payment-hero">
         <div className="payment-amount">{usd(amountUsd)}</div>
-        <button
-          className={`payment-memo-pill ${copiedKey === "memo" ? "is-copied" : ""}`}
-          type="button"
-          onClick={() => copyHandle("memo", memoText)}
-        >
-          <span>{fc.memoLabel}</span>
-          <strong>{memoText}</strong>
-          <em>{copiedKey === "memo" ? fc.copiedBtn : fc.copyBtn}</em>
-        </button>
-        <p className="payment-memo-hint">{fc.payMemoHint}</p>
       </div>
+
+      {/* 1 · 보내기 — QR 스캔 또는 받는 계정 복사 (핸들 원문은 노출하지 않는다) */}
+      <div className="payment-step"><span className="payment-step-no">1</span><p>{fc.payStep1}</p></div>
       <div className="payment-methods">
         {methods.map((m) => (
           <div className="payment-method" key={m.key}>
@@ -545,12 +553,28 @@ function PaymentCard({ amountUsd, memoText, reported, fc, sentCta, reportedNote,
               type="button"
               onClick={() => copyHandle(m.key, m.handle)}
             >
-              <code>{m.handle}</code>
-              <span>{copiedKey === m.key ? fc.copiedBtn : fc.copyBtn}</span>
+              {copiedKey === m.key ? fc.copiedBtn : fc.copyRecipient}
             </button>
           </div>
         ))}
       </div>
+
+      {/* 2 · 메모 — 주문번호가 있어야만 입금 매칭이 가능하다는 걸 강조 */}
+      <div className="payment-step"><span className="payment-step-no">2</span><p>{fc.payStep2}</p></div>
+      <div className="payment-memo-block">
+        <span className="payment-memo-label">{fc.memoLabel} · {fc.memoRequired}</span>
+        <button
+          className={`payment-memo-pill ${copiedKey === "memo" ? "is-copied" : ""}`}
+          type="button"
+          onClick={() => copyHandle("memo", memoText)}
+        >
+          <strong>{memoText}</strong>
+          <em>{copiedKey === "memo" ? fc.copiedBtn : fc.copyBtn}</em>
+        </button>
+      </div>
+
+      {/* 3 · 보고 — 셀프 리포트 버튼 */}
+      <div className="payment-step"><span className="payment-step-no">3</span><p>{fc.payStep3}</p></div>
       {payment.note && <p className="form-hint">{payment.note}</p>}
       {reported
         ? <p className="payment-reported" role="status">{reportedNote}</p>

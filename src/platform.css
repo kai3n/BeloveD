@@ -5157,28 +5157,44 @@ button.text-link:hover {
 .payment-card.is-locked, .payment-card.is-done { opacity: 0.75; }
 .payment-card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .payment-card-head h3 { margin: 2px 0 0; font-family: var(--serif); font-size: 21px; }
-.payment-hero { display: grid; justify-items: center; gap: 10px; padding: 6px 0 2px; }
+.payment-hero { display: grid; justify-items: center; gap: 10px; padding: 6px 0 0; }
 .payment-amount {
   text-align: center; font-family: var(--luxury-display);
   font-size: clamp(34px, 6vw, 46px); line-height: 1.05;
 }
+/* 결제 3단계 안내 — 번호 칩 + 한 줄 설명 */
+.payment-step { display: flex; align-items: center; gap: 10px; }
+.payment-step-no {
+  flex: none; width: 22px; height: 22px; display: grid; place-items: center;
+  border: 1px solid var(--accent); border-radius: 50%;
+  font-size: 11px; font-weight: 700; color: var(--accent-bright);
+}
+.payment-step p { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.55; }
+/* 메모 블록 — 주문번호 필수: 카드에서 가장 강조되는 요소 */
+.payment-memo-block {
+  border: 1px solid var(--accent); background: rgba(200, 168, 106, 0.07);
+  padding: 14px 16px; display: grid; gap: 9px; justify-items: center;
+}
+.payment-memo-label {
+  font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--accent-bright); font-weight: 700;
+}
 .payment-memo-pill {
-  display: inline-flex; align-items: center; gap: 10px;
-  border: 1px solid var(--line); background: var(--bg-2);
-  padding: 8px 16px; cursor: pointer; color: var(--text);
+  display: inline-flex; align-items: center; gap: 10px; max-width: 100%;
+  border: 1px solid var(--line-strong); background: var(--surface);
+  padding: 9px 16px; cursor: pointer; color: var(--text);
   font: inherit; font-size: 13px; transition: border-color 0.18s ease;
 }
 .payment-memo-pill:hover { border-color: var(--accent); }
-.payment-memo-pill span {
-  font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--quiet);
+.payment-memo-pill strong {
+  font-family: var(--mono); font-size: 13px; letter-spacing: 0.04em;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.payment-memo-pill strong { font-family: var(--mono); font-size: 13px; letter-spacing: 0.04em; }
 .payment-memo-pill em {
   font-style: normal; font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase;
-  color: var(--accent-bright); border-left: 1px solid var(--hair); padding-left: 10px;
+  color: var(--accent-bright); border-left: 1px solid var(--hair); padding-left: 10px; flex: none;
 }
 .payment-memo-pill.is-copied { border-color: var(--accent); }
-.payment-memo-hint { margin: 0; font-size: 12px; color: var(--quiet); text-align: center; }
 .payment-methods { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .payment-method {
   border: 1px solid var(--hair); background: var(--bg-2);
@@ -5196,21 +5212,15 @@ button.text-link:hover {
 .payment-method .payment-qr {
   width: 150px; max-width: 100%; background: #fff; padding: 8px; border: 1px solid var(--line);
 }
+/* 받는 계정 복사 버튼 — 핸들 원문은 화면에 노출하지 않는다 */
 .payment-handle {
-  display: inline-flex; align-items: center; gap: 10px; max-width: 100%;
+  display: inline-flex; align-items: center; justify-content: center; max-width: 100%;
   border: 1px solid var(--line); background: var(--surface);
-  padding: 8px 14px; cursor: pointer; font: inherit; transition: border-color 0.18s ease;
+  padding: 9px 18px; cursor: pointer; font: inherit; transition: border-color 0.18s ease;
+  font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text);
 }
 .payment-handle:hover { border-color: var(--accent); }
-.payment-handle.is-copied { border-color: var(--accent); }
-.payment-handle code {
-  font-family: var(--mono); font-size: 12.5px; color: var(--text);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.payment-handle span {
-  font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
-  color: var(--accent-bright); border-left: 1px solid var(--hair); padding-left: 10px; flex: none;
-}
+.payment-handle.is-copied { border-color: var(--accent); color: var(--accent-bright); }
 .payment-reported {
   margin: 0; padding: 12px 16px; text-align: center;
   border: 1px solid rgba(200, 168, 106, 0.45); background: rgba(200, 168, 106, 0.08);
