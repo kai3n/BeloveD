@@ -9,6 +9,7 @@ import { query } from "./db.js";
 import { authRouter } from "./authRoutes.js";
 import { mediaRouter } from "./mediaRoutes.js";
 import { activityRouter } from "./activityRoutes.js";
+import { adminActivityRouter } from "./adminActivityRoutes.js";
 
 const distDir = join(dirname(fileURLToPath(import.meta.url)), "..", "dist");
 
@@ -36,6 +37,7 @@ export function createApp() {
   // sendBeacon 기본 Content-Type(text/plain) 대응 — activity 경로만 텍스트도 수용
   app.use("/v1/activity", express.text({ type: "text/plain", limit: "64kb" }));
   app.use("/v1/activity", activityRouter());
+  app.use("/v1/admin", adminActivityRouter());
 
   // Any unmatched /v1 route returns the JSON error contract (never the SPA).
   app.use("/v1", (_req, _res, next) => next(new ApiError("NOT_FOUND", 404)));
