@@ -1414,6 +1414,47 @@ export function setBenchmarkPrice(shape, tier, unitUsdPerCt) {
     persist();
   }
 }
+// 일괄 % 조정 — shape/tier가 null이면 전체. 과거 견적은 snapshot이라 영향 없음.
+export function adjustBenchmark({ shape = null, tier = null, pct }) {
+  const delta = Number(pct);
+  if (!delta) return 0;
+  let count = 0;
+  for (const row of db().diamondPricing) {
+    if (shape && row.shape !== shape) continue;
+    if (tier && row.tier !== tier) continue;
+    row.unitUsdPerCt = Math.max(1, Math.round(row.unitUsdPerCt * (1 + delta / 100)));
+    row.quoteDate = now().slice(0, 10);
+    count++;
+  }
+  if (count) {
+    audit("ops", "benchmark", `${shape || "all"}/${tier || "all"}`, "bulkPct", "", `${delta > 0 ? "+" : ""}${delta}%`);
+    persist();
+  }
+  return count;
+}
+
+// ---------- metal pricing ($/g, 견적 프리필·고객 추정에 사용) ----------
+export function setMetalPrice(metal, usdPerG) {
+  const s = db().settings;
+  audit("ops", "metals", metal, "usdPerG", String(s.metalRefUsdPerG[metal]), String(usdPerG));
+  s.metalRefUsdPerG = { ...s.metalRefUsdPerG, [metal]: usdPerG };
+  s.metalQuotedDate = now().slice(0, 10);
+  persist();
+}
+export function adjustMetalPricing(pct) {
+  const delta = Number(pct);
+  if (!delta) return 0;
+  const s = db().settings;
+  const next = {};
+  for (const [metal, usd] of Object.entries(s.metalRefUsdPerG)) {
+    next[metal] = Math.max(0.1, Math.round(usd * (1 + delta / 100) * 10) / 10);
+  }
+  audit("ops", "metals", "all", "bulkPct", "", `${delta > 0 ? "+" : ""}${delta}%`);
+  s.metalRefUsdPerG = next;
+  s.metalQuotedDate = now().slice(0, 10);
+  persist();
+  return Object.keys(next).length;
+}
 
 // ---------- quotes ----------
 export function listQuotes(orderId) { return db().quotes.filter((q) => q.orderId === orderId).sort((a, b) => b.version - a.version); }

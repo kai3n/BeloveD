@@ -556,6 +556,39 @@
   line-height: 1.55;
 }
 
+/* 일괄 % 조정 바 (다이아 벤치마크 · 메탈 시세 공용) */
+.con-adjust {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  margin: 0 0 16px;
+  padding: 13px 16px 15px;
+  border: 1px solid var(--admin-line);
+  background: var(--admin-surface);
+  box-shadow: var(--admin-shadow);
+}
+.con-adjust-label {
+  align-self: center;
+  margin-right: 4px;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--admin-gold);
+  white-space: nowrap;
+}
+.con-adjust .field { flex: 0 1 170px; min-width: 120px; }
+.con-adjust .field-pct { flex: 0 1 110px; min-width: 90px; }
+.con-adjust .field input,
+.con-adjust .field select { padding: 9px 11px; font-size: 13px; }
+.con-adjust .button { min-height: 38px; }
+.con-adjust .con-saved-flash { align-self: center; margin-left: auto; }
+
+/* 좁은 콘텐츠 페이지 (메탈 시세 등) — 패널이 화면 전체로 퍼지지 않게 */
+.con-narrow { max-width: 660px; }
+
 /* 벤치마크 격자 */
 .con-bench .data-table input {
   width: 88px;

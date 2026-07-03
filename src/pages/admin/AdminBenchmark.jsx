@@ -1,30 +1,76 @@
 import { useState } from "react";
 import { BENCHMARK_SHAPES, CARAT_TIERS } from "../../lib/ops.js";
-import { getBenchmark, setBenchmarkPrice } from "../../lib/store.js";
+import { adjustBenchmark, getBenchmark, setBenchmarkPrice } from "../../lib/store.js";
 import { useDBVersion } from "../../lib/useDB.js";
 import { useLocale } from "../../i18n.jsx";
 import { ConsoleHead } from "./console.jsx";
 
+// 일괄 조정 바 카피 — 벤치마크 페이지 전용
+const BULK_COPY = {
+  en: { bulk: "Bulk adjust", shape: "Shape", tier: "Carat tier", all: "All", pct: "Change (%)", apply: "Apply", applied: (n, pct) => `${pct}% applied to ${n} cells` },
+  ko: { bulk: "일괄 조정", shape: "셰입", tier: "캐럿 티어", all: "전체", pct: "조정률 (%)", apply: "적용", applied: (n, pct) => `${n}개 칸에 ${pct}% 적용됨` },
+  zh: { bulk: "批量调整", shape: "形状", tier: "克拉档", all: "全部", pct: "调整率 (%)", apply: "应用", applied: (n, pct) => `已对 ${n} 个单元格应用 ${pct}%` },
+  es: { bulk: "Ajuste masivo", shape: "Forma", tier: "Rango de quilates", all: "Todos", pct: "Cambio (%)", apply: "Aplicar", applied: (n, pct) => `${pct}% aplicado a ${n} celdas` },
+};
+
 export default function AdminBenchmark() {
   useDBVersion();
-  const { p } = useLocale();
+  const { p, locale } = useLocale();
   const t = p.opsA.bench;
+  const b = BULK_COPY[locale] || BULK_COPY.en;
   const rows = getBenchmark();
   const [savedCell, setSavedCell] = useState("");
+  const [bulk, setBulk] = useState({ shape: "", tier: "", pct: "" });
   const cell = (shape, tier) => rows.find((r) => r.shape === shape && r.tier === tier);
 
   function commit(shape, tier, prev, value) {
     const v = Number(value);
     if (!v || v === prev) return;
     setBenchmarkPrice(shape, tier, v);
-    setSavedCell(`${p.shapes[shape] || shape} · ${tier}`);
+    setSavedCell(`${t.saved} — ${p.shapes[shape] || shape} · ${tier}`);
+  }
+
+  function applyBulk() {
+    const pct = Number(bulk.pct);
+    if (!pct) return;
+    const count = adjustBenchmark({ shape: bulk.shape || null, tier: bulk.tier || null, pct });
+    const signed = `${pct > 0 ? "+" : ""}${pct}`;
+    setSavedCell(b.applied(count, signed));
+    setBulk((current) => ({ ...current, pct: "" }));
   }
 
   return (
     <>
       <ConsoleHead kicker={p.opsA.menu.benchmark} title={t.title} sub={t.note}>
-        {savedCell && <span className="con-saved-flash" role="status">{t.saved} — {savedCell}</span>}
+        {savedCell && <span className="con-saved-flash" role="status">{savedCell}</span>}
       </ConsoleHead>
+
+      <div className="con-adjust">
+        <span className="con-adjust-label">{b.bulk}</span>
+        <label className="field"><span>{b.shape}</span>
+          <select value={bulk.shape} onChange={(e) => setBulk({ ...bulk, shape: e.target.value })}>
+            <option value="">{b.all}</option>
+            {BENCHMARK_SHAPES.map((shape) => <option key={shape} value={shape}>{p.shapes[shape] || shape}</option>)}
+          </select>
+        </label>
+        <label className="field"><span>{b.tier}</span>
+          <select value={bulk.tier} onChange={(e) => setBulk({ ...bulk, tier: e.target.value })}>
+            <option value="">{b.all}</option>
+            {CARAT_TIERS.map((tier) => <option key={tier.key} value={tier.key}>{tier.key}</option>)}
+          </select>
+        </label>
+        <label className="field field-pct"><span>{b.pct}</span>
+          <input
+            type="number" step="0.5" value={bulk.pct} placeholder="+5 / -3"
+            onChange={(e) => setBulk({ ...bulk, pct: e.target.value })}
+            onKeyDown={(e) => { if (e.key === "Enter") applyBulk(); }}
+          />
+        </label>
+        <button className="button primary small" type="button" disabled={!Number(bulk.pct)} onClick={applyBulk}>
+          {b.apply}
+        </button>
+      </div>
+
       <div className="con-table-panel con-bench">
         <table className="data-table">
           <thead>
