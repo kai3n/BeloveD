@@ -40,6 +40,36 @@ const OTP_COPY = {
   },
 };
 
+// 6자리 코드 세그먼트 — 실제 입력은 박스 위를 덮는 투명 input 하나라
+// 붙여넣기·iOS 코드 자동완성이 그대로 살고, 커서가 가운데 떠 보이는 문제가 없다
+function OtpBoxes({ value, onChange }) {
+  const [focused, setFocused] = useState(false);
+  const activeIdx = focused ? Math.min(value.length, 5) : -1;
+  return (
+    <div className="otp-field">
+      <input
+        className="otp-input"
+        value={value}
+        onChange={(e) => onChange(e.target.value.replace(/\D/g, "").slice(0, 6))}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        inputMode="numeric" autoComplete="one-time-code" maxLength={6} autoFocus required
+      />
+      <div className="otp-boxes" aria-hidden="true">
+        {Array.from({ length: 6 }, (_, i) => {
+          const d = value[i] || "";
+          return (
+            <span key={i} className={`otp-box${i === activeIdx ? " is-active" : ""}`}>
+              {d}
+              {i === activeIdx && !d && <i className="otp-caret" />}
+            </span>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function Login() {
   const { p, locale } = useLocale();
   const c = OTP_COPY[locale] || OTP_COPY.en;
@@ -122,11 +152,7 @@ export default function Login() {
           <p className="form-hint">{c.sentTo(email)}</p>
           {devCode && <p className="form-hint" style={{ color: "var(--accent-bright)" }}>{c.devHint(devCode)}</p>}
           <label className="field"><span>{c.codeLbl}</span>
-            <input
-              value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-              inputMode="numeric" autoComplete="one-time-code" placeholder="000000" autoFocus required
-              style={{ letterSpacing: "0.4em", fontSize: 20, textAlign: "center" }}
-            />
+            <OtpBoxes value={code} onChange={setCode} />
           </label>
           {error && <p className="form-error">{error}</p>}
           <button className="button primary" type="submit" disabled={busy || code.length !== 6}>{c.verify}</button>

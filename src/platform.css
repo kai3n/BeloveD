@@ -40,6 +40,27 @@
   outline: none;
   border-color: rgba(214, 197, 160, 0.6);
 }
+/* OTP 6칸 세그먼트 — 투명 인풋이 박스 전체를 덮는다 (탭하면 키보드, 커서는 활성 칸에만) */
+.otp-field { position: relative; }
+.otp-field .otp-input {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  opacity: 0; border: 0; padding: 0; background: transparent;
+  font-size: 16px; /* iOS 포커스 줌 방지 */
+}
+.otp-boxes { display: flex; gap: 8px; }
+.otp-box {
+  flex: 1; height: 54px;
+  display: flex; align-items: center; justify-content: center; gap: 1px;
+  background: var(--bg-2); border: 1px solid var(--line);
+  font-family: var(--serif); font-size: 22px; color: var(--text);
+  transition: border-color 0.15s ease;
+}
+.otp-box.is-active { border-color: rgba(214, 197, 160, 0.9); }
+.otp-caret {
+  width: 1.5px; height: 22px; background: var(--accent-bright);
+  animation: otp-blink 1.1s steps(2, start) infinite;
+}
+@keyframes otp-blink { 50% { opacity: 0; } }
 .lux-select,
 .lux-date {
   position: relative;
