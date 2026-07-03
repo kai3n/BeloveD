@@ -249,7 +249,7 @@ export default function AdminLiveOrders() {
 }
 
 // 이벤트 스텝 카드 — 필요한 입력(미디어/노트/금액/IGI/운송장)만 노출
-function StepCard({ step, index, order, changeRequest, expanded, onToggle, t, onSent }) {
+function StepCard({ step, index, order, done, changeRequest, expanded, onToggle, t, onSent }) {
   const [media, setMedia] = useState([]);
   // 견적 컴포저는 인테이크에서 프리필 — 어드민은 확인·수정만 하고 보낸다
   const fp = order.intake?.formPayload || {};
@@ -273,10 +273,9 @@ function StepCard({ step, index, order, changeRequest, expanded, onToggle, t, on
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   // 한 번 보낸 스텝은 잠근다 — 중복 발송(중복 메일·중복 컨펌)이 재발송 필요보다 훨씬 흔한 사고다.
-  // 단, 고객이 수정을 요청한 상태(changeRequest)면 다시 열어 수정본을 보낼 수 있다.
-  const stageIdx = STAGE_ORDER.indexOf(order.stage);
-  const reachIdx = STAGE_ORDER.indexOf(step.reaches);
-  const done = stageIdx >= reachIdx;
+  // done은 stage가 아니라 "이 이벤트가 실제 발사됐는가"(타임라인) 기준 — 같은 stage에 도달하는
+  // 스텝들(디파짓/다이아 둘 다 CAD)이 한꺼번에 체크되는 오판 방지.
+  // 고객이 수정을 요청한 상태(changeRequest)면 다시 열어 수정본을 보낼 수 있다.
   const unlocked = done && Boolean(changeRequest);
 
   async function fire() {
@@ -541,8 +540,9 @@ export function AdminLiveOrderDetail() {
         <p className="form-hint">{t.consoleHint}</p>
       </div>
       {(() => {
-        const stageIdxNow = STAGE_ORDER.indexOf(order.stage);
-        const firstOpenType = FLOW.find((s2) => stageIdxNow < STAGE_ORDER.indexOf(s2.reaches))?.type || null;
+        // 발사된 이벤트 = 완료 — 타임라인이 진실원장 (stage는 여러 스텝이 공유해 판정 기준으로 부적합)
+        const firedTypes = new Set(timeline.map((e) => e.payload?.type || e.title));
+        const firstOpenType = FLOW.find((s2) => !firedTypes.has(s2.type))?.type || null;
         const openKinds = new Set(actions.filter((a) => a.status === "OPEN").map((a) => a.kind));
         return FLOW.map((step, i) => {
           // 고객이 수정 요청한 컨펌 종류는 해당 스텝을 다시 연다.
@@ -553,10 +553,10 @@ export function AdminLiveOrderDetail() {
               .sort((x, y) => new Date(y.respondedAt) - new Date(x.respondedAt))[0] || null
             : null;
           const changeRequest = lastResponded?.responsePayload?.response === "REQUEST_CHANGES" ? lastResponded : null;
-          const done = stageIdxNow >= STAGE_ORDER.indexOf(step.reaches);
+          const done = firedTypes.has(step.type);
           const expanded = !done && (expandedStep ? expandedStep === step.type : step.type === firstOpenType);
           return (
-            <StepCard key={step.type} step={step} index={i + 1} order={order} t={t}
+            <StepCard key={step.type} step={step} index={i + 1} order={order} t={t} done={done}
               changeRequest={changeRequest} expanded={expanded}
               onToggle={() => setExpandedStep(step.type)}
               onSent={() => { setNotice(t.sent); setExpandedStep(null); load(); }} />
