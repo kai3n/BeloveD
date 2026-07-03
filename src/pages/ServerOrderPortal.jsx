@@ -45,6 +45,13 @@ const COPY = {
     artifactsTitle: "Shared with you",
     proposalTitle: "Your proposal",
     specStone: "Stone", specMetal: "Metal", specTotal: "Total, all-inclusive",
+    events: {
+      proposal_sent: "Proposal sent", deposit_confirmed: "Deposit confirmed",
+      diamond_locked: "Your diamond is secured", production_started: "Production started",
+      qc_ready: "Finished piece ready for your review", balance_requested: "Balance requested",
+      shipped: "Shipped", delivered: "Delivered",
+      "Request received": "Request received", "Response received": "Response received",
+    },
     emailTail: "Questions? Reply to any of our order emails — they reach the same team.",
   },
   ko: {
@@ -84,6 +91,13 @@ const COPY = {
     artifactsTitle: "공유된 자료",
     proposalTitle: "제안",
     specStone: "스톤", specMetal: "메탈", specTotal: "총액 (올인클루시브)",
+    events: {
+      proposal_sent: "제안 발송됨", deposit_confirmed: "디파짓 확인됨",
+      diamond_locked: "다이아몬드 확보됨", production_started: "제작 시작",
+      qc_ready: "완성품 확인 요청", balance_requested: "잔금 안내",
+      shipped: "발송됨", delivered: "배송 완료",
+      "Request received": "요청 접수됨", "Response received": "응답 접수됨",
+    },
     emailTail: "궁금한 점은 주문 메일에 회신해 주세요 — 같은 팀에게 바로 전달됩니다.",
   },
   zh: {
@@ -123,6 +137,13 @@ const COPY = {
     artifactsTitle: "与您共享",
     proposalTitle: "您的方案",
     specStone: "钻石", specMetal: "金属", specTotal: "总价（全包）",
+    events: {
+      proposal_sent: "方案已发送", deposit_confirmed: "定金已确认",
+      diamond_locked: "钻石已锁定", production_started: "开始制作",
+      qc_ready: "成品待您确认", balance_requested: "已发送尾款说明",
+      shipped: "已发货", delivered: "已送达",
+      "Request received": "已收到请求", "Response received": "已收到回复",
+    },
     emailTail: "如有疑问，直接回复订单邮件即可 — 同一团队为您服务。",
   },
   es: {
@@ -162,6 +183,13 @@ const COPY = {
     artifactsTitle: "Compartido contigo",
     proposalTitle: "Tu propuesta",
     specStone: "Piedra", specMetal: "Metal", specTotal: "Total, todo incluido",
+    events: {
+      proposal_sent: "Propuesta enviada", deposit_confirmed: "Depósito confirmado",
+      diamond_locked: "Diamante asegurado", production_started: "Producción iniciada",
+      qc_ready: "Pieza lista para tu revisión", balance_requested: "Saldo solicitado",
+      shipped: "Enviado", delivered: "Entregado",
+      "Request received": "Solicitud recibida", "Response received": "Respuesta recibida",
+    },
     emailTail: "¿Preguntas? Responde a cualquiera de nuestros correos del pedido.",
   },
 };
@@ -289,8 +317,12 @@ export default function ServerOrderPortal({ orderCode }) {
       )}
       {respondedId && !action && <p className="client-action-notice" role="status">{t.responded}</p>}
 
-      {/* 발행된 아티팩트 — 제안(QUOTE)은 스펙·노트·총액까지 카드로, 그 외는 미디어+노트 */}
-      {order.publishedArtifacts?.map((a) => {
+      {/* 발행된 아티팩트 — 타입별 최신 버전만 (재발송분은 구버전으로 취급, 중복 카드 방지) */}
+      {Object.values((order.publishedArtifacts || []).reduce((acc, a) => {
+        const prev = acc[a.type];
+        if (!prev || new Date(a.publishedAt) > new Date(prev.publishedAt)) acc[a.type] = a;
+        return acc;
+      }, {})).map((a) => {
         const pay = a.payload || {};
         const specs = [
           [t.specStone, pay.stoneSpec],
@@ -329,15 +361,19 @@ export default function ServerOrderPortal({ orderCode }) {
       <section className="panel">
         <p className="section-label">{t.timelineTitle}</p>
         <div className="client-brief-list" style={{ display: "grid", gap: 0 }}>
-          {order.timeline.map((event) => (
-            <div key={event.id} style={{ display: "flex", justifyContent: "space-between", gap: 14, padding: "10px 0", borderBottom: "1px solid var(--hair)" }}>
-              <div>
-                <strong style={{ fontSize: 14 }}>{event.title}</strong>
-                {event.body && <p className="form-hint" style={{ margin: "2px 0 0" }}>{event.body}</p>}
+          {order.timeline
+            // 이벤트명 현지화 (서버는 원시 타입을 title로 기록) + 같은 이벤트 연속 중복은 최신 1건만
+            .map((event) => ({ ...event, label: t.events[event.payload?.type] || t.events[event.title] || event.title }))
+            .filter((event, i, arr) => i === 0 || event.label !== arr[i - 1].label)
+            .map((event) => (
+              <div key={event.id} style={{ display: "flex", justifyContent: "space-between", gap: 14, padding: "10px 0", borderBottom: "1px solid var(--hair)" }}>
+                <div>
+                  <strong style={{ fontSize: 14 }}>{event.label}</strong>
+                  {event.body && <p className="form-hint" style={{ margin: "2px 0 0" }}>{event.body}</p>}
+                </div>
+                <span className="form-hint" style={{ whiteSpace: "nowrap" }}>{fmtDate(event.createdAt, locale)}</span>
               </div>
-              <span className="form-hint" style={{ whiteSpace: "nowrap" }}>{fmtDate(event.createdAt, locale)}</span>
-            </div>
-          ))}
+            ))}
         </div>
       </section>
 

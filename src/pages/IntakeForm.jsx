@@ -293,23 +293,37 @@ export default function IntakeForm() {
         // base64/blob 프리뷰는 제외 — R2 publicUrl만 서버로 (jsonb·바디 한도 보호)
         referenceMedia: refs.filter((m) => /^https?:\/\//.test(m.src || "")).slice(0, 5),
       },
-    }).catch(() => {});
+    })
+      // 실서버 주문번호(BD-)가 진짜 — 접수 화면·포털 링크를 서버 코드로 승격
+      .then((resp) => {
+        if (resp?.orderCode) setDone((d) => (d ? { ...d, serverCode: resp.orderCode } : d));
+      })
+      .catch(() => {});
 
     window.localStorage.removeItem(DRAFT_KEY);
     setDone(order);
   }
 
   if (done) {
+    // 서버 캡처 성공 시 BD- 주문번호가 진실 — 조회 코드는 로컬 폴백(DM-) 경로에서만 의미가 있다
+    const serverBacked = Boolean(done.serverCode);
     return (
       <div className="page page-narrow">
         <h1 className="page-title">{t.doneTitle}</h1>
         <div className="panel form-stack">
-          <div className="summary-grid" style={{ gridTemplateColumns: "1fr 1fr" }}>
-            <div className="summary-card"><div className="num" style={{ fontSize: 24 }}>{done.id}</div><div className="lbl">{t.orderIdLbl}</div></div>
-            <div className="summary-card"><div className="num" style={{ fontSize: 24 }}>{done.queryCode}</div><div className="lbl">{t.codeLbl}</div></div>
+          <div className="summary-grid" style={{ gridTemplateColumns: serverBacked ? "1fr" : "1fr 1fr" }}>
+            <div className="summary-card"><div className="num" style={{ fontSize: 24 }}>{done.serverCode || done.id}</div><div className="lbl">{t.orderIdLbl}</div></div>
+            {!serverBacked && (
+              <div className="summary-card"><div className="num" style={{ fontSize: 24 }}>{done.queryCode}</div><div className="lbl">{t.codeLbl}</div></div>
+            )}
           </div>
-          <p className="form-hint">{t.doneNote}</p>
-          <button className="button primary" onClick={() => navigate(`/orders/${done.id}?code=${done.queryCode}`)}>{t.goPortal}</button>
+          <p className="form-hint">{serverBacked ? t.doneNoteServer : t.doneNote}</p>
+          <button
+            className="button primary"
+            onClick={() => navigate(serverBacked ? `/orders/${done.serverCode}` : `/orders/${done.id}?code=${done.queryCode}`)}
+          >
+            {t.goPortal}
+          </button>
         </div>
       </div>
     );

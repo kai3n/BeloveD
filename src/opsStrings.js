@@ -170,6 +170,7 @@ const en = {
     backToDesigns: "Back to designs",
     doneTitle: "Request received", orderIdLbl: "Your Order ID", codeLbl: "Private tracking code",
     doneNote: "Save this code — it opens your order page without an account. We will reach out within 1 business day.",
+    doneNoteServer: "We emailed your order link. Sign in with the same email to follow every step — we will reach out within 1 business day.",
     goPortal: "Open my order page",
     termsBlocks: [
       "Minor CAD revisions are allowed after the first design.",
@@ -592,6 +593,7 @@ const ko = {
     backToDesigns: "디자인으로 돌아가기",
     doneTitle: "요청이 접수되었습니다", orderIdLbl: "주문 ID", codeLbl: "전용 조회 코드",
     doneNote: "이 코드를 저장해두세요 — 계정 없이 주문 페이지를 열 수 있습니다. 영업일 1일 내 연락드립니다.",
+    doneNoteServer: "주문 링크를 이메일로 보내드렸어요. 같은 이메일로 로그인하면 모든 단계를 확인할 수 있습니다 — 영업일 1일 내 연락드립니다.",
     goPortal: "내 주문 페이지 열기",
     termsBlocks: [
       "첫 디자인 이후 마이너 CAD 수정은 무료로 허용됩니다.",
@@ -1014,6 +1016,7 @@ const zh = {
     backToDesigns: "返回设计",
     doneTitle: "申请已收到", orderIdLbl: "订单 ID", codeLbl: "专属查询码",
     doneNote: "请保存此码 — 无需账户即可打开订单页面。我们将在 1 个工作日内联系您。",
+    doneNoteServer: "订单链接已发送至您的邮箱。用同一邮箱登录即可跟进每一步 — 我们将在 1 个工作日内联系您。",
     goPortal: "打开我的订单",
     termsBlocks: [
       "首版设计后允许免费小幅 CAD 修改。",
@@ -1436,6 +1439,7 @@ const es = {
     backToDesigns: "Volver a diseños",
     doneTitle: "Solicitud recibida", orderIdLbl: "ID de pedido", codeLbl: "Código privado de seguimiento",
     doneNote: "Guarda este código — abre tu página de pedido sin cuenta. Te contactaremos en 1 día hábil.",
+    doneNoteServer: "Te enviamos el enlace del pedido por correo. Inicia sesión con el mismo correo para seguir cada paso — te contactaremos en 1 día hábil.",
     goPortal: "Abrir mi pedido",
     termsBlocks: [
       "Se permiten revisiones menores del CAD tras el primer diseño.",
