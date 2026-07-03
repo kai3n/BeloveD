@@ -10,6 +10,7 @@ import {
 import { useDBVersion } from "../lib/useDB.js";
 import { MediaPicker, MediaThumb, usd } from "../components/ui.jsx";
 import ReviewForm from "../components/ReviewForm.jsx";
+import ServerOrderPortal from "./ServerOrderPortal.jsx";
 import { pickI18n, useLocale } from "../i18n.jsx";
 
 // 게스트 조회 입력 (Order ID + 쿼리코드)
@@ -52,24 +53,7 @@ function Checkpoint({ id, index, title, state, summary, children, badgeOverride 
   );
 }
 
-function ConfirmationRail({ steps }) {
-  const { p } = useLocale();
-  const copy = p.visual;
-  const labelFor = (state) => state === "done" ? copy.doneTag : state === "active" ? copy.nowAction : copy.upcoming;
-  return (
-    <section className="client-confirm-rail" aria-label={p.portal.actionsTitle}>
-      {steps.map((step, index) => (
-        <article className={`client-confirm-step ${step.state}`} key={step.key}>
-          <span className="client-confirm-index">{String(index + 1).padStart(2, "0")}</span>
-          <div>
-            <strong>{step.title}</strong>
-            <small>{labelFor(step.state)}</small>
-          </div>
-        </article>
-      ))}
-    </section>
-  );
-}
+// (구 ConfirmationRail은 미사용 데드코드였음 — 레일 마크업은 ServerOrderPortal이 직접 렌더)
 
 // 확정 제안 → 디파짓 flow 카피 (Request → Proposal → Deposit → Production)
 const PROPOSAL_FLOW_COPY = {
@@ -798,8 +782,15 @@ function CustomerDecisionPanel({
   );
 }
 
-// 체크포인트 ② 디자인 — 비교 뷰 + 핀 수정요청. 자유 텍스트 입력 없음.
-export default function ClientPortal() {
+// 라우트 진입점 — 실서버 주문(BD-)은 Postgres 포털로, 데모 주문(DM-)은 로컬 스토어 포털로.
+// 훅 순서가 orderId에 따라 달라지지 않도록 분기는 래퍼에서 한다.
+export default function ClientPortalRoute() {
+  const { orderId } = useParams();
+  if (/^BD-/i.test(orderId || "")) return <ServerOrderPortal orderCode={orderId.toUpperCase()} />;
+  return <ClientPortal />;
+}
+
+function ClientPortal() {
   useDBVersion();
   const { p, locale } = useLocale();
   const t = p.portal;

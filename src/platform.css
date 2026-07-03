@@ -3867,29 +3867,31 @@ html[data-theme="day"] .design-shop-card:hover .design-shop-media-frame {
   gap: 12px;
   margin: 18px 0;
 }
+/* 데이/나이트 공용 — 하드코딩 다크 배경 금지 (Gallery White에서 회색 블록이 됨) */
 .client-confirm-step {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   gap: 12px;
   align-items: center;
   min-height: 86px;
-  border: 1px solid rgba(214, 197, 160, 0.22);
-  background: rgba(13, 11, 8, 0.58);
+  border: 1px solid var(--line);
+  background: var(--surface);
   padding: 16px;
 }
+.client-confirm-step.upcoming { opacity: 0.62; }
 .client-confirm-step.active {
-  border-color: rgba(214, 197, 160, 0.72);
-  background: linear-gradient(135deg, rgba(214, 197, 160, 0.1), rgba(255, 255, 255, 0.014));
+  border-color: var(--accent);
+  background: var(--bg-2);
 }
 .client-confirm-step.done {
-  border-color: rgba(140, 210, 160, 0.36);
+  border-color: rgba(140, 210, 160, 0.45);
 }
 .client-confirm-index {
   display: grid;
   width: 38px;
   height: 38px;
   place-items: center;
-  border: 1px solid rgba(214, 197, 160, 0.45);
+  border: 1px solid var(--line-strong);
   color: var(--accent-bright);
   font-family: var(--serif);
   font-size: 19px;

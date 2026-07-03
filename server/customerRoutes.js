@@ -1,10 +1,13 @@
 import { Router } from "express";
 import { ApiError } from "./errors.js";
 import { rateLimit } from "./rateLimit.js";
-import { withTransaction } from "./db.js";
-import { createDraftIntake, submitIntake, requestHash, recordOrderEvent, EVENT_TRANSITIONS } from "./customerRepository.js";
+import { withTransaction, query } from "./db.js";
+import {
+  createDraftIntake, submitIntake, requestHash, recordOrderEvent, EVENT_TRANSITIONS,
+  listCustomerOrders, getCustomerOrder, respondToAction,
+} from "./customerRepository.js";
 import { sendOrderEventMail } from "./orderMail.js";
-import { requireAdmin } from "./middleware.js";
+import { requireAdmin, requireCustomer } from "./middleware.js";
 
 const MINUTE = 60 * 1000;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -80,6 +83,44 @@ export function customerRouter() {
         if (result.notify?.email) {
           fireMail(sendOrderEventMail({ ...result.notify, orderCode: result.orderCode, type, data: data || {} }), type);
         }
+      } catch (e) { next(e); }
+    });
+
+  // ── 고객 포털 읽기 — 세션 쿠키 기준. 레포지토리는 이메일 키라 principal id → email 변환.
+  async function principalEmail(req) {
+    const { rows } = await query("select email from customers where id = $1", [req.principal.id]);
+    if (!rows[0]) throw new ApiError("CUSTOMER_AUTH_REQUIRED", 401);
+    return rows[0].email;
+  }
+
+  r.get("/orders",
+    rateLimit({ limit: 30, windowMs: MINUTE }),
+    requireCustomer,
+    async (req, res, next) => {
+      try {
+        const orders = await listCustomerOrders(await principalEmail(req));
+        res.json({ ok: true, orders });
+      } catch (e) { next(e); }
+    });
+
+  r.get("/orders/:orderCode",
+    rateLimit({ limit: 60, windowMs: MINUTE }),
+    requireCustomer,
+    async (req, res, next) => {
+      try {
+        const order = await getCustomerOrder(req.params.orderCode, await principalEmail(req));
+        res.json({ ok: true, order });
+      } catch (e) { next(e); }
+    });
+
+  // 열린 고객 액션 응답 (컨펌/반려) — allowed_responses 화이트리스트는 레포지토리가 검증
+  r.post("/actions/:actionCode/respond",
+    rateLimit({ limit: 20, windowMs: MINUTE }),
+    requireCustomer,
+    async (req, res, next) => {
+      try {
+        const result = await respondToAction(req.params.actionCode, await principalEmail(req), req.body || {});
+        res.json({ ok: true, ...result });
       } catch (e) { next(e); }
     });
 
