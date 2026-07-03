@@ -5359,12 +5359,13 @@ button.text-link:hover {
 .gflow-review-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 @media (max-width: 640px) { .gflow-review-cards { grid-template-columns: 1fr; } }
 .gflow-review-card { border: 1px solid var(--line); background: var(--surface); overflow: hidden; }
+/* 미디어 박스는 제품 사진과 같은 1:1 정사각형 — 세 카드가 그리드에 딱 맞아떨어진다 */
 .gflow-review-card .rc-media {
-  aspect-ratio: 16 / 10; background: var(--bg-2); display: grid; place-items: center; overflow: hidden;
+  aspect-ratio: 1 / 1; background: var(--bg-2); display: grid; place-items: center; overflow: hidden;
   color: var(--accent-bright);
 }
 .gflow-review-card .rc-media .media-thumb { width: 100%; height: 100%; border: none; }
-.gflow-review-card .rc-media .gflow-shape-svg { width: 58px; height: 58px; }
+.gflow-review-card .rc-media .gflow-shape-svg { width: 76px; height: 76px; }
 .gflow-review-card .rc-body { padding: 12px 14px; display: grid; gap: 2px; }
 .gflow-review-card .rc-body span { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--quiet); }
 .gflow-review-card .rc-body strong { font-family: var(--serif); font-size: 17px; font-weight: 600; }

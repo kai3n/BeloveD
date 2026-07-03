@@ -1010,7 +1010,7 @@ export default function ClientPortal() {
         {quote && (
           <PaymentCard
             amountUsd={quote.depositUsd}
-            memoText={`BeloveD ${order.id} · Deposit`}
+            memoText={`BeloveD ${order.id} Deposit`}
             reported={depositCardState === "reported"}
             fc={fc}
             sentCta={fc.depositSentCta}
@@ -1048,7 +1048,7 @@ export default function ClientPortal() {
         {order.status === "BALANCE" && quote && (
           <PaymentCard
             amountUsd={quote.balanceUsd}
-            memoText={`BeloveD ${order.id} · Balance`}
+            memoText={`BeloveD ${order.id} Balance`}
             reported={false}
             fc={fc}
             sentCta={fc.balanceSentCta}

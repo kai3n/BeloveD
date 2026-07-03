@@ -8,7 +8,7 @@ import {
 import { createIntake, getDiamond, listOpsStyles } from "../lib/store.js";
 import {
   MAX_REFERENCE_MEDIA, RING_SIZE_OPTIONS, buildIntakePayload, conditionalComplete,
-  hasContactDetails, sanitizeReferenceMedia, submissionContact,
+  accountDisplayName, hasContactDetails, sanitizeReferenceMedia, submissionContact,
 } from "../lib/intakePayload.js";
 import { useDBVersion } from "../lib/useDB.js";
 import { pickI18n, useLocale } from "../i18n.jsx";
@@ -119,7 +119,7 @@ export default function IntakeForm() {
   const draft = readDraft();
 
   const baseForm = {
-    name: user?.name || "", contact: user?.email || "", productLine: inferProductLineFromStyle(styleFromParam), category: initialCategory,
+    name: accountDisplayName(user), contact: user?.email || "", productLine: inferProductLineFromStyle(styleFromParam), category: initialCategory,
     subcategory: initialSubcategory,
     styleId: styleParam, metal: "18kw",
     conditional: categoryDefaults(initialCategory),
@@ -169,11 +169,15 @@ export default function IntakeForm() {
 
   const solitaire = form.productLine === "solitaire";
   const isGuest = !user;
-  const screens = screenList(form.productLine, isGuest);
+  // 로그인 상태라도 계정에 제대로 된 이름이 없으면(이메일형) 이름만 받는 스텝을 보여준다
+  const needsContact = isGuest || !accountDisplayName(user);
+  const screens = screenList(form.productLine, needsContact);
   // 로그인 등으로 질문 목록이 바뀌어 현재 화면이 사라지면 리뷰로 폴백
   const activeScreen = screens.includes(screen) ? screen : "review";
   const screenIdx = Math.max(0, screens.indexOf(activeScreen));
-  const guestContactReady = hasContactDetails(submissionContact(form, user));
+  const guestContactReady = isGuest
+    ? hasContactDetails(submissionContact(form, user))
+    : Boolean(form.name.trim());
   const selectedStyle = styles.find((st) => st.id === form.styleId) || null;
   const selectedStyleName = selectedStyle ? pickI18n(selectedStyle.name, locale) : g.notSureTitle;
   const stylesForCategory = styles.filter((st) => st.category === form.category);
@@ -225,7 +229,7 @@ export default function IntakeForm() {
     setResumeTarget("");
     setF(patch);
     const nextLine = patch.productLine || form.productLine;
-    const list = screenList(nextLine, isGuest);
+    const list = screenList(nextLine, needsContact);
     const next = list[list.indexOf(currentName) + 1] || "review";
     window.setTimeout(() => setScreen(next), 170);
   }
@@ -404,7 +408,7 @@ export default function IntakeForm() {
       ), { onSkip: goNext })}
 
       {/* 비회원: 리뷰 직전 연락처 — "확정 제안이 도착할 곳"으로 프레이밍해 이탈을 줄인다 */}
-      {activeScreen === "contact" && stepShell(g.qContact, g.contactHint, (
+      {activeScreen === "contact" && stepShell(isGuest ? g.qContact : g.qContactName, g.contactHint, (
         <div className="gflow-contact">
           <label className="field"><span>{t.name} <span className="req">*</span></span>
             <input
@@ -414,15 +418,22 @@ export default function IntakeForm() {
               onKeyDown={(e) => { if (e.key === "Enter" && guestContactReady) goNext(); }}
             />
           </label>
-          <label className="field"><span>{t.contact} <span className="req">*</span></span>
-            <input
-              value={form.contact}
-              autoComplete="email"
-              placeholder="you@email.com"
-              onChange={(e) => setF({ contact: e.target.value })}
-              onKeyDown={(e) => { if (e.key === "Enter" && guestContactReady) goNext(); }}
-            />
-          </label>
+          {isGuest ? (
+            <label className="field"><span>{t.contact} <span className="req">*</span></span>
+              <input
+                value={form.contact}
+                autoComplete="email"
+                placeholder="you@email.com"
+                onChange={(e) => setF({ contact: e.target.value })}
+                onKeyDown={(e) => { if (e.key === "Enter" && guestContactReady) goNext(); }}
+              />
+            </label>
+          ) : (
+            // 로그인 고객: 제안이 도착할 이메일은 계정에서 — 수정 불가로 보여주기만
+            <label className="field"><span>{t.contact}</span>
+              <input value={user.email} readOnly />
+            </label>
+          )}
           <button className="button primary" type="button" disabled={!guestContactReady} onClick={goNext}>{t.next}</button>
         </div>
       ))}
@@ -433,8 +444,8 @@ export default function IntakeForm() {
             <div className="gflow-review-card">
               <div className="rc-media">
                 {styleMedia(selectedStyle)
-                  ? <MediaThumb media={styleMedia(selectedStyle)} alt={selectedStyleName} ratio="16 / 10" />
-                  : <MediaThumb media={categoryOptions.find((c) => c.value === cat)?.media} alt={p.opsCategories[cat]} ratio="16 / 10" />}
+                  ? <MediaThumb media={styleMedia(selectedStyle)} alt={selectedStyleName} ratio="1 / 1" />
+                  : <MediaThumb media={categoryOptions.find((c) => c.value === cat)?.media} alt={p.opsCategories[cat]} ratio="1 / 1" />}
               </div>
               <div className="rc-body">
                 <span>{g.pieceCard}</span>
@@ -444,7 +455,7 @@ export default function IntakeForm() {
             </div>
             <div className="gflow-review-card">
               <div className="rc-media">
-                {solitaire ? <ShapeSilhouette shape={form.stonePrefs.shape} /> : <MediaThumb media={styleMedia(selectedStyle) || categoryOptions.find((c) => c.value === cat)?.media} alt="" ratio="16 / 10" />}
+                {solitaire ? <ShapeSilhouette shape={form.stonePrefs.shape} /> : <MediaThumb media={styleMedia(selectedStyle) || categoryOptions.find((c) => c.value === cat)?.media} alt="" ratio="1 / 1" />}
               </div>
               <div className="rc-body">
                 <span>{g.stoneCard}</span>
@@ -464,7 +475,7 @@ export default function IntakeForm() {
             <div className="gflow-review-card">
               <div className="rc-media">
                 {refs[0]
-                  ? <MediaThumb media={refs[0]} alt={g.inspirationCard} ratio="16 / 10" fit="contain" />
+                  ? <MediaThumb media={refs[0]} alt={g.inspirationCard} ratio="1 / 1" fit="cover" />
                   : <ShapeSilhouette shape="round" />}
               </div>
               <div className="rc-body">
@@ -570,7 +581,7 @@ export default function IntakeForm() {
             </section>
           )}
 
-          {isGuest && (
+          {needsContact && (
             <section className="gflow-review-section">
               <h4>{t.contactTitle}</h4>
               <div className="gflow-quality-row">

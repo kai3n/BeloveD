@@ -23,10 +23,18 @@ export function sanitizeReferenceMedia(items) {
   }));
 }
 
+// 계정에 "제대로 된 이름"이 있는지 — OTP 가입 계정은 name이 이메일 그대로 저장되는
+// 경우가 있어(실서버 검증됨), 이메일 형태 이름은 없는 것으로 취급한다.
+export function accountDisplayName(user) {
+  const name = (user?.name || "").trim();
+  return name && !name.includes("@") ? name : "";
+}
+
 export function submissionContact(form, user) {
   const fallbackName = user?.email?.split("@")[0] || "";
+  // 위저드에서 입력한 이름(form.name)이 이메일형 계정 이름보다 우선한다
   return {
-    name: (user?.name || form.name || fallbackName).trim(),
+    name: (accountDisplayName(user) || form.name || fallbackName).trim(),
     contact: (user?.email || form.contact || "").trim(),
   };
 }

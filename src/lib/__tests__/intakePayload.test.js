@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
-  DEFAULT_MULTI_STANDARD, buildIntakePayload, conditionalComplete, sanitizeReferenceMedia,
+  DEFAULT_MULTI_STANDARD, accountDisplayName, buildIntakePayload, conditionalComplete,
+  sanitizeReferenceMedia, submissionContact,
 } from "../intakePayload.js";
 import { createIntake, resetDB } from "../store.js";
 
@@ -73,5 +74,25 @@ describe("sanitizeReferenceMedia", () => {
     const clean = sanitizeReferenceMedia(media);
     expect(clean).toHaveLength(5);
     expect(clean[0]).toEqual({ kind: "image", src: "/m0.png", width: 100 });
+  });
+});
+
+describe("submissionContact — 계정 이름 처리 (OTP 계정은 name이 이메일일 수 있음)", () => {
+  const otpUser = { name: "jpak1021@gmail.com", email: "jpak1021@gmail.com" };
+
+  it("이메일형 계정 이름은 없는 것으로 취급하고 위저드 입력 이름을 쓴다", () => {
+    expect(accountDisplayName(otpUser)).toBe("");
+    expect(submissionContact({ name: "James Pak", contact: "" }, otpUser))
+      .toEqual({ name: "James Pak", contact: "jpak1021@gmail.com" });
+  });
+
+  it("이름 미입력 시 이메일 앞부분으로 폴백 — 제출이 막히지는 않는다", () => {
+    expect(submissionContact({ name: "", contact: "" }, otpUser).name).toBe("jpak1021");
+  });
+
+  it("제대로 된 계정 이름은 그대로 사용 (연락처 스텝 스킵 대상)", () => {
+    const user = { name: "Jiwon Kim", email: "customer@demo.com" };
+    expect(accountDisplayName(user)).toBe("Jiwon Kim");
+    expect(submissionContact({ name: "", contact: "" }, user).name).toBe("Jiwon Kim");
   });
 });
