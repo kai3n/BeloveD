@@ -255,6 +255,26 @@ export function Footer() {
           <Link className="brand" to="/" aria-label="BeloveD home"><BrandLogo /></Link>
           {f.tagline ? <p className="footer-tagline">{f.tagline}</p> : null}
           {f.cert ? <span className="footer-cert">{f.cert}</span> : null}
+          <div className="footer-social-row">
+            <a
+              className="footer-social"
+              href={social.instagram.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Instagram — ${social.instagram.handle}`}
+            >
+              <Instagram size={20} strokeWidth={1.6} aria-hidden="true" />
+            </a>
+            <a
+              className="footer-social"
+              href={social.facebook.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Facebook — ${social.facebook.handle}`}
+            >
+              <Facebook size={20} strokeWidth={1.6} aria-hidden="true" />
+            </a>
+          </div>
         </div>
         <div className="footer-cols">
           {columns.map((col) => (
@@ -267,26 +287,6 @@ export function Footer() {
       </div>
       <div className="footer-bottom">
         <span>{f.copyright}</span>
-        <div className="footer-social-row">
-          <a
-            className="footer-social"
-            href={social.instagram.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={`Instagram — ${social.instagram.handle}`}
-          >
-            <Instagram size={18} strokeWidth={1.5} aria-hidden="true" />
-          </a>
-          <a
-            className="footer-social"
-            href={social.facebook.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={`Facebook — ${social.facebook.handle}`}
-          >
-            <Facebook size={18} strokeWidth={1.5} aria-hidden="true" />
-          </a>
-        </div>
       </div>
     </footer>
   );

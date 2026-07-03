@@ -1552,19 +1552,26 @@ html[data-theme="day"] .quality {
 }
 
 .footer-social-row {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
+  margin-top: 22px;
 }
 
+/* SNS는 샴페인 서클 버튼 — 원색 로고 대신 브랜드 골드로 존재감 (44px 터치 타깃) */
 .footer-social {
   display: inline-flex;
   align-items: center;
-  color: var(--quiet);
-  transition: color 0.15s ease;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  color: var(--accent);
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
 }
 
-.footer-social:hover { color: var(--text); }
+.footer-social:hover { background: var(--accent); border-color: var(--accent); color: var(--bg); }
 
 /* ── Info / 정책·신뢰 페이지 (About·Returns·Warranty·Shipping·Contact·FAQ) ── */
 .info-page {
@@ -2473,7 +2480,11 @@ html[data-theme="day"] .quality {
     gap: 28px 18px;
   }
 
+  /* 저작권이 두 줄로 꺾이면 아이콘이 텍스트에 붙어 충돌 → 세로 스택 */
   .footer-bottom {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
     padding: 20px 0 30px;
   }
 }
