@@ -1,7 +1,7 @@
 // 실주문(BD-) 콘솔 — Postgres 주문을 목록/상세로 운영한다.
 // 이벤트 버튼 하나 = stage 전이 + (선택) 아티팩트/고객 컨펌 발행 + 상태 메일(고객 언어) 발송.
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { apiFetch, ApiUnavailableError } from "../../lib/api.js";
 import { MediaPicker, MediaThumb, usd } from "../../components/ui.jsx";
 import { useLocale } from "../../i18n.jsx";
@@ -18,8 +18,9 @@ const COPY = {
     consoleHint: "Each step advances the stage and emails the customer in their language.",
     artifacts: "Published to customer", actions: "Customer confirmations", timeline: "Timeline",
     note: "Customer note", total: "Total ($)", igi: "IGI No.", tracking: "Tracking no.",
+    stoneSpec: "Stone spec", metalSpec: "Metal spec",
     media: "Media (published to the portal)",
-    fire: "Send", done: "Done", current: "Current",
+    fire: "Send", done: "Done", current: "Current", sentLabel: "Sent ✓",
     waitingOn: { CUSTOMER: "Customer", BELOVEDIAMOND: "BeloveD", EXTERNAL: "Carrier", NONE: "—" },
     steps: {
       proposal_sent: "Send the proposal", deposit_confirmed: "Deposit received",
@@ -40,8 +41,9 @@ const COPY = {
     consoleHint: "각 단계는 stage를 전이시키고 고객 언어로 상태 메일을 보냅니다.",
     artifacts: "고객에게 발행됨", actions: "고객 컨펌", timeline: "타임라인",
     note: "고객 노트", total: "총액 ($)", igi: "IGI 번호", tracking: "운송장 번호",
+    stoneSpec: "스톤 스펙", metalSpec: "메탈 스펙",
     media: "미디어 (포털에 공개)",
-    fire: "보내기", done: "완료", current: "현재",
+    fire: "보내기", done: "완료", current: "현재", sentLabel: "보냄 ✓",
     waitingOn: { CUSTOMER: "고객", BELOVEDIAMOND: "BeloveD", EXTERNAL: "운송사", NONE: "—" },
     steps: {
       proposal_sent: "제안 발송", deposit_confirmed: "디파짓 수령",
@@ -62,8 +64,9 @@ const COPY = {
     consoleHint: "每一步都会推进阶段，并以客户语言发送状态邮件。",
     artifacts: "已向客户发布", actions: "客户确认", timeline: "时间线",
     note: "客户备注", total: "总价 ($)", igi: "IGI 编号", tracking: "运单号",
+    stoneSpec: "钻石规格", metalSpec: "金属规格",
     media: "媒体（发布到订单页面）",
-    fire: "发送", done: "完成", current: "当前",
+    fire: "发送", done: "完成", current: "当前", sentLabel: "已发送 ✓",
     waitingOn: { CUSTOMER: "客户", BELOVEDIAMOND: "BeloveD", EXTERNAL: "承运商", NONE: "—" },
     steps: {
       proposal_sent: "发送方案", deposit_confirmed: "已收定金",
@@ -84,8 +87,9 @@ const COPY = {
     consoleHint: "Cada paso avanza la etapa y envía un correo al cliente en su idioma.",
     artifacts: "Publicado al cliente", actions: "Confirmaciones del cliente", timeline: "Cronología",
     note: "Nota al cliente", total: "Total ($)", igi: "N.º IGI", tracking: "N.º de guía",
+    stoneSpec: "Especif. de piedra", metalSpec: "Especif. de metal",
     media: "Medios (publicados al portal)",
-    fire: "Enviar", done: "Hecho", current: "Actual",
+    fire: "Enviar", done: "Hecho", current: "Actual", sentLabel: "Enviado ✓",
     waitingOn: { CUSTOMER: "Cliente", BELOVEDIAMOND: "BeloveD", EXTERNAL: "Transportista", NONE: "—" },
     steps: {
       proposal_sent: "Enviar la propuesta", deposit_confirmed: "Depósito recibido",
@@ -99,7 +103,7 @@ const COPY = {
 
 // 스테이지 순서 — 각 이벤트가 도달시키는 stage (완료/현재 표시용)
 const FLOW = [
-  { type: "proposal_sent", reaches: "QUOTE", media: "proposal", artifactType: "QUOTE", fields: ["note", "total"], action: { kind: "QUOTE_ACCEPTANCE", allowedResponses: ["APPROVE", "REQUEST_CHANGES"] } },
+  { type: "proposal_sent", reaches: "QUOTE", media: "proposal", artifactType: "QUOTE", fields: ["stoneSpec", "metalSpec", "note", "total"], action: { kind: "QUOTE_ACCEPTANCE", allowedResponses: ["APPROVE", "REQUEST_CHANGES"] } },
   { type: "deposit_confirmed", reaches: "CAD" },
   { type: "diamond_locked", reaches: "CAD", fields: ["igi"] },
   { type: "production_started", reaches: "PRODUCTION" },
@@ -125,6 +129,7 @@ function fetchState(setter) {
 
 export default function AdminLiveOrders() {
   const t = useCopy();
+  const navigate = useNavigate();
   const [state, setState] = useState({ status: "loading", data: null });
 
   useEffect(() => {
@@ -147,8 +152,12 @@ export default function AdminLiveOrders() {
             <thead><tr><th>Order</th><th>{t.customer}</th><th>{t.category}</th><th>{t.stage}</th><th>{t.waiting}</th><th>{t.updated}</th></tr></thead>
             <tbody>
               {state.data.map((o) => (
-                <tr key={o.orderCode}>
-                  <td><Link className="text-link" to={`/admin/live/${o.orderCode}`}><strong>{o.orderCode}</strong></Link></td>
+                <tr
+                  key={o.orderCode}
+                  className="row-clickable"
+                  onClick={() => navigate(`/admin/live/${o.orderCode}`)}
+                >
+                  <td><Link className="text-link" to={`/admin/live/${o.orderCode}`} onClick={(e) => e.stopPropagation()}><strong>{o.orderCode}</strong></Link></td>
                   <td>{o.customerName || o.customerEmail}<br /><span className="form-hint">{o.customerEmail} · {o.locale}</span></td>
                   <td>{o.intake?.category || "—"}</td>
                   <td><span className="status-badge mst-inProgress">{o.stage}</span></td>
@@ -167,10 +176,17 @@ export default function AdminLiveOrders() {
 // 이벤트 스텝 카드 — 필요한 입력(미디어/노트/금액/IGI/운송장)만 노출
 function StepCard({ step, order, t, onSent }) {
   const [media, setMedia] = useState([]);
-  const [f, setF] = useState({ note: "", total: "", igi: "", tracking: "" });
+  // 제안 스펙은 인테이크에서 프리필 — 어드민은 확인·수정만 하고 보낸다
+  const fp = order.intake?.formPayload || {};
+  const sp = fp.stonePrefs || {};
+  const [f, setF] = useState({
+    note: "", total: "", igi: "", tracking: "",
+    stoneSpec: [sp.shape, sp.carat && `${sp.carat}ct`, sp.color, sp.clarity, sp.growth].filter(Boolean).join(" · "),
+    metalSpec: fp.metal || "",
+  });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  // 완료 표시는 시각 힌트일 뿐 — 재발송(같은 타입 재호출)은 어드민 의도로 항상 허용된다
+  // 한 번 보낸 스텝은 잠근다 — 중복 발송(중복 메일·중복 컨펌)이 재발송 필요보다 훨씬 흔한 사고다
   const stageIdx = STAGE_ORDER.indexOf(order.stage);
   const reachIdx = STAGE_ORDER.indexOf(step.reaches);
   const done = stageIdx >= reachIdx;
@@ -187,6 +203,8 @@ function StepCard({ step, order, t, onSent }) {
           type: step.artifactType,
           media: media.filter((m) => /^https?:\/\//.test(m.src || "")).slice(0, 5),
           payload: {
+            ...(f.stoneSpec.trim() ? { stoneSpec: f.stoneSpec.trim() } : {}),
+            ...(f.metalSpec.trim() ? { metalSpec: f.metalSpec.trim() } : {}),
             ...(f.note.trim() ? { note: f.note.trim() } : {}),
             ...(f.total ? { totalUsd: Number(f.total) } : {}),
           },
@@ -219,6 +237,14 @@ function StepCard({ step, order, t, onSent }) {
               <MediaPicker value={media} onChange={setMedia} maxItems={5} showSamples={false} previewMode="list" scope={step.media} />
             </div>
           )}
+          {step.fields?.includes("stoneSpec") && (
+            <label className="field"><span>{t.stoneSpec}</span>
+              <input value={f.stoneSpec} onChange={(e) => setF({ ...f, stoneSpec: e.target.value })} /></label>
+          )}
+          {step.fields?.includes("metalSpec") && (
+            <label className="field"><span>{t.metalSpec}</span>
+              <input value={f.metalSpec} onChange={(e) => setF({ ...f, metalSpec: e.target.value })} /></label>
+          )}
           {step.fields?.includes("note") && (
             <label className="field"><span>{t.note}</span>
               <input value={f.note} onChange={(e) => setF({ ...f, note: e.target.value })} /></label>
@@ -238,7 +264,9 @@ function StepCard({ step, order, t, onSent }) {
             )}
           </div>
           {error && <p className="form-error">{error}</p>}
-          <button className={`button ${done ? "secondary" : "primary"} small`} type="button" disabled={busy} onClick={fire}>{t.fire}</button>
+          <button className={`button ${done ? "secondary" : "primary"} small`} type="button" disabled={busy || done} onClick={fire}>
+            {done ? t.sentLabel : t.fire}
+          </button>
         </>
       )}
     </div>

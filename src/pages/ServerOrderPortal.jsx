@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { apiFetch, ApiUnavailableError } from "../lib/api.js";
 import { useAuth, LOGIN_FOR } from "../lib/auth.jsx";
-import { MediaThumb } from "../components/ui.jsx";
+import { MediaThumb, usd } from "../components/ui.jsx";
 import { useLocale } from "../i18n.jsx";
 
 const COPY = {
@@ -43,6 +43,8 @@ const COPY = {
     responded: "Thank you — your response is in. We'll take it from here.",
     timelineTitle: "Timeline",
     artifactsTitle: "Shared with you",
+    proposalTitle: "Your proposal",
+    specStone: "Stone", specMetal: "Metal", specTotal: "Total, all-inclusive",
     emailTail: "Questions? Reply to any of our order emails — they reach the same team.",
   },
   ko: {
@@ -80,6 +82,8 @@ const COPY = {
     responded: "감사합니다 — 응답이 접수됐습니다. 이후 진행은 저희가 맡을게요.",
     timelineTitle: "타임라인",
     artifactsTitle: "공유된 자료",
+    proposalTitle: "제안",
+    specStone: "스톤", specMetal: "메탈", specTotal: "총액 (올인클루시브)",
     emailTail: "궁금한 점은 주문 메일에 회신해 주세요 — 같은 팀에게 바로 전달됩니다.",
   },
   zh: {
@@ -117,6 +121,8 @@ const COPY = {
     responded: "谢谢 — 已收到您的回复，后续交给我们。",
     timelineTitle: "时间线",
     artifactsTitle: "与您共享",
+    proposalTitle: "您的方案",
+    specStone: "钻石", specMetal: "金属", specTotal: "总价（全包）",
     emailTail: "如有疑问，直接回复订单邮件即可 — 同一团队为您服务。",
   },
   es: {
@@ -154,9 +160,21 @@ const COPY = {
     responded: "Gracias — recibimos tu respuesta. Nosotros seguimos desde aquí.",
     timelineTitle: "Cronología",
     artifactsTitle: "Compartido contigo",
+    proposalTitle: "Tu propuesta",
+    specStone: "Piedra", specMetal: "Metal", specTotal: "Total, todo incluido",
     emailTail: "¿Preguntas? Responde a cualquiera de nuestros correos del pedido.",
   },
 };
+
+// Account(My Page) 서버 주문 카드가 같은 라벨을 쓰도록 export
+export function serverStageLabel(stage, locale) {
+  const t = COPY[locale] || COPY.en;
+  return t.stages[stage] || stage;
+}
+export function serverActionLabel(kind, locale) {
+  const t = COPY[locale] || COPY.en;
+  return t.kinds[kind] || t.nextTitle;
+}
 
 function fmtDate(iso, locale) {
   if (!iso) return "";
@@ -271,17 +289,41 @@ export default function ServerOrderPortal({ orderCode }) {
       )}
       {respondedId && !action && <p className="client-action-notice" role="status">{t.responded}</p>}
 
-      {/* 공유 자료 (발행된 아티팩트 미디어) */}
-      {order.publishedArtifacts?.some((a) => a.media?.length) && (
-        <section className="panel">
-          <p className="section-label">{t.artifactsTitle}</p>
-          <div className="card-grid cols-3">
-            {order.publishedArtifacts.flatMap((a) => (a.media || []).map((m, i) => (
-              <MediaThumb key={`${a.id}-${i}`} media={m} alt={a.versionLabel} ratio="1 / 1" />
-            )))}
-          </div>
-        </section>
-      )}
+      {/* 발행된 아티팩트 — 제안(QUOTE)은 스펙·노트·총액까지 카드로, 그 외는 미디어+노트 */}
+      {order.publishedArtifacts?.map((a) => {
+        const pay = a.payload || {};
+        const specs = [
+          [t.specStone, pay.stoneSpec],
+          [t.specMetal, pay.metalSpec],
+        ].filter(([, v]) => v);
+        const hasContent = a.media?.length || pay.note || pay.totalUsd || specs.length;
+        if (!hasContent) return null;
+        return (
+          <section className="panel form-stack" key={a.id}>
+            <p className="section-label">{a.type === "QUOTE" ? t.proposalTitle : t.artifactsTitle}</p>
+            {a.media?.length > 0 && (
+              <div className="card-grid cols-3">
+                {a.media.map((m, i) => <MediaThumb key={i} media={m} alt={a.versionLabel} ratio="1 / 1" />)}
+              </div>
+            )}
+            {(specs.length > 0 || pay.totalUsd) && (
+              <div className="client-brief-list" style={{ display: "grid", gap: 0 }}>
+                {specs.map(([label, value]) => (
+                  <div key={label} style={{ display: "flex", justifyContent: "space-between", gap: 14, padding: "8px 0", borderBottom: "1px solid var(--hair)" }}>
+                    <span className="form-hint">{label}</span><strong style={{ fontSize: 14 }}>{value}</strong>
+                  </div>
+                ))}
+                {pay.totalUsd > 0 && (
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 14, padding: "8px 0" }}>
+                    <span className="form-hint">{t.specTotal}</span><strong style={{ fontSize: 16 }}>{usd(pay.totalUsd)}</strong>
+                  </div>
+                )}
+              </div>
+            )}
+            {pay.note && <p className="form-hint" style={{ margin: 0 }}>{pay.note}</p>}
+          </section>
+        );
+      })}
 
       {/* 타임라인 */}
       <section className="panel">

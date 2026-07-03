@@ -40,6 +40,10 @@
   outline: none;
   border-color: rgba(214, 197, 160, 0.6);
 }
+/* 클릭 가능한 테이블 행 — 행 전체가 상세로 이동 */
+.data-table tr.row-clickable { cursor: pointer; }
+.data-table tr.row-clickable:hover td { background: var(--bg-2); }
+
 /* OTP 6칸 세그먼트 — 투명 인풋이 박스 전체를 덮는다 (탭하면 키보드, 커서는 활성 칸에만) */
 .otp-field { position: relative; }
 .otp-field .otp-input {

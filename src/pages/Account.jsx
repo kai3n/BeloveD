@@ -1,9 +1,12 @@
+import { useEffect, useState } from "react";
 import { Link, Outlet } from "react-router-dom";
 import { useAuth } from "../lib/auth.jsx";
+import { apiFetch } from "../lib/api.js";
 import { getOpsStyle, listCustomerActions, listOpsOrders } from "../lib/store.js";
 import { useDBVersion } from "../lib/useDB.js";
 import { EmptyNote } from "../components/ui.jsx";
 import { pickI18n, useLocale } from "../i18n.jsx";
+import { serverActionLabel, serverStageLabel } from "./ServerOrderPortal.jsx";
 
 const accountCopy = {
   en: {
@@ -162,6 +165,60 @@ export function AccountOrders() {
   const copy = accountCopy[locale] ?? accountCopy.en;
   const { user } = useAuth();
   const orders = listOpsOrders({ customerId: user.id });
+
+  // 실서버(BD-) 주문이 진실 — 있으면 로컬 데모 미러(DM-) 대신 이것만 보여준다.
+  // 같은 제출이 DM-/BD- 두 번호로 따로 보이던 혼란 제거. 서버 미접속(정적 데모)이면 로컬 폴백.
+  const [serverOrders, setServerOrders] = useState([]);
+  useEffect(() => {
+    let cancelled = false;
+    apiFetch("/orders")
+      .then((d) => { if (!cancelled) setServerOrders(d.orders || []); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [user?.id]);
+
+  if (serverOrders.length > 0) {
+    return (
+      <>
+        <p className="page-sub" style={{ marginTop: 0 }}>{p.account.welcome(user.name)}</p>
+        <section className="account-section">
+          <div className="account-orders-heading">
+            <div>
+              <p className="section-label">{copy.ordersKicker}</p>
+              <h2>{copy.ordersTitle}</h2>
+            </div>
+            <p className="page-sub">{copy.ordersBody}</p>
+          </div>
+          <div className="account-order-list">
+            {serverOrders.map((o) => {
+              const needsAction = o.nextAction?.status === "OPEN";
+              const stageLabel = serverStageLabel(o.stage, locale);
+              return (
+                <Link className={`account-workspace-card${needsAction ? " needs-action" : ""}`} to={`/orders/${o.orderCode}`} key={o.orderCode}>
+                  <div className="account-workspace-main">
+                    <div className="proposal-head">
+                      <span>{o.orderCode}</span>
+                      <span className={`status-badge ${needsAction ? "mst-waitingClient" : "mst-inProgress"}`}>{needsAction ? copy.yourTurn : stageLabel}</span>
+                    </div>
+                    <h3>{copy.customRequest}</h3>
+                    <p className="account-order-meta">
+                      {o.expectedCompletionAt ? copy.requestedBy(String(o.expectedCompletionAt).slice(0, 10)) : copy.created(String(o.updatedAt).slice(0, 10))}
+                    </p>
+                  </div>
+                  <div className="account-workspace-action">
+                    <span>{needsAction ? copy.currentAction : copy.currentStage}</span>
+                    <strong>{needsAction ? serverActionLabel(o.nextAction.kind, locale) : stageLabel}</strong>
+                    <p>{needsAction ? "" : copy.noOpenAction}</p>
+                  </div>
+                  <span className="account-card-cta">{needsAction ? copy.reviewNow : copy.viewWorkspace} →</span>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      </>
+    );
+  }
 
   return (
     <>
