@@ -21,7 +21,7 @@ const METAL_LABELS = {
 const COPY = {
   en: {
     title: "Live orders", kicker: "REAL-SERVER ORDERS",
-    liveSection: "Live orders", pastSection: "Past orders", total: "Total",
+    liveSection: "Live orders", pastSection: "Past orders", totalCol: "Total",
     emptyPast: "No delivered orders yet — completed orders and revenue land here.",
     statOpen: "Open orders", statRevenue: "Total revenue", statDelivered: "Delivered", statAvg: "Average order", statPipeline: "Pipeline (quoted)",
     empty: "No live orders yet — they appear the moment a customer submits the wizard.",
@@ -56,7 +56,7 @@ const COPY = {
   },
   ko: {
     title: "실주문", kicker: "실서버 주문",
-    liveSection: "진행 중 주문", pastSection: "지난 주문", total: "총액",
+    liveSection: "진행 중 주문", pastSection: "지난 주문", totalCol: "총액",
     emptyPast: "완료된 주문이 아직 없습니다 — 배송 완료된 주문과 매출이 여기에 쌓입니다.",
     statOpen: "진행 중", statRevenue: "총 매출", statDelivered: "완료 주문", statAvg: "평균 주문액", statPipeline: "견적 파이프라인",
     empty: "아직 실주문이 없습니다 — 고객이 위저드를 제출하면 바로 나타납니다.",
@@ -91,7 +91,7 @@ const COPY = {
   },
   zh: {
     title: "实时订单", kicker: "真实服务器订单",
-    liveSection: "进行中订单", pastSection: "历史订单", total: "总价",
+    liveSection: "进行中订单", pastSection: "历史订单", totalCol: "总价",
     emptyPast: "暂无已完成订单 — 已交付订单与收入将显示在这里。",
     statOpen: "进行中", statRevenue: "总收入", statDelivered: "已完成", statAvg: "平均订单额", statPipeline: "报价管道",
     empty: "暂无实时订单 — 客户提交向导后会立即出现。",
@@ -126,7 +126,7 @@ const COPY = {
   },
   es: {
     title: "Pedidos en vivo", kicker: "PEDIDOS DEL SERVIDOR",
-    liveSection: "Pedidos activos", pastSection: "Pedidos pasados", total: "Total",
+    liveSection: "Pedidos activos", pastSection: "Pedidos pasados", totalCol: "Total",
     emptyPast: "Aún no hay pedidos entregados — los completados y los ingresos aparecerán aquí.",
     statOpen: "Activos", statRevenue: "Ingresos totales", statDelivered: "Entregados", statAvg: "Pedido promedio", statPipeline: "Pipeline (cotizado)",
     empty: "Aún no hay pedidos en vivo — aparecen cuando un cliente envía el asistente.",
@@ -198,7 +198,7 @@ function OrdersTable({ orders, t, navigate, withTotal = false }) {
         <thead>
           <tr>
             <th>Order</th><th>{t.customer}</th><th>{t.category}</th><th>{t.stage}</th>
-            {withTotal ? <th>{t.total}</th> : <th>{t.waiting}</th>}
+            {withTotal ? <th>{t.totalCol}</th> : <th>{t.waiting}</th>}
             <th>{t.updated}</th>
           </tr>
         </thead>
