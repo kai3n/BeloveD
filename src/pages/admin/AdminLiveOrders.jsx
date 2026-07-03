@@ -545,12 +545,14 @@ export function AdminLiveOrderDetail() {
         const firstOpenType = FLOW.find((s2) => stageIdxNow < STAGE_ORDER.indexOf(s2.reaches))?.type || null;
         const openKinds = new Set(actions.filter((a) => a.status === "OPEN").map((a) => a.kind));
         return FLOW.map((step, i) => {
-          // 고객이 수정 요청한 컨펌 종류는 해당 스텝을 다시 연다 (새 OPEN 액션이 생기면 다시 잠김)
-          const changeRequest = step.action && !openKinds.has(step.action.kind)
+          // 고객이 수정 요청한 컨펌 종류는 해당 스텝을 다시 연다.
+          // 단, 판단 기준은 "가장 최근 응답" — 이후에 승인(APPROVE)이 왔으면 이전 수정 요청은 소멸.
+          const lastResponded = step.action && !openKinds.has(step.action.kind)
             ? actions
-              .filter((a) => a.kind === step.action.kind && a.status === "RESPONDED" && a.responsePayload?.response === "REQUEST_CHANGES")
+              .filter((a) => a.kind === step.action.kind && a.status === "RESPONDED")
               .sort((x, y) => new Date(y.respondedAt) - new Date(x.respondedAt))[0] || null
             : null;
+          const changeRequest = lastResponded?.responsePayload?.response === "REQUEST_CHANGES" ? lastResponded : null;
           const done = stageIdxNow >= STAGE_ORDER.indexOf(step.reaches);
           const expanded = !done && (expandedStep ? expandedStep === step.type : step.type === firstOpenType);
           return (

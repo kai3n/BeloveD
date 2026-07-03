@@ -359,7 +359,7 @@ function ProposalCard({ quote, intake, style, fc, t, p, locale, shippingProps, o
 // Zelle/Venmo 결제 내용 — 디파짓·잔금 공용. 스테이지 안 콘텐츠 전용 (reported면 안내문, 아니면 셀프리포트 버튼)
 // memoText: 송금 앱 메모에 그대로 붙여넣는 완성 메시지 (예: "BeloveD DM-000009 · Deposit")
 // 실서버 포털(ServerOrderPortal)도 재사용 — 결제 핸들·QR은 시드 settings에서
-export function PaymentCard({ amountUsd, memoText, reported, fc, sentCta, reportedNote, onReport }) {
+export function PaymentCard({ amountUsd, amountLabel = "", amountContext = "", memoText, reported, fc, sentCta, reportedNote, onReport }) {
   const payment = getSettings().payment || {};
   const [copiedKey, setCopiedKey] = useState("");
   const methods = [
@@ -374,7 +374,9 @@ export function PaymentCard({ amountUsd, memoText, reported, fc, sentCta, report
   return (
     <div className="payment-card">
       <div className="payment-hero">
+        {amountLabel && <span className="payment-amount-label">{amountLabel}</span>}
         <div className="payment-amount">{usd(amountUsd)}</div>
+        {amountContext && <p className="payment-amount-context">{amountContext}</p>}
       </div>
 
       {/* 1 · 보내기 — QR 스캔 또는 받는 계정 복사 (핸들 원문은 노출하지 않는다) */}
@@ -861,6 +863,8 @@ function ClientPortal() {
         {quote && (
           <PaymentCard
             amountUsd={quote.depositUsd}
+            amountLabel={fc.depositToday}
+            amountContext={`${fc.totalLabel} ${usd(quote.totalUsd)} · ${fc.balanceShip} ${usd(quote.balanceUsd)}`}
             memoText={`BeloveD ${order.id} Deposit`}
             reported={depositCardState === "reported"}
             fc={fc}
@@ -899,6 +903,8 @@ function ClientPortal() {
         {order.status === "BALANCE" && quote && (
           <PaymentCard
             amountUsd={quote.balanceUsd}
+            amountLabel={fc.balanceShip}
+            amountContext={`${fc.totalLabel} ${usd(quote.totalUsd)}`}
             memoText={`BeloveD ${order.id} Balance`}
             reported={false}
             fc={fc}

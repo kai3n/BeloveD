@@ -5189,7 +5189,10 @@ button.text-link:hover {
 .payment-card.is-locked, .payment-card.is-done { opacity: 0.75; }
 .payment-card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .payment-card-head h3 { margin: 2px 0 0; font-family: var(--serif); font-size: 21px; }
-.payment-hero { display: grid; justify-items: center; gap: 10px; padding: 6px 0 0; }
+.payment-hero { display: grid; justify-items: center; gap: 6px; padding: 6px 0 0; }
+/* 금액이 무엇인지(디파짓/잔금) 한눈에 — 라벨 + 총액·잔금 맥락 줄 */
+.payment-amount-label { font-size: 11px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent-bright); }
+.payment-amount-context { margin: 0; color: var(--muted); font-size: 12.5px; }
 .payment-amount {
   text-align: center; font-family: var(--luxury-display);
   font-size: clamp(34px, 6vw, 46px); line-height: 1.05;

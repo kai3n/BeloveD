@@ -540,6 +540,8 @@ export default function ServerOrderPortal({ orderCode }) {
           )}
           <PaymentCard
             amountUsd={payDeposit}
+            amountLabel={fc.depositToday}
+            amountContext={`${fc.totalLabel} ${usd(payTotal)} · ${fc.balanceShip} ${usd(payTotal - payDeposit)}`}
             memoText={`BeloveD ${order.orderCode} Deposit`}
             reported={depositReported}
             fc={fc}
@@ -555,6 +557,8 @@ export default function ServerOrderPortal({ orderCode }) {
         <Checkpoint id="bd-balance" index="3-1" title={fc.balanceTitle} state={balanceState} summary={usd(payTotal - payDeposit)}>
           <PaymentCard
             amountUsd={payTotal - payDeposit}
+            amountLabel={fc.balanceShip}
+            amountContext={`${fc.totalLabel} ${usd(payTotal)} · ${fc.doneBadge} ${usd(payDeposit)}`}
             memoText={`BeloveD ${order.orderCode} Balance`}
             reported={balanceReported}
             fc={fc}
