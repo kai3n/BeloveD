@@ -37,6 +37,10 @@ function orderView(row) {
     waitingOn: row.waiting_on,
     expectedCompletionAt: row.expected_completion_at,
     summary: row.summary || {},
+    // 평면 별칭 — 목록 테이블 소비자용 (nested customer와 중복 유지)
+    customerEmail: row.customer_email,
+    customerName: row.customer_name,
+    locale: row.customer_locale,
     customer: {
       customerCode: row.customer_code,
       name: row.customer_name,

@@ -9,6 +9,7 @@ export default function Admin() {
   const location = useLocation();
   const isOrderDetail = /^\/admin\/orders\/[^/]+/.test(location.pathname);
   const menu = [
+    { to: "/admin/live", key: "live", ops: true },
     { to: "/admin/orders", key: "orders", ops: true },
     { to: "/admin/designs", key: "styles", ops: true },
     { to: "/admin/benchmark", key: "benchmark", ops: true },

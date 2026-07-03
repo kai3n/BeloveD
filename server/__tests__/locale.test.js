@@ -61,12 +61,16 @@ describe("인테이크 제출 — 접수 메일이 고객 언어로 나간다", 
       email: "es@test.com", name: "Sofia", locale: "es",
       category: "ring", productLine: "solitaire", termsAccepted: true,
       conditional: { ringSize: "6" },
+      // 회귀: 비어있지 않은 referenceMedia(jsonb) — pg 배열 직렬화 함정으로 500 나던 케이스
+      referenceMedia: [{ kind: "image", src: "https://pub.example/ref.jpg" }],
     });
     expect(res.status).toBe(201);
     expect(res.body.orderCode).toMatch(/^BD-\d{6}$/);
 
     const { rows } = await query("select locale from customers where email=$1", ["es@test.com"]);
     expect(rows[0].locale).toBe("es");
+    const intake = await query("select reference_media from customer_intakes order by id desc limit 1");
+    expect(intake.rows[0].reference_media).toEqual([{ kind: "image", src: "https://pub.example/ref.jpg" }]);
 
     // 메일은 응답 후 fire-and-forget — 마이크로태스크 한 틱 대기
     await new Promise((r) => setTimeout(r, 50));

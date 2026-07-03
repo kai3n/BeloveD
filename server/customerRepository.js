@@ -209,7 +209,9 @@ export async function createDraftIntake(payload = {}) {
         payload.requiredDate || null,
         payload.deliveryCountry || payload.country || null,
         payload,
-        payload.referenceMedia || [],
+        // 왜: node-pg는 JS 배열을 Postgres 배열 리터럴로 직렬화한다 — jsonb 컬럼엔
+        // 반드시 stringify (비어있지 않은 referenceMedia가 통째로 500 나던 버그)
+        JSON.stringify(payload.referenceMedia || []),
       ],
     );
     return intakeView(rows[0]);
@@ -535,10 +537,25 @@ export const EVENT_TRANSITIONS = {
   delivered: { stage: "DELIVERED", phase: "CLOSED", waitingOn: "NONE" },
 };
 
-export async function recordOrderEvent(orderCode, type, data = {}) {
+// 이벤트에 실어 보낼 수 있는 발행물 — 스키마 check 제약과 동일 목록 (사전 검증으로 500 대신 400)
+const ARTIFACT_TYPES = new Set(["REFERENCE", "DIAMOND_OPTION", "QUOTE", "CAD", "QC", "CERTIFICATE", "SHIPMENT"]);
+const ACTION_KINDS = new Set([
+  "DIAMOND_SELECTION", "QUOTE_ACCEPTANCE", "CAD_REVIEW", "FINAL_WEIGHT_ACCEPTANCE",
+  "FINAL_QC_CONFIRMATION", "DELIVERY_ADDRESS",
+]);
+
+// extras.artifact: 고객 포털에 공개할 미디어/페이로드, extras.action: 열릴 고객 컨펌.
+// 같은 트랜잭션에서 stage 전이와 함께 원자적으로 발행된다 — 절반만 적용되는 상태 없음.
+export async function recordOrderEvent(orderCode, type, data = {}, extras = {}) {
   // 왜: EVENT_TRANSITIONS[type]는 상속된 Object.prototype 속성명("toString" 등)도 truthy로 통과시킨다 — own-property로만 검사
   const transition = Object.hasOwn(EVENT_TRANSITIONS, type) ? EVENT_TRANSITIONS[type] : null;
   if (!transition) throw new ApiError("VALIDATION_ERROR", 400, `unknown event type: ${type}`);
+  if (extras.artifact && !ARTIFACT_TYPES.has(extras.artifact.type)) {
+    throw new ApiError("VALIDATION_ERROR", 400, "unknown artifact type");
+  }
+  if (extras.action && !ACTION_KINDS.has(extras.action.kind)) {
+    throw new ApiError("VALIDATION_ERROR", 400, "unknown action kind");
+  }
   return withTransaction(async (client) => {
     const { rows } = await client.query(
       `select o.*, c.email, c.locale from customer_orders o
@@ -559,11 +576,77 @@ export async function recordOrderEvent(orderCode, type, data = {}) {
        where id = $1`,
       [order.id, transition.stage, transition.phase, transition.waitingOn],
     );
+
+    let artifactCode = null;
+    if (extras.artifact) {
+      const a = extras.artifact;
+      artifactCode = await nextCode(client, "ART");
+      await client.query(
+        `insert into published_artifacts (artifact_code, order_id, type, version_label, subject_version_id, payload, media)
+         values ($1, $2, $3, $4, $5, $6, $7)`,
+        [artifactCode, order.id, a.type, a.versionLabel || "V1", a.subjectVersionId || artifactCode,
+          a.payload || {}, JSON.stringify(a.media || [])],
+      );
+    }
+
+    let actionCode = null;
+    if (extras.action) {
+      const act = extras.action;
+      // 한 번에 열린 컨펌은 하나 — 이전 열린 액션은 취소하고 새 액션을 다음 액션으로 지정
+      await client.query(
+        "update customer_actions set status = 'CANCELLED', updated_at = now() where order_id = $1 and status = 'OPEN'",
+        [order.id],
+      );
+      actionCode = await nextCode(client, "ACT");
+      const inserted = await client.query(
+        `insert into customer_actions (action_code, order_id, kind, title, description, subject_type, subject_version_id, due_at, allowed_responses)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+         returning id`,
+        [actionCode, order.id, act.kind, act.title || type, act.description || null,
+          act.subjectType || extras.artifact?.type || "ORDER",
+          act.subjectVersionId || artifactCode || orderCode,
+          act.dueAt || null, act.allowedResponses || []],
+      );
+      await client.query(
+        "update customer_orders set next_action_id = $2, updated_at = now() where id = $1",
+        [order.id, inserted.rows[0].id],
+      );
+    }
+
     await client.query(
       `insert into audit_log (actor_type, actor_ref, entity_type, entity_ref, action, before_json, after_json)
        values ('admin', null, 'order', $1, $2, $3, $4)`,
-      [orderCode, `event:${type}`, { stage: order.stage }, { stage: transition.stage, data }],
+      [orderCode, `event:${type}`, { stage: order.stage }, { stage: transition.stage, data, artifactCode, actionCode }],
     );
-    return { orderCode, stage: transition.stage, eventId: eventCode, notify: { email: order.email, locale: order.locale } };
+    return {
+      orderCode, stage: transition.stage, eventId: eventCode, artifactCode, actionCode,
+      notify: { email: order.email, locale: order.locale },
+    };
   });
+}
+
+// 어드민 실주문 콘솔 — 서버 주문 목록. 어드민 전용이라 고객 이메일 노출 허용.
+// 최근 갱신 순, 진행 중 주문을 위로 (CLOSED/CANCELLED는 뒤).
+export async function listServerOrders({ limit = 100 } = {}) {
+  const { rows } = await query(
+    `select o.order_code, o.stage, o.phase, o.waiting_on, o.created_at, o.updated_at, o.summary,
+            c.name as customer_name, c.email as customer_email, c.locale
+     from customer_orders o
+     join customers c on c.id = o.customer_id
+     order by (o.phase = 'CLOSED' or o.stage = 'CANCELLED'), o.updated_at desc
+     limit $1`,
+    [Math.min(Number(limit) || 100, 200)],
+  );
+  return rows.map((r) => ({
+    orderCode: r.order_code,
+    stage: r.stage,
+    phase: r.phase,
+    waitingOn: r.waiting_on,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+    summary: r.summary || {},
+    customerName: r.customer_name,
+    customerEmail: r.customer_email,
+    locale: r.locale,
+  }));
 }

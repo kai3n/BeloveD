@@ -11,6 +11,7 @@ import { mediaRouter } from "./mediaRoutes.js";
 import { customerRouter } from "./customerRoutes.js";
 import { activityRouter } from "./activityRoutes.js";
 import { adminActivityRouter } from "./adminActivityRoutes.js";
+import { adminOrderRouter } from "./adminOrderRoutes.js";
 import { runActivityMaintenance } from "./activityMaintenance.js";
 
 const distDir = join(dirname(fileURLToPath(import.meta.url)), "..", "dist");
@@ -40,6 +41,7 @@ export function createApp() {
   app.use("/v1/activity", express.text({ type: "text/plain", limit: "64kb" }));
   app.use("/v1/activity", activityRouter());
   app.use("/v1/admin", adminActivityRouter());
+  app.use("/v1/admin", adminOrderRouter());
 
   // Vercel Cron 전용 — CRON_SECRET 불일치·미설정 시 404로 존재 자체를 숨긴다.
   app.get("/v1/internal/activity-maintenance", async (req, res, next) => {

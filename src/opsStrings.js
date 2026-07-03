@@ -319,7 +319,7 @@ const en = {
     chipTitle: "Annotation chips (tap to enable/disable)",
   },
   opsA: {
-    menu: { orders: "Order Control", styles: "Style Library", benchmark: "Diamond Pricing", reviews: "Reviews", members: "Members", checklist: "Daily Checklist" },
+    menu: { live: "Live Orders", orders: "Order Control", styles: "Style Library", benchmark: "Diamond Pricing", reviews: "Reviews", members: "Members", checklist: "Daily Checklist" },
     members: {
       title: "Members & Activity",
       kpi: { today: "Sessions today", sessions7d: "Sessions · 7d", pageViews7d: "Page views · 7d", active: "Active members · 7d" },
@@ -741,7 +741,7 @@ const ko = {
     chipTitle: "주석 칩 관리 (탭하여 활성/비활성)",
   },
   opsA: {
-    menu: { orders: "주문 관제", styles: "스타일 라이브러리", benchmark: "다이아 벤치마크", reviews: "리뷰 관리", members: "회원", checklist: "데일리 체크" },
+    menu: { live: "실주문", orders: "주문 관제", styles: "스타일 라이브러리", benchmark: "다이아 벤치마크", reviews: "리뷰 관리", members: "회원", checklist: "데일리 체크" },
     members: {
       title: "회원·활동",
       kpi: { today: "오늘 세션", sessions7d: "세션 · 7일", pageViews7d: "페이지뷰 · 7일", active: "활성 회원 · 7일" },
@@ -1163,7 +1163,7 @@ const zh = {
     chipTitle: "标注标签管理（点按启用/停用）",
   },
   opsA: {
-    menu: { orders: "订单管控", styles: "款式库", benchmark: "钻石基准价", reviews: "评价管理", members: "会员", checklist: "每日检查" },
+    menu: { live: "实时订单", orders: "订单管控", styles: "款式库", benchmark: "钻石基准价", reviews: "评价管理", members: "会员", checklist: "每日检查" },
     members: {
       title: "会员·行为",
       kpi: { today: "今日会话", sessions7d: "会话 · 7天", pageViews7d: "页面浏览 · 7天", active: "活跃会员 · 7天" },
@@ -1585,7 +1585,7 @@ const es = {
     chipTitle: "Etiquetas de anotación (toca para activar/desactivar)",
   },
   opsA: {
-    menu: { orders: "Control de Pedidos", styles: "Biblioteca de Estilos", benchmark: "Precios de Diamante", reviews: "Reseñas", members: "Miembros", checklist: "Checklist Diario" },
+    menu: { live: "Pedidos en Vivo", orders: "Control de Pedidos", styles: "Biblioteca de Estilos", benchmark: "Precios de Diamante", reviews: "Reseñas", members: "Miembros", checklist: "Checklist Diario" },
     members: {
       title: "Miembros y actividad",
       kpi: { today: "Sesiones hoy", sessions7d: "Sesiones · 7d", pageViews7d: "Vistas · 7d", active: "Miembros activos · 7d" },

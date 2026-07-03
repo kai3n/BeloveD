@@ -4,7 +4,7 @@ import { rateLimit } from "./rateLimit.js";
 import { withTransaction, query } from "./db.js";
 import {
   createDraftIntake, submitIntake, requestHash, recordOrderEvent, EVENT_TRANSITIONS,
-  listCustomerOrders, getCustomerOrder, respondToAction,
+  listCustomerOrders, getCustomerOrder, respondToAction, listServerOrders,
 } from "./customerRepository.js";
 import { sendOrderEventMail } from "./orderMail.js";
 import { requireAdmin, requireCustomer } from "./middleware.js";
@@ -74,16 +74,27 @@ export function customerRouter() {
     requireAdmin,
     async (req, res, next) => {
       try {
-        const { type, data } = req.body || {};
+        const { type, data, artifact, action } = req.body || {};
         // 왜: EVENT_TRANSITIONS[type]는 상속된 Object.prototype 속성명("toString" 등)도 truthy로 통과시킨다 — own-property로만 검사
         if (!Object.hasOwn(EVENT_TRANSITIONS, type) || type === "received") {
           throw new ApiError("VALIDATION_ERROR", 400, "unknown event type");
         }
-        const result = await recordOrderEvent(req.params.orderCode, type, data || {});
-        res.status(201).json({ ok: true, orderCode: result.orderCode, stage: result.stage, eventId: result.eventId });
+        // artifact(포털 공개 미디어/페이로드)·action(열릴 고객 컨펌)은 stage 전이와 같은 트랜잭션에서 발행
+        const result = await recordOrderEvent(req.params.orderCode, type, data || {}, { artifact, action });
+        res.status(201).json({ ok: true, orderCode: result.orderCode, stage: result.stage, eventId: result.eventId, artifactCode: result.artifactCode || null, actionCode: result.actionCode || null });
         if (result.notify?.email) {
           fireMail(sendOrderEventMail({ ...result.notify, orderCode: result.orderCode, type, data: data || {} }), type);
         }
+      } catch (e) { next(e); }
+    });
+
+  // 어드민 실주문 콘솔 — 서버 주문 목록 (어드민이 실제 BD- 주문에 상태 이벤트를 발사할 대상)
+  r.get("/admin/orders",
+    rateLimit({ limit: 60, windowMs: MINUTE, keyFn: (req) => `admin-orders:${req.ip}` }),
+    requireAdmin,
+    async (req, res, next) => {
+      try {
+        res.json({ orders: await listServerOrders({ limit: Number(req.query.limit) || 100 }) });
       } catch (e) { next(e); }
     });
 

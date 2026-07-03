@@ -25,12 +25,20 @@ const COPY = {
       NONE: "All done — enjoy your piece.",
     },
     stages: {
-      OPS_REVIEW: "Reviewing your request", STONE_SELECTION: "Selecting your stone", QUOTE: "Preparing your proposal",
+      OPS_REVIEW: "Reviewing your request", STONE_SELECTION: "Selecting your stone", QUOTE: "Review your proposal",
       DEPOSIT: "Reserved — deposit", CAD: "Designing", PRODUCTION: "Crafting", FINAL_QC: "Final quality check",
       BALANCE: "Balance", SHIPPING: "Shipping", DELIVERED: "Delivered", CANCELLED: "Cancelled",
     },
     phases: { DEFINE: "Define your piece", APPROVE_DESIGN: "Approve the design", MAKING: "We make it", DELIVERY: "Deliver" },
     nextTitle: "Your confirmation",
+    kinds: {
+      QUOTE_ACCEPTANCE: "Review and confirm your proposal",
+      CAD_REVIEW: "Review your design",
+      FINAL_QC_CONFIRMATION: "Confirm your finished piece",
+      FINAL_WEIGHT_ACCEPTANCE: "Confirm the final weight",
+      DIAMOND_SELECTION: "Choose your stone",
+      DELIVERY_ADDRESS: "Confirm your delivery address",
+    },
     respond: { APPROVE: "Approve", ACCEPT: "Accept", CONFIRM: "Confirm", REQUEST_CHANGES: "Request changes", REJECT: "Decline" },
     responded: "Thank you — your response is in. We'll take it from here.",
     timelineTitle: "Timeline",
@@ -54,12 +62,20 @@ const COPY = {
       NONE: "모든 단계가 끝났습니다 — 마음껏 즐겨주세요.",
     },
     stages: {
-      OPS_REVIEW: "요청 검토 중", STONE_SELECTION: "스톤 선정 중", QUOTE: "제안 준비 중",
+      OPS_REVIEW: "요청 검토 중", STONE_SELECTION: "스톤 선정 중", QUOTE: "제안 확인 대기",
       DEPOSIT: "예약 — 디파짓", CAD: "디자인 중", PRODUCTION: "제작 중", FINAL_QC: "최종 품질 확인",
       BALANCE: "잔금", SHIPPING: "배송 중", DELIVERED: "배송 완료", CANCELLED: "취소됨",
     },
     phases: { DEFINE: "피스 확정", APPROVE_DESIGN: "디자인 승인", MAKING: "제작", DELIVERY: "배송" },
     nextTitle: "고객 컨펌",
+    kinds: {
+      QUOTE_ACCEPTANCE: "제안을 확인하고 컨펌해 주세요",
+      CAD_REVIEW: "디자인을 확인해 주세요",
+      FINAL_QC_CONFIRMATION: "완성품을 컨펌해 주세요",
+      FINAL_WEIGHT_ACCEPTANCE: "최종 중량을 확인해 주세요",
+      DIAMOND_SELECTION: "스톤을 선택해 주세요",
+      DELIVERY_ADDRESS: "배송지를 확인해 주세요",
+    },
     respond: { APPROVE: "승인", ACCEPT: "수락", CONFIRM: "컨펌", REQUEST_CHANGES: "수정 요청", REJECT: "반려" },
     responded: "감사합니다 — 응답이 접수됐습니다. 이후 진행은 저희가 맡을게요.",
     timelineTitle: "타임라인",
@@ -83,12 +99,20 @@ const COPY = {
       NONE: "全部完成 — 愿您喜欢。",
     },
     stages: {
-      OPS_REVIEW: "审核请求中", STONE_SELECTION: "挑选钻石中", QUOTE: "准备方案中",
+      OPS_REVIEW: "审核请求中", STONE_SELECTION: "挑选钻石中", QUOTE: "待您确认方案",
       DEPOSIT: "已预订 — 定金", CAD: "设计中", PRODUCTION: "制作中", FINAL_QC: "最终质检",
       BALANCE: "尾款", SHIPPING: "配送中", DELIVERED: "已送达", CANCELLED: "已取消",
     },
     phases: { DEFINE: "确定作品", APPROVE_DESIGN: "确认设计", MAKING: "制作", DELIVERY: "交付" },
     nextTitle: "待您确认",
+    kinds: {
+      QUOTE_ACCEPTANCE: "请查看并确认方案",
+      CAD_REVIEW: "请查看设计",
+      FINAL_QC_CONFIRMATION: "请确认成品",
+      FINAL_WEIGHT_ACCEPTANCE: "请确认最终重量",
+      DIAMOND_SELECTION: "请选择钻石",
+      DELIVERY_ADDRESS: "请确认收货地址",
+    },
     respond: { APPROVE: "同意", ACCEPT: "接受", CONFIRM: "确认", REQUEST_CHANGES: "请求修改", REJECT: "拒绝" },
     responded: "谢谢 — 已收到您的回复，后续交给我们。",
     timelineTitle: "时间线",
@@ -112,12 +136,20 @@ const COPY = {
       NONE: "Todo listo — disfruta tu pieza.",
     },
     stages: {
-      OPS_REVIEW: "Revisando tu solicitud", STONE_SELECTION: "Seleccionando tu piedra", QUOTE: "Preparando tu propuesta",
+      OPS_REVIEW: "Revisando tu solicitud", STONE_SELECTION: "Seleccionando tu piedra", QUOTE: "Revisa tu propuesta",
       DEPOSIT: "Reservado — depósito", CAD: "Diseñando", PRODUCTION: "Fabricando", FINAL_QC: "Control final",
       BALANCE: "Saldo", SHIPPING: "En camino", DELIVERED: "Entregado", CANCELLED: "Cancelado",
     },
     phases: { DEFINE: "Define tu pieza", APPROVE_DESIGN: "Aprueba el diseño", MAKING: "La fabricamos", DELIVERY: "Entrega" },
     nextTitle: "Tu confirmación",
+    kinds: {
+      QUOTE_ACCEPTANCE: "Revisa y confirma tu propuesta",
+      CAD_REVIEW: "Revisa tu diseño",
+      FINAL_QC_CONFIRMATION: "Confirma tu pieza terminada",
+      FINAL_WEIGHT_ACCEPTANCE: "Confirma el peso final",
+      DIAMOND_SELECTION: "Elige tu piedra",
+      DELIVERY_ADDRESS: "Confirma tu dirección de entrega",
+    },
     respond: { APPROVE: "Aprobar", ACCEPT: "Aceptar", CONFIRM: "Confirmar", REQUEST_CHANGES: "Pedir cambios", REJECT: "Rechazar" },
     responded: "Gracias — recibimos tu respuesta. Nosotros seguimos desde aquí.",
     timelineTitle: "Cronología",
@@ -220,7 +252,7 @@ export default function ServerOrderPortal({ orderCode }) {
         <section className="panel checkpoint client-stage-section active">
           <div className="client-stage-head">
             <span className="client-stage-number">!</span>
-            <div><h3>{action.title || t.nextTitle}</h3>{action.description && <p>{action.description}</p>}</div>
+            <div><h3>{t.kinds[action.kind] || action.title || t.nextTitle}</h3>{action.description && <p>{action.description}</p>}</div>
             <span className="status-badge mst-waitingClient">{t.nextTitle}</span>
           </div>
           <div className="customer-decision-actions" style={{ marginTop: 12 }}>
