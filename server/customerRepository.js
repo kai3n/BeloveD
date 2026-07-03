@@ -1,13 +1,8 @@
 import { createHash } from "node:crypto";
 import { query, withTransaction } from "./db.js";
+import { ApiError } from "./errors.js";
 
-export class ApiError extends Error {
-  constructor(code, status = 400, message = code) {
-    super(message);
-    this.code = code;
-    this.status = status;
-  }
-}
+export { ApiError }; // adminRepository 등 기존 import 경로 호환
 
 const sequenceByPrefix = {
   CUS: "customer_code_seq",
@@ -283,7 +278,10 @@ export async function submitIntake(intakeCode) {
       "select * from customer_orders where intake_id = $1",
       [intake.id],
     );
-    if (existing.rows[0]) return orderSummaryView(existing.rows[0]);
+    if (existing.rows[0]) {
+      const c = (await client.query("select email, locale from customers where id = $1", [existing.rows[0].customer_id])).rows[0];
+      return { ...orderSummaryView(existing.rows[0]), created: false, notify: { email: c.email, locale: c.locale } };
+    }
 
     const email = normalizeEmail(intake.contact_email || intake.form_payload?.contactEmail || intake.form_payload?.email);
     const customer = intake.customer_id
@@ -336,7 +334,7 @@ export async function submitIntake(intakeCode) {
       [customer.customer_code, orderCode, order],
     );
 
-    return orderSummaryView(order);
+    return { ...orderSummaryView(order), created: true, notify: { email: customer.email, locale: customer.locale } };
   });
 }
 
