@@ -3,6 +3,7 @@ import { deleteReview, listReviews, setReviewStatus, upsertReviewManual } from "
 import { useDBVersion } from "../../lib/useDB.js";
 import { MediaPicker, MediaThumb } from "../../components/ui.jsx";
 import { useLocale } from "../../i18n.jsx";
+import { ConsoleHead } from "./console.jsx";
 
 // 홈 "Loved & Worn" 리뷰 큐레이션 — 운영자가 전부 수동 추가/수정/삭제/게시 제어
 const COPY = {
@@ -29,15 +30,10 @@ export default function AdminReviews() {
   }
 
   return (
-    <div className="page">
-      <header className="ops-order-header">
-        <div>
-          <p className="admin-kicker">Loved &amp; Worn</p>
-          <h1>{c.title}</h1>
-          <p>{c.sub}</p>
-        </div>
-        <button className="button primary" onClick={() => setDraft({ ...EMPTY })}>{c.add}</button>
-      </header>
+    <>
+      <ConsoleHead kicker="Loved & Worn" title={c.title} sub={c.sub}>
+        <button className="button primary small" onClick={() => setDraft({ ...EMPTY })}>{c.add}</button>
+      </ConsoleHead>
 
       {draft && (
         <div className="panel form-stack" style={{ marginBottom: 18 }}>
@@ -87,6 +83,6 @@ export default function AdminReviews() {
           </div>
         ))}
       </div>
-    </div>
+    </>
   );
 }

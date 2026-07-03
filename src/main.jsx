@@ -7,6 +7,7 @@ import { AuthProvider } from "./lib/auth.jsx";
 import { ThemeProvider } from "./theme.jsx";
 import "./styles.css";
 import "./platform.css";
+import "./admin.css";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>

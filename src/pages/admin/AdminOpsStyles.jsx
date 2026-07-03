@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Edit3, Plus, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Search, Trash2 } from "lucide-react";
 import {
   deleteOpsStyle,
   deleteStyleSpec,
@@ -15,6 +15,7 @@ import { MediaPicker, MediaThumb, usd } from "../../components/ui.jsx";
 import { pickI18n, useLocale } from "../../i18n.jsx";
 import { defaultSubcategoryFor, styleSubcategoryKey, subcategoryKeysFor } from "../../lib/designSlots.js";
 import { opsStrings } from "../../opsStrings.js";
+import { ConsoleHead, StatStrip } from "./console.jsx";
 
 const FALLBACK_MEDIA = "/assets/lab-diamond-tweezers.webp";
 const MAX_STYLE_MEDIA = 5;
@@ -32,6 +33,13 @@ const ADMIN_STYLE_UI = {
     sub: "Add, edit, publish, and manage the sample designs customers choose before submitting references.",
     library: "Library",
     libraryHint: "Select a style to edit. New styles stay private until published.",
+    searchPh: "Search name or ID",
+    untitled: "Untitled style",
+    emptyList: "No styles match here yet.",
+    countLabel: (n) => `${n} styles`,
+    statStyles: "Styles",
+    forSaleShort: "For sale",
+    draftShort: "Draft",
     newStyle: "New style",
     editStyle: "Edit style",
     draftStyle: "Create new style",
@@ -72,6 +80,13 @@ const ADMIN_STYLE_UI = {
     sub: "고객이 주문 전 선택하는 샘플 디자인을 추가, 수정, 공개, 미디어 관리까지 한 곳에서 처리합니다.",
     library: "라이브러리",
     libraryHint: "수정할 스타일을 선택하세요. 새 스타일은 공개 전까지 비공개로 관리됩니다.",
+    searchPh: "이름·ID 검색",
+    untitled: "이름 없는 스타일",
+    emptyList: "조건에 맞는 스타일이 없습니다.",
+    countLabel: (n) => `${n}개 스타일`,
+    statStyles: "스타일",
+    forSaleShort: "판매중",
+    draftShort: "초안",
     newStyle: "새 스타일",
     editStyle: "스타일 수정",
     draftStyle: "새 스타일 만들기",
@@ -112,6 +127,13 @@ const ADMIN_STYLE_UI = {
     sub: "集中添加、编辑、发布并管理客户下单前看到的样式和媒体。",
     library: "款式库",
     libraryHint: "选择要编辑的款式。新款式发布前保持私密。",
+    searchPh: "搜索名称或 ID",
+    untitled: "未命名款式",
+    emptyList: "没有符合条件的款式。",
+    countLabel: (n) => `${n} 款`,
+    statStyles: "款式",
+    forSaleShort: "可售",
+    draftShort: "草稿",
     newStyle: "新款式",
     editStyle: "编辑款式",
     draftStyle: "创建新款式",
@@ -152,6 +174,13 @@ const ADMIN_STYLE_UI = {
     sub: "Agrega, edita, publica y administra los diseños de muestra que el cliente elige antes de enviar referencias.",
     library: "Biblioteca",
     libraryHint: "Selecciona un estilo para editar. Los nuevos estilos quedan privados hasta publicarse.",
+    searchPh: "Buscar nombre o ID",
+    untitled: "Estilo sin título",
+    emptyList: "No hay estilos que coincidan.",
+    countLabel: (n) => `${n} estilos`,
+    statStyles: "Estilos",
+    forSaleShort: "En venta",
+    draftShort: "Borrador",
     newStyle: "Nuevo estilo",
     editStyle: "Editar estilo",
     draftStyle: "Crear estilo",
@@ -403,20 +432,26 @@ export default function AdminOpsStyles() {
   const [copyDraft, setCopyDraft] = useState(() => catalogCopyDraft(settings));
   const [sp, setSp] = useState({ styleId: "", metal: "18kw", size: "", centerStoneSpec: "", estWeightG: "", variancePct: 6, laborUsd: "", materialsUsd: "" });
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [query, setQuery] = useState("");
   const [editorLocale, setEditorLocale] = useState(locale || "en");
   const [saveState, setSaveState] = useState({ status: "idle", message: "" });
   const selected = useMemo(() => styles.find((style) => style.id === draft.id) || null, [draft.id, styles]);
   const isEditing = Boolean(draft.id);
-  const filteredStyles = useMemo(() => (
-    categoryFilter === "all" ? styles : styles.filter((style) => style.category === categoryFilter)
-  ), [categoryFilter, styles]);
+  const filteredStyles = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return styles.filter((style) => {
+      if (categoryFilter !== "all" && style.category !== categoryFilter) return false;
+      if (!q) return true;
+      return [style.id, ...Object.values(style.name || {})].join(" ").toLowerCase().includes(q);
+    });
+  }, [categoryFilter, query, styles]);
   const stats = useMemo(() => ({
     total: styles.length,
     published: styles.filter((style) => style.published).length,
     sale: styles.filter((style) => style.availableForSale).length,
     media: styles.filter((style) => mediaCountLabel(style) > 0).length,
   }), [styles]);
-  const currentStyleTitle = draft.nameEn || draft.nameKo || draft.nameZh || draft.nameEs || ui.autoId;
+  const currentStyleTitle = draft.nameEn || draft.nameKo || draft.nameZh || draft.nameEs || ui.untitled;
 
   function setDraftField(patch) {
     setDraft((current) => ({ ...current, ...patch }));
@@ -491,89 +526,91 @@ export default function AdminOpsStyles() {
 
   return (
     <>
-      <section className="admin-styles-hero">
-        <div>
-          <p className="admin-kicker">{ui.kicker}</p>
-          <h2>{ui.headline}</h2>
-          <p>{ui.sub}</p>
-        </div>
-        <div className="admin-style-metrics" aria-label={t.title}>
-          <div><strong>{stats.total}</strong><span>{t.title}</span></div>
-          <div><strong>{stats.published}</strong><span>{ui.published}</span></div>
-          <div><strong>{stats.sale}</strong><span>{ui.readyForSale}</span></div>
-          <div><strong>{stats.media}</strong><span>{ui.media}</span></div>
-        </div>
-      </section>
+      <ConsoleHead kicker={ui.kicker} title={t.title} sub={ui.sub}>
+        <button className="button primary small" type="button" onClick={startNewStyle}>
+          <Plus size={15} strokeWidth={2} aria-hidden="true" />
+          {ui.newStyle}
+        </button>
+      </ConsoleHead>
 
-      <div className="admin-style-workbench">
-        <section className="panel admin-style-list-panel">
-          <div className="admin-panel-head">
-            <div>
-              <h3>{ui.library}</h3>
-              <p className="form-hint">{ui.libraryHint}</p>
+      <StatStrip
+        stats={[
+          { value: stats.total, label: ui.statStyles },
+          { value: stats.published, label: ui.published },
+          { value: stats.sale, label: ui.forSaleShort },
+          { value: stats.media, label: ui.media },
+        ]}
+      />
+
+      <div className="con-workbench">
+        <section className="con-list" aria-label={ui.library}>
+          <div className="con-list-tools">
+            <div className="con-search">
+              <Search size={14} strokeWidth={2} aria-hidden="true" />
+              <input
+                type="search"
+                value={query}
+                placeholder={ui.searchPh}
+                aria-label={ui.searchPh}
+                onChange={(e) => setQuery(e.target.value)}
+              />
             </div>
-            <button className="button primary small" type="button" onClick={startNewStyle}>
-              <Plus size={15} strokeWidth={2} aria-hidden="true" />
-              {ui.newStyle}
-            </button>
-          </div>
-
-          <div className="admin-style-filters" role="list" aria-label={p.admin.tpl.category}>
-            <button type="button" className={categoryFilter === "all" ? "is-active" : ""} onClick={() => setCategoryFilter("all")}>
-              {ui.categoryAll}
-            </button>
-            {Object.entries(p.opsCategories).map(([key, label]) => (
-              <button type="button" key={key} className={categoryFilter === key ? "is-active" : ""} onClick={() => setCategoryFilter(key)}>
-                {label}
+            <div className="con-filters" aria-label={p.admin.tpl.category}>
+              <button type="button" className={categoryFilter === "all" ? "is-active" : ""} onClick={() => setCategoryFilter("all")}>
+                {ui.categoryAll}
               </button>
-            ))}
+              {Object.entries(p.opsCategories).map(([key, label]) => (
+                <button type="button" key={key} className={categoryFilter === key ? "is-active" : ""} onClick={() => setCategoryFilter(key)}>
+                  {label}
+                </button>
+              ))}
+              <span className="con-count">{ui.countLabel(filteredStyles.length)}</span>
+            </div>
           </div>
 
-          <div className="admin-style-list">
+          <div className="con-list-scroll">
+            {filteredStyles.length === 0 && <p className="con-empty">{ui.emptyList}</p>}
             {filteredStyles.map((st) => {
               const active = draft.id === st.id;
               const media = mediaFromStyle(st);
               return (
-                <article className={`admin-style-row ${active ? "is-selected" : ""}`} key={st.id}>
-                  <button type="button" className="admin-style-row-main" onClick={() => setDraft(draftFromStyle(st))}>
-                    <span className="admin-media-mini">
+                <article className={`con-row ${active ? "is-selected" : ""}`} key={st.id}>
+                  <button type="button" className="con-row-main" onClick={() => setDraft(draftFromStyle(st))}>
+                    <span className="con-row-thumb">
                       <MediaThumb media={media[0] || { kind: "image", src: FALLBACK_MEDIA }} alt={pickI18n(st.name, locale)} />
                     </span>
-                    <span className="admin-style-row-copy">
+                    <span className="con-row-copy">
                       <strong>{pickI18n(st.name, locale)}</strong>
-                      <span>
-                        {p.opsCategories[st.category] || st.category}
-                        {" · "}
+                      <small>
                         {p.opsSubcategories?.[styleSubcategoryKey(st)] || styleSubcategoryKey(st)}
-                      </span>
-                      <small>{st.id} · {ui.mediaCount(media.length)} · {st.leadDays || 0}d</small>
+                        {" · "}{st.id}{" · "}{media.length}/5{" · "}{st.leadDays || 0}d
+                      </small>
                     </span>
                   </button>
-                  <div className="admin-style-row-actions">
+                  <div className="con-row-side">
                     <button
                       type="button"
-                      className={`admin-state-chip ${st.availableForSale ? "is-on" : ""}`}
+                      className={`con-pill ${st.availableForSale ? "is-on" : ""}`}
+                      aria-pressed={st.availableForSale}
+                      title={t.available}
                       onClick={() => toggleStyleField(st, { availableForSale: !st.availableForSale })}
                     >
-                      {st.availableForSale ? t.available : ui.privateDraft}
+                      <i aria-hidden="true" />
+                      {st.availableForSale ? ui.forSaleShort : ui.draftShort}
                     </button>
                     <button
                       type="button"
-                      className={`admin-state-chip ${st.published ? "is-on" : ""}`}
+                      className={`con-pill ${st.published ? "is-on" : ""}`}
+                      aria-pressed={st.published}
+                      title={t.published}
                       onClick={() => toggleStyleField(st, { published: !st.published })}
                     >
-                      {st.published ? t.published : ui.hidden}
+                      <i aria-hidden="true" />
+                      {st.published ? ui.published : ui.hidden}
                     </button>
-                    <div className="row-actions admin-row-icon-actions">
-                      <button className="button small" type="button" onClick={() => setDraft(draftFromStyle(st))}>
-                        <Edit3 size={14} strokeWidth={2} aria-hidden="true" />
-                        {p.common.view}
-                      </button>
-                      <button className="button danger small" type="button" onClick={() => removeStyle(st)}>
-                        <Trash2 size={14} strokeWidth={2} aria-hidden="true" />
-                        {p.common.delete}
-                      </button>
-                    </div>
+                    <button type="button" className="con-row-delete" aria-label={`${p.common.delete} ${st.id}`} onClick={() => removeStyle(st)}>
+                      <Trash2 size={14} strokeWidth={1.8} aria-hidden="true" />
+                    </button>
                   </div>
                 </article>
               );
@@ -581,27 +618,28 @@ export default function AdminOpsStyles() {
           </div>
         </section>
 
-        <form className="panel form-stack admin-style-editor-panel" onSubmit={submitStyle}>
-          <div className="admin-panel-head">
+        <form className="con-editor" onSubmit={submitStyle}>
+          <header className="con-editor-head">
             <div>
-              <p className="admin-kicker">{isEditing ? ui.editStyle : ui.draftStyle}</p>
+              <p className="con-kicker">{isEditing ? ui.editStyle : ui.draftStyle}</p>
               <h3>{currentStyleTitle}</h3>
-              <p className="form-hint">{isEditing ? `${draft.id} · ${ui.mediaCount(mediaFromStyle(selected).length)}` : ui.autoId}</p>
+              <p className="con-editor-meta">{isEditing ? `${draft.id} · ${ui.mediaCount(mediaFromStyle(selected).length)}` : ui.autoId}</p>
             </div>
             {isEditing && (
               <button className="button secondary small" type="button" onClick={startNewStyle}>
                 <Plus size={15} strokeWidth={2} aria-hidden="true" />
-                {p.common.new}
+                {ui.newStyle}
               </button>
             )}
-          </div>
+          </header>
 
-          <section className="admin-style-editor-section">
-            <div className="admin-section-title">
+          <section className="con-section">
+            <div className="con-section-head">
+              <span className="con-section-num">01</span>
               <h4>{ui.basics}</h4>
-              <span>{ui.status}</span>
+              <span className="con-section-aside">{ui.status}</span>
             </div>
-            <div className="filter-grid admin-style-basics-grid">
+            <div className="con-grid con-grid-basics">
               <label className="field"><span>{p.admin.tpl.category}</span>
                 <select
                   value={draft.category}
@@ -624,26 +662,33 @@ export default function AdminOpsStyles() {
               <label className="field"><span>{t.labor}</span><input type="number" value={draft.laborUsd} onChange={(e) => setDraftField({ laborUsd: e.target.value })} required /></label>
               <label className="field"><span>{t.leadDays}</span><input type="number" value={draft.leadDays} onChange={(e) => setDraftField({ leadDays: e.target.value })} required /></label>
             </div>
-            <div className="admin-toggle-grid">
-              <label className={`admin-toggle-card ${draft.availableForSale ? "is-on" : ""}`}>
+            <div className="con-switch-row">
+              <label className={`con-switch ${draft.availableForSale ? "is-on" : ""}`}>
                 <input type="checkbox" checked={draft.availableForSale} onChange={(e) => setDraftField({ availableForSale: e.target.checked })} />
-                <span>{t.available}</span>
-                <small>{ui.readyForSale}</small>
+                <span className="con-switch-track" aria-hidden="true" />
+                <span className="con-switch-copy">
+                  <strong>{t.available}</strong>
+                  <small>{ui.readyForSale}</small>
+                </span>
               </label>
-              <label className={`admin-toggle-card ${draft.published ? "is-on" : ""}`}>
+              <label className={`con-switch ${draft.published ? "is-on" : ""}`}>
                 <input type="checkbox" checked={draft.published} onChange={(e) => setDraftField({ published: e.target.checked })} />
-                <span>{t.published}</span>
-                <small>{draft.published ? ui.published : ui.hidden}</small>
+                <span className="con-switch-track" aria-hidden="true" />
+                <span className="con-switch-copy">
+                  <strong>{t.published}</strong>
+                  <small>{draft.published ? ui.published : ui.hidden}</small>
+                </span>
               </label>
             </div>
           </section>
 
-          <section className="admin-style-editor-section">
-            <div className="admin-section-title">
+          <section className="con-section">
+            <div className="con-section-head">
+              <span className="con-section-num">02</span>
               <h4>{ui.names}</h4>
-              <span>EN / KO / ZH / ES</span>
+              <span className="con-section-aside">EN / KO / ZH / ES</span>
             </div>
-            <div className="filter-grid admin-name-grid">
+            <div className="con-grid con-grid-2">
               <label className="field"><span>Name EN</span><input value={draft.nameEn} onChange={(e) => setDraftField({ nameEn: e.target.value })} required /></label>
               <label className="field"><span>Name KO</span><input value={draft.nameKo} onChange={(e) => setDraftField({ nameKo: e.target.value })} /></label>
               <label className="field"><span>Name ZH</span><input value={draft.nameZh} onChange={(e) => setDraftField({ nameZh: e.target.value })} /></label>
@@ -651,16 +696,18 @@ export default function AdminOpsStyles() {
             </div>
           </section>
 
-          <section className="admin-style-editor-section">
-            <div className="admin-section-title">
+          <section className="con-section">
+            <div className="con-section-head">
+              <span className="con-section-num">03</span>
               <h4>{ui.media}</h4>
-              <span>{t.media}</span>
+              <span className="con-section-aside">{ui.mediaCount(draft.media.length)}</span>
             </div>
             <StyleMediaManager media={draft.media} copy={ui} onChange={(media) => setDraftField({ media })} />
           </section>
 
-          <section className="admin-style-editor-section">
-            <div className="admin-section-title">
+          <section className="con-section">
+            <div className="con-section-head">
+              <span className="con-section-num">04</span>
               <h4>{ui.publicText}</h4>
               <div className="admin-locale-tabs">
                 {STYLE_LOCALES.map(({ key, label }) => (
@@ -670,7 +717,7 @@ export default function AdminOpsStyles() {
                 ))}
               </div>
             </div>
-            <div className="filter-grid admin-public-copy-grid">
+            <div className="con-grid con-grid-2">
               <label className="field"><span>Detail eyebrow</span>
                 <input
                   value={draft[fieldName("label", editorLocale)] || ""}
@@ -702,7 +749,7 @@ export default function AdminOpsStyles() {
             </div>
           </section>
 
-          <div className="admin-editor-footer">
+          <footer className="con-savebar">
             <div
               className={`admin-save-notice ${saveState.status !== "idle" ? `is-${saveState.status}` : ""}`}
               aria-live="polite"
@@ -713,7 +760,7 @@ export default function AdminOpsStyles() {
             <button className="button primary" type="submit" disabled={saveState.status === "saving"}>
               {saveState.status === "saving" ? ui.savingStyle : isEditing ? ui.saveStyle : ui.addStyle}
             </button>
-          </div>
+          </footer>
         </form>
       </div>
 
