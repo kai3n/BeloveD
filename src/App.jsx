@@ -82,15 +82,18 @@ export default function App() {
           <Route path="account" element={<RequireRole role="customer"><CustomerShell /></RequireRole>}>
             <Route index element={<AccountOrders />} />
           </Route>
+          {/* 구 어드민 경로 — 존재를 드러내지 않고 홈으로 (미인증 접근과 동일한 겉모습) */}
+          <Route path="admin" element={<Navigate to="/" replace />} />
+          <Route path="admin/*" element={<Navigate to="/" replace />} />
           {WITH_BACKOFFICE && (
-            <Route path="admin" element={<RequireRole role="admin"><Admin /></RequireRole>}>
-              <Route index element={<Navigate to="/admin/live" replace />} />
+            <Route path="bo-4q9z7m" element={<RequireRole role="admin"><Admin /></RequireRole>}>
+              <Route index element={<Navigate to="/bo-4q9z7m/live" replace />} />
               {/* 구 데모 워크벤치(DM-) 라우트 — 실서버 콘솔로 통합되며 제거 */}
-              <Route path="orders" element={<Navigate to="/admin/live" replace />} />
-              <Route path="orders/:orderId" element={<Navigate to="/admin/live" replace />} />
+              <Route path="orders" element={<Navigate to="/bo-4q9z7m/live" replace />} />
+              <Route path="orders/:orderId" element={<Navigate to="/bo-4q9z7m/live" replace />} />
               <Route path="designs" element={<AdminOpsStyles />} />
-              <Route path="styles" element={<Navigate to="/admin/designs" replace />} />
-              <Route path="ops" element={<Navigate to="/admin/live" replace />} />
+              <Route path="styles" element={<Navigate to="/bo-4q9z7m/designs" replace />} />
+              <Route path="ops" element={<Navigate to="/bo-4q9z7m/live" replace />} />
               <Route path="benchmark" element={<AdminBenchmark />} />
               <Route path="metals" element={<AdminMetals />} />
               <Route path="reviews" element={<AdminReviews />} />
@@ -100,8 +103,8 @@ export default function App() {
               <Route path="analytics" element={<AdminMembers />} />
               <Route path="analytics/:memberId" element={<AdminMemberTimeline />} />
               <Route path="members/:memberId" element={<AdminMemberTimeline />} />
-              <Route path="diamonds" element={<Navigate to="/admin/benchmark" replace />} />
-              <Route path="settings" element={<Navigate to="/admin/live" replace />} />
+              <Route path="diamonds" element={<Navigate to="/bo-4q9z7m/benchmark" replace />} />
+              <Route path="settings" element={<Navigate to="/bo-4q9z7m/live" replace />} />
             </Route>
           )}
           <Route path="*" element={<NotFound />} />

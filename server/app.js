@@ -23,6 +23,13 @@ export function createApp() {
   // rate limiting. PUBLIC_ORIGIN stays authoritative for link building, so a
   // spoofed X-Forwarded-Host cannot poison magic links (M5).
   if (process.env.NODE_ENV === "production") app.set("trust proxy", 1);
+  app.disable("x-powered-by"); // 스택 지문 노출 금지
+  // API 응답에도 최소 방어 헤더 — 정적 응답은 vercel.json headers가 담당
+  app.use((_req, res, next) => {
+    res.set("X-Content-Type-Options", "nosniff");
+    res.set("Referrer-Policy", "strict-origin-when-cross-origin");
+    next();
+  });
   app.use(express.json({ limit: "1mb" }));
   app.use(cookieParser());
   app.use(attachPrincipal);

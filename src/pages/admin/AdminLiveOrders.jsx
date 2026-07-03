@@ -208,9 +208,9 @@ function OrdersTable({ orders, t, navigate, withTotal = false }) {
             <tr
               key={o.orderCode}
               className="row-clickable"
-              onClick={() => navigate(`/admin/live/${o.orderCode}`)}
+              onClick={() => navigate(`/bo-4q9z7m/live/${o.orderCode}`)}
             >
-              <td><Link className="text-link con-code" to={`/admin/live/${o.orderCode}`} onClick={(e) => e.stopPropagation()}><strong>{o.orderCode}</strong></Link></td>
+              <td><Link className="text-link con-code" to={`/bo-4q9z7m/live/${o.orderCode}`} onClick={(e) => e.stopPropagation()}><strong>{o.orderCode}</strong></Link></td>
               <td>{o.customerName || o.customerEmail}<br /><span className="form-hint">{o.customerEmail} · {o.locale}</span></td>
               <td>{o.intake?.category || o.summary?.category || "—"}</td>
               <td><span className={`status-badge ${o.stage === "DELIVERED" ? "mst-done" : "mst-inProgress"}`}>{o.stage}</span></td>
@@ -552,7 +552,7 @@ export function AdminLiveOrderDetail() {
 
   return (
     <div className="form-stack">
-      <p><Link className="text-link" to="/admin/live">{t.back}</Link></p>
+      <p><Link className="text-link" to="/bo-4q9z7m/live">{t.back}</Link></p>
       <div className="panel" style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
         <div>
           <p className="admin-kicker">{t.kicker}</p>

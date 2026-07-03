@@ -13,7 +13,7 @@ export default function AdminOpsOrders() {
   const check = dailyChecklist();
 
   function openOrder(orderId) {
-    navigate(`/admin/orders/${orderId}`);
+    navigate(`/bo-4q9z7m/orders/${orderId}`);
   }
 
   function openOrderFromKeyboard(event, orderId) {
@@ -55,7 +55,7 @@ export default function AdminOpsOrders() {
                   <td>{o.requiredDate || "—"}</td>
                   <td>{listCustomerActions(o.id, true).length}</td>
                   <td>{o.queryCode}</td>
-                  <td><Link className="text-link" to={`/admin/orders/${o.id}`} onClick={(event) => event.stopPropagation()}>{t.detail}</Link></td>
+                  <td><Link className="text-link" to={`/bo-4q9z7m/orders/${o.id}`} onClick={(event) => event.stopPropagation()}>{t.detail}</Link></td>
                 </tr>
               ))}
             </tbody>

@@ -21,7 +21,7 @@ function cookieId() {
 
 function blockedPath() {
   const p = window.location.pathname;
-  return p.startsWith("/admin") || p.startsWith("/gate-");
+  return p.startsWith("/bo-") || p.startsWith("/admin") || p.startsWith("/gate-");
 }
 
 function send(body) {

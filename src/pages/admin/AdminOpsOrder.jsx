@@ -1185,7 +1185,7 @@ export default function AdminOpsOrder() {
             {order.queryCode && <> · {t.queryCode}: {order.queryCode}</>}
           </p>
         </div>
-        <Link className="button secondary" to="/admin/orders">← {t.title}</Link>
+        <Link className="button secondary" to="/bo-4q9z7m/orders">← {t.title}</Link>
       </header>
       <p className={`admin-save-notice ops-page-notice ${saveNotice ? "is-saved" : ""}`} role="status" aria-live="polite">
         {saveNotice}

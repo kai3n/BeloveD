@@ -131,7 +131,7 @@ export default function AdminMembers() {
             <tbody>
               {members.map((m) => (
                 <tr key={m.id}>
-                  <td><Link className="text-link" to={`/admin/analytics/${m.id}`}><b>{m.name}</b></Link></td>
+                  <td><Link className="text-link" to={`/bo-4q9z7m/analytics/${m.id}`}><b>{m.name}</b></Link></td>
                   <td>{m.email}</td>
                   <td>{m.createdAt ? new Date(m.createdAt).toLocaleDateString() : "—"}</td>
                   <td>{fmtWhen(m.lastActive)}</td>
@@ -171,7 +171,7 @@ export function AdminMemberTimeline() {
 
   return (
     <>
-      <p style={{ margin: "0 0 14px" }}><Link className="text-link" to="/admin/members">← {s.back}</Link></p>
+      <p style={{ margin: "0 0 14px" }}><Link className="text-link" to="/bo-4q9z7m/members">← {s.back}</Link></p>
       <ConsoleHead
         kicker={p.opsA.menu.members}
         title={s.timelineTitle(member?.name || `#${memberId}`)}

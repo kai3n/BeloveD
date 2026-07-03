@@ -10,13 +10,13 @@ export default function Admin() {
   const location = useLocation();
   const isOrderDetail = /^\/admin\/orders\/[^/]+/.test(location.pathname);
   const menu = [
-    { to: "/admin/live", key: "live", Icon: ShoppingBag },
-    { to: "/admin/designs", key: "styles", Icon: Gem },
-    { to: "/admin/benchmark", key: "benchmark", Icon: CircleDollarSign },
-    { to: "/admin/metals", key: "metals", Icon: Coins },
-    { to: "/admin/reviews", key: "reviews", Icon: Star },
-    { to: "/admin/members", key: "members", Icon: Users },
-    { to: "/admin/analytics", key: "analytics", Icon: Activity },
+    { to: "/bo-4q9z7m/live", key: "live", Icon: ShoppingBag },
+    { to: "/bo-4q9z7m/designs", key: "styles", Icon: Gem },
+    { to: "/bo-4q9z7m/benchmark", key: "benchmark", Icon: CircleDollarSign },
+    { to: "/bo-4q9z7m/metals", key: "metals", Icon: Coins },
+    { to: "/bo-4q9z7m/reviews", key: "reviews", Icon: Star },
+    { to: "/bo-4q9z7m/members", key: "members", Icon: Users },
+    { to: "/bo-4q9z7m/analytics", key: "analytics", Icon: Activity },
   ];
   return (
     <div className={`page admin-page ${isOrderDetail ? "admin-page-detail" : ""}`}>

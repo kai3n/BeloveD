@@ -147,7 +147,7 @@ function MemberRows({ m, t, open, onToggle }) {
                   <div
                     key={o.orderCode}
                     className="crm-order-row"
-                    onClick={(e) => { e.stopPropagation(); navigate(`/admin/live/${o.orderCode}`); }}
+                    onClick={(e) => { e.stopPropagation(); navigate(`/bo-4q9z7m/live/${o.orderCode}`); }}
                   >
                     <span className="crm-order-main">
                       <strong>{o.orderCode}</strong>
