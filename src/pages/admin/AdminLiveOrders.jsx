@@ -9,6 +9,9 @@ import { useLocale } from "../../i18n.jsx";
 const COPY = {
   en: {
     title: "Live orders", kicker: "REAL-SERVER ORDERS",
+    liveSection: "Live orders", pastSection: "Past orders", total: "Total",
+    emptyPast: "No delivered orders yet — completed orders and revenue land here.",
+    statRevenue: "Total revenue", statDelivered: "Delivered orders", statAvg: "Average order", statPipeline: "Open pipeline (quoted)",
     empty: "No live orders yet — they appear the moment a customer submits the wizard.",
     needAuth: "This console needs a server admin session. Sign in again through the admin gate.",
     unavailable: "API unreachable — run the local API server or check the deployment.",
@@ -32,6 +35,9 @@ const COPY = {
   },
   ko: {
     title: "실주문", kicker: "실서버 주문",
+    liveSection: "진행 중 주문", pastSection: "지난 주문", total: "총액",
+    emptyPast: "완료된 주문이 아직 없습니다 — 배송 완료된 주문과 매출이 여기에 쌓입니다.",
+    statRevenue: "총 매출", statDelivered: "완료 주문", statAvg: "평균 주문액", statPipeline: "진행 중 견적 총액",
     empty: "아직 실주문이 없습니다 — 고객이 위저드를 제출하면 바로 나타납니다.",
     needAuth: "이 콘솔은 서버 어드민 세션이 필요합니다. 어드민 게이트에서 다시 로그인해 주세요.",
     unavailable: "API에 연결할 수 없습니다 — 로컬 API 서버를 켜거나 배포 상태를 확인하세요.",
@@ -55,6 +61,9 @@ const COPY = {
   },
   zh: {
     title: "实时订单", kicker: "真实服务器订单",
+    liveSection: "进行中订单", pastSection: "历史订单", total: "总价",
+    emptyPast: "暂无已完成订单 — 已交付订单与收入将显示在这里。",
+    statRevenue: "总收入", statDelivered: "已完成订单", statAvg: "平均订单额", statPipeline: "进行中报价总额",
     empty: "暂无实时订单 — 客户提交向导后会立即出现。",
     needAuth: "此控制台需要服务器管理员会话，请通过管理入口重新登录。",
     unavailable: "无法连接 API — 请启动本地 API 服务器或检查部署。",
@@ -78,6 +87,9 @@ const COPY = {
   },
   es: {
     title: "Pedidos en vivo", kicker: "PEDIDOS DEL SERVIDOR",
+    liveSection: "Pedidos activos", pastSection: "Pedidos pasados", total: "Total",
+    emptyPast: "Aún no hay pedidos entregados — los completados y los ingresos aparecerán aquí.",
+    statRevenue: "Ingresos totales", statDelivered: "Pedidos entregados", statAvg: "Pedido promedio", statPipeline: "Pipeline abierto (cotizado)",
     empty: "Aún no hay pedidos en vivo — aparecen cuando un cliente envía el asistente.",
     needAuth: "Esta consola requiere sesión de administrador del servidor. Inicia sesión de nuevo por la puerta admin.",
     unavailable: "API inalcanzable — inicia el servidor local o revisa el despliegue.",
@@ -127,6 +139,43 @@ function fetchState(setter) {
   return (e) => setter({ status: e instanceof ApiUnavailableError ? "unavailable" : "auth", data: null });
 }
 
+// 완료 상태 — Past Orders 섹션으로 분류되는 stage
+const PAST_STAGES = new Set(["DELIVERED", "CANCELLED"]);
+
+function OrdersTable({ orders, t, navigate, withTotal = false }) {
+  return (
+    <div className="panel" style={{ overflowX: "auto" }}>
+      <table className="data-table">
+        <thead>
+          <tr>
+            <th>Order</th><th>{t.customer}</th><th>{t.category}</th><th>{t.stage}</th>
+            {withTotal ? <th>{t.total}</th> : <th>{t.waiting}</th>}
+            <th>{t.updated}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {orders.map((o) => (
+            <tr
+              key={o.orderCode}
+              className="row-clickable"
+              onClick={() => navigate(`/admin/live/${o.orderCode}`)}
+            >
+              <td><Link className="text-link" to={`/admin/live/${o.orderCode}`} onClick={(e) => e.stopPropagation()}><strong>{o.orderCode}</strong></Link></td>
+              <td>{o.customerName || o.customerEmail}<br /><span className="form-hint">{o.customerEmail} · {o.locale}</span></td>
+              <td>{o.intake?.category || o.summary?.category || "—"}</td>
+              <td><span className={`status-badge ${o.stage === "DELIVERED" ? "mst-done" : "mst-inProgress"}`}>{o.stage}</span></td>
+              {withTotal
+                ? <td>{o.totalUsd ? usd(o.totalUsd) : "—"}</td>
+                : <td>{t.waitingOn[o.waitingOn] || o.waitingOn}</td>}
+              <td>{new Date(o.updatedAt).toLocaleDateString()}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export default function AdminLiveOrders() {
   const t = useCopy();
   const navigate = useNavigate();
@@ -141,34 +190,29 @@ export default function AdminLiveOrders() {
   if (state.status === "loading") return <div className="panel"><p className="form-hint">…</p></div>;
   if (state.status !== "ok") return <ErrorPanel error={state.status} t={t} />;
 
+  const live = state.data.filter((o) => !PAST_STAGES.has(o.stage));
+  const past = state.data.filter((o) => PAST_STAGES.has(o.stage));
+  const delivered = past.filter((o) => o.stage === "DELIVERED");
+  const revenue = delivered.reduce((s, o) => s + (o.totalUsd || 0), 0);
+  const pipeline = live.reduce((s, o) => s + (o.totalUsd || 0), 0);
+
   return (
     <div className="form-stack">
-      <p className="admin-kicker">{t.kicker}</p>
-      {state.data.length === 0 ? (
-        <div className="panel"><p className="form-hint">{t.empty}</p></div>
-      ) : (
-        <div className="panel" style={{ overflowX: "auto" }}>
-          <table className="data-table">
-            <thead><tr><th>Order</th><th>{t.customer}</th><th>{t.category}</th><th>{t.stage}</th><th>{t.waiting}</th><th>{t.updated}</th></tr></thead>
-            <tbody>
-              {state.data.map((o) => (
-                <tr
-                  key={o.orderCode}
-                  className="row-clickable"
-                  onClick={() => navigate(`/admin/live/${o.orderCode}`)}
-                >
-                  <td><Link className="text-link" to={`/admin/live/${o.orderCode}`} onClick={(e) => e.stopPropagation()}><strong>{o.orderCode}</strong></Link></td>
-                  <td>{o.customerName || o.customerEmail}<br /><span className="form-hint">{o.customerEmail} · {o.locale}</span></td>
-                  <td>{o.intake?.category || "—"}</td>
-                  <td><span className="status-badge mst-inProgress">{o.stage}</span></td>
-                  <td>{t.waitingOn[o.waitingOn] || o.waitingOn}</td>
-                  <td>{new Date(o.updatedAt).toLocaleDateString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <p className="admin-kicker">{t.kicker} · {t.liveSection}</p>
+      {live.length === 0
+        ? <div className="panel"><p className="form-hint">{t.empty}</p></div>
+        : <OrdersTable orders={live} t={t} navigate={navigate} />}
+
+      <p className="admin-kicker" style={{ marginTop: 18 }}>{t.pastSection}</p>
+      <div className="summary-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))" }}>
+        <div className="summary-card"><div className="num">{usd(revenue)}</div><div className="lbl">{t.statRevenue}</div></div>
+        <div className="summary-card"><div className="num">{delivered.length}</div><div className="lbl">{t.statDelivered}</div></div>
+        <div className="summary-card"><div className="num">{delivered.length ? usd(revenue / delivered.length) : "—"}</div><div className="lbl">{t.statAvg}</div></div>
+        <div className="summary-card"><div className="num">{usd(pipeline)}</div><div className="lbl">{t.statPipeline}</div></div>
+      </div>
+      {past.length === 0
+        ? <div className="panel"><p className="form-hint">{t.emptyPast}</p></div>
+        : <OrdersTable orders={past} t={t} navigate={navigate} withTotal />}
     </div>
   );
 }

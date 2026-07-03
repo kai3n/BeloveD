@@ -21,8 +21,6 @@ const ReviewNew = lazy(() => import("./pages/ReviewNew.jsx"));
 // 백오피스·내부 목업 — 공개 배포 번들에서는 제외 (vite define으로 트리셰이킹)
 const StaffLogin = WITH_BACKOFFICE ? lazy(() => import("./pages/StaffLogin.jsx")) : null;
 const Admin = WITH_BACKOFFICE ? lazy(() => import("./pages/admin/Admin.jsx")) : null;
-const AdminOpsOrders = WITH_BACKOFFICE ? lazy(() => import("./pages/admin/AdminOpsOrders.jsx")) : null;
-const AdminOpsOrder = WITH_BACKOFFICE ? lazy(() => import("./pages/admin/AdminOpsOrder.jsx")) : null;
 const AdminOpsStyles = WITH_BACKOFFICE ? lazy(() => import("./pages/admin/AdminOpsStyles.jsx")) : null;
 const AdminReviews = WITH_BACKOFFICE ? lazy(() => import("./pages/admin/AdminReviews.jsx")) : null;
 const AdminBenchmark = WITH_BACKOFFICE ? lazy(() => import("./pages/admin/AdminBenchmark.jsx")) : null;
@@ -84,13 +82,13 @@ export default function App() {
           </Route>
           {WITH_BACKOFFICE && (
             <Route path="admin" element={<RequireRole role="admin"><Admin /></RequireRole>}>
-              <Route index element={<Navigate to="/admin/orders" replace />} />
-              <Route path="orders" element={<AdminOpsOrders />} />
-              <Route path="orders/:orderId" element={<AdminOpsOrder />} />
+              <Route index element={<Navigate to="/admin/live" replace />} />
+              {/* 구 데모 워크벤치(DM-) 라우트 — 실서버 콘솔로 통합되며 제거 */}
+              <Route path="orders" element={<Navigate to="/admin/live" replace />} />
+              <Route path="orders/:orderId" element={<Navigate to="/admin/live" replace />} />
               <Route path="designs" element={<AdminOpsStyles />} />
               <Route path="styles" element={<Navigate to="/admin/designs" replace />} />
-              <Route path="ops" element={<Navigate to="/admin/orders" replace />} />
-              <Route path="ops/:orderId" element={<AdminOpsOrder />} />
+              <Route path="ops" element={<Navigate to="/admin/live" replace />} />
               <Route path="benchmark" element={<AdminBenchmark />} />
               <Route path="reviews" element={<AdminReviews />} />
               <Route path="live" element={<AdminLiveOrders />} />
@@ -98,7 +96,7 @@ export default function App() {
               <Route path="members" element={<AdminMembers />} />
               <Route path="members/:memberId" element={<AdminMemberTimeline />} />
               <Route path="diamonds" element={<Navigate to="/admin/benchmark" replace />} />
-              <Route path="settings" element={<Navigate to="/admin/orders" replace />} />
+              <Route path="settings" element={<Navigate to="/admin/live" replace />} />
             </Route>
           )}
           <Route path="*" element={<NotFound />} />

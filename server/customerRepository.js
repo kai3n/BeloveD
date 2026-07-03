@@ -630,7 +630,14 @@ export async function recordOrderEvent(orderCode, type, data = {}, extras = {}) 
 export async function listServerOrders({ limit = 100 } = {}) {
   const { rows } = await query(
     `select o.order_code, o.stage, o.phase, o.waiting_on, o.created_at, o.updated_at, o.summary,
-            c.name as customer_name, c.email as customer_email, c.locale
+            c.name as customer_name, c.email as customer_email, c.locale,
+            (
+              select (pa.payload->>'totalUsd')::numeric
+              from published_artifacts pa
+              where pa.order_id = o.id and pa.type = 'QUOTE' and pa.payload ? 'totalUsd'
+              order by pa.published_at desc
+              limit 1
+            ) as total_usd
      from customer_orders o
      join customers c on c.id = o.customer_id
      order by (o.phase = 'CLOSED' or o.stage = 'CANCELLED'), o.updated_at desc
@@ -648,5 +655,7 @@ export async function listServerOrders({ limit = 100 } = {}) {
     customerName: r.customer_name,
     customerEmail: r.customer_email,
     locale: r.locale,
+    // 최신 QUOTE 아티팩트의 총액 — Past Orders 매출 집계용 (견적 전 주문은 null)
+    totalUsd: r.total_usd === null ? null : Number(r.total_usd),
   }));
 }

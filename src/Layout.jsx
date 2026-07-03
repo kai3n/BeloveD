@@ -17,7 +17,7 @@ function BrandLogo() {
 
 function roleHome(user) {
   if (!user) return "/sign-in";
-  if (user.role === "admin") return "/admin/orders";
+  if (user.role === "admin") return "/admin/live";
   return "/account";
 }
 
