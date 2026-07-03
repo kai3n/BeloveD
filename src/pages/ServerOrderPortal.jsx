@@ -501,7 +501,7 @@ export default function ServerOrderPortal({ orderCode }) {
       <section className="client-confirm-rail" aria-label={t.kicker}>
         {order.phases.map((phase, index) => (
           <article className={`client-confirm-step ${phase.state === "complete" ? "done" : phase.state}`} key={phase.key}>
-            <span className="client-confirm-index">{String(index + 1).padStart(2, "0")}</span>
+            <span className="client-confirm-index">{phase.state === "complete" ? "✓" : String(index + 1).padStart(2, "0")}</span>
             <div><strong>{t.phases[phase.key] || phase.title}</strong></div>
           </article>
         ))}

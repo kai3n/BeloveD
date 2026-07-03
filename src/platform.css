@@ -3891,48 +3891,72 @@ html[data-theme="day"] .design-shop-card:hover .design-shop-media-frame {
 .client-brief-mobile-details[open] summary::after {
   content: "−";
 }
+/* 배송 추적기형 진행 레일 — 완료 ✓ 채운 원, 현재 강조 원, 연결선이 진행도를 그린다.
+   데이/나이트 공용 — 하드코딩 다크 배경 금지 (Gallery White에서 회색 블록이 됨) */
 .client-confirm-rail {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  margin: 18px 0;
+  display: flex;
+  align-items: flex-start;
+  margin: 26px 0 22px;
 }
-/* 데이/나이트 공용 — 하드코딩 다크 배경 금지 (Gallery White에서 회색 블록이 됨) */
 .client-confirm-step {
+  position: relative;
+  flex: 1;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 12px;
-  align-items: center;
-  min-height: 86px;
-  border: 1px solid var(--line);
-  background: var(--surface);
-  padding: 16px;
+  justify-items: center;
+  gap: 10px;
+  text-align: center;
+  padding: 0 8px;
 }
-.client-confirm-step.upcoming { opacity: 0.62; }
-.client-confirm-step.active {
-  border-color: var(--accent);
-  background: var(--bg-2);
+.client-confirm-step::before,
+.client-confirm-step::after {
+  content: "";
+  position: absolute;
+  top: 19px;
+  height: 1px;
+  width: calc(50% - 30px);
+  background: var(--line-strong);
 }
-.client-confirm-step.done {
-  border-color: rgba(140, 210, 160, 0.45);
-}
+.client-confirm-step::before { left: 0; }
+.client-confirm-step::after { right: 0; }
+.client-confirm-step:first-child::before,
+.client-confirm-step:last-child::after { display: none; }
+/* 지나온 구간은 샴페인 라인 */
+.client-confirm-step.done::before,
+.client-confirm-step.done::after,
+.client-confirm-step.active::before { background: var(--accent); }
 .client-confirm-index {
   display: grid;
   width: 38px;
   height: 38px;
   place-items: center;
   border: 1px solid var(--line-strong);
-  color: var(--accent-bright);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--muted);
   font-family: var(--serif);
-  font-size: 19px;
+  font-size: 17px;
   line-height: 1;
+}
+.client-confirm-step.done .client-confirm-index {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+  font-size: 15px;
+}
+.client-confirm-step.active .client-confirm-index {
+  border: 2px solid var(--accent);
+  color: var(--accent-bright);
+  box-shadow: 0 0 0 4px rgba(214, 197, 160, 0.16);
 }
 .client-confirm-step strong {
   display: block;
-  color: var(--text);
-  font-size: 15px;
+  color: var(--quiet);
+  font-size: 13px;
+  font-weight: 500;
   line-height: 1.24;
 }
+.client-confirm-step.active strong { color: var(--text); font-weight: 600; }
+.client-confirm-step.done strong { color: var(--muted); }
 .client-confirm-step small {
   display: block;
   margin-top: 5px;
@@ -4261,9 +4285,7 @@ html[data-theme="day"] .design-shop-card:hover .design-shop-media-frame {
   .category-design-grid,
   .card-grid.cols-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .workspace-hero { grid-template-columns: 1fr; }
-  .client-confirm-rail {
-    grid-template-columns: 1fr;
-  }
+  .client-confirm-step strong { font-size: 11px; }
   .conversation-form {
     grid-template-columns: 1fr;
   }
