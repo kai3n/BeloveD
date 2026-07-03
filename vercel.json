@@ -3,5 +3,8 @@
   "rewrites": [
     { "source": "/v1/:path*", "destination": "/api" },
     { "source": "/((?!api|assets|v1).*)", "destination": "/index.html" }
+  ],
+  "crons": [
+    { "path": "/v1/internal/activity-maintenance", "schedule": "0 18 * * *" }
   ]
 }
