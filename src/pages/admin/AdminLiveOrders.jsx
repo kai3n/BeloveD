@@ -262,7 +262,7 @@ function StepCard({ step, order, changeRequest, t, onSent }) {
       fp.conditional?.ringSize,
     ].filter(Boolean).join(" · "),
     designNote: "",
-    metalSpec: METAL_LABELS[fp.metal] || fp.metal || "",
+    metalSpec: METAL_LABELS[fp.metal] || fp.metal || "18K White Gold",
     estWeightG: "", leadDays: "10",
     shape: sp.shape || "round",
     caratMin: sp.carat ? String(sp.carat) : "",
@@ -372,7 +372,13 @@ function StepCard({ step, order, changeRequest, t, onSent }) {
               <label className="field"><span>{t.designNote}</span>
                 <input value={f.designNote} onChange={(e) => setF({ ...f, designNote: e.target.value })} /></label>
               <label className="field"><span>{t.metalSpec}</span>
-                <input value={f.metalSpec} onChange={(e) => setF({ ...f, metalSpec: e.target.value })} /></label>
+                <select value={f.metalSpec} onChange={(e) => setF({ ...f, metalSpec: e.target.value })}>
+                  {/* 인테이크 프리필이 표준 목록 밖 값이면 잃지 않게 옵션으로 유지 */}
+                  {f.metalSpec && !Object.values(METAL_LABELS).includes(f.metalSpec) && (
+                    <option value={f.metalSpec}>{f.metalSpec}</option>
+                  )}
+                  {Object.values(METAL_LABELS).map((v) => <option key={v} value={v}>{v}</option>)}
+                </select></label>
               <p className="form-hint" style={{ margin: 0 }}>{t.centerStone}</p>
               <div className="filter-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
                 <label className="field"><span>{t.shape}</span>
