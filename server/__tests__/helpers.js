@@ -10,3 +10,8 @@ export async function truncateCustomerCore() {
     customer_orders, customer_intakes, customers, idempotency_keys, audit_log
     restart identity cascade`);
 }
+
+export async function truncateActivity() {
+  await query("truncate table activity_events, activity_daily restart identity");
+  await query("delete from activity_sessions");
+}

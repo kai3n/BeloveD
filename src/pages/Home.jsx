@@ -10,6 +10,7 @@ import { MediaThumb, withBase } from "../components/ui.jsx";
 import { listReviews } from "../lib/store.js";
 import { useDBVersion } from "../lib/useDB.js";
 import { DESIGN_CATEGORIES } from "../lib/designSlots.js";
+import { track } from "../lib/track.js";
 
 const collectionImageClass = {
   ring: "shot-ring",
@@ -253,6 +254,7 @@ function Collections({ locale }) {
               key={category.key}
               to={`/designs?category=${category.key}`}
               aria-label={item.label}
+              onClick={() => track("style_click", { path: "/", meta: { category: category.key } })}
             >
               <span className={`coll-noir-ph ${collectionImageClass[category.key]}`} aria-hidden="true" />
               <span className="coll-noir-meta">

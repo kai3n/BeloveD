@@ -6,6 +6,7 @@ import { useDBVersion } from "../lib/useDB.js";
 import { MediaThumb, withBase } from "../components/ui.jsx";
 import { pickI18n, useLocale } from "../i18n.jsx";
 import { categoryMeta, getDesignSlotStyle, styleMediaGallery, styleSubcategoryKey } from "../lib/designSlots.js";
+import { track } from "../lib/track.js";
 
 function styleText(style, field, locale, fallback) {
   return pickI18n(style?.[field], locale) || fallback;
@@ -25,6 +26,11 @@ export default function StyleDetail() {
     setIsMagnifying(false);
     setMagnifyPosition({ x: 50, y: 50 });
   }, [id]);
+
+  // 상품 상세 조회 이벤트 — 공개된 스타일만
+  useEffect(() => {
+    if (style?.published) track("style_view", { path: `/designs/${id}`, entityType: "style", entityId: id });
+  }, [id, style?.published]);
 
   // 갤러리 이웃 이미지를 미리 받아 화살표 전환이 즉시 되게 한다
   useEffect(() => {

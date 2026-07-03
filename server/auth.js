@@ -120,7 +120,8 @@ export async function loginWithPassword(email, password) {
   }
   const cust = await query("select * from customers where email=$1", [normalized]);
   if (cust.rows[0]?.password_hash && verifyPassword(password, cust.rows[0].password_hash)) {
-    return { principalType: "customer", session: await issueSession("customer", cust.rows[0].id) };
+    // customerId는 activity 세션 연결용 (authRoutes.linkActivity)
+    return { principalType: "customer", customerId: cust.rows[0].id, session: await issueSession("customer", cust.rows[0].id) };
   }
   // No matching row: still run one verify against a constant dummy hash so the
   // response time for an unknown email matches a wrong-password attempt (I3).

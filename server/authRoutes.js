@@ -3,6 +3,7 @@ import { ApiError } from "./errors.js";
 import { createMagicLink, verifyMagicLink, loginWithPassword, setCustomerPassword, createLoginCode, verifyLoginCode } from "./auth.js";
 import { revokeSession } from "./session.js";
 import { rateLimit } from "./rateLimit.js";
+import { linkSessionToCustomer, recordAuthEvent } from "./activityRepository.js";
 import {
   setSessionCookie, clearSessionCookie, requireCustomer,
   COOKIE_CUSTOMER, COOKIE_ADMIN,
@@ -24,6 +25,17 @@ function originOf() {
 export function authRouter() {
   const r = Router();
 
+  // 로그인 성공 시 익명 방문 세션(bd_aid)을 회원과 연결하고 login 이벤트 기록.
+  // 추적 실패가 로그인을 막으면 안 되므로 조용히 삼킨다.
+  async function linkActivity(req, customerId) {
+    const aid = req.cookies?.bd_aid;
+    if (!aid || !customerId) return;
+    try {
+      await linkSessionToCustomer(aid, customerId);
+      await recordAuthEvent(aid, "login");
+    } catch { /* no-op */ }
+  }
+
   r.post("/magic-link",
     rateLimit({ limit: 5, windowMs: MINUTE }),
     async (req, res, next) => {
@@ -44,8 +56,9 @@ export function authRouter() {
     try {
       const token = req.query.token;
       if (!token) throw new ApiError("MAGIC_LINK_INVALID", 400);
-      const { session } = await verifyMagicLink(String(token));
+      const { session, customer } = await verifyMagicLink(String(token));
       setSessionCookie(res, COOKIE_CUSTOMER, session);
+      await linkActivity(req, customer?.id);
       res.json({ ok: true, principal: "customer" });
     } catch (e) { next(e); }
   });
@@ -72,8 +85,9 @@ export function authRouter() {
     try {
       const { email, code } = req.body || {};
       if (typeof email !== "string" || typeof code !== "string") throw new ApiError("VALIDATION_ERROR", 400);
-      const { session } = await verifyLoginCode(email, code);
+      const { session, customer } = await verifyLoginCode(email, code);
       setSessionCookie(res, COOKIE_CUSTOMER, session);
+      await linkActivity(req, customer?.id);
       res.json({ ok: true, principal: "customer" });
     } catch (e) { next(e); }
   });
@@ -86,8 +100,9 @@ export function authRouter() {
       if (typeof email !== "string" || typeof password !== "string") {
         throw new ApiError("VALIDATION_ERROR", 400);
       }
-      const { principalType, session } = await loginWithPassword(email, password);
+      const { principalType, customerId, session } = await loginWithPassword(email, password);
       setSessionCookie(res, principalType === "admin" ? COOKIE_ADMIN : COOKIE_CUSTOMER, session);
+      if (principalType === "customer") await linkActivity(req, customerId);
       res.json({ ok: true, principal: principalType });
     } catch (e) { next(e); }
   });

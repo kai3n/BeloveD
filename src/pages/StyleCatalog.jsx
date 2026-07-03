@@ -5,6 +5,7 @@ import { getSettings, listOpsStyles } from "../lib/store.js";
 import { useDBVersion } from "../lib/useDB.js";
 import { MediaThumb, withBase } from "../components/ui.jsx";
 import { pickI18n, useLocale } from "../i18n.jsx";
+import { track } from "../lib/track.js";
 import {
   DESIGN_CATEGORIES,
   categoryMeta,
@@ -44,7 +45,12 @@ function CatalogMediaCarousel({ card }) {
   return (
     <div className="design-shop-media-frame">
       {card.href ? (
-        <Link to={card.href} className="design-shop-media" aria-label={card.title}>
+        <Link
+          to={card.href}
+          className="design-shop-media"
+          aria-label={card.title}
+          onClick={() => track("style_click", { entityType: "style", entityId: card.id })}
+        >
           {mediaContent}
         </Link>
       ) : (

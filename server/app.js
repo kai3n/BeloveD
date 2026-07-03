@@ -9,6 +9,9 @@ import { query } from "./db.js";
 import { authRouter } from "./authRoutes.js";
 import { mediaRouter } from "./mediaRoutes.js";
 import { customerRouter } from "./customerRoutes.js";
+import { activityRouter } from "./activityRoutes.js";
+import { adminActivityRouter } from "./adminActivityRoutes.js";
+import { runActivityMaintenance } from "./activityMaintenance.js";
 
 const distDir = join(dirname(fileURLToPath(import.meta.url)), "..", "dist");
 
@@ -33,6 +36,22 @@ export function createApp() {
 
   app.use("/v1/auth", authRouter());
   app.use("/v1/media", mediaRouter());
+  // sendBeacon 기본 Content-Type(text/plain) 대응 — activity 경로만 텍스트도 수용
+  app.use("/v1/activity", express.text({ type: "text/plain", limit: "64kb" }));
+  app.use("/v1/activity", activityRouter());
+  app.use("/v1/admin", adminActivityRouter());
+
+  // Vercel Cron 전용 — CRON_SECRET 불일치·미설정 시 404로 존재 자체를 숨긴다.
+  app.get("/v1/internal/activity-maintenance", async (req, res, next) => {
+    try {
+      const secret = process.env.CRON_SECRET;
+      if (!secret || req.get("authorization") !== `Bearer ${secret}`) {
+        return next(new ApiError("NOT_FOUND", 404));
+      }
+      res.json(await runActivityMaintenance());
+    } catch (e) { next(e); }
+  });
+
   app.use("/v1", customerRouter());
 
   // Any unmatched /v1 route returns the JSON error contract (never the SPA).

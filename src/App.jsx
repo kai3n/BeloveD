@@ -1,9 +1,10 @@
-import { lazy, Suspense } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { lazy, Suspense, useEffect } from "react";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import Layout from "./Layout.jsx";
 import NotFound from "./NotFound.jsx";
 import { RequireRole } from "./lib/auth.jsx";
 import { WITH_BACKOFFICE } from "./lib/flags.js";
+import { track } from "./lib/track.js";
 // 공개 스토어프론트 — 모든 방문자가 즉시 보는 화면은 eager 로드
 import Home from "./pages/Home.jsx";
 import Login from "./pages/Login.jsx";
@@ -25,6 +26,8 @@ const AdminOpsOrder = WITH_BACKOFFICE ? lazy(() => import("./pages/admin/AdminOp
 const AdminOpsStyles = WITH_BACKOFFICE ? lazy(() => import("./pages/admin/AdminOpsStyles.jsx")) : null;
 const AdminReviews = WITH_BACKOFFICE ? lazy(() => import("./pages/admin/AdminReviews.jsx")) : null;
 const AdminBenchmark = WITH_BACKOFFICE ? lazy(() => import("./pages/admin/AdminBenchmark.jsx")) : null;
+const AdminMembers = WITH_BACKOFFICE ? lazy(() => import("./pages/admin/AdminMembers.jsx")) : null;
+const AdminMemberTimeline = WITH_BACKOFFICE ? named(() => import("./pages/admin/AdminMembers.jsx"), "AdminMemberTimeline") : null;
 const CustomBuilderMockup = WITH_BACKOFFICE ? lazy(() => import("./pages/CustomBuilderMockup.jsx")) : null;
 const CustomFlowMockup = WITH_BACKOFFICE ? lazy(() => import("./pages/CustomFlowMockup.jsx")) : null;
 const IntakeStoneMockup = WITH_BACKOFFICE ? lazy(() => import("./pages/IntakeStoneMockup.jsx")) : null;
@@ -34,9 +37,17 @@ const GuideHub = named(() => import("./pages/Guide.jsx"), "GuideHub");
 const GuideLabDiamond = named(() => import("./pages/Guide.jsx"), "GuideLabDiamond");
 const Guide4C = named(() => import("./pages/Guide.jsx"), "Guide4C");
 
+// 라우트 이동마다 page_view 1건 — track.js가 어드민·게이트 경로는 스스로 거른다
+function PageViewTracker() {
+  const location = useLocation();
+  useEffect(() => { track("page_view", { path: location.pathname }); }, [location.pathname]);
+  return null;
+}
+
 export default function App() {
   return (
     <Suspense fallback={<div className="page"><p className="page-sub">…</p></div>}>
+      <PageViewTracker />
       <Routes>
         <Route element={<Layout />}>
           <Route index element={<Home />} />
@@ -80,6 +91,8 @@ export default function App() {
               <Route path="ops/:orderId" element={<AdminOpsOrder />} />
               <Route path="benchmark" element={<AdminBenchmark />} />
               <Route path="reviews" element={<AdminReviews />} />
+              <Route path="members" element={<AdminMembers />} />
+              <Route path="members/:memberId" element={<AdminMemberTimeline />} />
               <Route path="diamonds" element={<Navigate to="/admin/benchmark" replace />} />
               <Route path="settings" element={<Navigate to="/admin/orders" replace />} />
             </Route>
