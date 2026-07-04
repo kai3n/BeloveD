@@ -282,9 +282,11 @@ export default function IntakeForm() {
 
     // 실서버 새도우 캡처 — Postgres에 인테이크+주문을 기록하고 접수 메일(고객 언어)을 보낸다.
     // 포털 UI는 아직 로컬 스토어 기준이라 실패해도 흐름은 그대로 (정적 데모 포함).
+    // 키는 제출마다 새로 — 로컬 주문번호(DM-)는 브라우저마다 같은 값에서 시작해
+    // 서버의 idempotency_keys와 충돌하면 다른 고객의 접수가 조용히 유실된다.
     apiFetch("/intakes", {
       method: "POST",
-      headers: { "Idempotency-Key": order.id },
+      headers: { "Idempotency-Key": `${order.id}-${crypto.randomUUID()}` },
       body: {
         ...payload,
         email: contactDetails.contact,

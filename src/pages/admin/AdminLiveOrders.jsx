@@ -360,9 +360,10 @@ function StepCard({ step, index, order, done, changeRequest, expanded, onToggle,
       }
       await apiFetch(`/admin/orders/${order.orderCode}/events`, { method: "POST", body });
       onSent();
+      // 성공 시 busy 유지 — 부모 refetch가 스텝을 잠글 때까지의 틈에 재클릭하면
+      // 같은 이벤트(와 고객 메일)가 중복 발행된다
     } catch (e) {
       setError(e.code || e.message);
-    } finally {
       setBusy(false);
     }
   }

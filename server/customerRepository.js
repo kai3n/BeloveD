@@ -712,10 +712,16 @@ export async function recordOrderEvent(orderCode, type, data = {}, extras = {}) 
     if (extras.artifact) {
       const a = extras.artifact;
       artifactCode = await nextCode(client, "ART");
+      // 버전 자동 증가 — 수정 제안 재발송이 V1으로 남으면 고객·어드민 모두 몇 번째 안인지 알 수 없다
+      const { rows: verRows } = await client.query(
+        "select count(*)::int as n from published_artifacts where order_id = $1 and type = $2",
+        [order.id, a.type],
+      );
+      const versionLabel = a.versionLabel || `V${(verRows[0]?.n || 0) + 1}`;
       await client.query(
         `insert into published_artifacts (artifact_code, order_id, type, version_label, subject_version_id, payload, media)
          values ($1, $2, $3, $4, $5, $6, $7)`,
-        [artifactCode, order.id, a.type, a.versionLabel || "V1", a.subjectVersionId || artifactCode,
+        [artifactCode, order.id, a.type, versionLabel, a.subjectVersionId || artifactCode,
           a.payload || {}, JSON.stringify(a.media || [])],
       );
     }

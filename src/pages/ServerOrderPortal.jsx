@@ -418,7 +418,8 @@ export default function ServerOrderPortal({ orderCode }) {
 
   useEffect(() => {
     let cancelled = false;
-    setState({ status: "loading", order: null });
+    // 같은 주문의 재조회(컨펌·송금 보고 후)는 화면을 비우지 않는다 — 빈 "Loading" 플래시 방지
+    setState((s) => (s.order?.orderCode === orderCode ? s : { status: "loading", order: null }));
     apiFetch(`/orders/${orderCode}`)
       .then((data) => { if (!cancelled) setState({ status: "ok", order: data.order }); })
       .catch((e) => {
@@ -692,27 +693,43 @@ export default function ServerOrderPortal({ orderCode }) {
         </Checkpoint>
       )}
 
-      {/* 기타 열린 컨펌 (완성품 QC 등) */}
-      {otherAction && (
-        <Checkpoint
-          id="bd-action"
-          index="2-1"
-          title={t.kinds[otherAction.kind] || otherAction.title || t.nextTitle}
-          state="active"
-          badgeOverride={t.nextTitle}
-        >
-          {otherAction.description && <p className="form-hint">{otherAction.description}</p>}
-          {renderDecision(otherAction)}
-        </Checkpoint>
-      )}
+      {/* 기타 열린 컨펌 (완성품 QC 등) — 판단 근거(QC 사진·노트)를 버튼과 같은 카드에 보여준다 */}
+      {otherAction && (() => {
+        // 컨펌 종류에 대응하는 최신 아티팩트 — FINAL_QC_CONFIRMATION → QC 미디어
+        const subjectType = otherAction.kind === "FINAL_QC_CONFIRMATION" ? "QC" : null;
+        const subject = subjectType
+          ? (order.publishedArtifacts || [])
+            .filter((a) => a.type === subjectType)
+            .sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt))[0] || null
+          : null;
+        return (
+          <Checkpoint
+            id="bd-action"
+            index="2-1"
+            title={t.kinds[otherAction.kind] || otherAction.title || t.nextTitle}
+            state="active"
+            badgeOverride={t.nextTitle}
+          >
+            {subject?.media?.length > 0 && (
+              <div className="card-grid cols-3" style={{ marginTop: 12 }}>
+                {subject.media.map((m, i) => <MediaThumb key={i} media={m} alt={subject.versionLabel} ratio="1 / 1" />)}
+              </div>
+            )}
+            {subject?.payload?.note && <p className="form-hint" style={{ margin: "10px 0 0" }}>{subject.payload.note}</p>}
+            {otherAction.description && <p className="form-hint">{otherAction.description}</p>}
+            {renderDecision(otherAction)}
+          </Checkpoint>
+        );
+      })()}
 
-      {/* 공유 자료 — 비-QUOTE 아티팩트(QC 미디어 등), 타입별 최신만 */}
+      {/* 공유 자료 — 비-QUOTE 아티팩트(QC 미디어 등), 타입별 최신만. 열린 컨펌 카드에 이미 보인 것은 중복 노출 안 함 */}
       {Object.values((order.publishedArtifacts || []).reduce((acc, a) => {
         const prev = acc[a.type];
         if (!prev || new Date(a.publishedAt) > new Date(prev.publishedAt)) acc[a.type] = a;
         return acc;
       }, {})).map((a) => {
         if (a.type === "QUOTE") return null;
+        if (otherAction?.kind === "FINAL_QC_CONFIRMATION" && a.type === "QC") return null;
         const pay = a.payload || {};
         const hasContent = a.media?.length || pay.note;
         if (!hasContent) return null;
