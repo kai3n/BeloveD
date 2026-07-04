@@ -71,6 +71,7 @@ export function buildIntakePayload(form, refs, user) {
   return {
     ...form,
     ...contactDetails,
+    engraving: (form.engraving || "").trim(),
     stonePrefs: solitaire ? { ...form.stonePrefs, carat: Number(form.stonePrefs?.carat) || null } : null,
     multiSpec,
     referenceMedia: sanitizeReferenceMedia(refs),

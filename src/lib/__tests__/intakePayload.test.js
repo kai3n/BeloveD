@@ -54,6 +54,18 @@ describe("buildIntakePayload — createIntake 호환", () => {
     const { order } = createIntake(payload, null);
     expect(order.status).toBe("STYLE_SELECTION");
   });
+
+  it("각인 문구는 trim되어 실리고, 미입력이면 빈 문자열로 정규화된다", () => {
+    const withEngraving = buildIntakePayload(
+      ringForm({ name: "G", contact: "g@x.com", engraving: "  J ♥ M 2026.07.04  " }),
+      [],
+      null,
+    );
+    expect(withEngraving.engraving).toBe("J ♥ M 2026.07.04");
+    // 구버전 드래프트 등 engraving 키가 아예 없는 폼도 안전
+    const without = buildIntakePayload(ringForm({ name: "G", contact: "g@x.com" }), [], null);
+    expect(without.engraving).toBe("");
+  });
 });
 
 describe("conditionalComplete — 카테고리별 필수 사이즈/핏", () => {
