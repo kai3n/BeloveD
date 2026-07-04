@@ -36,6 +36,10 @@ function moneyToMinorUnits(value) {
 }
 
 function styleView(row) {
+  // payload = 클라이언트 스토어 스타일 원본 — 공개 카탈로그는 이 형태를 그대로 소비한다
+  if (row.payload && Object.keys(row.payload).length > 0) {
+    return { ...row.payload, id: row.style_code, category: row.category, published: row.published };
+  }
   return {
     styleCode: row.style_code,
     category: row.category,

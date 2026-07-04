@@ -5,8 +5,9 @@ import { withTransaction, query } from "./db.js";
 import {
   createDraftIntake, submitIntake, requestHash, recordOrderEvent, EVENT_TRANSITIONS,
   listCustomerOrders, getCustomerOrder, respondToAction, listServerOrders,
-  updateOrderShippingAddress, reportOrderPayment, cancelOrder,
+  updateOrderShippingAddress, reportOrderPayment, cancelOrder, listPublishedStyles,
 } from "./customerRepository.js";
+import { getSettingsValues, PUBLIC_SETTINGS_KEYS } from "./settingsRepository.js";
 import { sendOrderEventMail } from "./orderMail.js";
 import { requireAdmin, requireCustomer } from "./middleware.js";
 
@@ -173,6 +174,24 @@ export function customerRouter() {
       try {
         const result = await respondToAction(req.params.actionCode, await principalEmail(req), req.body || {});
         res.json({ ok: true, ...result });
+      } catch (e) { next(e); }
+    });
+
+  // ── 공개 카탈로그 — 어드민이 편집한 스타일이 모든 고객 브라우저에 도달하는 경로 ──
+  r.get("/designs",
+    rateLimit({ limit: 120, windowMs: MINUTE, keyFn: (req) => `designs:${req.ip}` }),
+    async (_req, res, next) => {
+      try {
+        res.json({ ok: true, styles: await listPublishedStyles() });
+      } catch (e) { next(e); }
+    });
+
+  // 공개 설정 — 견적 추정(가격표·정책값)·결제 채널(Zelle/Venmo)이 소비
+  r.get("/settings/public",
+    rateLimit({ limit: 120, windowMs: MINUTE, keyFn: (req) => `settings:${req.ip}` }),
+    async (_req, res, next) => {
+      try {
+        res.json({ ok: true, settings: await getSettingsValues(PUBLIC_SETTINGS_KEYS) });
       } catch (e) { next(e); }
     });
 

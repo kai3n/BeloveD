@@ -16,6 +16,7 @@ import { pickI18n, useLocale } from "../../i18n.jsx";
 import { defaultSubcategoryFor, styleSubcategoryKey, subcategoryKeysFor } from "../../lib/designSlots.js";
 import { opsStrings } from "../../opsStrings.js";
 import { ConsoleHead, StatStrip } from "./console.jsx";
+import { deleteStyleOnServer, pushSettingsToServer, pushStyleToServer } from "../../lib/serverSync.js";
 
 const FALLBACK_MEDIA = "/assets/lab-diamond-tweezers.webp";
 const MAX_STYLE_MEDIA = 5;
@@ -476,6 +477,7 @@ export default function AdminOpsStyles() {
     setSaveState({ status: "saving", message: ui.savingStyle });
     try {
       const saved = saveOpsStyle(styleFromDraft(draft));
+      pushStyleToServer(saved); // 서버가 진실 — 고객 카탈로그에 반영
       setDraft(draftFromStyle(saved));
       setSaveState({ status: "saved", message: wasEditing ? ui.savedStyle : ui.addedStyle });
     } catch (error) {
@@ -486,12 +488,14 @@ export default function AdminOpsStyles() {
 
   function saveCatalogCopy() {
     updateSettings({ designCopy: copyDraft });
+    pushSettingsToServer({ designCopy: copyDraft });
     setSaveState({ status: "saved", message: ui.catalogSaved });
   }
 
   function toggleStyleField(style, patch) {
     try {
       const saved = saveOpsStyle({ id: style.id, ...patch });
+      pushStyleToServer(saved);
       if (draft.id === saved.id) setDraft(draftFromStyle(saved));
       setSaveState({ status: "saved", message: ui.savedStyle });
     } catch (error) {
@@ -503,6 +507,7 @@ export default function AdminOpsStyles() {
   function removeStyle(style) {
     if (!confirm(ui.deleteConfirm(style.id))) return;
     deleteOpsStyle(style.id);
+    deleteStyleOnServer(style.id);
     if (draft.id === style.id) setDraft(newDraftForCategory(categoryFilter));
     setSaveState({ status: "saved", message: ui.deletedStyle });
   }
@@ -516,11 +521,13 @@ export default function AdminOpsStyles() {
       materialsUsd: Number(sp.materialsUsd) || 0,
     });
     setSp({ styleId: sp.styleId, metal: "18kw", size: "", centerStoneSpec: "", estWeightG: "", variancePct: 6, laborUsd: "", materialsUsd: "" });
+    pushSettingsToServer({ styleSpecs: listStyleSpecs() });
     setSaveState({ status: "saved", message: ui.specSaved });
   }
 
   function removeSpec(id) {
     deleteStyleSpec(id);
+    pushSettingsToServer({ styleSpecs: listStyleSpecs() });
     setSaveState({ status: "saved", message: ui.specDeleted });
   }
 

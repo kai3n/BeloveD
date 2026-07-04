@@ -4,7 +4,8 @@ import { Router } from "express";
 import { rateLimit } from "./rateLimit.js";
 import { requireAdmin } from "./middleware.js";
 import { query } from "./db.js";
-import { listAdminOrders, getAdminOrder } from "./adminRepository.js";
+import { listAdminOrders, getAdminOrder, listAdminStyles, upsertAdminStyle, deleteAdminStyle } from "./adminRepository.js";
+import { getSettingsValues, putSettingsValues, PUBLIC_SETTINGS_KEYS } from "./settingsRepository.js";
 
 const MINUTE = 60 * 1000;
 
@@ -105,6 +106,53 @@ export function adminOrderRouter() {
             respondedAt: row.responded_at, createdAt: row.created_at,
           })),
         });
+      } catch (e) { next(e); }
+    });
+
+  // ── 카탈로그(스타일) CRUD — 어드민 편집이 고객 카탈로그의 진실이 된다 ──
+  r.get("/designs",
+    rateLimit({ limit: 60, windowMs: MINUTE }),
+    requireAdmin,
+    async (_req, res, next) => {
+      try {
+        res.json({ ok: true, styles: await listAdminStyles() });
+      } catch (e) { next(e); }
+    });
+
+  r.put("/designs/:styleCode",
+    rateLimit({ limit: 60, windowMs: MINUTE }),
+    requireAdmin,
+    async (req, res, next) => {
+      try {
+        res.json({ ok: true, style: await upsertAdminStyle(req.params.styleCode, req.body || {}) });
+      } catch (e) { next(e); }
+    });
+
+  r.delete("/designs/:styleCode",
+    rateLimit({ limit: 30, windowMs: MINUTE }),
+    requireAdmin,
+    async (req, res, next) => {
+      try {
+        res.json({ ok: true, ...(await deleteAdminStyle(req.params.styleCode)) });
+      } catch (e) { next(e); }
+    });
+
+  // ── 운영 설정 — 가격표(diamond/metal)·결제 채널·카탈로그 카피·스펙 ──
+  r.get("/settings",
+    rateLimit({ limit: 60, windowMs: MINUTE }),
+    requireAdmin,
+    async (_req, res, next) => {
+      try {
+        res.json({ ok: true, settings: await getSettingsValues(PUBLIC_SETTINGS_KEYS) });
+      } catch (e) { next(e); }
+    });
+
+  r.put("/settings",
+    rateLimit({ limit: 60, windowMs: MINUTE }),
+    requireAdmin,
+    async (req, res, next) => {
+      try {
+        res.json({ ok: true, settings: await putSettingsValues(req.body || {}) });
       } catch (e) { next(e); }
     });
 

@@ -5,10 +5,24 @@ const CATEGORY_PREFIX = {
   ring: "RING",
   earrings: "EAR",
   bracelet: "BR",
+  bangle: "BR",
   necklace: "NECK",
 };
 
 function styleView(row) {
+  // payload = 클라이언트 스토어 스타일 객체 원본(무손실). 인덱스 컬럼이 진실인
+  // 필드(id/published/category)만 payload 위에 덮어쓴다.
+  if (row.payload && Object.keys(row.payload).length > 0) {
+    return {
+      ...row.payload,
+      id: row.style_code,
+      category: row.category,
+      published: row.published,
+      sortOrder: row.sort_order,
+      updatedAt: row.updated_at,
+    };
+  }
+  // 레거시 행(0008 이전) 폴백 — 마이그레이션이 지우므로 실전에선 도달하지 않는다
   return {
     styleCode: row.style_code,
     category: row.category,
@@ -69,25 +83,6 @@ async function nextStyleCode(client, category) {
   return `${prefix}-CUSTOM-${String(rows[0].value).padStart(4, "0")}`;
 }
 
-function normalizeStylePayload(payload = {}) {
-  const category = payload.category || "ring";
-  if (!CATEGORY_PREFIX[category]) throw new ApiError("INVALID_STYLE_CATEGORY", 400);
-  const media = Array.isArray(payload.media) ? payload.media : [];
-  return {
-    category,
-    name: payload.name || {},
-    summary: payload.summary || {},
-    heroMedia: payload.heroMedia || media[0] || {},
-    media,
-    supportedMetals: Array.isArray(payload.supportedMetals) ? payload.supportedMetals : [],
-    stoneRange: payload.stoneRange || null,
-    leadTimeMinDays: Number(payload.leadTimeDays?.min ?? payload.leadTimeMinDays ?? 21),
-    leadTimeMaxDays: Number(payload.leadTimeDays?.max ?? payload.leadTimeMaxDays ?? 42),
-    published: Boolean(payload.published),
-    sortOrder: Number(payload.sortOrder ?? 100),
-  };
-}
-
 export async function listAdminStyles() {
   const { rows } = await query(
     `
@@ -101,45 +96,35 @@ export async function listAdminStyles() {
 
 export async function upsertAdminStyle(styleCode, payload = {}) {
   return withTransaction(async (client) => {
-    const style = normalizeStylePayload(payload);
-    const code = styleCode || payload.styleCode || await nextStyleCode(client, style.category);
+    // payload = 클라이언트 스타일 객체 전체. 인덱스 컬럼만 뽑아 별도 저장.
+    const category = payload.category || "ring";
+    if (!CATEGORY_PREFIX[category]) throw new ApiError("INVALID_STYLE_CATEGORY", 400);
+    const code = styleCode || payload.id || await nextStyleCode(client, category);
+    const media = Array.isArray(payload.media) ? payload.media : [];
+    const style = { ...payload, id: code };
     const { rows } = await client.query(
       `
         insert into starter_designs (
-          style_code, category, name, summary, hero_media, media, supported_metals,
-          stone_range, lead_time_min_days, lead_time_max_days, published, sort_order
-        ) values (
-          $1, $2, $3, $4, $5, $6, $7,
-          $8, $9, $10, $11, $12
-        )
+          style_code, category, name, media, published, sort_order, payload
+        ) values ($1, $2, $3, $4, $5, $6, $7)
         on conflict (style_code) do update set
           category = excluded.category,
           name = excluded.name,
-          summary = excluded.summary,
-          hero_media = excluded.hero_media,
           media = excluded.media,
-          supported_metals = excluded.supported_metals,
-          stone_range = excluded.stone_range,
-          lead_time_min_days = excluded.lead_time_min_days,
-          lead_time_max_days = excluded.lead_time_max_days,
           published = excluded.published,
           sort_order = excluded.sort_order,
+          payload = excluded.payload,
           updated_at = now()
         returning *
       `,
       [
         code,
-        style.category,
-        JSON.stringify(style.name),
-        JSON.stringify(style.summary),
-        JSON.stringify(style.heroMedia),
-        JSON.stringify(style.media),
-        style.supportedMetals,
-        style.stoneRange,
-        style.leadTimeMinDays,
-        style.leadTimeMaxDays,
-        style.published,
-        style.sortOrder,
+        category,
+        JSON.stringify(payload.name || {}),
+        JSON.stringify(media),
+        Boolean(payload.published),
+        Number(payload.sortOrder ?? 100),
+        JSON.stringify(style),
       ],
     );
     await client.query(

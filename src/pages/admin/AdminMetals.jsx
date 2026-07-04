@@ -5,6 +5,7 @@ import { adjustMetalPricing, getSettings, setMetalPrice, updateSettings } from "
 import { useDBVersion } from "../../lib/useDB.js";
 import { useLocale } from "../../i18n.jsx";
 import { ConsoleHead } from "./console.jsx";
+import { pushSettingsToServer } from "../../lib/serverSync.js";
 
 const COPY = {
   en: {
@@ -58,6 +59,8 @@ export default function AdminMetals() {
     const v = Number(value);
     if (!v || v === prev) return;
     setMetalPrice(metal, v);
+    const next = getSettings();
+    pushSettingsToServer({ metalRefUsdPerG: next.metalRefUsdPerG, metalQuotedDate: next.metalQuotedDate || null });
     setNotice(`${c.saved} — ${p.opsMetals[metal] || metal}`);
   }
 
@@ -65,6 +68,8 @@ export default function AdminMetals() {
     const delta = Number(pct);
     if (!delta) return;
     const count = adjustMetalPricing(delta);
+    const next = getSettings();
+    pushSettingsToServer({ metalRefUsdPerG: next.metalRefUsdPerG, metalQuotedDate: next.metalQuotedDate || null });
     setNotice(c.applied(count, `${delta > 0 ? "+" : ""}${delta}`));
     setPct("");
   }
@@ -128,6 +133,7 @@ export default function AdminMetals() {
               const v = Number(e.target.value);
               if (Number.isFinite(v) && v !== settings.defaultLossRatePct) {
                 updateSettings({ defaultLossRatePct: v });
+                pushSettingsToServer({ defaultLossRatePct: v });
                 setNotice(`${c.saved} — ${p.opsA.orders.lossRate}`);
               }
             }}

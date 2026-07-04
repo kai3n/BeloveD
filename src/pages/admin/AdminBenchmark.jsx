@@ -4,6 +4,7 @@ import { adjustBenchmark, getBenchmark, setBenchmarkPrice } from "../../lib/stor
 import { useDBVersion } from "../../lib/useDB.js";
 import { useLocale } from "../../i18n.jsx";
 import { ConsoleHead } from "./console.jsx";
+import { pushSettingsToServer } from "../../lib/serverSync.js";
 
 // 일괄 조정 바 카피 — 벤치마크 페이지 전용
 const BULK_COPY = {
@@ -27,6 +28,7 @@ export default function AdminBenchmark() {
     const v = Number(value);
     if (!v || v === prev) return;
     setBenchmarkPrice(shape, tier, v);
+    pushSettingsToServer({ diamondPricing: getBenchmark() });
     setSavedCell(`${t.saved} — ${p.shapes[shape] || shape} · ${tier}`);
   }
 
@@ -34,6 +36,7 @@ export default function AdminBenchmark() {
     const pct = Number(bulk.pct);
     if (!pct) return;
     const count = adjustBenchmark({ shape: bulk.shape || null, tier: bulk.tier || null, pct });
+    pushSettingsToServer({ diamondPricing: getBenchmark() });
     const signed = `${pct > 0 ? "+" : ""}${pct}`;
     setSavedCell(b.applied(count, signed));
     setBulk((current) => ({ ...current, pct: "" }));

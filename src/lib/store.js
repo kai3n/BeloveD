@@ -392,6 +392,21 @@ function persist() {
   storage.setItem(KEY, JSON.stringify(cache));
   listeners.forEach((fn) => fn());
 }
+
+// ---------- 서버 하이드레이션 ----------
+// 서버(Postgres)가 카탈로그·가격·설정의 진실이고 이 스토어는 부팅 시 덮어쓰는 캐시다.
+// 서버가 비어 있으면(부트스트랩 전) 시드를 유지한다. 정적 데모는 호출부가 조용히 스킵.
+export function hydrateFromServer({ styles, settings } = {}) {
+  const database = db();
+  if (Array.isArray(styles) && styles.length > 0) database.opsStyles = styles;
+  if (settings && typeof settings === "object") {
+    const { styleSpecs, diamondPricing, ...rest } = settings;
+    if (Array.isArray(diamondPricing) && diamondPricing.length > 0) database.diamondPricing = diamondPricing;
+    if (Array.isArray(styleSpecs)) database.styleSpecs = styleSpecs;
+    database.settings = { ...database.settings, ...rest };
+  }
+  persist();
+}
 // 렌더 중 호출되는 lazy 정리(배치 만료 스윕)용 — 리스너 통지 없이 저장만 (렌더 중 setState 방지)
 function persistQuiet() {
   storage.setItem(KEY, JSON.stringify(cache));
