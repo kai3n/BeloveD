@@ -415,7 +415,7 @@ const now = () => new Date().toISOString();
 const today = () => now().slice(0, 10);
 const plusDays = (n) => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
 const MAX_ORDER_MEDIA = 5;
-export const ORDER_MESSAGE_CHANNELS = ["web", "instagram", "threads", "usCommunity", "cnCommunity"];
+const ORDER_MESSAGE_CHANNELS = ["web", "instagram", "threads", "usCommunity", "cnCommunity"];
 
 function mediaKindFromSrc(src) {
   const s = String(src || "");
@@ -537,32 +537,7 @@ export function addUser({ email, name, role = "customer" }) {
   persist();
   return user;
 }
-// ---------- diamonds ----------
-export function listDiamonds({ includeHidden = false } = {}) {
-  return db().diamonds.filter((d) => includeHidden || d.visible);
-}
 export function getDiamond(id) { return db().diamonds.find((d) => d.id === id) || null; }
-export function saveDiamond(diamond) {
-  const list = db().diamonds;
-  const i = list.findIndex((d) => d.id === diamond.id);
-  if (i >= 0) list[i] = { ...list[i], ...diamond };
-  else list.push({ media: [{ kind: "image", src: "/assets/lab-diamond-tweezers.webp" }], visible: true, ...diamond, id: nextId("d") });
-  persist();
-}
-export function deleteDiamond(id) {
-  const list = db().diamonds;
-  const i = list.findIndex((d) => d.id === id);
-  if (i >= 0) {
-    list.splice(i, 1);
-    persist();
-  }
-}
-export function adjustDiamondPrices(percent) {
-  db().diamonds.forEach((d) => {
-    d.priceUsd = Math.round((d.priceUsd * (1 + percent / 100)) / 10) * 10;
-  });
-  persist();
-}
 
 // ---------- vendor diamond pool (internal helpers — no exported surface) ----------
 function getPoolDiamond(id) { return db().poolDiamonds.find((s) => s.id === id) || null; }
@@ -624,14 +599,7 @@ function autoMatchFromPool(order, intake) {
 function audit(actor, entity, entityId, field, before, after) {
   db().auditLog.push({ id: nextId("aud"), actor, entity, entityId, field: field ?? null, before: before ?? null, after: after ?? null, at: now() });
 }
-export function listAudit(entityId) { return db().auditLog.filter((a) => a.entityId === entityId); }
 
-export function listOrderConversations(orderId) {
-  ensureMessagingCollections();
-  return db().conversations
-    .filter((c) => c.orderId === orderId)
-    .sort((a, b) => (b.updatedAt || "").localeCompare(a.updatedAt || ""));
-}
 
 function getOrCreateOrderConversation(orderId, { channel = "web", externalThreadId = "", sourceLabel = "" } = {}) {
   ensureMessagingCollections();
@@ -716,7 +684,6 @@ function nextSeqId(prefix, slice) {
   return `${prefix}-${String(db().opsCounter).padStart(6, "0")}`;
 }
 
-export function listIntakes() { return [...db().intakes]; }
 // 인테이크 제출 → Order 자동 생성 (매뉴얼 P1 자동화)
 export function createIntake(form, customerId = null) {
   const intakeId = nextSeqId("IN");
@@ -789,7 +756,7 @@ function findSpec(styleId, metal) {
   return db().styleSpecs.find((sp) => sp.styleId === styleId && sp.metal === metal && sp.status === "approved") || null;
 }
 // 스펙이 준비됐으면 어드민 없이 견적 생성·발송. 스펙이 없으면 false (weightLabor 경유 후 재시도)
-export function tryAutoQuote(orderId) {
+function tryAutoQuote(orderId) {
   const order = getOpsOrder(orderId);
   const intake = order ? getIntake(order.intakeId) : null;
   if (!order?.styleId || !intake) return false;
@@ -896,7 +863,7 @@ export function createProcurement(orderId, { type, supplierId, dueDate, batchVal
   return pr;
 }
 // 매뉴얼 §6.2: 배치 만료 시 태스크 종료 + 미판매 후보 자동 비공개 (큐/포털/체크리스트 진입 시 lazy 실행)
-export function sweepExpiredBatches() {
+function sweepExpiredBatches() {
   const t = today();
   let changed = false;
   db().procurementReqs.forEach((pr) => {
@@ -909,23 +876,6 @@ export function sweepExpiredBatches() {
     changed = true;
   });
   if (changed) persistQuiet();
-}
-// 서플라이어 화면용 — 고객 신원/Order ID 미노출
-export function supplierTasks(supplierId) {
-  sweepExpiredBatches();
-  return listProcurements({ supplierId }).map((pr) => {
-    const order = getOpsOrder(pr.orderId);
-    const style = order?.styleId ? getOpsStyle(order.styleId) : null;
-    const intake = order ? getIntake(order.intakeId) : null;
-    // CAD 태스크에는 최신 minorRevision 리뷰(이미지+핀)를 브리프로 동봉 (숨김 처리된 버전 제외)
-    const revision = pr.type === "cad" && order
-      ? listCadReviews(order.id).find((c) => c.decision === "minorRevision" && !c.hidden) || null
-      : null;
-    // 재고확인엔 대상 다이아, CAD/QC엔 확정된 센터스톤 사양 동봉 (둘 다 안전 필드만 — 고객가 미노출)
-    const diaId = pr.diamondId || (["cad", "qc"].includes(pr.type) ? order?.selectedDiamondId : null);
-    const diamond = diaId ? getCandidate(diaId) : null;
-    return supplierTaskView(pr, order, style, intake, revision, diamond);
-  });
 }
 export function submitWeightLabor(prId, result) {
   const pr = getProcurement(prId);
@@ -946,11 +896,6 @@ export function submitWeightLabor(prId, result) {
   if (order) tryAutoQuote(order.id);
   persist();
   return pr;
-}
-export function closeProcurement(prId) {
-  const pr = getProcurement(prId);
-  pr.status = "closed";
-  persist();
 }
 
 // 서플라이어가 PR ID로 CAD/QC 제출 — Order ID는 내부에서만 해석
@@ -1055,7 +1000,7 @@ export function listCandidates(filter = {}) {
   return cs;
 }
 export function getCandidate(id) { return db().diamondCands.find((c) => c.id === id) || null; }
-export function getQuoteDiamondCandidate(orderId) {
+function getQuoteDiamondCandidate(orderId) {
   const order = getOpsOrder(orderId);
   if (!order) return null;
   if (order.selectedDiamondId) return getCandidate(order.selectedDiamondId);
@@ -1168,11 +1113,6 @@ export function publishCandidate(diaId, customerPriceUsd) {
   persist();
   return c;
 }
-export function unpublishCandidate(diaId) {
-  const c = getCandidate(diaId);
-  c.published = false;
-  persist();
-}
 export function setCandidateAvailability(diaId, availability) {
   const c = getCandidate(diaId);
   c.availability = availability;
@@ -1246,26 +1186,7 @@ export function submitDiamondSelection(orderId, actor) {
   return candidate;
 }
 
-export function requestStockConfirm(orderId, actor) {
-  return submitDiamondSelection(orderId, actor);
-}
 
-// 확인된 고객 선택 후보 중 하나를 최종 락 (→ QUOTATION). 디파짓은 운영자 수동 확인.
-export function lockSelectedCandidate(diaId, actor) {
-  const c = getCandidate(diaId);
-  if (!(c.clientSelection === "selected" && c.stockConfirmed && c.availability === "available")) throw new Error("notLockable");
-  audit(actor, "diamond", diaId, "lock", null, "selected");
-  lockCandidate(diaId);
-  // 같은 주문의 다른 선택 후보 초기화
-  listCandidates({ orderId: c.orderId }).forEach((o) => {
-    if (o.id !== diaId && o.clientSelection === "selected") o.clientSelection = "none";
-  });
-  listCustomerActions(c.orderId, true)
-    .filter((action) => action.type === "diamondSelection")
-    .forEach((action) => respondCustomerAction(action.id, { decision: "approved", value: diaId }, actor || "customer"));
-  persist();
-  return c;
-}
 
 // 벤더 재고 확인 응답: 있음 → stockConfirmed(락은 고객이 최종 선택 시), 품절 → sold·비공개·선택 해제
 export function submitStockConfirm(prId, available) {
@@ -1589,7 +1510,7 @@ export function listMilestones(orderId) {
   const ms = db().milestones.filter((m) => m.orderId === orderId);
   return MILESTONE_STAGES.map((stage) => ms.find((m) => m.stage === stage)).filter(Boolean);
 }
-export function upsertMilestone(orderId, stage, patch) {
+function upsertMilestone(orderId, stage, patch) {
   let m = db().milestones.find((x) => x.orderId === orderId && x.stage === stage);
   if (!m) {
     m = {
@@ -1924,45 +1845,6 @@ export function submitReview(orderId, { rating, quote, body, media, name, locati
   audit(actor, "review", review.id, "create", null, "pending");
   persist();
   return review;
-}
-// 어드민 수동 관리 — 리뷰 추가/수정/삭제 (홈 노출 콘텐츠 큐레이션)
-export function upsertReviewManual(payload, actor = "ops") {
-  const rows = db().reviews;
-  const existing = payload.id ? rows.find((r) => r.id === payload.id) : null;
-  if (existing) {
-    Object.assign(existing, {
-      name: payload.name ?? existing.name,
-      location: payload.location ?? existing.location,
-      rating: Math.min(5, Math.max(1, Number(payload.rating) || existing.rating)),
-      quote: payload.quote ?? existing.quote,
-      body: payload.body ?? existing.body,
-      media: payload.media ? normalizeOrderMedia(payload.media).slice(0, 5) : existing.media,
-      status: payload.status ?? existing.status,
-    });
-    audit(actor, "review", existing.id, "edit", null, existing.status);
-    persist();
-    return existing;
-  }
-  const review = {
-    id: nextSeqId("REV"), orderId: payload.orderId || null,
-    name: (payload.name || "Client").trim(), location: (payload.location || "").trim(),
-    rating: Math.min(5, Math.max(1, Number(payload.rating) || 5)),
-    quote: (payload.quote || "").trim(), body: (payload.body || "").trim(),
-    media: normalizeOrderMedia(payload.media || []).slice(0, 5),
-    status: payload.status || "published", createdAt: now(),
-  };
-  rows.push(review);
-  audit(actor, "review", review.id, "create", null, review.status);
-  persist();
-  return review;
-}
-export function deleteReview(reviewId, actor = "ops") {
-  const idx = db().reviews.findIndex((r) => r.id === reviewId);
-  if (idx === -1) return false;
-  audit(actor, "review", reviewId, "delete", db().reviews[idx].status, null);
-  db().reviews.splice(idx, 1);
-  persist();
-  return true;
 }
 
 export function setReviewStatus(reviewId, status, actor = "ops") {
