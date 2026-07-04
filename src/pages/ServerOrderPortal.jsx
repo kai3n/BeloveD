@@ -521,7 +521,7 @@ export default function ServerOrderPortal({ orderCode }) {
         />
       </label>
       <div className="field"><span>{t.changesAttach}</span>
-        <MediaPicker value={changeMedia} onChange={setChangeMedia} maxItems={3} showSamples={false} previewMode="list" />
+        <MediaPicker value={changeMedia} onChange={setChangeMedia} maxItems={5} showSamples={false} previewMode="list" />
       </div>
       <div className="customer-decision-actions">
         <button
@@ -530,7 +530,7 @@ export default function ServerOrderPortal({ orderCode }) {
           disabled={!changeMsg.trim()}
           onClick={() => respond(act, "REQUEST_CHANGES", {
             message: changeMsg.trim(),
-            media: changeMedia.filter((m) => /^https?:\/\//.test(m.src || "")).slice(0, 3),
+            media: changeMedia.filter((m) => /^https?:\/\//.test(m.src || "")).slice(0, 5),
           })}
         >
           {t.changesSend}

@@ -29,7 +29,7 @@ export function MediaThumb({ media, ratio = "1 / 1", alt = "", eager = false, fi
   const src = withBase(media.src);
   if (media.kind === "video") {
     // 그리드 영상 썸네일은 화면 밖에서 버퍼링하지 않도록 preload="none" — 보이면 autoplay
-    return <video className={fitClass} style={{ aspectRatio: ratio }} src={src} muted loop autoPlay playsInline preload="none" />;
+    return <video className={fitClass} style={{ aspectRatio: ratio }} src={src} poster={media.poster ? withBase(media.poster) : undefined} muted loop autoPlay playsInline preload="none" />;
   }
   if (media.pos) {
     return (
@@ -546,7 +546,7 @@ const IMAGE_MAX_DIMENSION = 1600;
 const IMAGE_TARGET_BYTES = 650 * 1024;
 const IMAGE_MIN_QUALITY = 0.58;
 const IMAGE_START_QUALITY = 0.86;
-const MAX_VIDEO_MB = 50;
+const MAX_UPLOAD_MB = 30; // 이미지·영상 공통 원본 상한 — 초과 파일은 업로드 자체를 막는다
 
 function mediaKindFromFile(file) {
   const name = file.name || "";
@@ -652,6 +652,33 @@ async function optimizeImageFile(file, scope) {
   };
 }
 
+// 영상 첫 프레임(0.1s) 캡처 → JPEG 포스터. 실패해도 업로드는 계속(포스터는 최선노력).
+function captureVideoPoster(file) {
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (blob) => { if (!settled) { settled = true; URL.revokeObjectURL(url); resolve(blob); } };
+    const url = URL.createObjectURL(file);
+    const v = document.createElement("video");
+    v.muted = true;
+    v.playsInline = true;
+    v.preload = "auto";
+    v.src = url;
+    v.onloadedmetadata = () => { try { v.currentTime = Math.min(0.1, (v.duration || 1) / 2); } catch { finish(null); } };
+    v.onseeked = async () => {
+      try {
+        const w = Math.min(800, v.videoWidth || 800);
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = Math.max(1, Math.round((v.videoHeight || w) * (w / (v.videoWidth || w))));
+        canvas.getContext("2d").drawImage(v, 0, 0, canvas.width, canvas.height);
+        finish(await canvasToBlob(canvas, "image/jpeg", 0.8));
+      } catch { finish(null); }
+    };
+    v.onerror = () => finish(null);
+    window.setTimeout(() => finish(null), 4000);
+  });
+}
+
 // 서버(media.js)가 받는 영상 형식만 업로드 시도 — 브라우저가 type을 비워 보내는
 // 파일은 확장자로 보정하고, 매칭이 없으면 업로드 없이 로컬 프리뷰로 남긴다.
 const VIDEO_UPLOAD_TYPES = new Set(["video/mp4", "video/quicktime", "video/webm"]);
@@ -664,8 +691,6 @@ function videoContentType(file) {
 }
 
 async function prepareVideoFile(file, scope) {
-  const limit = MAX_VIDEO_MB * 1024 * 1024;
-  if (file.size > limit) throw new Error("videoTooLarge");
   const base = {
     kind: "video",
     name: file.name || "reference-video",
@@ -675,11 +700,15 @@ async function prepareVideoFile(file, scope) {
   };
   const contentType = videoContentType(file);
   const uploaded = contentType ? await uploadOrNull(file, scope, contentType) : null;
-  if (uploaded) return { ...base, src: uploaded };
-  return { ...base, src: URL.createObjectURL(file), transient: true };
+  // 포스터 썸네일 — 그리드/목록은 이걸 먼저 그리고, 원본 영상은 재생될 때만 내려받는다
+  const posterBlob = await captureVideoPoster(file);
+  const poster = posterBlob ? await uploadOrNull(posterBlob, scope, "image/jpeg") : null;
+  const withPoster = poster ? { poster } : {};
+  if (uploaded) return { ...base, src: uploaded, ...withPoster };
+  return { ...base, src: URL.createObjectURL(file), transient: true, ...withPoster };
 }
 
-export function MediaPicker({ value, onChange, maxItems = Infinity, showSamples = true, previewMode = "thumb", scope = "reference" }) {
+export function MediaPicker({ value, onChange, maxItems = 5, showSamples = true, previewMode = "thumb", scope = "reference" }) {
   const { p } = useLocale();
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -711,6 +740,7 @@ export function MediaPicker({ value, onChange, maxItems = Infinity, showSamples 
   async function prepareFile(file) {
     const kind = mediaKindFromFile(file);
     if (!kind) throw new Error("unsupportedType");
+    if (file.size > MAX_UPLOAD_MB * 1024 * 1024) throw new Error("fileTooLarge");
     if (kind === "video") return prepareVideoFile(file, scope);
     return optimizeImageFile(file, scope);
   }
@@ -734,7 +764,7 @@ export function MediaPicker({ value, onChange, maxItems = Infinity, showSamples 
         .map((result) => result.value);
       const failed = results.find((result) => result.status === "rejected")?.reason;
       if (files.length > remainingSlots) setError(p.picker.maxError(maxItems));
-      else if (failed?.message === "videoTooLarge") setError(p.picker.fileError(MAX_VIDEO_MB));
+      else if (failed?.message === "fileTooLarge") setError(p.picker.fileError(MAX_UPLOAD_MB));
       else if (failed?.message === "unsupportedType") setError(p.picker.typeError);
       else if (failed) setError(p.picker.optimizeError || p.picker.typeError);
       if (added.length) {

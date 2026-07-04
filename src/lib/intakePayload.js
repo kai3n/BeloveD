@@ -13,6 +13,7 @@ export function sanitizeReferenceMedia(items) {
   return (items || []).slice(0, MAX_REFERENCE_MEDIA).map((media) => ({
     kind: media.kind || "image",
     src: media.src,
+    ...(media.poster ? { poster: media.poster } : {}),
     ...(media.name ? { name: media.name } : {}),
     ...(media.size ? { size: media.size } : {}),
     ...(media.originalSize ? { originalSize: media.originalSize } : {}),
