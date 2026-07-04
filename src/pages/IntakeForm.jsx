@@ -136,6 +136,7 @@ export default function IntakeForm() {
     },
     multiSpec: { meleeSpec: "", overallDims: "", arrangement: "", standard: "" },
     inspirationNotes: "",
+    engraving: "",
     requiredDate: "", termsAccepted: false,
   };
   // 인테이크 진입 이벤트 — 스타일 프리필 여부 포함 (마운트 1회)
@@ -633,6 +634,16 @@ export default function IntakeForm() {
                   ariaLabel={t.requiredDate}
                   onChange={(value) => setF({ requiredDate: value })}
                 />
+              </label>
+              <label className="field"><span>{g.engravingLbl}</span>
+                <input
+                  value={form.engraving}
+                  maxLength={30}
+                  placeholder={g.engravingPh}
+                  onChange={(e) => setF({ engraving: e.target.value })}
+                />
+                {/* 힌트는 span 금지 — .review-contact-grid .field > span이 라벨 스타일을 입힌다 */}
+                <small className="form-hint" style={{ margin: 0 }}>{g.engravingHints[cat]}</small>
               </label>
             </div>
           </section>
