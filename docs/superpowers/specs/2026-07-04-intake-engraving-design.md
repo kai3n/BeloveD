@@ -23,12 +23,12 @@
 ## 2. UI — review 스텝 Size & Fit 섹션 (`IntakeForm.jsx`)
 
 - `#gflow-size-fit`의 `filter-grid` 안, 희망일(`requiredDate`) 필드 다음에 텍스트 입력 추가:
-  - 라벨: `g.engravingLbl` ("각인 문구 (선택)")
+  - 라벨: `g.engravingLbl` ("각인 문구") — 어드민·포털 브리프 행에서 재사용하므로 "(선택)" 접미사 없이 평문. 선택 표시는 힌트가 담당.
   - `maxLength={30}`, placeholder: `g.engravingPh` (예: `J ♥ M 2026.07.04`)
   - 필드 아래 `form-hint`로 카테고리별 위치 안내: `g.engravingHints[cat]`
-    - ring/bangle: 밴드 안쪽 · 최대 30자
-    - necklace: 펜던트 뒷면 · 최대 30자
-    - earrings: 디자인에 따라 가능 여부가 달라요 — 제안 단계에서 확정해 드려요
+    - ring/bangle: 선택 사항 — 밴드 안쪽 · 최대 30자
+    - necklace: 선택 사항 — 펜던트 뒷면 · 최대 30자
+    - earrings: 선택 사항 — 디자인에 따라 가능 여부가 달라요, 제안 단계에서 확정해 드려요
 - 선택 필드이므로 `conditionalComplete`·제출 검증 무변경. `form.conditional`이 아닌 form 최상위에 두는 이유: 카테고리 전환 시 `categoryDefaults()`로 리셋되지 않고 유지되어야 함.
 
 ## 3. i18n — `opsStrings.js` gflow (4개 언어)
