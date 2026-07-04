@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex" />
+<title>BeloveD 페이지 콘셉트 3안 — 과정 · 디자인 · 가이드 · 주문제작</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;1,6..96,400&family=Outfit:wght@200;300;400;500&family=JetBrains+Mono:wght@400;500&family=Pinyon+Script&family=Noto+Serif+KR:wght@200;300;400&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="./concepts-base.css" />
+<style>
+.hub { max-width: 1080px; margin: 0 auto; padding: 72px 24px 80px; }
+.hub-head { text-align: center; max-width: 720px; margin: 0 auto 56px; }
+.hub-head .brand { font-family: var(--script); font-size: 44px; color: var(--gold-deep); }
+.hub-head h1 { font-family: var(--serif); font-weight: 300; font-size: clamp(32px, 4.4vw, 52px); line-height: 1.2; margin: 14px 0 16px; }
+.hub-head p { color: var(--muted); font-size: 14.5px; }
+
+.diag { border: 1px solid var(--line); background: var(--surface); margin-bottom: 64px; }
+.diag-head { padding: 26px 32px 0; }
+.diag-head h2 { font-family: var(--serif); font-weight: 400; font-size: 24px; }
+.diag-head p { font-size: 13px; color: var(--quiet); margin-top: 6px; }
+.diag-row { display: grid; grid-template-columns: 170px 1fr 1fr; gap: 24px; padding: 22px 32px; border-top: 1px solid var(--hair); font-size: 13px; }
+.diag-row:first-of-type { margin-top: 22px; }
+.diag-row .pg { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text); font-weight: 500; }
+.diag-row .pg small { display: block; color: var(--quiet); font-weight: 400; margin-top: 3px; letter-spacing: 0.04em; text-transform: none; }
+.diag-row h6 { font-family: var(--mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 500; margin-bottom: 8px; }
+.diag-row .keep h6 { color: #4a7350; }
+.diag-row .fix h6 { color: #a05a34; }
+.diag-row ul { list-style: none; display: grid; gap: 5px; color: var(--muted); }
+.diag-row li::before { content: "· "; color: var(--quiet); }
+
+.dirs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+.dir { border: 1px solid var(--line); background: var(--surface); display: grid; grid-template-rows: auto 1fr auto; transition: box-shadow .25s, transform .25s; }
+.dir:hover { box-shadow: var(--shadow); transform: translateY(-3px); }
+.dir .no { font-family: var(--serif); font-size: 15px; color: var(--accent); padding: 26px 30px 0; }
+.dir h3 { font-family: var(--serif); font-weight: 400; font-size: 27px; padding: 6px 30px 0; }
+.dir .body { padding: 12px 30px 22px; }
+.dir .body p { font-size: 13.5px; color: var(--muted); }
+.dir .traits { list-style: none; margin-top: 16px; display: grid; gap: 6px; font-size: 12.5px; color: var(--muted); }
+.dir .traits li::before { content: "— "; color: var(--accent); }
+.dir .cost { font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--quiet); margin-top: 16px; }
+.dir .go { display: block; text-align: center; border-top: 1px solid var(--hair); padding: 16px; font-size: 12.5px; letter-spacing: 0.14em; text-transform: uppercase; }
+.dir .go:hover { background: var(--text); color: #fff; }
+.disc { text-align: center; font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; color: var(--quiet); margin-top: 44px; text-transform: uppercase; }
+@media (max-width: 900px) {
+  .dirs { grid-template-columns: 1fr; }
+  .diag-row { grid-template-columns: 1fr; gap: 14px; }
+}
+</style>
+</head>
+<body>
+
+<div class="hub">
+  <header class="hub-head">
+    <p class="brand">BeloveD</p>
+    <h1>페이지 콘셉트 3안</h1>
+    <p>과정 · 디자인 · 가이드 · 주문제작 시작 — 네 페이지의 섹션별 진단과 세 가지 개선 방향.
+    모든 목업은 day(Gallery White) 토큰과 실제 제품 사진으로 그렸습니다.</p>
+  </header>
+
+  <section class="diag">
+    <div class="diag-head">
+      <h2>섹션별 진단 요약</h2>
+      <p>지킬 것(Keep)과 고칠 것(Fix) — 세 방향 모두 이 진단 위에 서 있습니다.</p>
+    </div>
+    <div class="diag-row">
+      <div class="pg">/process<small>과정</small></div>
+      <div class="keep"><h6>Keep — 필요한 것</h6><ul><li>4단계 구조와 “누가 하는 일인지” 라벨</li><li>상·하단 CTA 배치</li></ul></div>
+      <div class="fix"><h6>Fix — 없애거나 바꿀 것</h6><ul><li>“워크스페이스” SaaS 카피 → 여정·사람 언어</li><li>아이콘 카드 → 실물 + 기간(24h 견적·3–5일 CAD·3–4주 제작)</li><li>말로만 설명하는 워크스페이스 패널 → UI 실물 or 삭제</li><li>포함 사항(수정 3회·승인 전 결제 없음)·FAQ 부재</li></ul></div>
+    </div>
+    <div class="diag-row">
+      <div class="pg">/designs<small>디자인</small></div>
+      <div class="keep"><h6>Keep</h6><ul><li>카테고리·서브카테고리 칩</li><li>“이 스타일로 시작” 동선</li><li>화이트 배경 실사 그리드</li></ul></div>
+      <div class="fix"><h6>Fix</h6><ul><li>가격 앵커 부재 — 시작가 필수(고AOV 신뢰 요소)</li><li>“샘플” 카피·“샘플 방향 11개” 노트 폐기</li><li>카드 위 화살표 캐러셀 → 호버 전환</li><li>메탈 옵션·IGI 표기 부재</li></ul></div>
+    </div>
+    <div class="diag-row">
+      <div class="pg">/guide<small>가이드</small></div>
+      <div class="keep"><h6>Keep</h6><ul><li>절제된 헤드 카피</li><li>가이드 → 주문제작 CTA</li></ul></div>
+      <div class="fix"><h6>Fix</h6><ul><li>이미지 0장 — 화면 절반이 빈 공간</li><li>3번째 카드는 /process 재링크(중복) → 셰입·예산 가이드로 교체</li><li>상세 페이지가 h3+p 텍스트 나열 — 4C는 시각 교육 필수</li><li>읽기 시간·디자인 연결 링크 부재</li></ul></div>
+    </div>
+    <div class="diag-row">
+      <div class="pg">/custom/new<small>주문제작 시작</small></div>
+      <div class="keep"><h6>Keep</h6><ul><li>한 화면 한 질문 + 이미지 선택 + 자동 진행</li><li>드래프트 이어하기 배너</li></ul></div>
+      <div class="fix"><h6>Fix</h6><ul><li>익명 진행 도트 → 단계명 + n/총 + 예상 시간</li><li>대형 화면 거대 여백(풀뷰포트 중앙 정렬)</li><li>“제출하면 무슨 일이” 약속 부재(24h 견적·승인 전 결제 없음)</li><li>상담 대안 경로·선택 요약 부재, 하단 링크 붕 뜸</li></ul></div>
+    </div>
+  </section>
+
+  <div class="dirs">
+    <a class="dir" href="./a-atelier.html">
+      <p class="no">Direction A</p>
+      <h3>아틀리에 스토리</h3>
+      <div class="body">
+        <p>“내 반지가 만들어지는 4주”를 이야기로 보여주는 에디토리얼. 단계마다 실물 아티팩트·기간·담당이 붙습니다.</p>
+        <ul class="traits">
+          <li>과정: 교차 레이아웃 + 승인 스레드 실물 목업</li>
+          <li>디자인: 시작가 + 메탈 도트 + 호버 컷 전환</li>
+          <li>인테이크: 선택 요약 레일 투컬럼</li>
+        </ul>
+        <p class="cost">이행 비용 中 · 신뢰 전달 가장 큼</p>
+      </div>
+      <span class="go">A 보기 →</span>
+    </a>
+    <a class="dir" href="./b-concierge.html">
+      <p class="no">Direction B</p>
+      <h3>컨시어지 프리시전</h3>
+      <div class="body">
+        <p>지금의 미니멀 레이아웃을 유지한 채, 빈 자리를 숫자와 약속(24h 견적·수정 3회·승인 전 결제 없음)으로 채웁니다.</p>
+        <ul class="traits">
+          <li>과정: 약속 3스탯 + 세로 타임라인 + 워크스페이스 브라우저 목업</li>
+          <li>디자인: 현 그리드에 가격·필터·트러스트만 추가</li>
+          <li>인테이크: 이름 있는 진행 크럼 + 바닥 약속 바</li>
+        </ul>
+        <p class="cost">이행 비용 小 · 현 코드에서 가장 빠름</p>
+      </div>
+      <span class="go">B 보기 →</span>
+    </a>
+    <a class="dir" href="./c-showroom.html">
+      <p class="no">Direction C</p>
+      <h3>쇼룸 이머시브</h3>
+      <div class="body">
+        <p>화면 절반 이상을 실물 사진에 내어주는 방향. 과정은 풀블리드 챕터, 가이드는 보는 교육, 인테이크는 스플릿 프리뷰.</p>
+        <ul class="traits">
+          <li>과정: 사진 위 챕터 4장 + 스탯 스트립</li>
+          <li>디자인: 히어로 밴드 + 밀도 그리드 + 호버 CTA</li>
+          <li>가이드: 캐럿 실측·컬러 스케일·셰입 실루엣 랩</li>
+        </ul>
+        <p class="cost">이행 비용 大 · 미디어 품질 의존</p>
+      </div>
+      <span class="go">C 보기 →</span>
+    </a>
+  </div>
+
+  <p class="disc">일정·가격 등 모든 수치는 목업용 예시 — 채택 시 실제 정책으로 확정 필요</p>
+</div>
+
+</body>
+</html>

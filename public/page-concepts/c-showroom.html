@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex" />
+<title>방향 C — 쇼룸 이머시브 | BeloveD 페이지 콘셉트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;1,6..96,400&family=Outfit:wght@200;300;400;500&family=JetBrains+Mono:wght@400;500&family=Pinyon+Script&family=Noto+Serif+KR:wght@200;300;400&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="./concepts-base.css" />
+<style>
+/* ══ 방향 C: 쇼룸 이머시브 — 사진이 주인공, 텍스트는 캡션 ══ */
+
+/* 1. 과정 — 풀블리드 4챕터 */
+.s-hero { position: relative; text-align: center; padding: 92px 24px 56px; }
+.s-hero h1 { font-family: var(--serif); font-weight: 300; font-size: clamp(38px, 5vw, 64px); line-height: 1.16; margin-top: 18px; }
+.s-hero .sub { color: var(--muted); font-size: 15px; margin-top: 16px; }
+.s-chapters { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; }
+.s-ch { position: relative; aspect-ratio: 0.72 / 1; overflow: hidden; }
+.s-ch img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .6s ease; }
+.s-ch:hover img { transform: scale(1.045); }
+.s-ch::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(18, 15, 11, 0.72) 0%, rgba(18, 15, 11, 0.12) 46%, rgba(18, 15, 11, 0) 70%);
+}
+.s-ch .txt { position: absolute; left: 26px; right: 26px; bottom: 24px; z-index: 1; color: #f5f1e6; }
+.s-ch .no { font-family: var(--serif); font-size: 15px; color: #d8c69a; }
+.s-ch h3 { font-family: var(--serif); font-weight: 400; font-size: 24px; margin: 6px 0 4px; }
+.s-ch p { font-size: 12.5px; color: rgba(245, 241, 230, 0.82); line-height: 1.55; }
+.s-ch .dur {
+  position: absolute; top: 20px; left: 26px; z-index: 1;
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: #f5f1e6; background: rgba(18, 15, 11, 0.55); padding: 6px 11px; backdrop-filter: blur(3px);
+}
+.s-strip {
+  display: flex; justify-content: center; gap: 40px; flex-wrap: wrap;
+  padding: 30px 24px; border-bottom: 1px solid var(--hair);
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; color: var(--muted); text-transform: uppercase;
+}
+.s-strip b { color: var(--text); font-weight: 500; }
+.s-cta-row { text-align: center; padding: 44px 24px 60px; }
+
+/* 2. 디자인 — 카테고리 히어로 밴드 + 밀도 그리드 */
+.s-band { position: relative; height: 320px; overflow: hidden; }
+.s-band img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 60%; }
+/* 검은배경 라인업 실사 → 의도적 다크 주얼 윈도우 밴드 (day 모드의 기존 문법) */
+.s-band::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to right, rgba(7, 6, 5, 0.82) 18%, rgba(7, 6, 5, 0.32) 52%, rgba(7, 6, 5, 0.05)); }
+.s-band .txt { position: absolute; z-index: 1; left: 56px; top: 50%; transform: translateY(-50%); max-width: 480px; color: #f1ecdf; }
+.s-band h2 { font-family: var(--serif); font-weight: 300; font-size: clamp(32px, 4vw, 50px); line-height: 1.15; margin-top: 12px; }
+.s-band p { color: rgba(241, 236, 223, 0.75); font-size: 14px; margin-top: 10px; }
+.s-tabs { display: flex; gap: 10px; padding: 26px 56px 4px; flex-wrap: wrap; }
+.s-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; padding: 24px 56px 64px; }
+.s-card { position: relative; overflow: hidden; background: var(--surface); border: 1px solid var(--hair); }
+.s-card.wide { grid-column: span 2; }
+.s-card img { aspect-ratio: 1 / 1; object-fit: cover; width: 100%; height: 100%; transition: transform .5s ease; }
+.s-card:hover img { transform: scale(1.03); }
+.s-card .cap {
+  position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+  padding: 24px 16px 12px; background: linear-gradient(to top, rgba(255,255,255,0.94) 40%, rgba(255,255,255,0));
+  font-size: 12.5px;
+}
+.s-card .cap b { font-family: var(--serif); font-weight: 400; font-size: 15.5px; }
+.s-card .cap span { font-family: var(--mono); font-size: 10.5px; color: var(--muted); white-space: nowrap; }
+.s-card .hoverbar {
+  position: absolute; left: 0; right: 0; bottom: 0; transform: translateY(100%); transition: transform .3s ease;
+  background: var(--text); color: #fff; text-align: center; padding: 13px 10px;
+  font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase;
+}
+.s-card:hover .hoverbar { transform: none; }
+.s-card:hover .cap { opacity: 0; }
+.s-card.demo .hoverbar { transform: none; }
+.s-card.demo .cap { opacity: 0; }
+
+/* 3. 가이드 — 비주얼 교육 */
+.s-guide { padding: 72px 56px; }
+.s-guide-head { text-align: center; max-width: 620px; margin: 0 auto 44px; }
+.s-guide-head h2 { font-family: var(--serif); font-weight: 300; font-size: clamp(30px, 3.6vw, 46px); margin-top: 12px; }
+.s-guide-head p { color: var(--muted); font-size: 14.5px; margin-top: 10px; }
+.s-guide-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.s-gcard { position: relative; aspect-ratio: 0.82 / 1; overflow: hidden; }
+.s-gcard img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .6s; }
+.s-gcard:hover img { transform: scale(1.04); }
+.s-gcard::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, rgba(18,15,11,0.66), rgba(18,15,11,0.05) 55%); }
+.s-gcard .txt { position: absolute; z-index: 1; left: 26px; right: 26px; bottom: 24px; color: #f5f1e6; }
+.s-gcard .txt .k { font-family: var(--mono); font-size: 10px; letter-spacing: 0.2em; color: #d8c69a; text-transform: uppercase; }
+.s-gcard h3 { font-family: var(--serif); font-weight: 400; font-size: 26px; margin: 8px 0 4px; }
+.s-gcard p { font-size: 12.5px; color: rgba(245,241,230,0.85); }
+.s-lab { margin-top: 20px; border: 1px solid var(--line); background: var(--surface); padding: 34px 40px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 44px; }
+.s-lab h5 { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--quiet); font-weight: 500; margin-bottom: 16px; }
+.s-carats { display: flex; align-items: flex-end; gap: 22px; }
+.s-carats .c { text-align: center; }
+.s-carats .dot { border-radius: 50%; background: radial-gradient(circle at 34% 30%, #ffffff 0%, #eceae4 42%, #c9c5ba 88%); border: 1px solid var(--line-strong); margin: 0 auto 8px; }
+.s-carats .c:nth-child(1) .dot { width: 22px; height: 22px; }
+.s-carats .c:nth-child(2) .dot { width: 30px; height: 30px; }
+.s-carats .c:nth-child(3) .dot { width: 38px; height: 38px; }
+.s-carats .c:nth-child(4) .dot { width: 46px; height: 46px; }
+.s-carats span { font-family: var(--mono); font-size: 10px; color: var(--muted); }
+.s-colors { display: flex; gap: 4px; }
+.s-colors i {
+  flex: 1; aspect-ratio: 0.9 / 1.3; font-style: normal; display: grid; place-items: end center; padding-bottom: 6px;
+  font-family: var(--mono); font-size: 10px; color: var(--muted); border: 1px solid var(--hair);
+}
+.s-colors .d { background: #fdfdfc; } .s-colors .e { background: #fdfdf9; } .s-colors .f { background: #fcfbf5; }
+.s-colors .g { background: #fbf9f0; } .s-colors .h { background: #faf7ea; } .s-colors .i2 { background: #f8f4e2; }
+.s-colors .rec { outline: 1px solid var(--gold-deep); outline-offset: -1px; }
+.s-shapes { display: flex; gap: 18px; align-items: center; }
+.s-shapes svg { display: block; }
+.s-shapes .sh { text-align: center; }
+.s-shapes span { font-family: var(--mono); font-size: 10px; color: var(--muted); display: block; margin-top: 6px; }
+
+/* 4. 주문제작 — 스플릿 프리뷰 */
+.s-intake { display: grid; grid-template-columns: 1fr 1fr; min-height: 640px; }
+.s-preview { position: relative; overflow: hidden; }
+.s-preview img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.s-preview .cap {
+  position: absolute; left: 28px; bottom: 26px; z-index: 1;
+  background: rgba(255,255,255,0.92); padding: 12px 18px;
+}
+.s-preview .cap b { font-family: var(--serif); font-weight: 400; font-size: 17px; display: block; }
+.s-preview .cap span { font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; color: var(--muted); text-transform: uppercase; }
+.s-qcol { padding: 56px 60px; display: grid; grid-template-rows: auto 1fr auto; }
+.s-qcol .prog { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.14em; color: var(--quiet); text-transform: uppercase; }
+.s-qcol .prog b { color: var(--text); font-weight: 500; }
+.s-qcol h2 { font-family: var(--serif); font-weight: 300; font-size: 34px; margin: 26px 0 4px; }
+.s-qcol .hint { color: var(--quiet); font-size: 13px; margin-bottom: 26px; }
+.s-rows { display: grid; gap: 10px; align-content: start; }
+.s-row { display: flex; align-items: center; gap: 16px; border: 1px solid var(--line); background: var(--surface); padding: 10px 18px 10px 10px; }
+.s-row img { width: 64px; height: 64px; object-fit: cover; }
+.s-row b { font-weight: 400; font-size: 14.5px; flex: 1; }
+.s-row span { font-family: var(--mono); font-size: 10px; color: var(--quiet); letter-spacing: 0.1em; text-transform: uppercase; }
+.s-row.sel { border-color: var(--gold-deep); box-shadow: 0 0 0 1px var(--gold-deep); }
+.s-row.sel span { color: var(--accent-bright); }
+.s-qfoot { display: flex; justify-content: space-between; align-items: center; padding-top: 26px; border-top: 1px solid var(--hair); margin-top: 30px; font-size: 12.5px; color: var(--muted); }
+.s-qfoot .concierge { color: var(--accent-bright); border-bottom: 1px solid var(--gold-soft); padding-bottom: 2px; }
+
+@media (max-width: 960px) {
+  .s-chapters { grid-template-columns: 1fr 1fr; }
+  .s-band .txt { left: 24px; }
+  .s-tabs, .s-grid, .s-guide { padding-left: 24px; padding-right: 24px; }
+  .s-grid { grid-template-columns: 1fr 1fr; }
+  .s-guide-grid { grid-template-columns: 1fr; }
+  .s-gcard { aspect-ratio: 1.4 / 1; }
+  .s-lab { grid-template-columns: 1fr; padding: 24px; }
+  .s-intake { grid-template-columns: 1fr; }
+  .s-preview { min-height: 320px; }
+  .s-qcol { padding: 36px 24px; }
+}
+</style>
+</head>
+<body>
+
+<nav class="c-top">
+  <a href="./index.html">← 콘셉트 허브</a>
+  <span>방향 C — 쇼룸 이머시브 · 사진이 주인공, 텍스트는 캡션</span>
+  <span class="c-switch"><a href="./a-atelier.html">A</a><a href="./b-concierge.html">B</a><a class="on" href="./c-showroom.html">C</a></span>
+</nav>
+
+<header class="c-intro">
+  <p class="kicker">Direction C</p>
+  <h1>쇼룸 이머시브</h1>
+  <p>화면의 절반 이상을 실물 사진에 내어주는 방향. 과정은 풀블리드 챕터로,
+  가이드는 보는 교육으로, 인테이크는 선택이 즉시 비주얼로 반영되는 스플릿 스크린으로. 수치는 예시입니다.</p>
+</header>
+
+<!-- ══════════ 1. 과정 ══════════ -->
+<div class="c-section"><strong>01 · /process</strong> 과정 — 풀블리드 4챕터</div>
+<div class="c-frame"><div class="c-canvas">
+  <div class="m-nav">
+    <div class="links"><span>디자인</span><span class="on">과정</span><span>가이드</span><span>주문제작 시작</span></div>
+    <div class="brand">BeloveD</div>
+    <div class="meta"><span>KO</span><span>◐</span><span>계정</span></div>
+  </div>
+
+  <section class="s-hero">
+    <p class="m-kicker">주문제작 방식</p>
+    <h1>구매가 아니라,<br />제작의 관람.</h1>
+    <p class="sub">첫 스케치부터 마지막 광택까지 — 4주의 여정을 지켜보세요.</p>
+  </section>
+
+  <div class="s-chapters">
+    <div class="s-ch">
+      <img src="/assets/designs/RIGTXR09875R400-WG-RB-WH-400-M0.jpg" alt="" />
+      <span class="dur">약 2분</span>
+      <div class="txt"><p class="no">Chapter 01</p><h3>브리프</h3><p>디자인을 고르거나 레퍼런스를 올리는 것으로 시작.</p></div>
+    </div>
+    <div class="s-ch">
+      <img src="/assets/designs/RIGKSR6117R600-WG-RB-WH-700-M0.jpg" alt="" />
+      <span class="dur">3–5일</span>
+      <div class="txt"><p class="no">Chapter 02</p><h3>견적 &amp; CAD</h3><p>견적과 3D 렌더가 버전으로 쌓입니다. 수정 3회 포함.</p></div>
+    </div>
+    <div class="s-ch">
+      <img src="/assets/designs/RIGTXR03183-GW4_1.jpg" alt="" />
+      <span class="dur">고객 페이스</span>
+      <div class="txt"><p class="no">Chapter 03</p><h3>승인</h3><p>마음에 들 때까지 — 결제는 승인 후에만.</p></div>
+    </div>
+    <div class="s-ch">
+      <img src="/assets/designs/RIGJRD0315-HW4_1.jpg" alt="" />
+      <span class="dur">3–4주</span>
+      <div class="txt"><p class="no">Chapter 04</p><h3>QC &amp; 배송</h3><p>실물 영상·IGI 인증서와 함께 보험 배송으로.</p></div>
+    </div>
+  </div>
+
+  <div class="s-strip">
+    <span>전체 여정 <b>약 4–5주</b></span>
+    <span>첫 견적 <b>24시간</b></span>
+    <span>CAD 수정 <b>3회 포함</b></span>
+    <span>승인 전 <b>결제 없음</b></span>
+  </div>
+  <div class="s-cta-row"><span class="m-btn">주문제작 시작 →</span></div>
+</div></div>
+<div class="c-notes">
+  <span>아이콘 카드 → 실물 사진 위 풀블리드 챕터 4장(기간 오버레이)</span>
+  <span>워크스페이스 설명 패널 → 신뢰 스탯 스트립 한 줄로 압축</span>
+  <span>히어로 카피를 관람 콘셉트로 — 시스템 언어 제거</span>
+</div>
+
+<!-- ══════════ 2. 디자인 ══════════ -->
+<div class="c-section"><strong>02 · /designs</strong> 디자인 — 카테고리 히어로 밴드 + 밀도 그리드</div>
+<div class="c-frame"><div class="c-canvas">
+  <div class="s-band">
+    <img src="/assets/jewelry-lineup.png" alt="" />
+    <div class="txt">
+      <p class="m-kicker">커스텀 디자인</p>
+      <h2>스타일 선택.</h2>
+      <p>모든 디자인은 시작점 — 그대로도, 원하는 만큼 바꿔도. 견적은 무료입니다.</p>
+    </div>
+  </div>
+  <div class="s-tabs">
+    <span class="m-chip on">전체</span><span class="m-chip">링</span><span class="m-chip">이어링</span>
+    <span class="m-chip">뱅글 / 브레이슬릿</span><span class="m-chip">네크리스 / 펜던트</span>
+  </div>
+  <div class="s-grid">
+    <article class="s-card wide">
+      <img src="/assets/designs/RIGTXR06263-2.50-GW4-1-NEW.jpg" alt="" />
+      <div class="cap"><b>라운드 쓰리 스톤 링</b><span>from $2,150</span></div>
+      <div class="hoverbar">이 스타일로 시작 →</div>
+    </article>
+    <article class="s-card">
+      <img src="/assets/designs/RIGTXR09875R400-WG-RB-WH-400-M0.jpg" alt="" />
+      <div class="cap"><b>쉐어드 프롱 밴드</b><span>from $1,450</span></div>
+      <div class="hoverbar">이 스타일로 시작 →</div>
+    </article>
+    <article class="s-card demo">
+      <img src="/assets/designs/RIGTXR01745-WG-RB-WH-150-M0.jpg" alt="" />
+      <div class="cap"><b>4프롱 솔리테어 링</b><span>from $1,180</span></div>
+      <div class="hoverbar">이 스타일로 시작 →</div>
+    </article>
+    <article class="s-card">
+      <img src="/assets/designs/RIGRVR02048-YG-RB-WH-200-M0.jpg" alt="" />
+      <div class="cap"><b>프렌치 파베 밴드</b><span>from $980</span></div>
+      <div class="hoverbar">이 스타일로 시작 →</div>
+    </article>
+    <article class="s-card">
+      <img src="/assets/designs/RIGWR4428-WG-RB-WH-500-M0-new.jpg" alt="" />
+      <div class="cap"><b>채널 세트 밴드</b><span>from $1,240</span></div>
+      <div class="hoverbar">이 스타일로 시작 →</div>
+    </article>
+    <article class="s-card">
+      <img src="/assets/designs/RIG0894X4C400H1-GW-NEW.jpg" alt="" />
+      <div class="cap"><b>히든 헤일로 링</b><span>from $1,390</span></div>
+      <div class="hoverbar">이 스타일로 시작 →</div>
+    </article>
+  </div>
+</div></div>
+<div class="c-notes">
+  <span>헤더를 카테고리 히어로 밴드로 — 라인업 실사 위 타이틀</span>
+  <span>카드 텍스트를 사진 위 캡션으로 수납, 밀도 그리드 + 2칸 피처 카드</span>
+  <span>호버 시 시작 CTA 바(세 번째 카드에 호버 상태 재현)</span>
+  <span>시작가 상시 노출</span>
+</div>
+
+<!-- ══════════ 3. 가이드 ══════════ -->
+<div class="c-section"><strong>03 · /guide</strong> 가이드 — 읽는 교육에서 보는 교육으로</div>
+<div class="c-frame"><div class="c-canvas">
+  <section class="s-guide">
+    <div class="s-guide-head">
+      <p class="m-kicker">다이아몬드 가이드</p>
+      <h2>망설임 없이 고를 수 있도록.</h2>
+      <p>글보다 눈 — 스케일과 실물로 비교하며 배우는 가이드.</p>
+    </div>
+    <div class="s-guide-grid">
+      <a class="s-gcard" href="#">
+        <img src="/assets/diamond-hero-white-poster.webp" alt="" />
+        <div class="txt"><p class="k">랩그로운 · 5분</p><h3>같은 광채,<br />더 합리적인 시작.</h3><p>차이는 탄생 과정뿐 — 확인해야 할 것들.</p></div>
+      </a>
+      <a class="s-gcard" href="#">
+        <img src="/assets/designs/RIGTXR01745-WG-RB-WH-150-M0.jpg" alt="" />
+        <div class="txt"><p class="k">4C · 4분</p><h3>보이는 아름다움<br />기준으로.</h3><p>컷·컬러·클래리티·캐럿의 우선순위.</p></div>
+      </a>
+      <a class="s-gcard" href="#">
+        <img src="/assets/designs/RIGTXR06263-2.50-GW4-1-NEW.jpg" alt="" />
+        <div class="txt"><p class="k">셰입 · 4분</p><h3>손 위에서<br />달라지는 광채.</h3><p>라운드부터 에메랄드까지.</p></div>
+      </a>
+    </div>
+    <div class="s-lab">
+      <div>
+        <h5>캐럿 — 실제 크기 비교</h5>
+        <div class="s-carats">
+          <div class="c"><div class="dot"></div><span>0.5ct</span></div>
+          <div class="c"><div class="dot"></div><span>1.0ct</span></div>
+          <div class="c"><div class="dot"></div><span>1.5ct</span></div>
+          <div class="c"><div class="dot"></div><span>2.0ct</span></div>
+        </div>
+      </div>
+      <div>
+        <h5>컬러 — D부터 I까지</h5>
+        <div class="s-colors">
+          <i class="d">D</i><i class="e rec">E</i><i class="f rec">F</i><i class="g">G</i><i class="h">H</i><i class="i2">I</i>
+        </div>
+      </div>
+      <div>
+        <h5>셰입 — 인기 실루엣</h5>
+        <div class="s-shapes">
+          <div class="sh"><svg width="34" height="34" viewBox="0 0 34 34"><circle cx="17" cy="17" r="14" fill="none" stroke="#8f7d54" stroke-width="1.1"/><circle cx="17" cy="17" r="8" fill="none" stroke="#cfc4a4" stroke-width="0.9"/></svg><span>라운드</span></div>
+          <div class="sh"><svg width="30" height="36" viewBox="0 0 30 36"><rect x="3" y="3" width="24" height="30" rx="4" fill="none" stroke="#8f7d54" stroke-width="1.1"/><rect x="8" y="9" width="14" height="18" rx="2" fill="none" stroke="#cfc4a4" stroke-width="0.9"/></svg><span>에메랄드</span></div>
+          <div class="sh"><svg width="30" height="36" viewBox="0 0 30 36"><ellipse cx="15" cy="18" rx="11" ry="15" fill="none" stroke="#8f7d54" stroke-width="1.1"/><ellipse cx="15" cy="18" rx="6" ry="9" fill="none" stroke="#cfc4a4" stroke-width="0.9"/></svg><span>오벌</span></div>
+          <div class="sh"><svg width="32" height="36" viewBox="0 0 32 36"><path d="M16 2 C24 10 30 16 30 22 A14 12 0 1 1 2 22 C2 16 8 10 16 2 Z" fill="none" stroke="#8f7d54" stroke-width="1.1"/></svg><span>페어</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div></div>
+<div class="c-notes">
+  <span>텍스트 카드 → 실사 위 오버레이 카드 3장(읽기 시간 표기)</span>
+  <span>비주얼 랩: 캐럿 실측 비교·컬러 스케일(추천 표시)·셰입 실루엣</span>
+  <span>가이드 상세도 같은 문법으로 — h3+p 나열 폐기</span>
+</div>
+
+<!-- ══════════ 4. 주문제작 시작 ══════════ -->
+<div class="c-section"><strong>04 · /custom/new</strong> 주문제작 — 선택이 즉시 반영되는 스플릿 프리뷰</div>
+<div class="c-frame"><div class="c-canvas">
+  <div class="s-intake">
+    <div class="s-preview">
+      <img src="/assets/designs/DP2284-2W_f45a16d1-c237-45c6-b77f-74978e8991c0.jpg" alt="네크리스 프리뷰" />
+      <div class="cap"><span>지금 보고 있는 선택</span><b>네크리스 / 펜던트</b></div>
+    </div>
+    <div class="s-qcol">
+      <div class="prog"><span><b>01</b> / 06 · 제품</span><span>약 2분</span></div>
+      <div>
+        <h2>어떤 주얼리를 만들까요?</h2>
+        <p class="hint">선택하면 왼쪽 프리뷰가 바뀝니다 — 견적 전까지 확정이 아니에요.</p>
+        <div class="s-rows">
+          <div class="s-row"><img src="/assets/designs/RIGTXR09875R400-WG-RB-WH-400-M0.jpg" alt="" /><b>링</b><span>11 스타일</span></div>
+          <div class="s-row sel"><img src="/assets/designs/DP2284-2W_f45a16d1-c237-45c6-b77f-74978e8991c0.jpg" alt="" /><b>네크리스 / 펜던트</b><span>선택됨 ✓</span></div>
+          <div class="s-row"><img src="/assets/designs/EAGJOE555-GP2-1.jpg" alt="" /><b>이어링</b><span>8 스타일</span></div>
+          <div class="s-row"><img src="/assets/designs/BCGTXBR00769-YG-RB-WH-1200-M0.jpg" alt="" /><b>뱅글 / 브레이슬릿</b><span>6 스타일</span></div>
+        </div>
+      </div>
+      <div class="s-qfoot">
+        <span>제출하면 <b>24시간 안에 무료 견적</b></span>
+        <span class="concierge">상담으로 시작 →</span>
+      </div>
+    </div>
+  </div>
+</div></div>
+<div class="c-notes">
+  <span>풀뷰포트 빈 여백 → 절반을 선택 반영 프리뷰 이미지로</span>
+  <span>옵션은 우측 리스트(카테고리별 스타일 수 표기)</span>
+  <span>진행·예상 시간 상단, 견적 약속·상담 대안 하단 고정</span>
+</div>
+
+<footer class="c-foot">
+  일정·가격 수치는 예시 — 확정 전 검증 필요 · <a href="./index.html">허브로 돌아가기 →</a>
+</footer>
+
+</body>
+</html>

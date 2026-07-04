@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex" />
+<title>방향 B — 컨시어지 프리시전 | BeloveD 페이지 콘셉트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;1,6..96,400&family=Outfit:wght@200;300;400;500&family=JetBrains+Mono:wght@400;500&family=Pinyon+Script&family=Noto+Serif+KR:wght@200;300;400&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="./concepts-base.css" />
+<style>
+/* ══ 방향 B: 컨시어지 프리시전 — 지금의 미니멀을 유지하고 숫자·약속으로 채운다 ══ */
+
+/* 1. 과정 */
+.b-hero { max-width: 760px; margin: 0 auto; padding: 88px 24px 40px; text-align: center; }
+.b-hero h1 { font-family: var(--serif); font-weight: 300; font-size: clamp(34px, 4.2vw, 52px); line-height: 1.22; margin: 18px 0 16px; }
+.b-hero .sub { color: var(--muted); font-size: 15px; }
+.b-hero .ctas { display: flex; gap: 14px; justify-content: center; margin-top: 30px; }
+.b-stats { display: grid; grid-template-columns: repeat(3, 1fr); max-width: 860px; margin: 30px auto 0; border: 1px solid var(--line); background: var(--surface); }
+.b-stats div { padding: 26px 20px; text-align: center; border-left: 1px solid var(--hair); }
+.b-stats div:first-child { border-left: 0; }
+.b-stats b { display: block; font-family: var(--serif); font-size: 30px; font-weight: 400; }
+.b-stats span { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--quiet); }
+.b-line { max-width: 860px; margin: 72px auto 0; padding: 0 24px 24px; }
+.b-stage { position: relative; display: grid; grid-template-columns: 56px 1fr 250px; gap: 26px; padding: 34px 0; }
+.b-stage::before { content: ""; position: absolute; left: 27px; top: 0; bottom: 0; border-left: 1px solid var(--line); }
+.b-stage:first-child::before { top: 44px; }
+.b-stage:last-child::before { bottom: auto; height: 44px; }
+.b-stage .dot {
+  position: relative; z-index: 1; width: 56px; height: 56px; border-radius: 50%;
+  display: grid; place-items: center; background: var(--bg-2); border: 1px solid var(--line-strong);
+  font-family: var(--serif); font-size: 19px;
+}
+.b-stage.hot .dot { background: var(--text); color: #ebd8aa; border-color: var(--text); }
+.b-stage h3 { font-family: var(--serif); font-weight: 400; font-size: 23px; display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.b-stage h3 .dur { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.14em; color: var(--accent-bright); text-transform: uppercase; border: 1px solid var(--gold-soft); padding: 4px 10px; }
+.b-stage p { color: var(--muted); font-size: 14px; margin-top: 8px; max-width: 52ch; }
+.b-stage .outs { display: grid; gap: 6px; align-content: start; padding-top: 6px; }
+.b-stage .outs i {
+  font-style: normal; font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em;
+  color: var(--muted); background: var(--surface-2); padding: 7px 12px; width: fit-content;
+}
+.b-stage .note { font-size: 12.5px; color: var(--accent-bright); margin-top: 10px; }
+/* 워크스페이스 브라우저 프레임 */
+.b-ws { max-width: 980px; margin: 48px auto 0; padding: 0 24px 72px; }
+.b-ws-head { text-align: center; margin-bottom: 26px; }
+.b-ws-head h2 { font-family: var(--serif); font-weight: 300; font-size: 32px; margin-top: 12px; }
+.b-ws-head p { color: var(--muted); font-size: 14px; margin-top: 8px; }
+.b-browser { border: 1px solid var(--line-strong); background: var(--surface); box-shadow: var(--shadow); }
+.b-browser .bar { display: flex; align-items: center; gap: 8px; padding: 12px 18px; border-bottom: 1px solid var(--line); }
+.b-browser .bar i { width: 9px; height: 9px; border-radius: 50%; background: var(--line-strong); font-style: normal; }
+.b-browser .bar .url {
+  flex: 1; text-align: center; font-family: var(--mono); font-size: 11px; color: var(--quiet);
+  background: var(--surface-2); padding: 6px 0; margin: 0 8%;
+}
+.b-ws-ui { padding: 30px 34px 36px; }
+.b-ws-order { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 10px; }
+.b-ws-order h4 { font-family: var(--serif); font-size: 22px; font-weight: 400; }
+.b-ws-order span { font-family: var(--mono); font-size: 11px; color: var(--quiet); letter-spacing: 0.1em; }
+.b-ws-steps { display: flex; gap: 5px; margin: 20px 0 6px; }
+.b-ws-steps i {
+  flex: 1; font-style: normal; text-align: center; font-family: var(--mono); font-size: 10px;
+  letter-spacing: 0.08em; text-transform: uppercase; padding: 9px 4px;
+  background: var(--surface-2); color: var(--quiet);
+}
+.b-ws-steps i.done { background: #efe9dd; color: var(--gold-deep); }
+.b-ws-steps i.now { background: var(--text); color: #ebd8aa; }
+.b-ws-next {
+  display: flex; justify-content: space-between; align-items: center; gap: 14px;
+  border: 1px solid var(--gold-soft); background: #fbf8f1; padding: 16px 20px; margin-top: 18px;
+}
+.b-ws-next p { font-size: 13.5px; } .b-ws-next b { font-weight: 500; }
+.b-ws-next span { font-family: var(--mono); font-size: 10.5px; color: var(--accent-bright); letter-spacing: 0.1em; text-transform: uppercase; }
+.b-ws-media { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 18px; }
+.b-ws-media figure { border: 1px solid var(--hair); }
+.b-ws-media img { aspect-ratio: 1.7 / 1; object-fit: cover; }
+.b-ws-media figcaption { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 10.5px; color: var(--muted); padding: 10px 14px; }
+
+/* 2. 디자인 */
+.b-cat-head { max-width: 1180px; margin: 0 auto; padding: 72px 24px 0; display: flex; justify-content: space-between; align-items: flex-end; gap: 30px; }
+.b-cat-head h2 { font-family: var(--serif); font-weight: 300; font-size: clamp(30px, 3.4vw, 44px); margin-top: 12px; }
+.b-cat-head .sub { color: var(--muted); font-size: 14.5px; margin-top: 10px; }
+.b-cat-head .igi { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.16em; color: var(--quiet); text-transform: uppercase; white-space: nowrap; }
+.b-filters { max-width: 1180px; margin: 26px auto 0; padding: 0 24px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.b-filters .sep { color: var(--hair); margin: 0 6px; }
+.b-filters .lab { font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; color: var(--quiet); text-transform: uppercase; }
+.b-grid { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; padding: 30px 24px 64px; }
+.b-card .ph { border: 1px solid var(--hair); background: var(--surface); }
+.b-card img { aspect-ratio: 1 / 1; object-fit: cover; }
+.b-card .body { padding: 14px 2px 0; }
+.b-card .sub { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--quiet); }
+.b-card h3 { font-family: var(--serif); font-weight: 400; font-size: 17.5px; margin: 5px 0 4px; line-height: 1.3; }
+.b-card .price { font-size: 12.5px; color: var(--muted); }
+.b-card .price b { font-weight: 500; color: var(--text); }
+
+/* 3. 가이드 */
+.b-guide { max-width: 1080px; margin: 0 auto; padding: 72px 24px; display: grid; grid-template-columns: 1fr 300px; gap: 56px; }
+.b-guide-head h2 { font-family: var(--serif); font-weight: 300; font-size: clamp(30px, 3.4vw, 44px); margin-top: 12px; }
+.b-guide-head p { color: var(--muted); font-size: 14.5px; margin-top: 10px; }
+.b-index { margin-top: 36px; border-top: 1px solid var(--line); }
+.b-row { display: grid; grid-template-columns: 64px 96px 1fr auto; gap: 22px; align-items: center; padding: 24px 0; border-bottom: 1px solid var(--line); }
+.b-row .no { font-family: var(--serif); font-size: 26px; color: var(--gold-soft); }
+.b-row img { aspect-ratio: 1/1; object-fit: cover; border: 1px solid var(--hair); }
+.b-row h4 { font-family: var(--serif); font-weight: 400; font-size: 20px; }
+.b-row p { font-size: 13px; color: var(--muted); margin-top: 3px; }
+.b-row .rt { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.12em; color: var(--quiet); text-transform: uppercase; white-space: nowrap; }
+.b-row .rt::after { content: " →"; color: var(--accent); }
+.b-side { align-self: start; position: sticky; top: 80px; display: grid; gap: 18px; }
+.b-side .box { border: 1px solid var(--line); background: var(--surface); padding: 26px; }
+.b-side h5 { font-family: var(--serif); font-size: 20px; font-weight: 400; line-height: 1.35; }
+.b-side p { font-size: 13px; color: var(--muted); margin: 10px 0 18px; }
+.b-side .mini { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.12em; color: var(--quiet); text-transform: uppercase; text-align: center; }
+
+/* 4. 주문제작 */
+.b-intake { max-width: 880px; margin: 0 auto; padding: 44px 24px 0; min-height: 560px; display: grid; grid-template-rows: auto 1fr auto; }
+.b-crumbs { display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap; font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--quiet); }
+.b-crumbs i { font-style: normal; display: flex; align-items: center; gap: 7px; }
+.b-crumbs i::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--line-strong); }
+.b-crumbs i.now { color: var(--text); font-weight: 500; }
+.b-crumbs i.now::before { background: var(--accent); }
+.b-crumbs .eta { color: var(--accent-bright); }
+.b-q { text-align: center; padding: 34px 0 8px; align-self: start; }
+.b-q h2 { font-family: var(--serif); font-weight: 300; font-size: 36px; }
+.b-q .hint { color: var(--quiet); font-size: 13px; margin-top: 6px; }
+.b-opts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 30px; }
+.b-opt { border: 1px solid var(--line); background: var(--surface); }
+.b-opt img { aspect-ratio: 1/1; object-fit: cover; }
+.b-opt span { display: block; text-align: center; font-size: 12.5px; padding: 11px 6px; border-top: 1px solid var(--hair); }
+.b-opt.sel { border-color: var(--gold-deep); box-shadow: 0 0 0 1px var(--gold-deep); }
+.b-floor {
+  display: flex; justify-content: space-between; align-items: center; gap: 16px;
+  border-top: 1px solid var(--line); margin-top: 40px; padding: 18px 0 26px;
+  font-size: 12.5px; color: var(--muted);
+}
+.b-floor .ghost { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; color: var(--quiet); text-transform: uppercase; }
+.b-floor .mid { text-align: center; }
+.b-floor .mid b { font-weight: 500; color: var(--text); }
+.b-floor .concierge { color: var(--accent-bright); border-bottom: 1px solid var(--gold-soft); padding-bottom: 2px; white-space: nowrap; }
+
+@media (max-width: 960px) {
+  .b-stage { grid-template-columns: 44px 1fr; }
+  .b-stage::before { left: 21px; }
+  .b-stage .dot { width: 44px; height: 44px; font-size: 16px; }
+  .b-stage .outs { grid-column: 2; flex-direction: row; display: flex; flex-wrap: wrap; }
+  .b-grid { grid-template-columns: repeat(2, 1fr); }
+  .b-guide { grid-template-columns: 1fr; }
+  .b-side { position: static; }
+  .b-row { grid-template-columns: 40px 72px 1fr; }
+  .b-row .rt { grid-column: 3; }
+  .b-opts { grid-template-columns: 1fr 1fr; }
+  .b-floor { flex-direction: column; }
+  .b-stats { grid-template-columns: 1fr; }
+  .b-stats div { border-left: 0; border-top: 1px solid var(--hair); }
+  .b-ws-media { grid-template-columns: 1fr; }
+  .b-cat-head { flex-direction: column; align-items: flex-start; }
+}
+</style>
+</head>
+<body>
+
+<nav class="c-top">
+  <a href="./index.html">← 콘셉트 허브</a>
+  <span>방향 B — 컨시어지 프리시전 · 미니멀 유지, 숫자와 약속으로 채움</span>
+  <span class="c-switch"><a href="./a-atelier.html">A</a><a class="on" href="./b-concierge.html">B</a><a href="./c-showroom.html">C</a></span>
+</nav>
+
+<header class="c-intro">
+  <p class="kicker">Direction B</p>
+  <h1>컨시어지 프리시전</h1>
+  <p>현재의 절제된 화이트 레이아웃을 그대로 지키면서, 비어 보이던 자리를 구체적인 숫자
+  (기간·가격·포함 사항)와 신뢰 신호로 채웁니다. 가장 이행 비용이 낮은 방향. 수치는 예시입니다.</p>
+</header>
+
+<!-- ══════════ 1. 과정 ══════════ -->
+<div class="c-section"><strong>01 · /process</strong> 과정 — 약속 3줄 + 세로 타임라인 + 워크스페이스 실물</div>
+<div class="c-frame"><div class="c-canvas">
+  <div class="m-nav">
+    <div class="links"><span>디자인</span><span class="on">과정</span><span>가이드</span><span>주문제작 시작</span></div>
+    <div class="brand">BeloveD</div>
+    <div class="meta"><span>KO</span><span>◐</span><span>계정</span></div>
+  </div>
+
+  <section class="b-hero">
+    <p class="m-kicker">주문제작 방식</p>
+    <h1>네 단계, 약 4–5주.<br />전 과정이 기록으로 남습니다.</h1>
+    <p class="sub">주얼리 쇼핑몰처럼 고르고, 프라이빗 아틀리에처럼 주문하세요.</p>
+    <div class="ctas"><span class="m-btn">주문제작 시작 →</span><span class="m-btn ghost">디자인 보기</span></div>
+    <div class="b-stats">
+      <div><b>24시간</b><span>첫 견적 응답</span></div>
+      <div><b>3회</b><span>CAD 수정 포함</span></div>
+      <div><b>100%</b><span>IGI 인증 스톤</span></div>
+    </div>
+  </section>
+
+  <div class="b-line">
+    <div class="b-stage">
+      <div class="dot">1</div>
+      <div>
+        <h3>디자인 브리프 <span class="dur">약 2분</span></h3>
+        <p>시작 디자인을 고르거나 레퍼런스를 업로드하세요. 사이즈·메탈·스톤 선호·날짜·예산을 정리합니다.</p>
+      </div>
+      <div class="outs"><i>브리프 1건</i><i>비용 없음</i></div>
+    </div>
+    <div class="b-stage">
+      <div class="dot">2</div>
+      <div>
+        <h3>견적 &amp; CAD <span class="dur">3–5일</span></h3>
+        <p>제작팀이 견적과 CAD, 렌더를 주문 워크스페이스에 버전으로 올립니다. 수정은 3회까지 기본 포함.</p>
+      </div>
+      <div class="outs"><i>견적서</i><i>CAD v1–v3</i><i>렌더·영상</i></div>
+    </div>
+    <div class="b-stage hot">
+      <div class="dot">3</div>
+      <div>
+        <h3>승인 <span class="dur">고객 페이스</span></h3>
+        <p>버전마다 코멘트를 남기고 제작 전 디자인을 승인합니다.</p>
+        <p class="note">✓ 여기까지 결제 없음 — 착수금은 승인 후에만.</p>
+      </div>
+      <div class="outs"><i>승인 기록</i><i>착수금 결제</i></div>
+    </div>
+    <div class="b-stage">
+      <div class="dot">4</div>
+      <div>
+        <h3>QC &amp; 배송 <span class="dur">3–4주</span></h3>
+        <p>최종 실물 영상, IGI 인증서, 잔금, 배송 추적이 같은 주문 타임라인에 연결됩니다.</p>
+      </div>
+      <div class="outs"><i>QC 영상</i><i>IGI 인증서</i><i>보험 배송</i></div>
+    </div>
+  </div>
+
+  <div class="b-ws">
+    <div class="b-ws-head">
+      <p class="m-kicker">주문 워크스페이스</p>
+      <h2>다음 단계를 늘 명확하게.</h2>
+      <p>말이 아니라 화면으로 — 실제 주문 화면이 이렇게 생겼습니다.</p>
+    </div>
+    <div class="b-browser">
+      <div class="bar"><i></i><i></i><i></i><span class="url">belovediamond.com/orders/BD-2419</span></div>
+      <div class="b-ws-ui">
+        <div class="b-ws-order">
+          <h4>BD-2419 · 4프롱 솔리테어 링</h4>
+          <span>18K WG · 라운드 1.50ct · E / VS1</span>
+        </div>
+        <div class="b-ws-steps">
+          <i class="done">브리프</i><i class="done">견적</i><i class="now">CAD 검토</i><i>승인</i><i>제작·QC</i><i>배송</i>
+        </div>
+        <div class="b-ws-next">
+          <p><b>다음 액션 — CAD v2를 검토해 주세요.</b> 코멘트를 남기면 3일 안에 다음 버전이 올라옵니다.</p>
+          <span>담당 · 고객</span>
+        </div>
+        <div class="b-ws-media">
+          <figure><img src="/assets/designs/RIGTXR01745-WG-RB-WH-150-M0.jpg" alt="CAD v2" /><figcaption><span>CAD v2 · 렌더</span><span>어제</span></figcaption></figure>
+          <figure><img src="/assets/designs/RIGTXR01745-WG-RB-WH-150-M3.jpg" alt="CAD v2 측면" /><figcaption><span>CAD v2 · 측면</span><span>어제</span></figcaption></figure>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+<div class="c-notes">
+  <span>히어로 아래 약속 3스탯(24시간·3회·100%) 신설</span>
+  <span>아이콘 카드 4장 → 기간·산출물이 붙은 세로 타임라인</span>
+  <span>“결제는 승인 후” 순간을 3단계에서 명시적으로 강조</span>
+  <span>워크스페이스 텍스트 패널 → 브라우저 프레임 실물 프리뷰</span>
+</div>
+
+<!-- ══════════ 2. 디자인 ══════════ -->
+<div class="c-section"><strong>02 · /designs</strong> 디자인 — 현 그리드 유지 + 가격·필터·트러스트만 추가</div>
+<div class="c-frame"><div class="c-canvas">
+  <section class="b-cat-head">
+    <div>
+      <p class="m-kicker">커스텀 디자인</p>
+      <h2>스타일 선택.</h2>
+      <p class="sub">그대로 제작해도 되고, 원하는 디자인이 따로 있으면 주문 단계에서 레퍼런스를 올려주세요.</p>
+    </div>
+    <span class="igi">IGI 인증 · 무료 견적 · 30일 반품</span>
+  </section>
+  <div class="b-filters">
+    <span class="m-chip on">전체</span><span class="m-chip">링</span><span class="m-chip">이어링</span>
+    <span class="m-chip">뱅글 / 브레이슬릿</span><span class="m-chip">네크리스 / 펜던트</span>
+    <span class="sep">|</span>
+    <span class="lab">필터</span>
+    <span class="m-chip">셰입 ▾</span><span class="m-chip">메탈 ▾</span><span class="m-chip">예산 ▾</span>
+  </div>
+  <div class="b-grid">
+    <article class="b-card">
+      <div class="ph"><img src="/assets/designs/RIGTXR09875R400-WG-RB-WH-400-M0.jpg" alt="" /></div>
+      <div class="body"><p class="sub">링 · 웨딩밴드</p><h3>쉐어드 프롱 이터니티 밴드</h3><p class="price"><b>from $1,450</b> · WG YG RG</p></div>
+    </article>
+    <article class="b-card">
+      <div class="ph"><img src="/assets/designs/RIGRVR02048-YG-RB-WH-200-M0.jpg" alt="" /></div>
+      <div class="body"><p class="sub">링 · 웨딩밴드</p><h3>프렌치 파베 웨딩 밴드</h3><p class="price"><b>from $980</b> · WG YG</p></div>
+    </article>
+    <article class="b-card">
+      <div class="ph"><img src="/assets/designs/RIGWR4428-WG-RB-WH-500-M0-new.jpg" alt="" /></div>
+      <div class="body"><p class="sub">링 · 웨딩밴드</p><h3>채널 세트 이터니티 밴드</h3><p class="price"><b>from $1,240</b> · WG YG RG</p></div>
+    </article>
+    <article class="b-card">
+      <div class="ph"><img src="/assets/designs/RIGTXR01745-WG-RB-WH-150-M0.jpg" alt="" /></div>
+      <div class="body"><p class="sub">링 · 약혼반지</p><h3>4프롱 솔리테어 링</h3><p class="price"><b>from $1,180</b> · WG YG RG</p></div>
+    </article>
+  </div>
+</div></div>
+<div class="c-notes">
+  <span>레이아웃·카피 톤 유지 — 시작가와 메탈 약어만 카드에 추가</span>
+  <span>카테고리 칩 옆 셰입·메탈·예산 필터 신설</span>
+  <span>헤더 우측 IGI·무료 견적·반품 트러스트 라인</span>
+  <span>카드 위 캐러셀 화살표 제거(디테일에서만 갤러리)</span>
+</div>
+
+<!-- ══════════ 3. 가이드 ══════════ -->
+<div class="c-section"><strong>03 · /guide</strong> 가이드 — 목차형 인덱스 + 스티키 시작 카드</div>
+<div class="c-frame"><div class="c-canvas">
+  <section class="b-guide">
+    <div>
+      <div class="b-guide-head">
+        <p class="m-kicker">다이아몬드 가이드</p>
+        <h2>망설임 없이 고를 수 있도록.</h2>
+        <p>순서대로 읽으면 15분 — 브리프에 필요한 지식은 이게 전부입니다.</p>
+      </div>
+      <div class="b-index">
+        <div class="b-row">
+          <span class="no">01</span>
+          <img src="/assets/diamond-hero-white-poster.webp" alt="" />
+          <div><h4>같은 광채, 더 합리적인 시작.</h4><p>랩그로운 다이아몬드의 차이와 꼭 확인해야 할 정보.</p></div>
+          <span class="rt">5분</span>
+        </div>
+        <div class="b-row">
+          <span class="no">02</span>
+          <img src="/assets/designs/RIGTXR01745-WG-RB-WH-150-M0.jpg" alt="" />
+          <div><h4>컷, 컬러, 클래리티, 캐럿.</h4><p>눈에 보이는 아름다움 기준으로 우선순위 잡기.</p></div>
+          <span class="rt">4분</span>
+        </div>
+        <div class="b-row">
+          <span class="no">03</span>
+          <img src="/assets/designs/RIGTXR06263-2.50-GW4-1-NEW.jpg" alt="" />
+          <div><h4>셰입 — 손 위에서 달라지는 광채.</h4><p>라운드부터 에메랄드까지, 셰입별 인상 정리.</p></div>
+          <span class="rt">4분</span>
+        </div>
+        <div class="b-row">
+          <span class="no">04</span>
+          <img src="/assets/designs/BCGTXBR00769-YG-RB-WH-1200-M0.jpg" alt="" />
+          <div><h4>같은 예산, 더 큰 광채.</h4><p>가격을 움직이는 스펙과 눈에 안 보이는 절약 지점.</p></div>
+          <span class="rt">2분</span>
+        </div>
+      </div>
+    </div>
+    <aside class="b-side">
+      <div class="box">
+        <h5>다 읽을 필요는<br />없습니다.</h5>
+        <p>추천 스펙(E · VS1 · IGI)으로 시작하고, 견적에서 조정해도 됩니다.</p>
+        <span class="m-btn small">주문제작 시작 →</span>
+      </div>
+      <p class="mini">읽는 중 질문이 생기면 — 상담으로</p>
+    </aside>
+  </section>
+</div></div>
+<div class="c-notes">
+  <span>카드 3장 → 읽기 순서가 있는 목차형 인덱스(썸네일+읽기 시간)</span>
+  <span>과정 재링크 카드 삭제, 셰입·예산 토픽 신설</span>
+  <span>스티키 “다 읽을 필요 없다” 카드 — 교육이 CTA를 막지 않게</span>
+</div>
+
+<!-- ══════════ 4. 주문제작 시작 ══════════ -->
+<div class="c-section"><strong>04 · /custom/new</strong> 주문제작 — 이름 있는 진행 표시 + 바닥 약속 바</div>
+<div class="c-frame"><div class="c-canvas">
+  <div class="b-intake">
+    <div class="b-crumbs">
+      <i class="now">제품</i><i>디자인</i><i>메탈</i><i>스톤</i><i>레퍼런스</i><i>확인</i>
+      <span class="eta">· 약 2분</span>
+    </div>
+    <div class="b-q">
+      <p class="m-kicker">01 — 제품</p>
+      <h2>어떤 주얼리를 만들까요?</h2>
+      <p class="hint">확정이 아니에요 — 견적 전까지 언제든 바꿀 수 있습니다.</p>
+      <div class="b-opts">
+        <div class="b-opt"><img src="/assets/designs/RIGTXR09875R400-WG-RB-WH-400-M0.jpg" alt="" /><span>링</span></div>
+        <div class="b-opt sel"><img src="/assets/designs/DP2284-2W_f45a16d1-c237-45c6-b77f-74978e8991c0.jpg" alt="" /><span>네크리스 / 펜던트</span></div>
+        <div class="b-opt"><img src="/assets/designs/EAGJOE555-GP2-1.jpg" alt="" /><span>이어링</span></div>
+        <div class="b-opt"><img src="/assets/designs/BCGTXBR00769-YG-RB-WH-1200-M0.jpg" alt="" /><span>뱅글 / 브레이슬릿</span></div>
+      </div>
+    </div>
+    <div class="b-floor">
+      <span class="ghost">← 디자인으로 돌아가기</span>
+      <p class="mid"><b>제출하면 24시간 안에 무료 견적</b> · 결제는 디자인 승인 후</p>
+      <span class="concierge">상담으로 시작 →</span>
+    </div>
+  </div>
+</div></div>
+<div class="c-notes">
+  <span>익명 도트 → 단계 이름이 보이는 크럼(현재 강조)+예상 시간</span>
+  <span>풀뷰포트 중앙 여백 축소 — 콘텐츠 높이 기준</span>
+  <span>바닥 고정 약속 바: 24시간 견적·승인 전 결제 없음·상담 대안</span>
+  <span>붕 떠 있던 “디자인으로 돌아가기” 링크를 바닥 바 좌측으로 수납</span>
+</div>
+
+<footer class="c-foot">
+  일정·가격 수치는 예시 — 확정 전 검증 필요 · <a href="./c-showroom.html">다음: 방향 C 쇼룸 이머시브 →</a>
+</footer>
+
+</body>
+</html>
