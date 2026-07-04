@@ -1,8 +1,7 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, CheckCircle2, Gem, MessageSquareText, PackageCheck } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useLocale } from "../i18n.jsx";
 
-const stageIcons = [Gem, MessageSquareText, CheckCircle2, PackageCheck];
 const processCopy = {
   en: {
     label: "HOW CUSTOM WORKS",
@@ -66,47 +65,49 @@ const processCopy = {
   },
 };
 
+// 단계 제목의 "1. " 숫자 프리픽스는 에디토리얼 넘버링(01–04)으로 따로 그린다
+const stripStageNumber = (title) => title.replace(/^\d+\.\s*/, "");
+
 export default function Process() {
   const { locale, p } = useLocale();
   const copy = processCopy[locale] ?? processCopy.en;
 
   return (
-    <div className="page process-page">
-      <section className="process-hero">
-        <p className="section-label">{copy.label}</p>
-        <h1 className="page-title">{copy.title}</h1>
-        <p className="page-sub">
-          {copy.body}
-        </p>
-        <div className="hero-ctas" style={{ justifyContent: "flex-start" }}>
-          <Link className="button primary" to="/custom/new">
+    <div className="page proc-noir-page">
+      <section className="proc-noir-head">
+        <span className="noir-eyebrow">{copy.label}</span>
+        <h1>{copy.title}</h1>
+        <p className="proc-noir-sub">{copy.body}</p>
+        <div className="proc-noir-ctas">
+          <Link className="noir-btn" to="/custom/new">
             {p.nav.startCustom}
-            <ArrowRight size={18} strokeWidth={1.7} />
+            <ArrowRight size={15} strokeWidth={1.6} />
           </Link>
-          <Link className="button secondary" to="/designs">{copy.explore}</Link>
+          <Link className="noir-link" to="/designs">{copy.explore}</Link>
         </div>
       </section>
 
-      <section className="process-detail-grid">
-        {copy.stages.map(([title, body, action], index) => {
-          const Icon = stageIcons[index];
-          return (
-          <article className="panel process-detail-card" key={title}>
-            <Icon size={28} strokeWidth={1.35} />
-            <h2>{title}</h2>
-            <p>{body}</p>
-            <span>{action}</span>
+      <section className="proc-noir-stages">
+        {copy.stages.map(([title, body, action], index) => (
+          <article className="proc-noir-stage" key={title}>
+            <span className="proc-noir-no">{String(index + 1).padStart(2, "0")}</span>
+            <div className="proc-noir-stage-copy">
+              <h2>{stripStageNumber(title)}</h2>
+              <p>{body}</p>
+            </div>
+            <span className="proc-noir-action">{action}</span>
           </article>
-          );
-        })}
+        ))}
       </section>
 
-      <section className="panel workspace-note">
-        <p className="section-label">{copy.workspaceLabel}</p>
+      <section className="proc-noir-workspace">
+        <span className="noir-eyebrow">{copy.workspaceLabel}</span>
         <h2>{copy.workspaceTitle}</h2>
-        <p>
-          {copy.workspaceBody}
-        </p>
+        <p>{copy.workspaceBody}</p>
+        <Link className="noir-btn" to="/custom/new">
+          {p.nav.startCustom}
+          <ArrowRight size={15} strokeWidth={1.6} />
+        </Link>
       </section>
     </div>
   );

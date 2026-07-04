@@ -1,39 +1,42 @@
 import { Link } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
 import { useLocale } from "../i18n.jsx";
+
+// 허브 카드 표지 — 화이트 배경 실사(디자인 카탈로그와 같은 관례라 양 테마 모두 안전)
+const hubCards = [
+  { key: "lab", to: "/guide/lab-diamond", image: "/assets/diamond-hero-white-poster.webp" },
+  { key: "fourc", to: "/guide/4c", image: "/assets/designs/RIGTXR01745-WG-RB-WH-150-M0.jpg" },
+  { key: "custom", to: "/process", image: "/assets/designs/RIGTXR06263-2.50-GW4-1-NEW.jpg" },
+];
 
 export function GuideHub() {
   const { p } = useLocale();
   const g = p.guide.hub;
   return (
-    <div className="page guide-hub">
-      <p className="section-label">{g.kicker}</p>
-      <h1 className="page-title">{g.title}</h1>
-      <p className="page-sub">{g.sub}</p>
-      <div className="card-grid cols-3">
-        <Link className="item-card guide-card" to="/guide/lab-diamond">
-          <div className="card-body">
-            <p className="section-label">{g.cards.lab.kicker}</p>
-            <h3>{g.cards.lab.title}</h3>
-            <p className="spec">{g.cards.lab.body}</p>
-            <span className="guide-card-cta">{p.common.view} →</span>
-          </div>
-        </Link>
-        <Link className="item-card guide-card" to="/guide/4c">
-          <div className="card-body">
-            <p className="section-label">{g.cards.fourc.kicker}</p>
-            <h3>{g.cards.fourc.title}</h3>
-            <p className="spec">{g.cards.fourc.body}</p>
-            <span className="guide-card-cta">{p.common.view} →</span>
-          </div>
-        </Link>
-        <Link className="item-card guide-card" to="/process">
-          <div className="card-body">
-            <p className="section-label">{g.cards.custom.kicker}</p>
-            <h3>{g.cards.custom.title}</h3>
-            <p className="spec">{g.cards.custom.body}</p>
-            <span className="guide-card-cta">{p.common.view} →</span>
-          </div>
-        </Link>
+    <div className="page guide-noir-page">
+      <section className="guide-noir-head">
+        <span className="noir-eyebrow">{g.kicker}</span>
+        <h1>{g.title}</h1>
+        <p className="guide-noir-sub">{g.sub}</p>
+      </section>
+      <div className="guide-noir-gallery">
+        {hubCards.map(({ key, to, image }) => {
+          const card = g.cards[key];
+          return (
+            <Link className="guide-noir-piece" to={to} key={key}>
+              <span className="guide-noir-ph" style={{ backgroundImage: `url(${image})` }} aria-hidden="true" />
+              <span className="guide-noir-meta">
+                <span className="guide-noir-kicker">{card.kicker}</span>
+                <span className="guide-noir-name">{card.title}</span>
+                <span className="guide-noir-cap">{card.body}</span>
+                <span className="guide-noir-discover">
+                  {p.common.view}
+                  <ArrowRight size={14} strokeWidth={1.8} />
+                </span>
+              </span>
+            </Link>
+          );
+        })}
       </div>
     </div>
   );
@@ -43,17 +46,23 @@ export function GuideLabDiamond() {
   const { p } = useLocale();
   const g = p.guide.lab;
   return (
-    <div className="page page-narrow guide-page">
-      <h1 className="page-title">{g.title}</h1>
-      <p>{g.p1}</p>
+    <div className="page page-narrow guide-noir-article">
+      <span className="noir-eyebrow">{p.guide.hub.cards.lab.kicker}</span>
+      <h1>{g.title}</h1>
+      <p className="guide-noir-lede">{g.p1}</p>
       <h3>{g.h1}</h3>
       <p>{g.p2}</p>
       <h3>{g.h2}</h3>
       <p>{g.p3}</p>
       <h3>{g.h3}</h3>
       <p>{g.p4}</p>
-      <p><Link className="button primary" to="/custom/new">{g.cta}</Link></p>
-      <p><Link className="text-link" to="/guide/4c">{g.next}</Link></p>
+      <div className="guide-noir-actions">
+        <Link className="noir-btn" to="/custom/new">
+          {g.cta}
+          <ArrowRight size={15} strokeWidth={1.6} />
+        </Link>
+        <Link className="noir-link" to="/guide/4c">{g.next}</Link>
+      </div>
     </div>
   );
 }
@@ -62,8 +71,9 @@ export function Guide4C() {
   const { p } = useLocale();
   const g = p.guide.fourc;
   return (
-    <div className="page page-narrow guide-page">
-      <h1 className="page-title">{g.title}</h1>
+    <div className="page page-narrow guide-noir-article">
+      <span className="noir-eyebrow">{p.guide.hub.cards.fourc.kicker}</span>
+      <h1>{g.title}</h1>
       <h3>{g.caratH}</h3>
       <p>{g.caratP}</p>
       <h3>{g.cutH}</h3>
@@ -72,8 +82,13 @@ export function Guide4C() {
       <p>{g.colorP}</p>
       <h3>{g.clarityH}</h3>
       <p>{g.clarityP}</p>
-      <p className="form-hint">{g.tip}</p>
-      <p><Link className="button primary" to="/custom/new">{g.cta}</Link></p>
+      <p className="guide-noir-tip">{g.tip}</p>
+      <div className="guide-noir-actions">
+        <Link className="noir-btn" to="/custom/new">
+          {g.cta}
+          <ArrowRight size={15} strokeWidth={1.6} />
+        </Link>
+      </div>
     </div>
   );
 }

@@ -3939,3 +3939,278 @@ html[data-theme="day"] .noir-dock-go {
   color: var(--text);
 }
 html[data-theme="day"] .noir-dock-go:hover { background: rgba(214, 197, 160, 0.16); }
+
+/* ── 과정 — Maison 에디토리얼 (홈 noir 문법) ─────────────── */
+.proc-noir-page { max-width: 1180px; }
+
+.proc-noir-head {
+  text-align: center;
+  max-width: 780px;
+  margin: 26px auto 72px;
+}
+
+.proc-noir-head h1 {
+  margin: 20px 0 0;
+  font-family: var(--luxury-display);
+  font-weight: 400;
+  font-size: clamp(36px, 5.4vw, 60px);
+  line-height: 1.06;
+  letter-spacing: -0.01em;
+}
+
+.proc-noir-sub {
+  margin: 20px auto 0;
+  max-width: 44ch;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 17px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.proc-noir-ctas {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 18px 34px;
+  margin-top: 36px;
+}
+
+.proc-noir-ctas .noir-btn { width: auto; padding: 0 34px; }
+
+.proc-noir-stages {
+  max-width: 1040px;
+  margin: 0 auto;
+  border-top: 1px solid var(--line);
+}
+
+.proc-noir-stage {
+  display: grid;
+  grid-template-columns: 120px 1fr 200px;
+  gap: 30px;
+  align-items: start;
+  padding: 46px 6px;
+  border-bottom: 1px solid var(--line);
+}
+
+.proc-noir-no {
+  font-family: var(--luxury-display);
+  font-size: clamp(40px, 4.6vw, 56px);
+  font-weight: 400;
+  line-height: 0.9;
+  color: var(--gold-soft);
+}
+
+.proc-noir-stage-copy h2 {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: clamp(22px, 2.4vw, 30px);
+  line-height: 1.15;
+}
+
+.proc-noir-stage-copy p {
+  margin: 12px 0 0;
+  max-width: 52ch;
+  color: var(--muted);
+  font-size: 14.5px;
+  line-height: 1.7;
+}
+
+.proc-noir-action {
+  justify-self: end;
+  align-self: center;
+  text-align: right;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent-bright);
+  border: 1px solid rgba(214, 197, 160, 0.46);
+  padding: 9px 14px;
+}
+
+.proc-noir-workspace {
+  margin: 84px auto 30px;
+  padding: clamp(48px, 7vw, 84px) clamp(24px, 6vw, 72px);
+  text-align: center;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+}
+
+.proc-noir-workspace h2 {
+  margin: 18px 0 0;
+  font-family: var(--luxury-display);
+  font-weight: 400;
+  font-size: clamp(30px, 4vw, 48px);
+  line-height: 1.06;
+}
+
+.proc-noir-workspace p {
+  margin: 18px auto 0;
+  max-width: 52ch;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.proc-noir-workspace .noir-btn { width: auto; padding: 0 34px; margin-top: 32px; }
+
+@media (max-width: 760px) {
+  .proc-noir-head { margin-bottom: 52px; }
+  .proc-noir-stage {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding: 36px 2px;
+  }
+  .proc-noir-action { justify-self: start; text-align: left; }
+}
+
+/* ── 가이드 — Maison 에디토리얼 (홈 noir 문법) ───────────── */
+.guide-noir-page { max-width: 1180px; }
+
+.guide-noir-head {
+  text-align: center;
+  max-width: 720px;
+  margin: 26px auto 60px;
+}
+
+.guide-noir-head h1 {
+  margin: 20px 0 0;
+  font-family: var(--luxury-display);
+  font-weight: 400;
+  font-size: clamp(36px, 5.4vw, 60px);
+  line-height: 1.06;
+  letter-spacing: -0.01em;
+}
+
+.guide-noir-sub {
+  margin: 20px auto 0;
+  max-width: 46ch;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 17px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.guide-noir-gallery {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+  margin-bottom: 40px;
+}
+
+.guide-noir-piece { display: block; }
+
+.guide-noir-ph {
+  display: block;
+  aspect-ratio: 1.08 / 1;
+  border: 1px solid var(--line);
+  background-size: cover;
+  background-position: center;
+  transition: transform 0.6s ease;
+}
+
+.guide-noir-piece:hover .guide-noir-ph,
+.guide-noir-piece:active .guide-noir-ph { transform: scale(1.02); }
+
+.guide-noir-meta { display: grid; gap: 8px; padding: 20px 4px 0; }
+
+.guide-noir-kicker {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.guide-noir-name {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: clamp(21px, 2vw, 25px);
+  line-height: 1.2;
+  color: var(--text);
+}
+
+.guide-noir-cap {
+  color: var(--muted);
+  font-size: 13.5px;
+  line-height: 1.6;
+  max-width: 36ch;
+}
+
+.guide-noir-discover {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.guide-noir-discover svg { transition: transform 0.4s ease; }
+.guide-noir-piece:hover .guide-noir-discover svg,
+.guide-noir-piece:active .guide-noir-discover svg { transform: translateX(5px); }
+
+@media (max-width: 860px) {
+  .guide-noir-gallery { grid-template-columns: 1fr; gap: 40px; }
+  .guide-noir-ph { aspect-ratio: 1.4 / 1; }
+}
+
+/* 가이드 상세 — 좁은 에디토리얼 컬럼 */
+.guide-noir-article { padding-top: 14px; }
+
+.guide-noir-article h1 {
+  margin: 18px 0 22px;
+  font-family: var(--luxury-display);
+  font-weight: 400;
+  font-size: clamp(30px, 4.4vw, 48px);
+  line-height: 1.08;
+}
+
+.guide-noir-lede {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 17.5px;
+  line-height: 1.55;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.guide-noir-article h3 {
+  margin: 34px 0 8px;
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 21px;
+  color: var(--text);
+}
+
+.guide-noir-article p { color: var(--muted); line-height: 1.75; }
+
+.guide-noir-tip {
+  margin-top: 30px;
+  padding: 16px 20px;
+  border: 1px solid rgba(214, 197, 160, 0.46);
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--accent-bright);
+}
+
+.guide-noir-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 18px 34px;
+  margin-top: 38px;
+}
+
+.guide-noir-actions .noir-btn { width: auto; padding: 0 30px; }
