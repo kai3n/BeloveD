@@ -17,11 +17,12 @@
     <title>BeloveD | Lab Diamond Jewelry</title>
     <script>
       // React 마운트 전에 저장된 테마를 적용 — 하드 로드 시 다크 기본값이
-      // 먼저 그려지는 깜빡임(FOUC) 방지. theme.jsx와 같은 키/기본값을 쓴다.
+      // 먼저 그려지는 깜빡임(FOUC) 방지. themePref.js와 같은 키/기본값을 쓴다.
+      // 구 키(lumina-theme)는 다크 기본 시절 자동 기록으로 오염돼 읽지 않는다.
       (function () {
         var theme = "day";
         try {
-          if (window.localStorage.getItem("lumina-theme") === "dark") theme = "dark";
+          if (window.localStorage.getItem("beloved-theme") === "dark") theme = "dark";
         } catch (e) {}
         document.documentElement.dataset.theme = theme;
         document.documentElement.style.colorScheme = theme === "day" ? "light" : "dark";
