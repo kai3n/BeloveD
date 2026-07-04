@@ -94,13 +94,16 @@ export function MetalSwatches({ value, onSelect, labels = {} }) {
 }
 
 // 캐럿 슬라이더 — 실물 비율 스톤 프리뷰
-export function CaratSlider({ value, onChange, min = 0.5, max = 4, step = 0.1 }) {
+export function CaratSlider({ value, onChange, min = 0.5, max = 4, step = 0.1, shape = "round" }) {
   const ct = Number(value) || min;
   const px = Math.round(34 + Math.sqrt(ct) * 22);
   return (
     <div className="gflow-carat">
       <div className="gflow-carat-visual">
-        <span className="gflow-carat-stone" style={{ width: px, height: px }} aria-hidden="true" />
+        {/* 스톤 프리뷰는 고객이 고른 셰입을 따른다 — 원 고정이면 선택이 반영 안 된 것처럼 보인다 */}
+        <span className="gflow-carat-stone" style={{ width: px, height: px }} aria-hidden="true">
+          <ShapeSilhouette shape={shape} />
+        </span>
         <span className="gflow-carat-readout"><strong>{ct.toFixed(2)}</strong><small>carat</small></span>
       </div>
       <input

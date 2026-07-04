@@ -480,8 +480,7 @@
 .con-grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .con-grid-2 .field-wide { grid-column: 1 / -1; }
 .con-grid-basics { grid-template-columns: repeat(6, minmax(0, 1fr)); }
-.con-grid-basics .field:nth-child(-n + 2) { grid-column: span 3; }
-.con-grid-basics .field:nth-child(n + 3) { grid-column: span 2; }
+.con-grid-basics .field { grid-column: span 2; }
 
 /* 스위치 — 각진 트랙, 원장 미학 유지 */
 .con-switch-row {

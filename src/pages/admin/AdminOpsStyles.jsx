@@ -41,6 +41,10 @@ const ADMIN_STYLE_UI = {
     statStyles: "Styles",
     forSaleShort: "For sale",
     draftShort: "Draft",
+    lineLbl: "Stone step",
+    lineAuto: "Auto (by name)",
+    lineSolitaire: "Customer picks center stone",
+    lineMulti: "Fixed design — no stone step",
     newStyle: "New style",
     editStyle: "Edit style",
     draftStyle: "Create new style",
@@ -88,6 +92,10 @@ const ADMIN_STYLE_UI = {
     statStyles: "스타일",
     forSaleShort: "판매중",
     draftShort: "초안",
+    lineLbl: "다이아 스텝",
+    lineAuto: "자동 (이름 기반)",
+    lineSolitaire: "고객이 센터스톤 선택",
+    lineMulti: "완성형 — 스톤 스텝 없음",
     newStyle: "새 스타일",
     editStyle: "스타일 수정",
     draftStyle: "새 스타일 만들기",
@@ -135,6 +143,10 @@ const ADMIN_STYLE_UI = {
     statStyles: "款式",
     forSaleShort: "可售",
     draftShort: "草稿",
+    lineLbl: "钻石步骤",
+    lineAuto: "自动（按名称）",
+    lineSolitaire: "客户选择主石",
+    lineMulti: "成品设计 — 无钻石步骤",
     newStyle: "新款式",
     editStyle: "编辑款式",
     draftStyle: "创建新款式",
@@ -182,6 +194,10 @@ const ADMIN_STYLE_UI = {
     statStyles: "Estilos",
     forSaleShort: "En venta",
     draftShort: "Borrador",
+    lineLbl: "Paso de diamante",
+    lineAuto: "Auto (por nombre)",
+    lineSolitaire: "Cliente elige piedra central",
+    lineMulti: "Diseño fijo — sin paso",
     newStyle: "Nuevo estilo",
     editStyle: "Editar estilo",
     draftStyle: "Crear estilo",
@@ -242,6 +258,7 @@ const emptyDraft = {
   beforeEs: "",
   category: "ring",
   subcategory: defaultSubcategoryFor("ring"),
+  productLine: "",
   estWeightG: "",
   laborUsd: "",
   leadDays: "",
@@ -298,6 +315,7 @@ function draftFromStyle(style) {
     beforeEs: styleI18n(style, "beforeProductionText", "es"),
     category: style.category || "ring",
     subcategory: styleSubcategoryKey(style),
+    productLine: style.productLine || "",
     estWeightG: String(style.estWeightG ?? ""),
     laborUsd: String(style.laborUsd ?? ""),
     leadDays: String(style.leadDays ?? ""),
@@ -323,6 +341,7 @@ function styleFromDraft(draft) {
     beforeProductionText: draftI18n(draft, "before"),
     category: draft.category,
     subcategory: draft.subcategory || defaultSubcategoryFor(draft.category),
+    productLine: draft.productLine || null,
     coverImage: media[0]?.src || FALLBACK_MEDIA,
     media,
     mediaComplete: media.length > 0,
@@ -663,6 +682,13 @@ export default function AdminOpsStyles() {
                   {subcategoryKeysFor(draft.category).map((key) => (
                     <option key={key} value={key}>{p.opsSubcategories?.[key] || key}</option>
                   ))}
+                </select>
+              </label>
+              <label className="field"><span>{ui.lineLbl}</span>
+                <select value={draft.productLine} onChange={(e) => setDraftField({ productLine: e.target.value })}>
+                  <option value="">{ui.lineAuto}</option>
+                  <option value="solitaire">{ui.lineSolitaire}</option>
+                  <option value="multi">{ui.lineMulti}</option>
                 </select>
               </label>
               <label className="field"><span>{t.estW}</span><input type="number" step="0.1" value={draft.estWeightG} onChange={(e) => setDraftField({ estWeightG: e.target.value })} required /></label>

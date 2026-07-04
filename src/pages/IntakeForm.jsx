@@ -48,6 +48,10 @@ function styleMedia(style) {
 
 function inferProductLineFromStyle(style) {
   if (!style) return "solitaire";
+  // 명시 값 우선 — 시드는 seed.js의 STYLE_PRODUCT_LINE, 새 스타일은 Style Library에서 지정.
+  if (style.productLine === "solitaire" || style.productLine === "multi") return style.productLine;
+  // 폴백 키워드 추론: "센터스톤이 없는" 제품 유형만 multi로.
+  // halo/three-stone은 센터스톤이 있는 약혼반지라 여기 넣으면 다이아 스텝이 사라진다 — 제외.
   const text = [
     style.id,
     style.category,
@@ -56,7 +60,7 @@ function inferProductLineFromStyle(style) {
     style.name?.zh,
     style.name?.es,
   ].filter(Boolean).join(" ").toLowerCase();
-  if (/(band|eternity|tennis|bracelet|bangle|stud|earring|halo|pav[eé]|multi|station|three[- ]?stone|3[- ]?stone)/i.test(text)) {
+  if (/(band|eternity|tennis|bracelet|bangle|stud|earring|hoop|huggie|pav[eé]|multi|station|cluster|cross)/i.test(text)) {
     return "multi";
   }
   return "solitaire";
@@ -131,6 +135,7 @@ export default function IntakeForm() {
       growth: "CVD", lab: "IGI India", colorTreatment: "disclosed", fluorescence: "none", lwRatio: "",
     },
     multiSpec: { meleeSpec: "", overallDims: "", arrangement: "", standard: "" },
+    inspirationNotes: "",
     requiredDate: "", termsAccepted: false,
   };
   // 인테이크 진입 이벤트 — 스타일 프리필 여부 포함 (마운트 1회)
@@ -161,6 +166,8 @@ export default function IntakeForm() {
   // 항상 첫 질문부터 시작 — URL 프리필(?style=/?category=)은 답을 미리 골라둘 뿐 화면은 건너뛰지 않는다.
   // (화면 건너뛰기·드래프트 자동 점프 둘 다 "중간부터 시작"처럼 보여 혼란을 준다)
   const [screen, setScreen] = useState("category");
+  // "이게 뭐예요?" 도움말이 열려 있으면 비교 모드 — 선택해도 자동 진행하지 않는다
+  const [shapeEduOpen, setShapeEduOpen] = useState(false);
   // 드래프트 이어하기는 배너로 명시적 선택 (답변은 이미 프리필되어 있어 새로 시작해도 빠르다)
   const hasEntryParams = Boolean(styleFromParam || categoryFromParam || refDiamond);
   const [resumeTarget, setResumeTarget] = useState(() => (
@@ -429,10 +436,15 @@ export default function IntakeForm() {
             labels={p.shapes}
             onSelect={(value) => {
               setS({ shape: value });
-              window.setTimeout(goNext, 170);
+              // 도움말을 읽는 중에는 선택이 곧장 다음 화면으로 튕기지 않는다 —
+              // 셰입을 바꿔가며 아래 가이드를 비교하고, 준비되면 "다음"을 누른다
+              if (!shapeEduOpen) window.setTimeout(goNext, 170);
             }}
           />
-          <details className="gflow-edu-toggle">
+          {shapeEduOpen && (
+            <button className="button primary" type="button" onClick={() => { setShapeEduOpen(false); goNext(); }}>{t.next}</button>
+          )}
+          <details className="gflow-edu-toggle" onToggle={(e) => setShapeEduOpen(e.currentTarget.open)}>
             <summary>{g.whatsThis}</summary>
             <div className="gflow-edu-body"><StoneEduPanel field="shape" prefs={form.stonePrefs} /></div>
           </details>
@@ -441,7 +453,7 @@ export default function IntakeForm() {
 
       {activeScreen === "carat" && stepShell(g.qCarat, g.caratHint, (
         <>
-          <CaratSlider value={form.stonePrefs.carat} onChange={(value) => setS({ carat: value })} />
+          <CaratSlider value={form.stonePrefs.carat} shape={form.stonePrefs.shape} onChange={(value) => setS({ carat: value })} />
           <button className="button primary" type="button" onClick={goNext}>{t.next}</button>
           <details className="gflow-edu-toggle">
             <summary>{g.whatsThis}</summary>
@@ -455,6 +467,15 @@ export default function IntakeForm() {
           <MediaPicker value={refs} maxItems={MAX_REFERENCE_MEDIA} showSamples={false} previewMode="list" onChange={(v) => {
             setRefs(sanitizeReferenceMedia(v));
           }} />
+          {/* 사진만으로 다 담기지 않는 요청 — 텍스트로도 받는다 (buildIntakePayload가 form 전체를 실어 서버 formPayload로 전달) */}
+          <label className="field"><span>{g.inspirationNotesLbl}</span>
+            <textarea
+              rows={3}
+              value={form.inspirationNotes}
+              placeholder={g.inspirationNotesPh}
+              onChange={(e) => setForm((current) => ({ ...current, inspirationNotes: e.target.value }))}
+            />
+          </label>
           <button className="button primary" type="button" onClick={goNext}>{t.next}</button>
         </div>
       ), { onSkip: goNext })}

@@ -65,15 +65,22 @@ function ShapeVisual({ prefs }) {
 
 function CaratVisual({ prefs }) {
   const active = nearestIndex(CARAT_REFS, prefs.carat);
-  const px = (ct) => caratDiameterMm(ct) * 4.6; // mm → px (3ct ≈ 43px로 viewBox에 맞춤)
+  // 크기 비교도 고객이 고른 셰입으로 — 원 고정이면 선택이 반영 안 된 것처럼 보인다
+  const shape = SHAPE_NODES[prefs.shape] ? prefs.shape : "round";
+  const px = (ct) => caratDiameterMm(ct) * 4.6; // mm → px (3ct ≈ 43px로 셀에 맞춤)
   return (
     <div className="edu-scale-row">
       {CARAT_REFS.map((ct, i) => (
         <div key={ct} className={`edu-scale-item ${i === active ? "is-active" : ""}`}>
-          <svg viewBox="0 0 44 44" width="44" height="44" aria-hidden>
-            <circle cx="22" cy="22" r={px(ct) / 2} fill="none"
-              stroke={i === active ? "var(--accent)" : "var(--line-strong)"} strokeWidth={i === active ? 1.6 : 1} />
-          </svg>
+          <span
+            style={{
+              width: 44, height: 48, display: "grid", placeItems: "center",
+              color: i === active ? "var(--accent)" : "var(--line-strong)",
+            }}
+            aria-hidden
+          >
+            <ShapeGlyph shape={shape} size={px(ct) * 0.84} />
+          </span>
           <span>{ct} ct</span>
         </div>
       ))}

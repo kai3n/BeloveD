@@ -2,6 +2,19 @@ import { defaultBenchmark } from "./ops.js";
 import { defaultChipCatalog } from "./chips.js";
 import { styleSeedData } from "./styleSeedData.js";
 
+// 스타일별 제품 라인 — solitaire = 고객이 센터스톤(셰입·캐럿)을 고른다 / multi = 완성형 디자인(스톤 스텝 없음).
+// 이름 키워드 추론(halo→multi 오분류로 헤일로 약혼반지의 다이아 스텝이 사라지는 버그)의 명시적 교정.
+// styleSeedData.js는 CSV 생성물이라 여기서 병합한다. 어드민이 만든 새 스타일은 Style Library에서 지정.
+const STYLE_PRODUCT_LINE = {
+  "RING-001": "solitaire", "RING-002": "solitaire", "RING-003": "solitaire", "RING-004": "solitaire",
+  "RING-005": "solitaire", "RING-006": "solitaire", "RING-007": "solitaire", "RING-009": "solitaire",
+  "BAND-001": "multi", "BAND-005": "multi", "BAND-006": "multi",
+  "EARR-001": "multi", "EARR-002": "multi", "EARR-003": "multi", "EARR-004": "multi", "EARR-005": "multi", "EARR-006": "multi",
+  "BRAC-001": "multi", "BRAC-002": "multi", "BRAC-003": "multi",
+  "NECK-001": "solitaire", "NECK-002": "solitaire", "NECK-003": "multi", "NECK-004": "multi", "NECK-005": "multi",
+  "NECK-006": "multi", "NECK-007": "multi", "NECK-008": "multi", "NECK-009": "multi", "NECK-010": "multi",
+};
+
 const TWEEZERS = "/assets/lab-diamond-tweezers.webp";
 const NOIR_VIDEO = "/assets/diamond-noir-white.mp4";
 
@@ -84,7 +97,10 @@ export function seed() {
         status: "DELIVERED", owner: "Operations", queryCode: "RV4D-7TQ2", selectedDiamondId: null,
         requiredDate: "2026-06-20", internalNotes: "Delivered demo — review flow testing", createdAt: "2026-05-10T09:10:00.000Z" },
     ],
-    opsStyles: styleSeedData,
+    opsStyles: styleSeedData.map((style) => ({
+      ...style,
+      productLine: STYLE_PRODUCT_LINE[style.id] || style.productLine || null,
+    })),
     styleSpecs: [
       { id: "SPEC-000001", styleId: "NECK-001", metal: "18ky", size: "18in", centerStoneSpec: "standard center stone",
         estWeightG: 4.2, variancePct: 6, laborUsd: 75, materialsUsd: 30, status: "approved", evidence: "supplier quote 2026-05-15" },
