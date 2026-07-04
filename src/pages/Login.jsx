@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth.jsx";
 import { ApiUnavailableError } from "../lib/api.js";
+import { WITH_BACKOFFICE } from "../lib/flags.js";
 import { useLocale } from "../i18n.jsx";
 
 // 고객 로그인 — 이메일 6자리 인증번호(실서버). 서버가 없는 정적 데모에선 비밀번호 폴백.
@@ -12,7 +13,7 @@ const OTP_COPY = {
     verify: "Sign in", resend: "Resend code", resendIn: (s) => `Resend in ${s}s`,
     sentTo: (e) => `Code sent to ${e}`, changeEmail: "Use a different email",
     devHint: (c) => `Dev code: ${c}`,
-    errors: { CODE_INVALID: "That code is invalid or expired.", RATE_LIMITED: "Too many attempts — try again in a minute.", VALIDATION_ERROR: "Please check your email address." },
+    errors: { CODE_INVALID: "That code is invalid or expired.", RATE_LIMITED: "Too many attempts — try again in a minute.", VALIDATION_ERROR: "Please check your email address.", SERVER_DOWN: "We can't reach the server right now — please try again in a moment." },
   },
   ko: {
     title: "로그인", sub: "이메일로 6자리 인증번호를 보내드려요 — 비밀번호가 필요 없습니다.",
@@ -20,7 +21,7 @@ const OTP_COPY = {
     verify: "로그인", resend: "재전송", resendIn: (s) => `${s}초 후 재전송`,
     sentTo: (e) => `${e}로 코드를 보냈어요`, changeEmail: "다른 이메일 사용",
     devHint: (c) => `개발용 코드: ${c}`,
-    errors: { CODE_INVALID: "인증번호가 틀렸거나 만료됐어요.", RATE_LIMITED: "시도가 너무 많아요 — 1분 후 다시 시도해주세요.", VALIDATION_ERROR: "이메일 주소를 확인해주세요." },
+    errors: { CODE_INVALID: "인증번호가 틀렸거나 만료됐어요.", RATE_LIMITED: "시도가 너무 많아요 — 1분 후 다시 시도해주세요.", VALIDATION_ERROR: "이메일 주소를 확인해주세요.", SERVER_DOWN: "지금은 서버에 연결할 수 없어요 — 잠시 후 다시 시도해 주세요." },
   },
   zh: {
     title: "登录", sub: "我们会将 6 位验证码发送到您的邮箱 — 无需密码。",
@@ -28,7 +29,7 @@ const OTP_COPY = {
     verify: "登录", resend: "重新发送", resendIn: (s) => `${s} 秒后可重发`,
     sentTo: (e) => `验证码已发送至 ${e}`, changeEmail: "更换邮箱",
     devHint: (c) => `开发码：${c}`,
-    errors: { CODE_INVALID: "验证码无效或已过期。", RATE_LIMITED: "尝试次数过多 — 请一分钟后再试。", VALIDATION_ERROR: "请检查邮箱地址。" },
+    errors: { CODE_INVALID: "验证码无效或已过期。", RATE_LIMITED: "尝试次数过多 — 请一分钟后再试。", VALIDATION_ERROR: "请检查邮箱地址。", SERVER_DOWN: "暂时无法连接服务器 — 请稍后再试。" },
   },
   es: {
     title: "Iniciar sesión", sub: "Te enviaremos un código de 6 dígitos por correo — sin contraseña.",
@@ -36,7 +37,7 @@ const OTP_COPY = {
     verify: "Entrar", resend: "Reenviar", resendIn: (s) => `Reenviar en ${s}s`,
     sentTo: (e) => `Código enviado a ${e}`, changeEmail: "Usar otro correo",
     devHint: (c) => `Código dev: ${c}`,
-    errors: { CODE_INVALID: "Código inválido o expirado.", RATE_LIMITED: "Demasiados intentos — prueba en un minuto.", VALIDATION_ERROR: "Revisa tu dirección de correo." },
+    errors: { CODE_INVALID: "Código inválido o expirado.", RATE_LIMITED: "Demasiados intentos — prueba en un minuto.", VALIDATION_ERROR: "Revisa tu dirección de correo.", SERVER_DOWN: "No podemos conectar con el servidor — inténtalo de nuevo en un momento." },
   },
 };
 
@@ -105,8 +106,12 @@ export default function Login() {
       setStep("code");
       setCooldown(60);
     } catch (err) {
-      if (err instanceof ApiUnavailableError) setStep("fallback"); // 정적 데모 — 비밀번호 폴백
-      else setError(c.errors[err.code] || c.errors.VALIDATION_ERROR);
+      if (err instanceof ApiUnavailableError) {
+        // 비밀번호 폴백(+demo1234 안내)은 서버 없는 정적 데모 빌드 전용 —
+        // 실서버에서 API 장애 시 데모 계정 안내가 노출되면 안 된다
+        if (WITH_BACKOFFICE) setError(c.errors.SERVER_DOWN);
+        else setStep("fallback");
+      } else setError(c.errors[err.code] || c.errors.VALIDATION_ERROR);
     } finally { setBusy(false); }
   }
 

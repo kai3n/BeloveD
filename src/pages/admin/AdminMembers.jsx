@@ -1,7 +1,7 @@
 // 회원·활동 대시보드 — KPI/인기 스타일/전환 퍼널 + 회원 목록 + 개인 타임라인.
 // 데이터는 전부 실서버 API(/v1/admin/*) — 데모 빌드/서버 부재 시 안내만 보여준다.
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { apiFetch, ApiUnavailableError } from "../../lib/api.js";
 import { pickI18n, useLocale } from "../../i18n.jsx";
 import { getOpsStyle } from "../../lib/store.js";
@@ -151,6 +151,8 @@ export function AdminMemberTimeline() {
   const { p } = useLocale();
   const s = p.opsA.members;
   const { memberId } = useParams();
+  // 진입 경로 유지 — /analytics/:id에서 왔으면 애널리틱스 목록으로, /members/:id면 고객 목록으로
+  const backTo = useLocation().pathname.includes("/analytics/") ? "/bo-4q9z7m/analytics" : "/bo-4q9z7m/members";
   const [events, setEvents] = useState(null);
   const [member, setMember] = useState(null);
   const [error, setError] = useState(null);
@@ -171,7 +173,7 @@ export function AdminMemberTimeline() {
 
   return (
     <>
-      <p style={{ margin: "0 0 14px" }}><Link className="text-link" to="/bo-4q9z7m/members">← {s.back}</Link></p>
+      <p style={{ margin: "0 0 14px" }}><Link className="text-link" to={backTo}>← {s.back}</Link></p>
       <ConsoleHead
         kicker={p.opsA.menu.members}
         title={s.timelineTitle(member?.name || `#${memberId}`)}

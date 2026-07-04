@@ -8,7 +8,7 @@ import { useLocale } from "../../i18n.jsx";
 export default function Admin() {
   const { p } = useLocale();
   const location = useLocation();
-  const isOrderDetail = /^\/admin\/orders\/[^/]+/.test(location.pathname);
+  const isOrderDetail = /^\/bo-4q9z7m\/live\/[^/]+/.test(location.pathname);
   const menu = [
     { to: "/bo-4q9z7m/live", key: "live", Icon: ShoppingBag },
     { to: "/bo-4q9z7m/designs", key: "styles", Icon: Gem },
