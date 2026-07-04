@@ -15,10 +15,10 @@ export const footerGroups = {
 };
 
 export const infoNav = {
-  en: { about: "About", returns: "Returns", warranty: "Warranty", shipping: "Shipping", contact: "Contact", faq: "FAQ", howItWorks: "How it works", labGrown: "Lab-grown diamonds", fourC: "The 4Cs" },
-  ko: { about: "브랜드 소개", returns: "반품", warranty: "보증", shipping: "배송", contact: "문의", faq: "자주 묻는 질문", howItWorks: "주문 과정", labGrown: "랩그로운 다이아몬드", fourC: "4C 가이드" },
-  zh: { about: "关于我们", returns: "退货", warranty: "保修", shipping: "配送", contact: "联系我们", faq: "常见问题", howItWorks: "定制流程", labGrown: "培育钻石", fourC: "4C 指南" },
-  es: { about: "Sobre nosotros", returns: "Devoluciones", warranty: "Garantía", shipping: "Envíos", contact: "Contacto", faq: "Preguntas", howItWorks: "Cómo funciona", labGrown: "Diamantes de laboratorio", fourC: "Las 4C" },
+  en: { about: "About", returns: "Returns", warranty: "Warranty", shipping: "Shipping", contact: "Contact", faq: "FAQ", howItWorks: "How it works", labGrown: "Lab-grown diamonds", fourC: "The 4Cs", shapesGuide: "Diamond shapes" },
+  ko: { about: "브랜드 소개", returns: "반품", warranty: "보증", shipping: "배송", contact: "문의", faq: "자주 묻는 질문", howItWorks: "주문 과정", labGrown: "랩그로운 다이아몬드", fourC: "4C 가이드", shapesGuide: "셰입 가이드" },
+  zh: { about: "关于我们", returns: "退货", warranty: "保修", shipping: "配送", contact: "联系我们", faq: "常见问题", howItWorks: "定制流程", labGrown: "培育钻石", fourC: "4C 指南", shapesGuide: "形状指南" },
+  es: { about: "Sobre nosotros", returns: "Devoluciones", warranty: "Garantía", shipping: "Envíos", contact: "Contacto", faq: "Preguntas", howItWorks: "Cómo funciona", labGrown: "Diamantes de laboratorio", fourC: "Las 4C", shapesGuide: "Guía de formas" },
 };
 
 export const trustStrip = {

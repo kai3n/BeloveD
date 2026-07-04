@@ -216,6 +216,7 @@ export function Footer() {
         { to: "/process", label: n.howItWorks },
         { to: "/guide/lab-diamond", label: n.labGrown },
         { to: "/guide/4c", label: n.fourC },
+        { to: "/guide/shapes", label: n.shapesGuide },
       ],
     },
     {

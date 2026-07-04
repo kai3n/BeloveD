@@ -176,7 +176,7 @@ const en = {
       cards: {
         lab: { kicker: "Lab-grown", title: "Same fire. Smarter origin.", body: "How lab-grown diamonds compare and what disclosures matter." },
         fourc: { kicker: "4C", title: "Cut, color, clarity, carat.", body: "The practical way to prioritize visible brilliance." },
-        custom: { kicker: "Custom", title: "From brief to final QC.", body: "What happens after you start a custom order." },
+        shapes: { kicker: "Shapes", title: "Brilliance that changes on the hand.", body: "Round to Asscher — the character of nine silhouettes and how to choose." },
       },
     },
     lab: {
@@ -195,6 +195,26 @@ const en = {
       clarityH: "Clarity", clarityP: "The degree of inclusions. From IF (flawless) down to VS2, inclusions are invisible to the naked eye.",
       tip: "Tip: the most efficient combination is an Excellent cut + F–G color + VS1–VS2 clarity.",
       cta: "Start a custom order with this in mind",
+      next: "Next: The shape guide →",
+    },
+    shapes: {
+      title: "The Shape Guide",
+      lede: "The same carat wears differently by shape — in the character of its sparkle, its face-up size, and how it flatters the hand. Nine silhouettes, briefly.",
+      introH: "Shape is not cut",
+      introP: "Shape is the outline of the stone; cut is how well it handles light. Whatever shape you choose, the cut grade decides the brilliance — shape is a matter of taste.",
+      notes: {
+        round: "The benchmark for brilliance. 58 brilliant facets return more light than any other shape. Demand keeps its price per carat the highest.",
+        oval: "Round brilliance, elegantly elongated. Looks larger for its carat and lengthens the finger. A well-cut stone shows little to no bow-tie shadow.",
+        princess: "A modern classic with crisp lines. Rich in sparkle and forgiving with inclusions; its sharp corners are protected by prongs.",
+        emerald: "A step-cut hall of mirrors. Clear, deep luster instead of sparkle — inclusions stay visible, so spend on clarity here. Price per carat works in your favor.",
+        pear: "A teardrop — round brilliance with the drama of a marquise. The most gracefully elongating shape on the hand.",
+        marquise: "The largest face-up look per carat. Dramatic points, a vintage soul.",
+        cushion: "A romantic classic with softened corners. Warm, gentle fire that sits naturally in vintage and halo settings.",
+        radiant: "The emerald outline with brilliant faceting. Hides inclusions well, and trimmed corners make it durable for every day.",
+        asscher: "A square step cut with an Art Deco windmill pattern. Like the emerald, clarity matters — architectural and quietly striking.",
+      },
+      tip: "Tip: round buys brilliance; oval, pear, and marquise buy visual size on the same budget. For step cuts (emerald, Asscher), go one grade up on color and clarity.",
+      cta: "Start a custom order with this shape",
     },
   },
 };
@@ -374,7 +394,7 @@ const ko = {
       cards: {
         lab: { kicker: "랩그로운", title: "같은 광채, 더 합리적인 시작.", body: "랩그로운 다이아몬드의 차이와 꼭 확인해야 할 정보를 정리했습니다." },
         fourc: { kicker: "4C", title: "컷, 컬러, 클래리티, 캐럿.", body: "눈에 보이는 아름다움을 기준으로 우선순위를 잡는 방법입니다." },
-        custom: { kicker: "주문제작", title: "상담부터 최종 QC까지.", body: "주문제작을 시작한 뒤 어떤 과정으로 진행되는지 안내합니다." },
+        shapes: { kicker: "셰입", title: "손 위에서 달라지는 광채.", body: "라운드부터 아셔까지 — 아홉 실루엣의 성격과 고르는 기준을 담았습니다." },
       },
     },
     lab: {
@@ -393,6 +413,26 @@ const ko = {
       clarityH: "Clarity — 클래리티", clarityP: "내포물의 정도. IF(무결점)–VS2까지는 육안으로 내포물이 보이지 않습니다.",
       tip: "팁: 예산 대비 가장 효율적인 조합은 Excellent 컷 + F–G 컬러 + VS1–VS2 클래리티입니다.",
       cta: "이 기준으로 주문제작 시작",
+      next: "다음: 셰입 가이드 →",
+    },
+    shapes: {
+      title: "셰입 가이드",
+      lede: "같은 캐럿이라도 셰입에 따라 광채의 성격, 보이는 크기, 손의 인상이 달라집니다. 아홉 가지 실루엣을 간결하게 정리했습니다.",
+      introH: "셰입과 컷은 다릅니다",
+      introP: "셰입은 스톤의 외형이고, 컷은 빛을 다루는 솜씨입니다. 어떤 셰입을 고르든 광채를 결정하는 것은 컷 등급 — 셰입은 취향의 문제입니다.",
+      notes: {
+        round: "광채의 기준점. 58면 브릴리언트 파셋이 어떤 셰입보다 빛을 많이 되돌립니다. 수요가 가장 높아 캐럿당 가격도 가장 높습니다.",
+        oval: "라운드의 광채를 우아하게 늘인 실루엣. 같은 캐럿이 더 커 보이고 손가락이 길어 보입니다. 잘 커팅된 스톤은 중앙의 보타이 그림자가 거의 없습니다.",
+        princess: "각진 라인의 모던 클래식. 파셋이 많아 광채가 풍부하고 내포물을 잘 감춥니다. 뾰족한 코너는 프롱 세팅으로 보호합니다.",
+        emerald: "스텝 컷이 만드는 ‘거울의 방’. 반짝임 대신 맑고 깊은 윤광 — 내포물이 그대로 보이므로 클래리티에 예산을 더 쓰는 셰입입니다. 캐럿당 가격은 유리합니다.",
+        pear: "물방울 실루엣 — 라운드의 광채와 마퀴즈의 드라마를 함께. 손가락을 가장 우아하게 늘여 보입니다.",
+        marquise: "같은 캐럿에서 가장 커 보이는 셰입. 양끝의 포인트가 드라마틱하고, 빈티지 무드와 잘 어울립니다.",
+        cushion: "모서리가 둥근 로맨틱 클래식. 부드럽고 따뜻한 불꽃이 특징이라 빈티지·헤일로 세팅과 자연스럽습니다.",
+        radiant: "에메랄드의 윤곽에 브릴리언트의 광채. 내포물을 잘 감추고, 잘린 코너 덕분에 일상 착용에도 견고합니다.",
+        asscher: "정방형 스텝 컷, 아르데코의 윈드밀 패턴. 에메랄드처럼 클래리티가 중요하고, 건축적인 매력이 있습니다.",
+      },
+      tip: "팁: 라운드는 광채를, 오벌·페어·마퀴즈는 같은 예산에서 더 커 보이는 크기를 삽니다. 스텝 컷(에메랄드·아셔)은 컬러·클래리티를 한 단계 높이세요.",
+      cta: "이 셰입으로 주문제작 시작",
     },
   },
 };
@@ -572,7 +612,7 @@ const zh = {
       cards: {
         lab: { kicker: "培育钻石", title: "同样火彩，更聪明的来源。", body: "了解培育钻石的差异，以及哪些披露信息需要关注。" },
         fourc: { kicker: "4C", title: "切工、颜色、净度、克拉。", body: "用实用方式判断哪些因素最影响肉眼美感。" },
-        custom: { kicker: "定制", title: "从需求到最终质检。", body: "开始定制订单后，每一步会发生什么。" },
+        shapes: { kicker: "形状", title: "在手上变化的光彩。", body: "从圆形到阿斯切形 — 九种轮廓的性格与选择之道。" },
       },
     },
     lab: {
@@ -591,6 +631,26 @@ const zh = {
       clarityH: "Clarity — 净度", clarityP: "内含物的程度。IF（无瑕）至 VS2 的内含物肉眼不可见。",
       tip: "提示：性价比最高的组合是 Excellent 切工 + F–G 颜色 + VS1–VS2 净度。",
       cta: "按此标准开始定制",
+      next: "下一篇：形状指南 →",
+    },
+    shapes: {
+      title: "形状指南",
+      lede: "同样的克拉，不同的形状 — 火彩的性格、看起来的大小、手上的气质都会随之改变。九种轮廓，简明整理。",
+      introH: "形状不等于切工",
+      introP: "形状是钻石的外形，切工是处理光线的功力。无论选择哪种形状，决定光彩的都是切工等级 — 形状只关乎品味。",
+      notes: {
+        round: "光彩的基准。58 个明亮式刻面带来最强的光线反射。需求最高，每克拉价格也最高。",
+        oval: "把圆形的光彩优雅拉长。同克拉显得更大，也让手指更显修长。切工好的椭圆几乎没有中央的领结阴影。",
+        princess: "线条利落的现代经典。刻面丰富、光彩充足，也能很好地掩藏内含物；尖角需以爪镶保护。",
+        emerald: "阶梯式切割的“镜厅”。以清澈深邃的光泽取代闪烁 — 内含物一览无余，值得在净度上多投入。每克拉价格更有优势。",
+        pear: "水滴轮廓 — 圆形的光彩与马眼形的戏剧感兼得，最能优雅地拉长手指。",
+        marquise: "同克拉中看起来最大的形状。两端的尖角充满张力，带着复古气质。",
+        cushion: "圆角的浪漫经典。火彩柔和温暖，与复古及光环镶嵌相得益彰。",
+        radiant: "祖母绿形的轮廓，明亮式的光彩。善于掩藏内含物，切角设计也更耐日常佩戴。",
+        asscher: "方形阶梯切割，装饰艺术风格的风车纹理。与祖母绿形一样，净度是关键。",
+      },
+      tip: "提示：圆形买的是光彩；椭圆、梨形、马眼形在同样预算下看起来更大。阶梯式切割（祖母绿形、阿斯切形）建议将颜色与净度提高一档。",
+      cta: "以此形状开始定制",
     },
   },
 };
@@ -770,7 +830,7 @@ const es = {
       cards: {
         lab: { kicker: "Laboratorio", title: "Mismo fuego. Origen más inteligente.", body: "Cómo se comparan los diamantes de laboratorio y qué detalles importan." },
         fourc: { kicker: "4C", title: "Talla, color, pureza, quilates.", body: "Una forma práctica de priorizar el brillo visible." },
-        custom: { kicker: "A medida", title: "Del brief al QC final.", body: "Qué ocurre después de iniciar un pedido a medida." },
+        shapes: { kicker: "Formas", title: "Un brillo que cambia en la mano.", body: "Del redondo al Asscher: el carácter de nueve siluetas y cómo elegir." },
       },
     },
     lab: {
@@ -789,6 +849,26 @@ const es = {
       clarityH: "Clarity — Pureza", clarityP: "El grado de inclusiones. De IF (impecable) hasta VS2, las inclusiones son invisibles a simple vista.",
       tip: "Consejo: la combinación más eficiente es talla Excellent + color F–G + pureza VS1–VS2.",
       cta: "Empezar un pedido con estos criterios",
+      next: "Siguiente: Guía de formas →",
+    },
+    shapes: {
+      title: "Guía de formas",
+      lede: "El mismo quilataje se ve distinto según la forma: el carácter del brillo, el tamaño aparente y cómo favorece a la mano. Nueve siluetas, en breve.",
+      introH: "Forma no es talla",
+      introP: "La forma es el contorno de la piedra; la talla es cómo maneja la luz. Elijas la forma que elijas, el grado de talla decide el brillo — la forma es cuestión de gusto.",
+      notes: {
+        round: "La referencia del brillo. Sus 58 facetas devuelven más luz que ninguna otra forma. La demanda mantiene su precio por quilate como el más alto.",
+        oval: "El brillo del redondo, elegantemente alargado. Parece más grande por quilate y estiliza el dedo. Bien tallado, apenas muestra la sombra de «corbatín».",
+        princess: "Un clásico moderno de líneas nítidas. Rico en destellos y tolerante con las inclusiones; sus esquinas se protegen con garras.",
+        emerald: "Un «salón de espejos» de talla escalonada. Lustre claro y profundo en vez de destellos — las inclusiones quedan a la vista, así que invierte en pureza. Su precio por quilate es favorable.",
+        pear: "Una lágrima: el brillo del redondo con el drama de la marquesa. La forma que más estiliza la mano.",
+        marquise: "La que más grande se ve por quilate. Puntas dramáticas, alma vintage.",
+        cushion: "Un clásico romántico de esquinas suaves. Fuego cálido y delicado, natural en monturas vintage y halo.",
+        radiant: "El contorno de la esmeralda con facetado brillante. Disimula bien las inclusiones y sus esquinas recortadas resisten el uso diario.",
+        asscher: "Talla escalonada cuadrada con patrón de molinete Art Déco. Como en la esmeralda, la pureza es clave.",
+      },
+      tip: "Consejo: el redondo compra brillo; ovalado, pera y marquesa compran tamaño visual con el mismo presupuesto. En tallas escalonadas (esmeralda, Asscher), sube un grado el color y la pureza.",
+      cta: "Empezar un pedido con esta forma",
     },
   },
 };

@@ -39,6 +39,7 @@ const InfoPage = lazy(() => import("./pages/Info.jsx"));
 const GuideHub = named(() => import("./pages/Guide.jsx"), "GuideHub");
 const GuideLabDiamond = named(() => import("./pages/Guide.jsx"), "GuideLabDiamond");
 const Guide4C = named(() => import("./pages/Guide.jsx"), "Guide4C");
+const GuideShapes = named(() => import("./pages/Guide.jsx"), "GuideShapes");
 
 // 라우트 이동마다 page_view 1건 — track.js가 어드민·게이트 경로는 스스로 거른다
 function PageViewTracker() {
@@ -74,6 +75,7 @@ export default function App() {
           <Route path="guide" element={<GuideHub />} />
           <Route path="guide/lab-diamond" element={<GuideLabDiamond />} />
           <Route path="guide/4c" element={<Guide4C />} />
+          <Route path="guide/shapes" element={<GuideShapes />} />
           <Route path="about" element={<InfoPage page="about" />} />
           <Route path="returns" element={<InfoPage page="returns" />} />
           <Route path="warranty" element={<InfoPage page="warranty" />} />

@@ -4214,3 +4214,38 @@ html[data-theme="day"] .noir-dock-go:hover { background: rgba(214, 197, 160, 0.1
 }
 
 .guide-noir-actions .noir-btn { width: auto; padding: 0 30px; }
+
+/* 셰입 가이드 — 실루엣 + 노트 에디토리얼 행 */
+.guide-noir-shapes {
+  margin-top: 34px;
+  border-top: 1px solid var(--line);
+}
+
+.guide-noir-shape {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 24px;
+  align-items: start;
+  padding: 26px 2px;
+  border-bottom: 1px solid var(--line);
+}
+
+.guide-noir-shape-ic {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border: 1px solid rgba(214, 197, 160, 0.4);
+  color: var(--accent);
+}
+
+.guide-noir-shape-ic svg { width: 40px; height: 40px; }
+
+.guide-noir-shape h4 {
+  margin: 2px 0 7px;
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 19px;
+  color: var(--text);
+}
+
+.guide-noir-shape p { margin: 0; font-size: 14px; line-height: 1.7; }
