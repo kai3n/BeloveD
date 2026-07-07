@@ -541,6 +541,7 @@ export function AdminLiveOrderDetail() {
       ["Stone", [sp.shape, sp.carat && `${sp.carat}ct`, sp.color, sp.clarity, sp.growth].filter(Boolean).join(" · ")],
       ["Fit", Object.entries(fp.conditional || {}).map(([k, v]) => `${k}: ${v}`).join(" · ")],
       ["Engraving", (fp.engraving || "").trim()],
+      ["Coupon", (fp.couponCode || "").trim()],
       [t.refNotes, (fp.inspirationNotes || "").trim()],
       [t.budget, order.intake?.budgetMinorUnits ? usd(order.intake.budgetMinorUnits / 100) : "—"],
       [t.requiredDate, order.intake?.requiredDate ? String(order.intake.requiredDate).slice(0, 10) : "—"],
