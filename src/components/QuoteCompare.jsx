@@ -20,6 +20,9 @@ export default function QuoteCompare({ form }) {
         <div>
           <div className="qc-kicker">{est.solitaire ? t.kickerStone : t.kicker}</div>
           <div className="qc-total">{usd(est.beloved.low)} – {usd(est.beloved.high)}</div>
+          {est.coupon && (
+            <div className="qc-kicker" style={{ marginTop: 4 }}>{t.couponLine(est.coupon.code, usd(est.coupon.savedUsd))}</div>
+          )}
         </div>
         {est.savingsTop > 0 && (
           <div className="qc-savings">{t.savings(usd(est.savingsTop), est.topName)}</div>

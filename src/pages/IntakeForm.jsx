@@ -20,6 +20,7 @@ import QuoteCompare from "../components/QuoteCompare.jsx";
 import GalleryStep from "../components/intake/GalleryStep.jsx";
 import { CaratSlider, ImageOptionGrid, MetalSwatches, ScalePicker, ShapeSilhouette, ShapeTiles } from "../components/intake/pickers.jsx";
 import { defaultSubcategoryFor, styleSubcategoryKey, subcategoryKeysFor } from "../lib/designSlots.js";
+import { findCoupon, normalizeCouponCode } from "../lib/coupons.js";
 
 const DRAFT_KEY = "lumina-intake-draft";
 
@@ -137,6 +138,7 @@ export default function IntakeForm() {
     multiSpec: { meleeSpec: "", overallDims: "", arrangement: "", standard: "" },
     inspirationNotes: "",
     engraving: "",
+    couponCode: "",
     requiredDate: "", termsAccepted: false,
   };
   // 인테이크 진입 이벤트 — 스타일 프리필 여부 포함 (마운트 1회)
@@ -196,6 +198,7 @@ export default function IntakeForm() {
     ? hasContactDetails(submissionContact(form, user))
     : Boolean(form.name.trim());
   const selectedStyle = styles.find((st) => st.id === form.styleId) || null;
+  const activeCoupon = findCoupon(form.couponCode);
   const selectedStyleName = selectedStyle ? pickI18n(selectedStyle.name, locale) : g.notSureTitle;
   const stylesForCategory = styles.filter((st) => st.category === form.category);
   const optionLabels = t.optionLabels || {};
@@ -675,6 +678,24 @@ export default function IntakeForm() {
               </div>
             </section>
           )}
+
+          {/* 쿠폰 — 견적 바로 위: 코드를 넣으면 아래 예상 견적이 즉시 할인 반영된다 */}
+          <section className="gflow-review-section">
+            <h4>{g.couponTitle}</h4>
+            <label className="field" style={{ maxWidth: 320 }}>
+              <input
+                value={form.couponCode}
+                maxLength={20}
+                placeholder={g.couponPh}
+                onChange={(e) => setF({ couponCode: e.target.value.toUpperCase() })}
+              />
+            </label>
+            <p className="form-hint" style={{ margin: 0 }}>
+              {activeCoupon
+                ? `✓ ${g.couponNames[activeCoupon.labelKey]} — ${g.couponAppliedNote}`
+                : normalizeCouponCode(form.couponCode) ? g.couponInvalid : g.couponHint}
+            </p>
+          </section>
 
           <QuoteCompare form={form} />
 
