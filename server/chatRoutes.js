@@ -4,7 +4,8 @@ import { rateLimit } from "./rateLimit.js";
 import { createUploadUrl } from "./media.js";
 import { query } from "./db.js";
 import { COOKIE_CHAT, setChatCookie, clearChatCookie } from "./middleware.js";
-import { notifyStaffNewChat } from "./chatMail.js";
+import { notifyConsultation } from "./chatMail.js";
+import { matchFaq } from "../src/lib/chatFaq.js";
 import {
   newThreadToken, findThreadByToken, findCustomerThread, createVisitorThread,
   appendMessage, listMessages, markCustomerSeen, findThreadByCode,
@@ -60,22 +61,34 @@ export function chatRouter() {
       try {
         const { body, attachments, locale, email } = req.body || {};
         const thread = await resolveOrCreateThread(req, res, locale);
-        if (email && EMAIL_RE.test(String(email))) await setVisitorEmail(thread.id, String(email).slice(0, 200));
+        const validEmail = email && EMAIL_RE.test(String(email)) ? String(email).slice(0, 200) : null;
+        if (validEmail) await setVisitorEmail(thread.id, validEmail);
         const message = await appendMessage(thread.id, { sender: "visitor", body, attachments });
-        // 스태프 알림 (스레드당 스로틀) — 전송 전 상태로 판단
-        if (shouldNotifyStaff(thread)) {
+
+        // FAQ 자동응답 — 기본 질문이면 컨시어지(자동)가 즉시 답변한다. 없으면 사람이 응대.
+        let autoReply = null;
+        const faq = matchFaq(body, thread.visitor_locale || locale || "en");
+        if (faq) autoReply = await appendMessage(thread.id, { sender: "staff", body: faq.answer });
+
+        // 상담 요청을 support@로 전달 — 신규/스로틀 해제 또는 사진·영상 포함 시,
+        // 전체 대화 내용 + 모든 미디어를 함께 보낸다.
+        const hasMedia = Array.isArray(attachments) && attachments.length > 0;
+        if (shouldNotifyStaff(thread) || hasMedia) {
           await markStaffNotified(thread.id);
-          const c = thread.customer_id
+          const cust = thread.customer_id
             ? (await query("select name from customers where id = $1", [thread.customer_id])).rows[0]
             : null;
-          fireMail(notifyStaffNewChat({
+          const transcript = await listMessages(thread.id, 0);
+          fireMail(notifyConsultation({
             threadCode: thread.thread_code,
-            preview: message.body || "(image)",
-            customerName: c?.name || null,
-          }), "staff-notify");
+            visitorEmail: validEmail || thread.visitor_email || null,
+            customerName: cust?.name || null,
+            messages: transcript,
+          }), "consultation");
         }
+
         const fresh = await findThreadByCode(thread.thread_code);
-        res.status(201).json({ ok: true, thread: threadView(fresh), message, staffAgent: STAFF_AGENT });
+        res.status(201).json({ ok: true, thread: threadView(fresh), message, autoReply, staffAgent: STAFF_AGENT });
       } catch (e) { next(e); }
     });
 

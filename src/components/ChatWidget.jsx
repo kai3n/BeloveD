@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import { ImagePlus, MessageCircle, Send, X } from "lucide-react";
 import { useLocale } from "../i18n.jsx";
 import { fetchThread, sendChatMessage, uploadChatImage } from "../lib/chat.js";
+import { faqChips } from "../lib/chatFaq.js";
 import "../chat.css";
 
 // 위젯을 숨길 경로 — 어드민 콘솔·스태프 게이트(같은 Layout 안에서 렌더되므로 여기서 차단)
@@ -54,12 +55,19 @@ export default function ChatWidget() {
   const { pathname } = useLocation();
   const { locale } = useLocale();
   const t = COPY[locale] || COPY.en;
+  const chips = faqChips(locale);
   const hidden = BLOCKED(pathname);
 
+  // 열림 상태를 세션에 유지 — 페이지 이동(위젯은 Layout에 상시 마운트)뿐 아니라
+  // 새로고침에도 살아남는다. ?chat=open(이메일 CTA)이면 강제로 열림.
   const [open, setOpen] = useState(() => {
     if (typeof window === "undefined") return false;
-    return new URLSearchParams(window.location.search).get("chat") === "open";
+    if (new URLSearchParams(window.location.search).get("chat") === "open") return true;
+    try { return window.sessionStorage.getItem("bd_chat_open") === "1"; } catch { return false; }
   });
+  useEffect(() => {
+    try { window.sessionStorage.setItem("bd_chat_open", open ? "1" : "0"); } catch { /* no-op */ }
+  }, [open]);
   const [messages, setMessages] = useState([]);
   const [thread, setThread] = useState(null);
   const [agent, setAgent] = useState(null);
@@ -125,19 +133,27 @@ export default function ChatWidget() {
     finally { setUploading(false); }
   }
 
-  async function handleSend() {
-    const body = input.trim();
+  async function doSend(text) {
+    const body = String(text || "").trim();
     if ((!body && pending.length === 0) || sending) return;
     setSending(true); setError("");
     try {
-      const data = await sendChatMessage({
-        body, attachments: pending, locale,
-        email: email.trim() || undefined,
+      const data = await sendChatMessage({ body, attachments: pending, locale, email: email.trim() || undefined });
+      setPending([]);
+      // 방문자 메시지 + (있으면) FAQ 자동응답을 즉시 반영 — 폴링에서도 dedup됨
+      ingest({
+        staffAgent: data.staffAgent, thread: data.thread,
+        messages: [data.message, ...(data.autoReply ? [data.autoReply] : [])],
       });
-      setInput(""); setPending([]);
-      ingest({ staffAgent: data.staffAgent, thread: data.thread, messages: [data.message] });
     } catch { setError("Could not send — please try again."); }
     finally { setSending(false); }
+  }
+
+  function handleSend() {
+    const body = input.trim();
+    if (!body && pending.length === 0) return;
+    setInput("");
+    doSend(body);
   }
 
   function onKeyDown(e) {
@@ -177,7 +193,14 @@ export default function ChatWidget() {
           {messages.length === 0 ? (
             <div className="chat-greeting">
               <Avatar agent={agent} className="chat-greeting-avatar" />
-              {t.greeting}
+              <div>{t.greeting}</div>
+              <div className="chat-chips">
+                {chips.map((c) => (
+                  <button key={c.id} type="button" className="chat-chip" disabled={sending} onClick={() => doSend(c.label)}>
+                    {c.label}
+                  </button>
+                ))}
+              </div>
             </div>
           ) : (
             messages.map((m) => (

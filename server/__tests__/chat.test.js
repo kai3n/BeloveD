@@ -99,16 +99,47 @@ describe("라이브챗", () => {
     expect(poll.body.thread.customerId).toBeTruthy();
   });
 
-  it("스태프 알림은 스레드당 스로틀 — 연속 인바운드에 재알림 안 함", async () => {
+  it("상담 알림은 스레드당 스로틀 — 연속 텍스트에 재발송 안 함", async () => {
     await adminCookie();
     const v = await request(app).post("/v1/chat/messages").send({ body: "first" });
     const vCookie = v.headers["set-cookie"];
     await flush();
-    expect(drainMail().filter((m) => m.type === "chat_staff_notify").length).toBe(1);
+    expect(drainMail().filter((m) => m.type === "chat_consultation").length).toBe(1);
 
     await request(app).post("/v1/chat/messages").set("Cookie", vCookie).send({ body: "second" });
     await flush();
-    expect(drainMail().filter((m) => m.type === "chat_staff_notify").length).toBe(0);
+    expect(drainMail().filter((m) => m.type === "chat_consultation").length).toBe(0);
+  });
+
+  it("FAQ 자동응답 — 기본 질문이면 컨시어지가 즉시 답한다", async () => {
+    const res = await request(app).post("/v1/chat/messages").send({ body: "How much does a ring cost?", locale: "en" });
+    expect(res.status).toBe(201);
+    expect(res.body.autoReply).toBeTruthy();
+    expect(res.body.autoReply.sender).toBe("staff");
+    expect(res.body.autoReply.body.toLowerCase()).toContain("price");
+    // 방문자 + 자동응답 2건이 스레드에 남는다
+    const poll = await request(app).get("/v1/chat/thread").set("Cookie", res.headers["set-cookie"]);
+    expect(poll.body.messages).toHaveLength(2);
+  });
+
+  it("한국어 질문엔 한국어로 자동응답, 매칭 안 되면 사람에게(자동응답 없음)", async () => {
+    const ko = await request(app).post("/v1/chat/messages").send({ body: "배송은 얼마나 걸려요?", locale: "ko" });
+    expect(ko.body.autoReply?.body).toMatch(/배송/);
+    const none = await request(app).post("/v1/chat/messages").send({ body: "zzz qwerty gibberish", locale: "en" });
+    expect(none.body.autoReply).toBeNull();
+  });
+
+  it("상담 요청은 대화 내용·첨부와 함께 support@belovediamond.com 로 전송", async () => {
+    const res = await request(app).post("/v1/chat/messages").send({
+      body: "Here is my inspiration photo",
+      attachments: [{ url: "https://cdn.example.com/ring.jpg", contentType: "image/jpeg", name: "ring.jpg" }],
+      locale: "en",
+    });
+    expect(res.status).toBe(201);
+    await flush();
+    const mails = drainMail().filter((m) => m.type === "chat_consultation");
+    expect(mails.length).toBeGreaterThanOrEqual(1);
+    expect(mails[0].to).toBe("support@belovediamond.com");
   });
 
   it("스태프 답장 시 고객 오프라인+이메일 알려짐이면 이메일 폴백, 온라인이면 안 보냄", async () => {
