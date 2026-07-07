@@ -24,7 +24,7 @@ const COPY = {
     deniedTitle: "We couldn't open this order",
     deniedBody: "This order belongs to a different account. Sign in with the email you used when ordering.",
     unavailableTitle: "The order portal is warming up",
-    unavailableBody: "Please try again in a moment, or reply to your confirmation email — we answer within one business day.",
+    unavailableBody: "Please try again in a moment, or email support@belovediamond.com — we answer within one business day.",
     loading: "Loading your order…",
     waiting: {
       CUSTOMER: "Your turn — a confirmation below is waiting for you.",
@@ -80,7 +80,7 @@ const COPY = {
       order_cancelled: "Order cancelled", cancel_requested: "Cancellation requested",
       "Request received": "Request received", "Response received": "Response received",
     },
-    emailTail: "Questions? Reply to any of our order emails — they reach the same team.",
+    emailTail: "Questions? Email support@belovediamond.com — it reaches the order team directly.",
   },
   ko: {
     kicker: "주문 현황",
@@ -90,7 +90,7 @@ const COPY = {
     deniedTitle: "이 주문을 열 수 없습니다",
     deniedBody: "다른 계정의 주문입니다. 주문할 때 사용한 이메일로 로그인해 주세요.",
     unavailableTitle: "주문 포털을 준비하고 있어요",
-    unavailableBody: "잠시 후 다시 시도해 주세요. 급하시면 접수 메일에 회신 주시면 영업일 기준 하루 안에 답변드립니다.",
+    unavailableBody: "잠시 후 다시 시도해 주세요. 급하시면 support@belovediamond.com으로 문의 주시면 영업일 기준 하루 안에 답변드립니다.",
     loading: "주문을 불러오는 중…",
     waiting: {
       CUSTOMER: "지금은 고객님 차례예요 — 아래 컨펌이 기다리고 있습니다.",
@@ -146,7 +146,7 @@ const COPY = {
       order_cancelled: "주문 취소됨", cancel_requested: "취소 요청 접수",
       "Request received": "요청 접수됨", "Response received": "응답 접수됨",
     },
-    emailTail: "궁금한 점은 주문 메일에 회신해 주세요 — 같은 팀에게 바로 전달됩니다.",
+    emailTail: "궁금한 점은 support@belovediamond.com으로 문의해 주세요 — 주문 팀에게 바로 전달됩니다.",
   },
   zh: {
     kicker: "订单状态",
@@ -156,7 +156,7 @@ const COPY = {
     deniedTitle: "无法打开此订单",
     deniedBody: "该订单属于其他账户。请使用下单时的邮箱登录。",
     unavailableTitle: "订单页面正在准备",
-    unavailableBody: "请稍后重试，或直接回复确认邮件，我们会在一个工作日内回复。",
+    unavailableBody: "请稍后重试，或致信 support@belovediamond.com，我们会在一个工作日内回复。",
     loading: "正在加载订单…",
     waiting: {
       CUSTOMER: "轮到您了 — 下方有待您确认的事项。",
@@ -212,7 +212,7 @@ const COPY = {
       order_cancelled: "订单已取消", cancel_requested: "已申请取消",
       "Request received": "已收到请求", "Response received": "已收到回复",
     },
-    emailTail: "如有疑问，直接回复订单邮件即可 — 同一团队为您服务。",
+    emailTail: "如有疑问，请致信 support@belovediamond.com — 同一团队为您服务。",
   },
   es: {
     kicker: "Estado del pedido",
@@ -222,7 +222,7 @@ const COPY = {
     deniedTitle: "No pudimos abrir este pedido",
     deniedBody: "Este pedido pertenece a otra cuenta. Inicia sesión con el correo que usaste al ordenar.",
     unavailableTitle: "El portal del pedido se está preparando",
-    unavailableBody: "Inténtalo de nuevo en un momento, o responde a tu correo de confirmación — contestamos en un día hábil.",
+    unavailableBody: "Inténtalo de nuevo en un momento, o escríbenos a support@belovediamond.com — contestamos en un día hábil.",
     loading: "Cargando tu pedido…",
     waiting: {
       CUSTOMER: "Tu turno — hay una confirmación esperándote abajo.",
@@ -278,7 +278,7 @@ const COPY = {
       order_cancelled: "Pedido cancelado", cancel_requested: "Cancelación solicitada",
       "Request received": "Solicitud recibida", "Response received": "Respuesta recibida",
     },
-    emailTail: "¿Preguntas? Responde a cualquiera de nuestros correos del pedido.",
+    emailTail: "¿Preguntas? Escríbenos a support@belovediamond.com.",
   },
 };
 

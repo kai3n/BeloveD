@@ -3,11 +3,13 @@
 import { sendOrderMail } from "./mailer.js";
 
 // 왜: wrap()이 영어 면책 문구를 항상 붙이므로 비영어 로케일에만 현지화 문구를 추가한다 (스펙 §3)
+// 발신 주소가 no-reply라 "이 메일에 회신" 안내는 금지 — 문의는 support 주소로만 안내한다.
+const SUPPORT_EMAIL = "support@belovediamond.com";
 const CHROME = {
-  en: { cta: "VIEW YOUR ORDER", tail: "Questions? Just reply to this email." },
-  ko: { cta: "주문 확인하기", tail: "궁금한 점은 이 메일에 회신해 주세요.", ignore: "이 주문을 기억하지 못하시면 이 메일을 무시하셔도 됩니다." },
-  zh: { cta: "查看订单", tail: "如有疑问，直接回复本邮件即可。", ignore: "如果您不记得此订单，可以忽略此邮件。" },
-  es: { cta: "VER TU PEDIDO", tail: "¿Preguntas? Responde a este correo.", ignore: "Si no reconoces este pedido, puedes ignorar este correo." },
+  en: { cta: "VIEW YOUR ORDER", tail: `Questions? Email us at ${SUPPORT_EMAIL}.` },
+  ko: { cta: "주문 확인하기", tail: `궁금한 점은 ${SUPPORT_EMAIL}으로 문의해 주세요.`, ignore: "이 주문을 기억하지 못하시면 이 메일을 무시하셔도 됩니다." },
+  zh: { cta: "查看订单", tail: `如有疑问，请致信 ${SUPPORT_EMAIL}。`, ignore: "如果您不记得此订单，可以忽略此邮件。" },
+  es: { cta: "VER TU PEDIDO", tail: `¿Preguntas? Escríbenos a ${SUPPORT_EMAIL}.`, ignore: "Si no reconoces este pedido, puedes ignorar este correo." },
 };
 
 export { CHROME };
@@ -131,10 +133,10 @@ export const ORDER_MAIL = {
     es: { subject: (o) => `Saldo pendiente — ${o}`, line: () => "Tu pieza pasó el control final. Paga el saldo restante en tu portal para iniciar el envío." },
   },
   order_cancelled: {
-    en: { subject: (o) => `Order cancelled — ${o}`, line: (o, d) => `Your order has been cancelled.${d.refundNote ? ` ${d.refundNote}` : ""} If this wasn't intended, just reply to this email.` },
-    ko: { subject: (o) => `주문 취소 완료 — ${o}`, line: (o, d) => `주문이 취소되었습니다.${d.refundNote ? ` ${d.refundNote}` : ""} 의도치 않은 취소라면 이 메일에 회신해 주세요.` },
-    zh: { subject: (o) => `订单已取消 — ${o}`, line: (o, d) => `您的订单已取消。${d.refundNote ? `${d.refundNote} ` : ""}如非本意，请直接回复此邮件。` },
-    es: { subject: (o) => `Pedido cancelado — ${o}`, line: (o, d) => `Tu pedido ha sido cancelado.${d.refundNote ? ` ${d.refundNote}` : ""} Si no fue intencional, responde a este correo.` },
+    en: { subject: (o) => `Order cancelled — ${o}`, line: (o, d) => `Your order has been cancelled.${d.refundNote ? ` ${d.refundNote}` : ""} If this wasn't intended, contact us at ${SUPPORT_EMAIL}.` },
+    ko: { subject: (o) => `주문 취소 완료 — ${o}`, line: (o, d) => `주문이 취소되었습니다.${d.refundNote ? ` ${d.refundNote}` : ""} 의도치 않은 취소라면 ${SUPPORT_EMAIL}으로 알려주세요.` },
+    zh: { subject: (o) => `订单已取消 — ${o}`, line: (o, d) => `您的订单已取消。${d.refundNote ? `${d.refundNote} ` : ""}如非本意，请联系 ${SUPPORT_EMAIL}。` },
+    es: { subject: (o) => `Pedido cancelado — ${o}`, line: (o, d) => `Tu pedido ha sido cancelado.${d.refundNote ? ` ${d.refundNote}` : ""} Si no fue intencional, escríbenos a ${SUPPORT_EMAIL}.` },
   },
   cancel_requested: {
     en: { subject: (o) => `Cancellation request received — ${o}`, line: () => "We received your cancellation request. Since production has begun, refunds follow our policy — we will contact you within 1 business day with the details." },
