@@ -26,6 +26,7 @@ const AdminReviews = WITH_BACKOFFICE ? lazy(() => import("./pages/admin/AdminRev
 const AdminBenchmark = WITH_BACKOFFICE ? lazy(() => import("./pages/admin/AdminBenchmark.jsx")) : null;
 const AdminMetals = WITH_BACKOFFICE ? lazy(() => import("./pages/admin/AdminMetals.jsx")) : null;
 const AdminPayments = WITH_BACKOFFICE ? lazy(() => import("./pages/admin/AdminPayments.jsx")) : null;
+const AdminCoupons = WITH_BACKOFFICE ? lazy(() => import("./pages/admin/AdminCoupons.jsx")) : null;
 const AdminMembers = WITH_BACKOFFICE ? lazy(() => import("./pages/admin/AdminMembers.jsx")) : null;
 const AdminCustomers = WITH_BACKOFFICE ? lazy(() => import("./pages/admin/AdminCustomers.jsx")) : null;
 const AdminMemberTimeline = WITH_BACKOFFICE ? named(() => import("./pages/admin/AdminMembers.jsx"), "AdminMemberTimeline") : null;
@@ -100,6 +101,7 @@ export default function App() {
               <Route path="benchmark" element={<AdminBenchmark />} />
               <Route path="metals" element={<AdminMetals />} />
               <Route path="payments" element={<AdminPayments />} />
+              <Route path="coupons" element={<AdminCoupons />} />
               <Route path="reviews" element={<AdminReviews />} />
               <Route path="live" element={<AdminLiveOrders />} />
               <Route path="live/:orderCode" element={<AdminLiveOrderDetail />} />

@@ -13,6 +13,7 @@ export const PUBLIC_SETTINGS_KEYS = [
   "opsDepositRate",
   "payment",
   "styleSpecs",
+  "coupons", // 쿠폰 카탈로그 — 위저드 견적 추정이 소비 (코드는 공개돼도 되는 '약속')
 ];
 
 export async function getSettingsValues(keys) {
