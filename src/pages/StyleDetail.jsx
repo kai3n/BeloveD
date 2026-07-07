@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { getOpsStyle } from "../lib/store.js";
@@ -12,6 +12,9 @@ function styleText(style, field, locale, fallback) {
   return pickI18n(style?.[field], locale) || fallback;
 }
 
+// CSS --detail-magnify-scale와 단일 소스 — 터치 팬 보정에 같은 값이 필요하다
+const MAGNIFY_SCALE = 3;
+
 export default function StyleDetail() {
   useDBVersion();
   const { p, locale } = useLocale();
@@ -20,6 +23,8 @@ export default function StyleDetail() {
   const [active, setActive] = useState(0);
   const [isMagnifying, setIsMagnifying] = useState(false);
   const [magnifyPosition, setMagnifyPosition] = useState({ x: 50, y: 50 });
+  // 터치 드래그-팬의 직전 손가락 좌표 — 드래그 사이에만 유효
+  const touchDragRef = useRef(null);
 
   useEffect(() => {
     setActive(0);
@@ -77,6 +82,21 @@ export default function StyleDetail() {
   function updateMagnifyPosition(event, force = false) {
     if (!canMagnify || (!isMagnifying && !force)) return;
     const rect = event.currentTarget.getBoundingClientRect();
+    // 터치는 드래그-팬: 확대 이미지가 손가락을 따라온다. 마우스식 절대 매핑(호버 지점 = 확대 지점)을
+    // 터치에 그대로 쓰면 origin이 손가락과 같이 움직여 이미지가 반대 방향으로 미끄러진다.
+    // Δorigin = −Δfinger/(scale−1) 이면 콘텐츠가 손가락을 화면 1:1로 추적한다.
+    if (event.pointerType === "touch" && !force) {
+      const last = touchDragRef.current;
+      touchDragRef.current = { x: event.clientX, y: event.clientY };
+      if (!last) return;
+      const dx = ((event.clientX - last.x) / rect.width) * 100 / (MAGNIFY_SCALE - 1);
+      const dy = ((event.clientY - last.y) / rect.height) * 100 / (MAGNIFY_SCALE - 1);
+      setMagnifyPosition((pos) => ({
+        x: Math.min(100, Math.max(0, pos.x - dx)),
+        y: Math.min(100, Math.max(0, pos.y - dy)),
+      }));
+      return;
+    }
     const x = ((event.clientX - rect.left) / rect.width) * 100;
     const y = ((event.clientY - rect.top) / rect.height) * 100;
     setMagnifyPosition({
@@ -100,11 +120,21 @@ export default function StyleDetail() {
               setIsMagnifying((value) => !value);
             }}
             onPointerMove={updateMagnifyPosition}
-            onPointerDown={updateMagnifyPosition}
+            onPointerDown={(event) => {
+              // 터치는 드래그 시작점만 기록 — 절대 점프 없이 이어지는 move에서 팬한다
+              if (event.pointerType === "touch") {
+                touchDragRef.current = { x: event.clientX, y: event.clientY };
+                return;
+              }
+              updateMagnifyPosition(event);
+            }}
+            onPointerUp={() => { touchDragRef.current = null; }}
+            onPointerCancel={() => { touchDragRef.current = null; }}
+            onPointerLeave={() => { touchDragRef.current = null; }}
             style={{
               "--detail-magnify-x": `${magnifyPosition.x}%`,
               "--detail-magnify-y": `${magnifyPosition.y}%`,
-              "--detail-magnify-scale": 3,
+              "--detail-magnify-scale": MAGNIFY_SCALE,
             }}
           >
             <MediaThumb media={activeMedia} alt={name} eager />
