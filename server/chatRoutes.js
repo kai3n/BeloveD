@@ -119,6 +119,19 @@ export function chatRouter() {
       } catch (e) { next(e); }
     });
 
+  // 이메일만 별도 저장(오프라인 이메일 답장용) — 메시지 없이도 저장 가능
+  r.post("/email",
+    rateLimit({ limit: 20, windowMs: MINUTE, keyFn: (req) => `chat-email:${req.cookies?.bd_chat || req.ip}` }),
+    async (req, res, next) => {
+      try {
+        const { email, locale } = req.body || {};
+        if (!email || !EMAIL_RE.test(String(email))) throw new ApiError("VALIDATION_ERROR", 400);
+        const thread = await resolveOrCreateThread(req, res, locale);
+        await setVisitorEmail(thread.id, String(email).slice(0, 200));
+        res.json({ ok: true });
+      } catch (e) { next(e); }
+    });
+
   // 방문자가 대화 종료
   r.post("/close", async (req, res, next) => {
     try {

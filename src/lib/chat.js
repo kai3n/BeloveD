@@ -19,7 +19,22 @@ export async function closeChatThread() {
   return apiFetch("/chat/close", { method: "POST", body: {} });
 }
 
-// 채팅 이미지 — /chat/upload-url presigned 발급 후 R2로 직행 PUT, 영구 URL 반환.
+// 오프라인 이메일 답장용 주소만 저장 (메시지 없이도)
+export async function saveChatEmail(email, locale) {
+  return apiFetch("/chat/email", { method: "POST", body: { email, locale } });
+}
+
+// 서버 media.js ALLOWED_TYPES와 정렬 — 이미지·영상만 첨부 허용. 최대 100MB.
+export const CHAT_MAX_BYTES = 100 * 1024 * 1024;
+
+// File/DataTransfer 목록에서 이미지·영상 파일만 골라낸다(드래그앤드롭·붙여넣기·파일선택 공용).
+export function chatMediaFiles(list) {
+  return Array.from(list || []).filter(
+    (f) => f && typeof f.type === "string" && (f.type.startsWith("image/") || f.type.startsWith("video/")),
+  );
+}
+
+// 채팅 미디어 — /chat/upload-url presigned 발급 후 R2로 직행 PUT, 영구 URL 반환. 이미지·영상 공용.
 export async function uploadChatImage(blob, contentType) {
   const { uploadUrl, publicUrl } = await apiFetch("/chat/upload-url", {
     method: "POST",

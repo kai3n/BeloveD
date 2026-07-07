@@ -172,4 +172,14 @@ describe("라이브챗", () => {
     const poll = await request(app).get(`/v1/chat/thread?since=${firstId}`).set("Cookie", vCookie);
     expect(poll.body.messages.map((m) => m.body)).toEqual(["m2"]);
   });
+
+  it("이메일만 별도 저장 API — 잘못된 값 400, 정상은 스레드에 반영", async () => {
+    const v = await request(app).post("/v1/chat/messages").send({ body: "hi" });
+    const vCookie = v.headers["set-cookie"];
+    const code = v.body.thread.code;
+    expect((await request(app).post("/v1/chat/email").set("Cookie", vCookie).send({ email: "nope" })).status).toBe(400);
+    expect((await request(app).post("/v1/chat/email").set("Cookie", vCookie).send({ email: "later@test.com" })).status).toBe(200);
+    const { rows } = await query("select visitor_email from chat_threads where thread_code = $1", [code]);
+    expect(rows[0].visitor_email).toBe("later@test.com");
+  });
 });

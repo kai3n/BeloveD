@@ -1,38 +1,75 @@
 import { useEffect, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
-import { ImagePlus, MessageCircle, Send, X } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { Check, HelpCircle, Home, ImagePlus, Mail, MessageCircle, Send, UserRound, X } from "lucide-react";
 import { useLocale } from "../i18n.jsx";
-import { fetchThread, sendChatMessage, uploadChatImage } from "../lib/chat.js";
+import { fetchThread, saveChatEmail, sendChatMessage, uploadChatImage, chatMediaFiles, CHAT_MAX_BYTES } from "../lib/chat.js";
 import { faqChips } from "../lib/chatFaq.js";
 import "../chat.css";
 
 // 위젯을 숨길 경로 — 어드민 콘솔·스태프 게이트(같은 Layout 안에서 렌더되므로 여기서 차단)
 const BLOCKED = (path) => path.startsWith("/bo-") || path.startsWith("/gate-") || path.startsWith("/admin");
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const COPY = {
   en: {
     title: "Messages", open: "Chat with us",
     greeting: "Hi! Questions about a design, sizing, or an order? Our team usually replies within a few minutes.",
-    placeholder: "Write a message…", email: "your@email.com — for a reply by email (optional)",
-    powered: "BeloveD concierge",
+    placeholder: "Write a message…", emailToggle: "Get a reply by email too?", emailPh: "your@email.com", emailSaved: "We'll reply by email too ✓",
+    powered: "BeloveD concierge", drop: "Drop a photo or video", attach: "Attach photo or video",
+    tooLarge: "That file is too large (max 100MB).",
+    menu: "Menu", backToChat: "Back to chat", talk: "Talk to a person", talkMsg: "I'd like to talk to a person.",
+    quickTitle: "Or jump to",
+    quick: [
+      { id: "order", label: "Start a custom order", to: "/custom/new" },
+      { id: "designs", label: "Browse designs", to: "/designs" },
+      { id: "track", label: "Track my order", to: "/track" },
+      { id: "home", label: "Back to home", to: "/" },
+    ],
   },
   ko: {
     title: "메시지", open: "문의하기",
     greeting: "안녕하세요! 디자인·사이즈·주문 관련 무엇이든 물어보세요. 보통 몇 분 안에 답장드려요.",
-    placeholder: "메시지를 입력하세요…", email: "이메일 주소 — 이메일로도 답장받기 (선택)",
-    powered: "BeloveD 컨시어지",
+    placeholder: "메시지를 입력하세요…", emailToggle: "이메일로도 답장받기", emailPh: "your@email.com", emailSaved: "이메일로도 답장드릴게요 ✓",
+    powered: "BeloveD 컨시어지", drop: "사진·영상을 여기에 놓으세요", attach: "사진·영상 첨부",
+    tooLarge: "파일이 너무 커요 (최대 100MB).",
+    menu: "메뉴", backToChat: "대화로 돌아가기", talk: "상담원 연결", talkMsg: "상담원과 연결해 주세요.",
+    quickTitle: "바로가기",
+    quick: [
+      { id: "order", label: "주문제작 시작하기", to: "/custom/new" },
+      { id: "designs", label: "디자인 둘러보기", to: "/designs" },
+      { id: "track", label: "주문 조회", to: "/track" },
+      { id: "home", label: "홈으로 돌아가기", to: "/" },
+    ],
   },
   zh: {
     title: "消息", open: "在线咨询",
     greeting: "您好！关于设计、尺寸或订单有任何问题都可以问我们，通常几分钟内回复。",
-    placeholder: "输入消息…", email: "您的邮箱 — 也可通过邮件回复（可选）",
-    powered: "BeloveD 礼宾",
+    placeholder: "输入消息…", emailToggle: "也用邮件回复我", emailPh: "your@email.com", emailSaved: "我们也会邮件回复您 ✓",
+    powered: "BeloveD 礼宾", drop: "拖放照片或视频到此处", attach: "添加照片或视频",
+    tooLarge: "文件过大（最大 100MB）。",
+    menu: "菜单", backToChat: "返回对话", talk: "联系人工", talkMsg: "我想联系人工客服。",
+    quickTitle: "快捷前往",
+    quick: [
+      { id: "order", label: "开始定制", to: "/custom/new" },
+      { id: "designs", label: "浏览设计", to: "/designs" },
+      { id: "track", label: "订单查询", to: "/track" },
+      { id: "home", label: "返回首页", to: "/" },
+    ],
   },
   es: {
     title: "Mensajes", open: "Chatea con nosotros",
     greeting: "¡Hola! ¿Preguntas sobre un diseño, tallas o un pedido? Solemos responder en unos minutos.",
-    placeholder: "Escribe un mensaje…", email: "tu@email.com — para responder por correo (opcional)",
-    powered: "BeloveD concierge",
+    placeholder: "Escribe un mensaje…", emailToggle: "¿Respuesta por correo también?", emailPh: "tu@email.com", emailSaved: "También responderemos por correo ✓",
+    powered: "BeloveD concierge", drop: "Suelta una foto o video", attach: "Adjuntar foto o video",
+    tooLarge: "Ese archivo es muy grande (máx. 100MB).",
+    menu: "Menú", backToChat: "Volver al chat", talk: "Hablar con una persona", talkMsg: "Quiero hablar con una persona.",
+    quickTitle: "O ve a",
+    quick: [
+      { id: "order", label: "Iniciar pedido personalizado", to: "/custom/new" },
+      { id: "designs", label: "Ver diseños", to: "/designs" },
+      { id: "track", label: "Seguir mi pedido", to: "/track" },
+      { id: "home", label: "Volver al inicio", to: "/" },
+    ],
   },
 };
 
@@ -51,8 +88,19 @@ function Avatar({ agent, className = "" }) {
   return <div className={`chat-avatar ${className}`} aria-hidden="true">{initials(agent?.name)}</div>;
 }
 
+// 첨부 렌더 — 이미지·영상 공용. thumb=작은 미리보기(합성 대기), 아니면 대화 본문.
+function AttachMedia({ a, thumb }) {
+  if (String(a.contentType || "").startsWith("video/")) {
+    return thumb
+      ? <video src={a.url} muted playsInline />
+      : <video src={a.url} controls preload="metadata" />;
+  }
+  return <img src={a.url} alt={a.name || "attachment"} loading="lazy" />;
+}
+
 export default function ChatWidget() {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const { locale } = useLocale();
   const t = COPY[locale] || COPY.en;
   const chips = faqChips(locale);
@@ -71,10 +119,15 @@ export default function ChatWidget() {
   const [unread, setUnread] = useState(0);
   const [input, setInput] = useState("");
   const [email, setEmail] = useState("");
+  const [emailOpen, setEmailOpen] = useState(false); // 이메일 입력 펼침
+  const [emailSaved, setEmailSaved] = useState(false);
   const [pending, setPending] = useState([]); // 첨부 대기 [{url,contentType,name}]
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  const [dragOver, setDragOver] = useState(false);
+  const [dockH, setDockH] = useState(0); // 모바일 스티키 독(.noir-dock) 높이 — 최소화 버블을 그 위로
+  const [menuOpen, setMenuOpen] = useState(false); // 홈/메뉴 뷰 — 헤더 ⌂로 토글, 대화 후 막다른 길 방지
 
   const lastIdRef = useRef(0);
   const bodyRef = useRef(null);
@@ -113,26 +166,68 @@ export default function ChatWidget() {
     return () => { alive = false; window.clearInterval(id); };
   }, [open, hidden]);
 
-  // 열려 있고 새 메시지 오면 맨 아래로
-  useEffect(() => {
-    if (open && bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
-  }, [messages, open]);
+  const showMenu = menuOpen || messages.length === 0;
 
-  async function handleFile(e) {
-    const file = e.target.files?.[0];
-    if (fileRef.current) fileRef.current.value = "";
-    if (!file || !file.type.startsWith("image/")) return;
+  // 대화 뷰일 때 새 메시지 오면 맨 아래로
+  useEffect(() => {
+    if (open && !showMenu && bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
+  }, [messages, open, showMenu]);
+
+  // 모바일 스티키 독(.noir-dock)이 보이면 최소화 버블을 독 높이만큼 위로 올려 '주문제작 시작'
+  // 버튼과 겹치지 않게 한다. 스크롤 중 등장/리사이즈에도 대응(값이 그대로면 리렌더 없음).
+  useEffect(() => {
+    let raf = 0;
+    const check = () => {
+      const dock = document.querySelector(".noir-dock");
+      setDockH(dock && dock.getClientRects().length > 0 ? Math.round(dock.getBoundingClientRect().height) : 0);
+    };
+    const onScroll = () => { if (raf) return; raf = requestAnimationFrame(() => { raf = 0; check(); }); };
+    check();
+    const id = window.setTimeout(check, 400);
+    window.addEventListener("resize", check);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.clearTimeout(id);
+      window.removeEventListener("resize", check);
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, [pathname]);
+
+  // 파일 업로드 공용 — 파일선택·드래그앤드롭·붙여넣기 모두 여기로. 이미지·영상만, 다중 지원.
+  async function uploadFiles(list) {
+    const files = chatMediaFiles(list);
+    if (!files.length) return;
     setUploading(true); setError("");
     try {
-      const url = await uploadChatImage(file, file.type);
-      setPending((p) => [...p, { url, contentType: file.type, name: file.name }]);
-    } catch { setError("Upload failed — try again."); }
-    finally { setUploading(false); }
+      for (const file of files) {
+        if (file.size > CHAT_MAX_BYTES) { setError(t.tooLarge); continue; }
+        try {
+          const url = await uploadChatImage(file, file.type);
+          setPending((p) => [...p, { url, contentType: file.type, name: file.name }]);
+        } catch { setError("Upload failed — try again."); }
+      }
+    } finally { setUploading(false); }
+  }
+
+  function onFileInput(e) {
+    uploadFiles(e.target.files).finally(() => { if (fileRef.current) fileRef.current.value = ""; });
+  }
+  function onDrop(e) { e.preventDefault(); setDragOver(false); uploadFiles(e.dataTransfer?.files); }
+  function onDragOver(e) { e.preventDefault(); if (!dragOver) setDragOver(true); }
+  function onDragLeave(e) { if (e.currentTarget.contains(e.relatedTarget)) return; setDragOver(false); }
+  function onPaste(e) {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    const files = [];
+    for (const it of items) { if (it.kind === "file") { const f = it.getAsFile(); if (f) files.push(f); } }
+    const media = chatMediaFiles(files);
+    if (media.length) { e.preventDefault(); uploadFiles(media); }
   }
 
   async function doSend(text) {
     const body = String(text || "").trim();
     if ((!body && pending.length === 0) || sending) return;
+    setMenuOpen(false); // 보내면 대화 뷰로
     setSending(true); setError("");
     try {
       const data = await sendChatMessage({ body, attachments: pending, locale, email: email.trim() || undefined });
@@ -157,13 +252,24 @@ export default function ChatWidget() {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
   }
 
+  // 사이트 페이지로 이동하는 빠른 액션 — 위젯은 접어 페이지가 보이게 한다
+  function goto(to) { setOpen(false); navigate(to); }
+
+  // 오프라인 이메일 답장용 주소만 저장 (메시지 없이도)
+  async function saveEmail() {
+    const v = email.trim();
+    if (!EMAIL_RE.test(v)) return;
+    try { await saveChatEmail(v, locale); setEmailSaved(true); setEmailOpen(false); }
+    catch { setError("Could not save email — try again."); }
+  }
+
   if (hidden) return null;
 
   const showEmail = !thread?.customerId && !thread?.visitorEmail;
 
   if (!open) {
     return (
-      <div className="chat-root">
+      <div className="chat-root" style={dockH ? { bottom: `calc(${dockH + 14}px + env(safe-area-inset-bottom))` } : undefined}>
         <button className="chat-launcher" aria-label={t.open} onClick={() => setOpen(true)}>
           <MessageCircle size={26} strokeWidth={1.8} />
           {unread > 0 && <span className="chat-badge">{unread > 9 ? "9+" : unread}</span>}
@@ -172,25 +278,44 @@ export default function ChatWidget() {
     );
   }
 
+  const quickActions = (
+    <div className="chat-quick">
+      <div className="chat-quick-label">{t.quickTitle}</div>
+      {t.quick.map((q) => (
+        <button key={q.id} type="button" className="chat-quick-btn" onClick={() => goto(q.to)}>{q.label}</button>
+      ))}
+    </div>
+  );
+
   return (
     <div className="chat-root">
-      <div className="chat-panel" role="dialog" aria-label={t.title}>
+      <div
+        className="chat-panel" role="dialog" aria-label={t.title}
+        onDragEnter={onDragOver} onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop} onPaste={onPaste}
+      >
+        {dragOver && <div className="chat-dropzone">{t.drop}</div>}
         <div className="chat-head">
           <Avatar agent={agent} />
           <div className="chat-head-meta">
             <div className="chat-head-name">{agent?.name || "BeloveD"}</div>
             <div className="chat-head-sub"><span className="chat-online-dot" />{agent?.title || t.powered}</div>
           </div>
+          {messages.length > 0 && (
+            <button className="chat-icon-btn" aria-label={showMenu ? t.backToChat : t.menu}
+              onClick={() => setMenuOpen((v) => !v)}>
+              {showMenu ? <MessageCircle size={19} strokeWidth={1.9} /> : <Home size={19} strokeWidth={1.9} />}
+            </button>
+          )}
           <button className="chat-icon-btn" aria-label="Close" onClick={() => setOpen(false)}>
             <X size={19} strokeWidth={1.9} />
           </button>
         </div>
 
         <div className="chat-body" ref={bodyRef}>
-          {messages.length === 0 ? (
+          {showMenu ? (
             <div className="chat-greeting">
               <Avatar agent={agent} className="chat-greeting-avatar" />
-              <div>{t.greeting}</div>
+              {messages.length === 0 && <div>{t.greeting}</div>}
               <div className="chat-chips">
                 {chips.map((c) => (
                   <button key={c.id} type="button" className="chat-chip" disabled={sending} onClick={() => doSend(c.label)}>
@@ -198,19 +323,29 @@ export default function ChatWidget() {
                   </button>
                 ))}
               </div>
+              {quickActions}
+              <button type="button" className="chat-quick-btn chat-talk" onClick={() => doSend(t.talkMsg)}>
+                <UserRound size={15} strokeWidth={1.9} /> {t.talk}
+              </button>
             </div>
           ) : (
             messages.map((m) => (
               <div key={m.id} className={`chat-msg ${m.sender}`}>
                 {m.body && <span>{m.body}</span>}
-                {(m.attachments || []).map((a, i) => (
-                  <img key={i} src={a.url} alt={a.name || "attachment"} loading="lazy" />
-                ))}
+                {(m.attachments || []).map((a, i) => <AttachMedia key={i} a={a} />)}
                 {m.sender !== "system" && <span className="chat-msg-time">{hhmm(m.createdAt)}</span>}
               </div>
             ))
           )}
         </div>
+
+        {/* 대화 뷰에서 늘 보이는 액션 바 — 막다른 길 방지(메뉴로 돌아가기 / 상담원 연결) */}
+        {!showMenu && (
+          <div className="chat-actionbar">
+            <button type="button" onClick={() => setMenuOpen(true)}><HelpCircle size={14} strokeWidth={1.9} /> {t.menu}</button>
+            <button type="button" onClick={() => doSend(t.talkMsg)}><UserRound size={14} strokeWidth={1.9} /> {t.talk}</button>
+          </div>
+        )}
 
         <div className="chat-foot">
           {error && <div className="chat-error">{error}</div>}
@@ -218,26 +353,37 @@ export default function ChatWidget() {
             <div className="chat-attachments">
               {pending.map((a, i) => (
                 <div className="chat-attachment" key={i}>
-                  <img src={a.url} alt={a.name || "attachment"} />
+                  <AttachMedia a={a} thumb />
                   <button aria-label="Remove" onClick={() => setPending((p) => p.filter((_, j) => j !== i))}>×</button>
                 </div>
               ))}
             </div>
           )}
-          {showEmail && (
+          {showEmail && !emailSaved && (emailOpen ? (
             <div className="chat-email-row">
+              <Mail className="chat-email-icon" size={14} strokeWidth={1.9} aria-hidden="true" />
               <input
-                type="email" value={email} placeholder={t.email}
+                type="email" value={email} placeholder={t.emailPh} autoFocus
                 onChange={(e) => setEmail(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); saveEmail(); } }}
               />
+              <button type="button" className="chat-email-save" aria-label="Save email"
+                disabled={!EMAIL_RE.test(email.trim())} onClick={saveEmail}>
+                <Check size={15} strokeWidth={2.2} />
+              </button>
             </div>
-          )}
+          ) : (
+            <button type="button" className="chat-email-toggle" onClick={() => setEmailOpen(true)}>
+              <Mail size={13} strokeWidth={1.9} /> {t.emailToggle}
+            </button>
+          ))}
+          {emailSaved && <div className="chat-email-done"><Check size={13} strokeWidth={2.2} /> {t.emailSaved}</div>}
           <div className="chat-composer">
-            <button className="chat-attach" aria-label="Attach image" disabled={uploading}
+            <button className="chat-attach" aria-label={t.attach} disabled={uploading}
               onClick={() => fileRef.current?.click()}>
               <ImagePlus size={18} strokeWidth={1.8} />
             </button>
-            <input ref={fileRef} type="file" accept="image/*" hidden onChange={handleFile} />
+            <input ref={fileRef} type="file" accept="image/*,video/*" multiple hidden onChange={onFileInput} />
             <textarea
               rows={1} value={input} placeholder={t.placeholder}
               onChange={(e) => setInput(e.target.value)} onKeyDown={onKeyDown}

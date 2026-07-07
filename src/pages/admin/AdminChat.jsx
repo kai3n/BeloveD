@@ -34,6 +34,22 @@ export default function AdminChat() {
   const lastIdRef = useRef(0);
   const threadBodyRef = useRef(null);
   const fileRef = useRef(null);
+  const achatRef = useRef(null);
+
+  // 3-pane 인박스 높이를 실측으로 맞춰 뷰포트에 딱 들어오게 한다 — 사이트 헤더/콘솔헤드
+  // 높이와 무관하게 답장 컴포저가 항상 화면 안에 보인다(컴포저 잘림·하단 빈 공간 버그 방지).
+  useEffect(() => {
+    const fit = () => {
+      const el = achatRef.current;
+      if (!el) return;
+      const top = el.getBoundingClientRect().top;
+      el.style.height = `${Math.max(480, Math.round(window.innerHeight - top - 24))}px`;
+    };
+    fit();
+    const id = window.setTimeout(fit, 300);
+    window.addEventListener("resize", fit);
+    return () => { window.clearTimeout(id); window.removeEventListener("resize", fit); };
+  }, []);
 
   const loadThreads = useCallback(async () => {
     try {
@@ -121,7 +137,7 @@ export default function AdminChat() {
       <ConsoleHead kicker="Live chat" title={c.title} sub={c.sub} />
       {error && <p className="form-error" style={{ marginBottom: 12 }}>{error}</p>}
 
-      <div className="achat">
+      <div className="achat" ref={achatRef}>
         <div className="achat-list">
           <div className="achat-filter">
             {["open", "all"].map((s) => (
