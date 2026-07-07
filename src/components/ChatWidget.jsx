@@ -58,16 +58,13 @@ export default function ChatWidget() {
   const chips = faqChips(locale);
   const hidden = BLOCKED(pathname);
 
-  // 열림 상태를 세션에 유지 — 페이지 이동(위젯은 Layout에 상시 마운트)뿐 아니라
-  // 새로고침에도 살아남는다. ?chat=open(이메일 CTA)이면 강제로 열림.
+  // 기본은 최소화(작은 로고 버블) — 화면을 가리지 않는다. ?chat=open(이메일 CTA)일 때만
+  // 자동으로 펼친다. 페이지 이동(SPA)에는 Layout 상시 마운트로 열림 상태가 그대로 유지되고,
+  // 대화 내용은 bd_chat 쿠키(서버 스레드)로 유지된다.
   const [open, setOpen] = useState(() => {
     if (typeof window === "undefined") return false;
-    if (new URLSearchParams(window.location.search).get("chat") === "open") return true;
-    try { return window.sessionStorage.getItem("bd_chat_open") === "1"; } catch { return false; }
+    return new URLSearchParams(window.location.search).get("chat") === "open";
   });
-  useEffect(() => {
-    try { window.sessionStorage.setItem("bd_chat_open", open ? "1" : "0"); } catch { /* no-op */ }
-  }, [open]);
   const [messages, setMessages] = useState([]);
   const [thread, setThread] = useState(null);
   const [agent, setAgent] = useState(null);
