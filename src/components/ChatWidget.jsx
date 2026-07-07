@@ -128,6 +128,7 @@ export default function ChatWidget() {
   const [error, setError] = useState("");
   const [dragOver, setDragOver] = useState(false);
   const [dockH, setDockH] = useState(0); // 모바일 스티키 독(.noir-dock) 높이 — 최소화 버블을 그 위로
+  const [pastHero, setPastHero] = useState(true); // 홈 히어로 구간에선 버블 숨김(스크롤하면 등장)
   const [menuOpen, setMenuOpen] = useState(false); // 홈/메뉴 뷰 — 헤더 ⌂로 토글, 대화 후 막다른 길 방지
 
   const lastIdRef = useRef(0);
@@ -192,6 +193,17 @@ export default function ChatWidget() {
       window.removeEventListener("resize", check);
       window.removeEventListener("scroll", onScroll);
     };
+  }, [pathname]);
+
+  // 홈 히어로(영상 컨트롤·CTA가 우하단에 몰린 구간)에선 최소화 버블을 숨겼다가, 조금 스크롤하면
+  // 등장시킨다 — 코너 혼잡을 피하고 '둘러본 뒤 등장'이라 전환에도 유리. 다른 페이지는 항상 표시.
+  useEffect(() => {
+    if (pathname !== "/") { setPastHero(true); return undefined; }
+    const check = () => setPastHero(window.scrollY > window.innerHeight * 0.6);
+    check();
+    window.addEventListener("scroll", check, { passive: true });
+    window.addEventListener("resize", check);
+    return () => { window.removeEventListener("scroll", check); window.removeEventListener("resize", check); };
   }, [pathname]);
 
   // 파일 업로드 공용 — 파일선택·드래그앤드롭·붙여넣기 모두 여기로. 이미지·영상만, 다중 지원.
@@ -273,7 +285,7 @@ export default function ChatWidget() {
 
   if (!open) {
     return (
-      <div className="chat-root" style={dockH ? { bottom: `calc(${dockH + 14}px + env(safe-area-inset-bottom))` } : undefined}>
+      <div className={`chat-root${pastHero ? "" : " chat-root--hidden"}`} style={dockH ? { bottom: `calc(${dockH + 14}px + env(safe-area-inset-bottom))` } : undefined}>
         <button className="chat-launcher" aria-label={t.open} onClick={() => setOpen(true)}>
           <MessageCircle size={26} strokeWidth={1.8} />
           {unread > 0 && <span className="chat-badge">{unread > 9 ? "9+" : unread}</span>}

@@ -1,5 +1,7 @@
 /* 라이브챗 위젯 — 테마 토큰(--surface/--accent/--text …)으로 day·NOIR 자동 적응 */
-.chat-root { position: fixed; right: 20px; bottom: 20px; z-index: 940; font-family: var(--sans); }
+.chat-root { position: fixed; right: 20px; bottom: 20px; z-index: 940; font-family: var(--sans); transition: opacity .25s ease, transform .25s ease; }
+/* 홈 히어로 구간 — 버블을 부드럽게 숨김(스크롤하면 등장) */
+.chat-root--hidden { opacity: 0; transform: translateY(12px); pointer-events: none; }
 
 /* 닫힌 버블 */
 .chat-launcher {
