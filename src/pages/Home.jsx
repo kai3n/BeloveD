@@ -433,7 +433,8 @@ function LovedWorn({ locale }) {
     };
   }, [open]);
   if (reviews.length === 0) return null;
-  const avg = (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1);
+  // rating이 문자열/누락이어도 평균이 NaN으로 깨지지 않게 숫자로 강제
+  const avg = (reviews.reduce((s, r) => s + (Number(r.rating) || 0), 0) / reviews.length).toFixed(1);
   // iOS에서 scroll-snap mandatory와 scrollBy(smooth)가 충돌해 안 움직인다 → 셀 offsetLeft로 정확히 이동
   const scroll = (dir) => {
     const el = trackRef.current;

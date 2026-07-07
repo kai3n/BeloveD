@@ -1840,7 +1840,9 @@ export function listReviews(filter = {}) {
   let rows = [...(db().reviews || [])];
   if (filter.orderId) rows = rows.filter((r) => r.orderId === filter.orderId);
   if (filter.publishedOnly) rows = rows.filter((r) => r.status === "published");
-  return rows.sort((a, b) => ((b.rating || 0) - (a.rating || 0)) || (b.createdAt || "").localeCompare(a.createdAt || ""));
+  // 레거시 localStorage 행에 rating이 없거나 문자열이면 평균 계산이 NaN으로 깨진다 — 읽기 시 숫자로 정규화
+  rows = rows.map((r) => ({ ...r, rating: Math.min(5, Math.max(1, Number(r.rating) || 5)) }));
+  return rows.sort((a, b) => (b.rating - a.rating) || (b.createdAt || "").localeCompare(a.createdAt || ""));
 }
 // 배송 완료된 주문만, 주문당 1건 — 주문번호가 곧 인증(Verified)
 export function submitReview(orderId, { rating, quote, body, media, name, location }, actor = "customer") {

@@ -33,6 +33,17 @@ describe("고객 리뷰 — 인증·검수 규칙", () => {
     expect(again.id).toBe(review.id);
   });
 
+  it("레거시 행 정규화 — rating 누락·문자열이어도 읽기 시 숫자로 보정 (홈 평균 NaN 방지)", () => {
+    updateOpsOrder("DM-000001", { status: "DELIVERED" });
+    const live = submitReview("DM-000001", { rating: 5, quote: "legacy row" });
+    live.rating = undefined; // rating 필드가 없던 과거 localStorage 데이터 시뮬레이션
+    expect(listReviews({ orderId: "DM-000001" })[0].rating).toBe(5);
+    live.rating = "4.5"; // 문자열로 저장된 경우
+    expect(listReviews({ orderId: "DM-000001" })[0].rating).toBe(4.5);
+    const sum = listReviews({}).reduce((s, r) => s + r.rating, 0);
+    expect(Number.isNaN(sum)).toBe(false);
+  });
+
   it("별점은 0.5 단위 — 하프스타 저장, 어중간한 값은 스냅", () => {
     updateOpsOrder("DM-000001", { status: "DELIVERED" });
     const review = submitReview("DM-000001", { rating: 4.3, quote: "almost five" });
