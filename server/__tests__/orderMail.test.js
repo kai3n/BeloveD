@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { sendOrderEventMail, ORDER_MAIL, CHROME, journeyStrip, JOURNEY_LABELS } from "../orderMail.js";
+import { sendOrderEventMail, ORDER_MAIL, CHROME, journeyStrip, JOURNEY_LABELS, receiptBlock, RECEIPT_LABELS } from "../orderMail.js";
 import { drainMail } from "../mailer.js";
 
 beforeEach(() => { drainMail(); });
@@ -79,6 +79,44 @@ describe("orderMail", () => {
 
     it("미지원 로케일은 en 라벨로 폴백한다", () => {
       expect(journeyStrip("shipped", "fr")).toContain("Delivery");
+    });
+  });
+
+  describe("receiptBlock — 결제 확인 메일의 영수증", () => {
+    it("디파짓 영수증: 항목·금액·총액·남은 금액을 표기한다 (ko)", () => {
+      const html = receiptBlock({ kind: "deposit_confirmed", amountUsd: 540, totalUsd: 1800, paidUsd: 540, remainingUsd: 1260 }, "ko");
+      expect(html).toContain("결제 영수증");
+      expect(html).toContain("디파짓");
+      expect(html).toContain("$540");
+      expect(html).toContain("$1,800");
+      expect(html).toContain("$1,260");
+    });
+
+    it("잔금 완납 시 남은 금액 대신 '완납'을 표기한다", () => {
+      const html = receiptBlock({ kind: "balance_confirmed", amountUsd: 1260, totalUsd: 1800, paidUsd: 1800, remainingUsd: 0 }, "ko");
+      expect(html).toContain("잔금");
+      expect(html).toContain("완납");
+      expect(html).not.toContain("$0");
+    });
+
+    it("영수증 데이터가 없거나 금액이 0이면 빈 문자열", () => {
+      expect(receiptBlock(null, "en")).toBe("");
+      expect(receiptBlock({ kind: "deposit_confirmed", amountUsd: 0 }, "en")).toBe("");
+    });
+
+    it("총액을 모르면(견적 없음) 결제 금액만 표기한다", () => {
+      const html = receiptBlock({ kind: "deposit_confirmed", amountUsd: 500, totalUsd: null, paidUsd: 500, remainingUsd: null }, "en");
+      expect(html).toContain("$500");
+      expect(html).not.toContain("Order total");
+      expect(html).not.toContain("Remaining");
+    });
+
+    it("4개 언어 라벨 파리티", () => {
+      for (const loc of ["en", "ko", "zh", "es"]) {
+        for (const k of ["title", "deposit_confirmed", "balance_confirmed", "amount", "total", "remaining", "paidFull"]) {
+          expect(typeof RECEIPT_LABELS[loc][k], `${loc}/${k}`).toBe("string");
+        }
+      }
     });
   });
 });

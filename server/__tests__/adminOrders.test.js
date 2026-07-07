@@ -110,6 +110,39 @@ describe("어드민 실주문 콘솔", () => {
     expect(detail.body.timeline.some((t) => t.title === "proposal_sent")).toBe(true);
   });
 
+  it("결제 확인(디파짓→잔금)은 견적 금액으로 영수증을 남긴다 — summary.payments 기록·재발사 시 교체", async () => {
+    const orderCode = await submitOrder("receipt@test.com");
+    const adm = await adminCookie();
+    await request(app).post(`/v1/admin/orders/${orderCode}/events`).set("Cookie", adm).send({
+      type: "proposal_sent",
+      artifact: { type: "QUOTE", payload: { totalUsd: 1800, depositUsd: 540 } },
+    });
+    drainMail();
+
+    // 디파짓 확인 — 견적의 depositUsd(540)를 영수증으로
+    const dep = await request(app).post(`/v1/admin/orders/${orderCode}/events`).set("Cookie", adm).send({ type: "deposit_confirmed" });
+    expect(dep.status).toBe(201);
+    const cust = await customerCookie("receipt@test.com");
+    const afterDep = await request(app).get(`/v1/orders/${orderCode}`).set("Cookie", cust);
+    expect(afterDep.body.order.summary.payments).toHaveLength(1);
+    expect(afterDep.body.order.summary.payments[0]).toMatchObject({ kind: "deposit_confirmed", amountUsd: 540 });
+
+    // 잔금 확인 — 남은 금액(1260) 자동 산출, 누적 2건
+    await request(app).post(`/v1/admin/orders/${orderCode}/events`).set("Cookie", adm).send({ type: "balance_confirmed" });
+    const afterBal = await request(app).get(`/v1/orders/${orderCode}`).set("Cookie", cust);
+    expect(afterBal.body.order.summary.payments).toHaveLength(2);
+    expect(afterBal.body.order.summary.payments[1]).toMatchObject({ kind: "balance_confirmed", amountUsd: 1260 });
+
+    // 같은 타입 재발사(재발송)는 영수증을 교체 — 중복 항목이 생기지 않는다
+    await request(app).post(`/v1/admin/orders/${orderCode}/events`).set("Cookie", adm).send({ type: "balance_confirmed", data: { amountUsd: 1300 } });
+    const afterRefire = await request(app).get(`/v1/orders/${orderCode}`).set("Cookie", cust);
+    expect(afterRefire.body.order.summary.payments).toHaveLength(2);
+    expect(afterRefire.body.order.summary.payments.find((p) => p.kind === "balance_confirmed").amountUsd).toBe(1300);
+
+    await new Promise((r) => setTimeout(r, 50));
+    expect(drainMail().filter((m) => m.type === "order_deposit_confirmed" || m.type === "order_balance_confirmed").length).toBe(3);
+  });
+
   it("새 액션을 열면 이전 열린 액션은 취소된다 (한 번에 컨펌 하나)", async () => {
     const orderCode = await submitOrder("cancel@test.com");
     const adm = await adminCookie();

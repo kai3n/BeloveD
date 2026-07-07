@@ -712,6 +712,34 @@ export async function recordOrderEvent(orderCode, type, data = {}, extras = {}) 
       );
     }
 
+    // 결제 확인(디파짓/잔금) — 최신 견적(QUOTE)에서 금액을 확정해 summary.payments에 영수증으로 남긴다.
+    // 메일 영수증 블록과 포털 결제 내역이 같은 숫자를 보는 단일 소스. data.amountUsd로 어드민 수동 override 가능.
+    // 같은 타입 재발사(재발송 의도)는 항목을 교체해 중복 영수증을 만들지 않는다.
+    let receipt = null;
+    if (type === "deposit_confirmed" || type === "balance_confirmed") {
+      const { rows: quoteRows } = await client.query(
+        `select payload from published_artifacts
+         where order_id = $1 and type = 'QUOTE' order by published_at desc limit 1`,
+        [order.id],
+      );
+      const qp = quoteRows[0]?.payload || {};
+      const total = Number(qp.totalUsd) > 0 ? Number(qp.totalUsd) : null;
+      const deposit = total ? Math.min(total, Number(qp.depositUsd) > 0 ? Number(qp.depositUsd) : Math.round(total * 0.3)) : null;
+      const fallback = type === "deposit_confirmed" ? deposit : (total && deposit ? total - deposit : null);
+      const amount = Number(data.amountUsd) > 0 ? Number(data.amountUsd) : fallback;
+      if (amount) {
+        const prior = (Array.isArray(order.summary?.payments) ? order.summary.payments : []).filter((p) => p.kind !== type);
+        const payments = [...prior, { kind: type, amountUsd: amount, at: new Date().toISOString() }];
+        const paidUsd = payments.reduce((s, p) => s + (Number(p.amountUsd) || 0), 0);
+        receipt = { kind: type, amountUsd: amount, totalUsd: total, paidUsd, remainingUsd: total ? Math.max(0, total - paidUsd) : null };
+        await client.query(
+          `update customer_orders set summary = coalesce(summary, '{}'::jsonb) || jsonb_build_object('payments', $2::jsonb)
+           where id = $1`,
+          [order.id, JSON.stringify(payments)],
+        );
+      }
+    }
+
     let artifactCode = null;
     if (extras.artifact) {
       const a = extras.artifact;
@@ -760,7 +788,7 @@ export async function recordOrderEvent(orderCode, type, data = {}, extras = {}) 
       [orderCode, `event:${type}`, { stage: order.stage }, { stage: transition.stage, data, artifactCode, actionCode }],
     );
     return {
-      orderCode, stage: transition.stage, eventId: eventCode, artifactCode, actionCode,
+      orderCode, stage: transition.stage, eventId: eventCode, artifactCode, actionCode, receipt,
       notify: { email: order.email, locale: order.locale },
     };
   });

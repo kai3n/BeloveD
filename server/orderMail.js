@@ -31,6 +31,38 @@ const EVENT_STAGE = {
   shipped: "delivery", delivered: "delivery",
 };
 
+// 결제 영수증 라벨 — deposit_confirmed/balance_confirmed 메일에 금액 내역을 싣는다
+export const RECEIPT_LABELS = {
+  en: { title: "Payment receipt", deposit_confirmed: "Deposit", balance_confirmed: "Balance payment", amount: "Amount received", total: "Order total", remaining: "Remaining balance", paidFull: "Paid in full" },
+  ko: { title: "결제 영수증", deposit_confirmed: "디파짓", balance_confirmed: "잔금", amount: "결제 금액", total: "주문 총액", remaining: "남은 금액", paidFull: "완납" },
+  zh: { title: "付款收据", deposit_confirmed: "定金", balance_confirmed: "尾款", amount: "已收金额", total: "订单总额", remaining: "剩余金额", paidFull: "已付清" },
+  es: { title: "Recibo de pago", deposit_confirmed: "Depósito", balance_confirmed: "Saldo", amount: "Importe recibido", total: "Total del pedido", remaining: "Saldo restante", paidFull: "Pagado por completo" },
+};
+
+const usdFmt = (n) => `$${Number(n).toLocaleString("en-US")}`;
+
+// 결제 확인 메일의 영수증 블록 — 헤어라인 박스 + 금액 행. 남은 금액 0이면 "완납"으로 표기.
+export function receiptBlock(receipt, loc) {
+  if (!receipt || !(Number(receipt.amountUsd) > 0)) return "";
+  const L = RECEIPT_LABELS[loc] || RECEIPT_LABELS.en;
+  const kindLabel = L[receipt.kind] || L.deposit_confirmed;
+  const row = (label, value, strong = false) => `
+      <tr>
+        <td style="padding:6px 0;font-size:13px;color:#8e897e">${label}</td>
+        <td style="padding:6px 0;font-size:13px;text-align:right;${strong ? "font-weight:700;" : ""}color:#15130f">${value}</td>
+      </tr>`;
+  const remaining = receipt.remainingUsd === null || receipt.remainingUsd === undefined
+    ? ""
+    : row(L.remaining, receipt.remainingUsd > 0 ? usdFmt(receipt.remainingUsd) : L.paidFull);
+  return `
+    <div style="border:1px solid #e4e0d6;padding:14px 18px;margin:20px 0 0">
+      <p style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#8e897e;margin:0 0 4px">${L.title}</p>
+      <table style="width:100%;border-collapse:collapse">
+        ${row(kindLabel, usdFmt(receipt.amountUsd), true)}${receipt.totalUsd ? row(L.total, usdFmt(receipt.totalUsd)) : ""}${remaining}
+      </table>
+    </div>`;
+}
+
 // 이메일 클라이언트 호환을 위해 인라인 스타일 + 텍스트 화살표만 사용 (flex/grid 금지).
 // 완료 ✓(잉크) → 현재 ●(샴페인 볼드) → 남은 단계(회색). delivered는 전 단계 완료로 표시.
 export function journeyStrip(type, loc) {
@@ -140,7 +172,7 @@ export async function sendOrderEventMail({ email, locale, orderCode, type, data 
   const link = `${origin}/track/${orderCode}`;
   const inner = `
     <p style="font-size:15px;line-height:1.6">${t.line(orderCode, data)}</p>
-    <p style="font-size:13px;color:#8e897e;margin:6px 0 0">Order ${orderCode}</p>${journeyStrip(type, loc)}
+    <p style="font-size:13px;color:#8e897e;margin:6px 0 0">Order ${orderCode}</p>${receiptBlock(data.receipt, loc)}${journeyStrip(type, loc)}
     <p style="margin:24px 0"><a href="${link}" style="background:#16130f;color:#f8f7f5;padding:14px 26px;text-decoration:none;letter-spacing:.12em;font-size:13px">${chrome.cta}</a></p>
     <p style="font-size:13px;color:#8e897e">${chrome.tail}</p>${loc !== "en" ? `
     <p style="font-size:12px;color:#8e897e">${chrome.ignore}</p>` : ""}`;

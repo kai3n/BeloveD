@@ -85,7 +85,9 @@ export function customerRouter() {
         const result = await recordOrderEvent(req.params.orderCode, type, data || {}, { artifact, action });
         res.status(201).json({ ok: true, orderCode: result.orderCode, stage: result.stage, eventId: result.eventId, artifactCode: result.artifactCode || null, actionCode: result.actionCode || null });
         if (result.notify?.email) {
-          fireMail(sendOrderEventMail({ ...result.notify, orderCode: result.orderCode, type, data: data || {} }), type);
+          // 결제 확인 이벤트면 리포지토리가 확정한 영수증(금액·잔액)을 메일 본문에 싣는다
+          const mailData = { ...(data || {}), ...(result.receipt ? { receipt: result.receipt } : {}) };
+          fireMail(sendOrderEventMail({ ...result.notify, orderCode: result.orderCode, type, data: mailData }), type);
         }
       } catch (e) { next(e); }
     });

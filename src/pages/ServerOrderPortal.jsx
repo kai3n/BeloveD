@@ -65,6 +65,7 @@ const COPY = {
     shipmentTitle: "Shipment", trackingLabel: "Tracking number",
     shipmentNote: "Fully insured door-to-door — signature required on delivery.",
     timelineTitle: "Timeline",
+    receiptsTitle: "Payments", receiptDeposit: "Deposit received", receiptBalance: "Balance received", receiptPaidTotal: "Paid to date",
     artifactsTitle: "Shared with you",
     proposalTitle: "Your proposal",
     specStone: "Stone", specMetal: "Metal", specTotal: "Total, all-inclusive",
@@ -130,6 +131,7 @@ const COPY = {
     shipmentTitle: "배송", trackingLabel: "운송장 번호",
     shipmentNote: "전 구간 보험 배송 — 수령 시 서명이 필요합니다.",
     timelineTitle: "타임라인",
+    receiptsTitle: "결제 내역", receiptDeposit: "디파짓 결제 완료", receiptBalance: "잔금 결제 완료", receiptPaidTotal: "누적 결제액",
     artifactsTitle: "공유된 자료",
     proposalTitle: "제안",
     specStone: "스톤", specMetal: "메탈", specTotal: "총액 (올인클루시브)",
@@ -195,6 +197,7 @@ const COPY = {
     shipmentTitle: "配送", trackingLabel: "运单号",
     shipmentNote: "全程保险配送 — 签收时需要签名。",
     timelineTitle: "时间线",
+    receiptsTitle: "付款记录", receiptDeposit: "定金已收", receiptBalance: "尾款已收", receiptPaidTotal: "累计已付",
     artifactsTitle: "与您共享",
     proposalTitle: "您的方案",
     specStone: "钻石", specMetal: "金属", specTotal: "总价（全包）",
@@ -260,6 +263,7 @@ const COPY = {
     shipmentTitle: "Envío", trackingLabel: "Número de guía",
     shipmentNote: "Envío asegurado puerta a puerta — se requiere firma al recibir.",
     timelineTitle: "Cronología",
+    receiptsTitle: "Pagos", receiptDeposit: "Depósito recibido", receiptBalance: "Saldo recibido", receiptPaidTotal: "Total pagado",
     artifactsTitle: "Compartido contigo",
     proposalTitle: "Tu propuesta",
     specStone: "Piedra", specMetal: "Metal", specTotal: "Total, todo incluido",
@@ -777,6 +781,28 @@ export default function ServerOrderPortal({ orderCode }) {
         </section>
       )}
       </>)}
+
+      {/* 결제 내역(영수증) — summary.payments가 단일 소스 (deposit/balance_confirmed 이벤트가 기록, 메일 영수증과 동일 숫자) */}
+      {Array.isArray(order.summary?.payments) && order.summary.payments.length > 0 && (
+        <section className="panel">
+          <p className="section-label">{t.receiptsTitle}</p>
+          <div style={{ display: "grid", gap: 0 }}>
+            {order.summary.payments.map((pmt) => (
+              <div key={pmt.kind} style={{ display: "flex", justifyContent: "space-between", gap: 14, padding: "10px 0", borderBottom: "1px solid var(--hair)" }}>
+                <div>
+                  <strong style={{ fontSize: 14 }}>✓ {pmt.kind === "balance_confirmed" ? t.receiptBalance : t.receiptDeposit}</strong>
+                  <p className="form-hint" style={{ margin: "2px 0 0" }}>{fmtDate(pmt.at, locale)}</p>
+                </div>
+                <strong style={{ whiteSpace: "nowrap" }}>{usd(pmt.amountUsd)}</strong>
+              </div>
+            ))}
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 14, padding: "10px 0 0" }}>
+              <span className="form-hint">{t.receiptPaidTotal}</span>
+              <strong>{usd(order.summary.payments.reduce((s, x) => s + (Number(x.amountUsd) || 0), 0))}</strong>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* 타임라인 */}
       <section className="panel">
