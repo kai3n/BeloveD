@@ -5171,6 +5171,23 @@ html[data-theme="day"] .gflow-consult-note {
   color: #6f6141;
 }
 
+/* 딥링크 진입 시 선택된 디자인 칩 — 건너뛴 답을 보여주고 되돌아갈 길을 연다 */
+.gflow-style-chip {
+  display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap;
+  border: 1px solid var(--line-strong); background: var(--surface);
+  padding: 10px 16px; margin: 0 0 14px;
+  font-size: 12.5px; letter-spacing: 0.04em; text-align: center;
+}
+.gflow-style-chip-lbl { opacity: 0.65; text-transform: uppercase; font-size: 11px; letter-spacing: 0.12em; }
+.gflow-style-chip-cat { opacity: 0.65; }
+.gflow-style-chip-change {
+  background: none; border: none; border-bottom: 1px solid currentColor;
+  cursor: pointer; color: var(--accent-bright);
+  font: inherit; font-size: 12px; letter-spacing: 0.08em; padding: 0 0 1px;
+}
+.gflow-style-chip-change:hover { opacity: 0.8; }
+html[data-theme="day"] .gflow-style-chip-change { color: #6f6141; }
+
 /* ── Day 잉크 원칙: 면 채움은 잉크 블랙, 샴페인은 헤어라인·라벨·언더라인만 ──
    솔리드 골드/샴페인 채움은 화이트 배경에서 탁한 갈색으로 보인다 (럭셔리 화이트 하우스 규칙) */
 html[data-theme="day"] .button.primary {

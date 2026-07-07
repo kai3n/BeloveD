@@ -128,7 +128,8 @@ export default function IntakeForm() {
   const baseForm = {
     name: accountDisplayName(user), contact: user?.email || "", productLine: inferProductLineFromStyle(styleFromParam), category: initialCategory,
     subcategory: initialSubcategory,
-    styleId: styleParam, metal: "18kw",
+    // 미공개/삭제된 스타일 코드가 URL로 들어와도 유령 styleId를 만들지 않는다
+    styleId: styleFromParam ? styleParam : "", metal: "18kw",
     conditional: categoryDefaults(initialCategory),
     stonePrefs: {
       shape: refDiamond?.shape || "round", carat: String(refDiamond?.carat || "1.5"),
@@ -159,16 +160,18 @@ export default function IntakeForm() {
       ...draft.form,
       category: nextCategory,
       subcategory: nextSubcategory,
-      styleId: styleParam || draft.form.styleId || baseForm.styleId,
+      styleId: (styleFromParam ? styleParam : "") || draft.form.styleId || baseForm.styleId,
       conditional: { ...baseForm.conditional, ...draft.form.conditional },
       stonePrefs: { ...baseForm.stonePrefs, ...draft.form.stonePrefs },
       multiSpec: { ...baseForm.multiSpec, ...draft.form.multiSpec },
       termsAccepted: false,
     };
   });
-  // 항상 첫 질문부터 시작 — URL 프리필(?style=/?category=)은 답을 미리 골라둘 뿐 화면은 건너뛰지 않는다.
-  // (화면 건너뛰기·드래프트 자동 점프 둘 다 "중간부터 시작"처럼 보여 혼란을 준다)
-  const [screen, setScreen] = useState("category");
+  // 딥링크 진입 — 스타일이 정해져 있으면(상세 페이지 "Start custom order") 피스·디자인 질문은
+  // 이미 답이 있으므로 메탈부터, 카테고리만 알면(카탈로그 CTA) 디자인부터 시작한다.
+  // 건너뛴 답은 상단 칩으로 보여주고 "디자인 변경"으로 언제든 되돌아갈 수 있다.
+  const entryScreen = styleFromParam ? "metal" : categoryFromParam ? "design" : "category";
+  const [screen, setScreen] = useState(entryScreen);
   // "이게 뭐예요?" 도움말이 열려 있으면 비교 모드 — 선택해도 자동 진행하지 않는다
   const [shapeEduOpen, setShapeEduOpen] = useState(false);
   // 드래프트 이어하기는 배너로 명시적 선택 (답변은 이미 프리필되어 있어 새로 시작해도 빠르다)
@@ -223,12 +226,12 @@ export default function IntakeForm() {
     setStepError("");
   }, [screen]);
 
-  // 같은 라우트 재진입(nav의 START CUSTOM 재클릭 등)은 리마운트가 없어 화면이 유지된다 → 항상 1번 질문으로 리셋
+  // 같은 라우트 재진입(nav의 START CUSTOM 재클릭 등)은 리마운트가 없어 화면이 유지된다 → 진입 화면으로 리셋
   const locationKeyRef = useRef(location.key);
   useEffect(() => {
     if (locationKeyRef.current === location.key) return;
     locationKeyRef.current = location.key;
-    setScreen("category");
+    setScreen(entryScreen);
     setResumeTarget("");
     setStepError("");
   }, [location.key]);
@@ -400,17 +403,32 @@ export default function IntakeForm() {
         </div>
       )}
       {consultMode && <p className="gflow-consult-note" role="status">✦ {g.consultNote}</p>}
+      {/* 딥링크로 피스·디자인을 건너뛴 뒤에도 무엇이 선택돼 있는지 보이게 — 리뷰/디자인 화면은 자체 표시가 있어 제외 */}
+      {selectedStyle && !["category", "design", "review"].includes(activeScreen) && (
+        <div className="gflow-style-chip" role="status">
+          <span className="gflow-style-chip-lbl">{t.selectedDesign}</span>
+          <strong>{selectedStyleName}</strong>
+          <span className="gflow-style-chip-cat">{p.opsCategories[form.category]}</span>
+          <button type="button" className="gflow-style-chip-change" onClick={() => setScreen("design")}>{g.changeDesign}</button>
+        </div>
+      )}
       {activeScreen === "category" && stepShell(g.qCategory, null, (
         <ImageOptionGrid
           columns={4}
           options={categoryOptions}
           value={form.category}
-          onSelect={(value) => selectAndAdvance({
-            category: value,
-            subcategory: defaultSubcategoryFor(value),
-            conditional: categoryDefaults(value),
-            styleId: "",
-          }, "category")}
+          onSelect={(value) => selectAndAdvance(
+            // 같은 피스 재선택이면 이미 고른 디자인·사이즈 답변을 버리지 않는다
+            value === form.category
+              ? { category: value }
+              : {
+                category: value,
+                subcategory: defaultSubcategoryFor(value),
+                conditional: categoryDefaults(value),
+                styleId: "",
+              },
+            "category",
+          )}
         />
       ))}
 
