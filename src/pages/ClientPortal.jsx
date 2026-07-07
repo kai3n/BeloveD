@@ -790,8 +790,11 @@ function ClientPortal() {
     : (nextMsg || t.reviewUpdates);
   const heroReady = Boolean(activeAction) || depositTurn || order.status === "BALANCE";
   const finalMedia = mediaList(finalAction?.media, finalAction?.link);
-  const statusLabel = t.statusLabel?.[order.status] || p.orderStatus[order.status] || order.status;
-  const dueLabel = activeAction?.dueDate || order.requiredDate || workspaceCopy.noDue;
+  // 고를 후보도 견적도 없으면 배지도 '준비 중' — "Choosing diamond"는 아직 고를 게 없는 고객을 헷갈리게 한다
+  const statusLabel = proposalPreparing && !activeAction
+    ? workspaceCopy.stonePreparingBadge
+    : t.statusLabel?.[order.status] || p.orderStatus[order.status] || order.status;
+  const dueValue = activeAction?.dueDate || order.requiredDate || null;
   const activeAnchor = proposalPreparing ? "#conversation"
     : activeAction?.type === "quoteAcceptance" ? "#proposal-stage"
     : depositTurn || depositCardState === "reported" ? "#pay-stage"
@@ -829,7 +832,8 @@ function ClientPortal() {
         <div className="client-actionbar-meta">
           <span>{order.id}</span>
           <span className={`status-badge ost-${order.status}`}>{statusLabel}</span>
-          <span>{workspaceCopy.due}: {dueLabel}</span>
+          {/* 희망일 미설정이면 내부 필드 같은 "Due: Not set"을 노출하지 않는다 */}
+          {dueValue && <span>{workspaceCopy.due}: {dueValue}</span>}
           <a className="button primary small" href={proposalPreparing ? "#conversation" : activeAnchor}>
             {proposalPreparing ? workspaceCopy.chat : workspaceCopy.goToAction}
           </a>

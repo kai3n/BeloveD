@@ -229,6 +229,12 @@ export default function IntakeForm() {
     setStepError("");
   }, [screen]);
 
+  // 접수 완료 화면 — 제출 버튼이 리뷰 맨 아래라 스크롤을 되돌리지 않으면
+  // 짧아진 페이지가 하단으로 클램프되어 주문번호·조회코드가 헤더 위로 잘려 안 보인다
+  useEffect(() => {
+    if (done) window.scrollTo({ top: 0, behavior: "auto" });
+  }, [done]);
+
   // 같은 라우트 재진입(nav의 START CUSTOM 재클릭 등)은 리마운트가 없어 화면이 유지된다 → 진입 화면으로 리셋
   const locationKeyRef = useRef(location.key);
   useEffect(() => {
@@ -669,7 +675,8 @@ export default function IntakeForm() {
                   onChange={(value) => setF({ requiredDate: value })}
                 />
               </label>
-              <label className="field"><span>{g.engravingLbl}</span>
+              {/* 그리드 마지막 홀수 칸 — 풀로우로 펼쳐 빈 칸 비대칭을 없앤다 */}
+              <label className="field" style={{ gridColumn: "1 / -1" }}><span>{g.engravingLbl}</span>
                 <input
                   value={form.engraving}
                   maxLength={30}
