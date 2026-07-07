@@ -207,7 +207,7 @@ export const infoPages = {
       title: ["Talk to a", "diamond expert."],
       intro: "Real people, not chatbots. Reach a client advisor for anything — a quote, a question, or guidance through your first bespoke piece.",
       channels: [
-        { label: "Email", value: "care@beloved.example", note: "Replies within one business day" },
+        { label: "Email", value: "support@belovediamond.com", note: "Replies within one business day" },
         { label: "Hours", value: "Mon–Sat · 9:00–18:00 PT" },
         { label: "Begin a piece", value: "Start a custom order", to: "/custom/new" },
         { label: "Existing order", value: "Track your order", to: "/track" },
@@ -219,7 +219,7 @@ export const infoPages = {
       title: ["다이아몬드 전문가와", "상담하세요."],
       intro: "챗봇이 아닌 실제 어드바이저입니다. 견적, 질문, 첫 비스포크 안내까지 무엇이든 도와드립니다.",
       channels: [
-        { label: "이메일", value: "care@beloved.example", note: "1영업일 이내 회신" },
+        { label: "이메일", value: "support@belovediamond.com", note: "1영업일 이내 회신" },
         { label: "운영 시간", value: "월–토 · 9:00–18:00 (PT)" },
         { label: "피스 시작", value: "주문 제작 시작", to: "/custom/new" },
         { label: "기존 주문", value: "주문 조회", to: "/track" },
@@ -231,7 +231,7 @@ export const infoPages = {
       title: ["与钻石专家", "对话。"],
       intro: "真人顾问，而非聊天机器人。报价、疑问，或第一件定制的引导 —— 任何事都可咨询。",
       channels: [
-        { label: "邮箱", value: "care@beloved.example", note: "一个工作日内回复" },
+        { label: "邮箱", value: "support@belovediamond.com", note: "一个工作日内回复" },
         { label: "服务时间", value: "周一至周六 · 9:00–18:00（PT）" },
         { label: "开始定制", value: "开始定制订单", to: "/custom/new" },
         { label: "已有订单", value: "订单查询", to: "/track" },
@@ -243,7 +243,7 @@ export const infoPages = {
       title: ["Habla con un", "experto en diamantes."],
       intro: "Personas reales, no chatbots. Contacta a un asesor para lo que sea — una cotización, una duda o guía en tu primera pieza a medida.",
       channels: [
-        { label: "Email", value: "care@beloved.example", note: "Respuesta en un día hábil" },
+        { label: "Email", value: "support@belovediamond.com", note: "Respuesta en un día hábil" },
         { label: "Horario", value: "Lun–Sáb · 9:00–18:00 PT" },
         { label: "Crear una pieza", value: "Iniciar pedido a medida", to: "/custom/new" },
         { label: "Pedido existente", value: "Rastrea tu pedido", to: "/track" },
@@ -324,7 +324,7 @@ export const infoPages = {
         { h: "Changes", p: "If this policy changes materially, we will update this page and revise the effective date above." },
       ],
       channels: [
-        { label: "Privacy inquiries", value: "care@belovediamond.com", note: "Replies within one business day" },
+        { label: "Privacy inquiries", value: "support@belovediamond.com", note: "Replies within one business day" },
       ],
     },
     ko: {
@@ -344,7 +344,7 @@ export const infoPages = {
         { h: "변경 고지", p: "방침이 중요하게 바뀌면 이 페이지를 갱신하고 상단의 시행일을 수정합니다." },
       ],
       channels: [
-        { label: "개인정보 문의", value: "care@belovediamond.com", note: "1영업일 이내 회신" },
+        { label: "개인정보 문의", value: "support@belovediamond.com", note: "1영업일 이내 회신" },
       ],
     },
     zh: {
@@ -364,7 +364,7 @@ export const infoPages = {
         { h: "政策变更", p: "若本政策发生重大变化，我们会更新本页面并修改上方的生效日期。" },
       ],
       channels: [
-        { label: "隐私咨询", value: "care@belovediamond.com", note: "一个工作日内回复" },
+        { label: "隐私咨询", value: "support@belovediamond.com", note: "一个工作日内回复" },
       ],
     },
     es: {
@@ -384,7 +384,7 @@ export const infoPages = {
         { h: "Cambios", p: "Si esta política cambia de forma sustancial, actualizaremos esta página y revisaremos la fecha de vigencia indicada arriba." },
       ],
       channels: [
-        { label: "Consultas de privacidad", value: "care@belovediamond.com", note: "Respuesta en un día hábil" },
+        { label: "Consultas de privacidad", value: "support@belovediamond.com", note: "Respuesta en un día hábil" },
       ],
     },
   },
