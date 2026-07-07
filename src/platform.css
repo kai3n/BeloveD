@@ -5155,6 +5155,22 @@ button.text-link:hover {
 }
 .gflow-resume-actions { display: flex; gap: 8px; }
 
+/* 오픈 브리프(스타일 미정) 상담 진행 신호 — 디자인 스텝 이후 전 화면 상단 */
+.gflow-consult-note {
+  border: 1px solid rgba(214, 197, 160, 0.45);
+  background: var(--surface);
+  color: var(--accent-bright);
+  padding: 10px 16px;
+  margin: 0 0 14px;
+  font-size: 12.5px;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+html[data-theme="day"] .gflow-consult-note {
+  border-color: rgba(143, 125, 84, 0.4);
+  color: #6f6141;
+}
+
 /* ── Day 잉크 원칙: 면 채움은 잉크 블랙, 샴페인은 헤어라인·라벨·언더라인만 ──
    솔리드 골드/샴페인 채움은 화이트 배경에서 탁한 갈색으로 보인다 (럭셔리 화이트 하우스 규칙) */
 html[data-theme="day"] .button.primary {

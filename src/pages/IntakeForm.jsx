@@ -199,7 +199,9 @@ export default function IntakeForm() {
     : Boolean(form.name.trim());
   const selectedStyle = styles.find((st) => st.id === form.styleId) || null;
   const activeCoupon = findCoupon(form.couponCode);
-  const selectedStyleName = selectedStyle ? pickI18n(selectedStyle.name, locale) : g.notSureTitle;
+  const selectedStyleName = selectedStyle ? pickI18n(selectedStyle.name, locale) : g.consultPiece;
+  // 디자인 스텝 이후 스타일 미정 = "아직 모르겠어요"(오픈 브리프) 선택 — 상담 진행 신호를 띄운다
+  const consultMode = !form.styleId && screenIdx > screens.indexOf("design");
   const stylesForCategory = styles.filter((st) => st.category === form.category);
   const optionLabels = t.optionLabels || {};
   const optionDescriptions = t.optionDescriptions || {};
@@ -331,6 +333,8 @@ export default function IntakeForm() {
             )}
           </div>
           <p className="form-hint">{serverBacked ? t.doneNoteServer : t.doneNote}</p>
+          {/* 오픈 브리프(스타일 미정) — 상담이 이제 시작된다는 걸 접수 화면에서 못박는다 */}
+          {!done.styleId && <p className="form-hint">✦ {g.consultDoneNote}</p>}
           <button
             className="button primary"
             onClick={() => navigate(serverBacked ? `/orders/${done.serverCode}` : `/orders/${done.id}?code=${done.queryCode}`)}
@@ -395,6 +399,7 @@ export default function IntakeForm() {
           </div>
         </div>
       )}
+      {consultMode && <p className="gflow-consult-note" role="status">✦ {g.consultNote}</p>}
       {activeScreen === "category" && stepShell(g.qCategory, null, (
         <ImageOptionGrid
           columns={4}
