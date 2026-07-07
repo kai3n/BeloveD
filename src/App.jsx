@@ -81,6 +81,7 @@ export default function App() {
           <Route path="returns" element={<InfoPage page="returns" />} />
           <Route path="warranty" element={<InfoPage page="warranty" />} />
           <Route path="shipping" element={<InfoPage page="shipping" />} />
+          <Route path="privacy" element={<InfoPage page="privacy" />} />
           <Route path="contact" element={<InfoPage page="contact" />} />
           <Route path="faq" element={<InfoPage page="faq" />} />
           <Route path="account" element={<RequireRole role="customer"><CustomerShell /></RequireRole>}>

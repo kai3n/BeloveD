@@ -15,10 +15,10 @@ export const footerGroups = {
 };
 
 export const infoNav = {
-  en: { about: "About", returns: "Returns", warranty: "Warranty", shipping: "Shipping", contact: "Contact", faq: "FAQ", howItWorks: "How it works", labGrown: "Lab-grown diamonds", fourC: "The 4Cs", shapesGuide: "Diamond shapes" },
-  ko: { about: "브랜드 소개", returns: "반품", warranty: "보증", shipping: "배송", contact: "문의", faq: "자주 묻는 질문", howItWorks: "주문 과정", labGrown: "랩그로운 다이아몬드", fourC: "4C 가이드", shapesGuide: "셰입 가이드" },
-  zh: { about: "关于我们", returns: "退货", warranty: "保修", shipping: "配送", contact: "联系我们", faq: "常见问题", howItWorks: "定制流程", labGrown: "培育钻石", fourC: "4C 指南", shapesGuide: "形状指南" },
-  es: { about: "Sobre nosotros", returns: "Devoluciones", warranty: "Garantía", shipping: "Envíos", contact: "Contacto", faq: "Preguntas", howItWorks: "Cómo funciona", labGrown: "Diamantes de laboratorio", fourC: "Las 4C", shapesGuide: "Guía de formas" },
+  en: { about: "About", returns: "Returns", warranty: "Warranty", shipping: "Shipping", contact: "Contact", faq: "FAQ", howItWorks: "How it works", labGrown: "Lab-grown diamonds", fourC: "The 4Cs", shapesGuide: "Diamond shapes", privacy: "Privacy policy" },
+  ko: { about: "브랜드 소개", returns: "반품", warranty: "보증", shipping: "배송", contact: "문의", faq: "자주 묻는 질문", howItWorks: "주문 과정", labGrown: "랩그로운 다이아몬드", fourC: "4C 가이드", shapesGuide: "셰입 가이드", privacy: "개인정보처리방침" },
+  zh: { about: "关于我们", returns: "退货", warranty: "保修", shipping: "配送", contact: "联系我们", faq: "常见问题", howItWorks: "定制流程", labGrown: "培育钻石", fourC: "4C 指南", shapesGuide: "形状指南", privacy: "隐私政策" },
+  es: { about: "Sobre nosotros", returns: "Devoluciones", warranty: "Garantía", shipping: "Envíos", contact: "Contacto", faq: "Preguntas", howItWorks: "Cómo funciona", labGrown: "Diamantes de laboratorio", fourC: "Las 4C", shapesGuide: "Guía de formas", privacy: "Política de privacidad" },
 };
 
 export const trustStrip = {
@@ -299,6 +299,92 @@ export const infoPages = {
         { q: "¿Pasará la prueba de diamante?", a: "Sí. Un probador estándar la lee como diamante, porque lo es. El certificado simplemente la indica como cultivada en laboratorio." },
         { q: "¿Cómo funciona un pedido a medida?", a: "Elige una silueta y una piedra, o sube referencias. Devolvemos una cotización y renders CAD para tu aprobación. No se cobra nada hasta que aceptas, y la producción empieza solo tras tu visto bueno." },
         { q: "¿Y si no me queda?", a: "Tu primer ajuste de talla dentro de 60 días es gratuito. Consulta Garantía y Devoluciones para los detalles." },
+      ],
+    },
+  },
+
+  // 개인정보처리방침 — Pinterest 등 광고/소셜 계정 등록에 독립 URL(/privacy)이 요구된다.
+  // 내용은 실제 동작 기준: 인테이크 연락처·레퍼런스 미디어·bd_aid 활동 분석·localStorage,
+  // 카드 미수집(Zelle/Venmo 외부 처리), 제작 파트너에는 연락처 마스킹 후 사양만 전달.
+  privacy: {
+    en: {
+      eyebrow: "Legal",
+      title: ["Privacy", "policy."],
+      intro: "Effective July 7, 2026. This policy explains what personal data BeloveD (belovediamond.com) collects, how we use it, and the choices you have.",
+      sections: [
+        { h: "What we collect", p: "When you request a quote or place an order we collect your name, email address or phone number, jewelry specifications (including engraving text and coupon codes), preferred dates, and any reference photos or videos you upload. If you create an account, we store your email for one-time-code sign-in. When you leave a review, we store its text and media." },
+        { h: "Collected automatically", p: "We assign a random visitor identifier (bd_aid) and log page views and interactions such as wizard selections to understand how the site is used. Our servers also record IP addresses and browser information for security and rate limiting." },
+        { h: "How we use it", p: "To prepare quotes and proposals, craft and deliver your order, send transactional emails (order confirmations, sign-in codes, status updates), provide customer care, prevent abuse, and improve the site. We do not send marketing email without your consent." },
+        { h: "Payments", p: "We never collect or store card numbers. Payments are arranged through external channels such as Zelle or Venmo, and are governed by those providers' terms." },
+        { h: "Sharing", p: "We never sell your personal data. Manufacturing partners receive only jewelry specifications and reference images — contact details are masked before anything is shared. Infrastructure processors act on our instructions: Vercel (hosting), Neon (database), Cloudflare (media storage), and Resend (email delivery)." },
+        { h: "Where data lives & retention", p: "Data is stored on servers located in the United States. Order records are kept as long as needed to fulfill your order and meet legal obligations; you may request deletion of data we are not required to keep." },
+        { h: "Cookies & local storage", p: "We use browser local storage — not advertising cookies — for your theme preference, in-progress order drafts, sign-in session, and the bd_aid analytics identifier. Clearing your browser storage removes them." },
+        { h: "Your rights", p: "You may request access to, correction of, or deletion of your personal data at any time by emailing us. We respond within a reasonable period, and applicable local rights (such as GDPR or CCPA rights) are honored." },
+        { h: "Children", p: "Our services are not directed to children under 13, and we do not knowingly collect their data." },
+        { h: "Changes", p: "If this policy changes materially, we will update this page and revise the effective date above." },
+      ],
+      channels: [
+        { label: "Privacy inquiries", value: "care@belovediamond.com", note: "Replies within one business day" },
+      ],
+    },
+    ko: {
+      eyebrow: "법적 고지",
+      title: ["개인정보", "처리방침."],
+      intro: "시행일 2026년 7월 7일. 이 방침은 BeloveD(belovediamond.com)가 어떤 개인정보를 수집하고, 어떻게 이용하며, 어떤 선택권이 있는지 설명합니다.",
+      sections: [
+        { h: "수집하는 정보", p: "견적 요청·주문 시 이름, 이메일 또는 연락처, 주얼리 사양(각인 문구·쿠폰 코드 포함), 희망일, 업로드하신 레퍼런스 사진·영상을 수집합니다. 계정을 만들면 일회용 코드 로그인을 위한 이메일을 저장하며, 리뷰 작성 시 리뷰 내용과 미디어를 저장합니다." },
+        { h: "자동으로 수집되는 정보", p: "사이트 이용 방식을 파악하기 위해 무작위 방문자 식별자(bd_aid)를 부여하고 페이지 열람·위저드 선택 등의 이벤트를 기록합니다. 서버는 보안과 요청 제한을 위해 IP 주소와 브라우저 정보를 기록합니다." },
+        { h: "이용 목적", p: "견적·제안 준비, 주문 제작·배송, 거래 이메일 발송(접수 확인·로그인 코드·진행 알림), 고객 지원, 부정 사용 방지, 사이트 개선에 이용합니다. 동의 없이 마케팅 이메일을 보내지 않습니다." },
+        { h: "결제 정보", p: "카드 번호를 수집하거나 저장하지 않습니다. 결제는 Zelle·Venmo 등 외부 채널로 진행되며 해당 서비스의 약관이 적용됩니다." },
+        { h: "제3자 제공", p: "개인정보를 판매하지 않습니다. 제작 파트너에게는 연락처를 가린 뒤 주얼리 사양과 레퍼런스 이미지만 전달합니다. 인프라 처리자는 저희 지시에 따라 작동합니다: Vercel(호스팅), Neon(데이터베이스), Cloudflare(미디어 저장), Resend(이메일 발송)." },
+        { h: "보관 위치와 기간", p: "데이터는 미국 소재 서버에 저장됩니다. 주문 기록은 주문 이행과 법적 의무에 필요한 기간 동안 보관하며, 보관 의무가 없는 데이터는 삭제를 요청하실 수 있습니다." },
+        { h: "쿠키·로컬 저장소", p: "광고 쿠키가 아닌 브라우저 로컬 저장소를 사용합니다 — 테마 설정, 작성 중인 주문 드래프트, 로그인 세션, bd_aid 분석 식별자가 여기에 해당합니다. 브라우저 저장소를 지우면 함께 삭제됩니다." },
+        { h: "이용자의 권리", p: "언제든 이메일로 본인 개인정보의 열람·정정·삭제를 요청할 수 있습니다. 합리적인 기간 내에 회신하며, GDPR·CCPA 등 관련 지역 법령상의 권리를 존중합니다." },
+        { h: "아동", p: "저희 서비스는 만 13세 미만 아동을 대상으로 하지 않으며, 아동의 정보를 고의로 수집하지 않습니다." },
+        { h: "변경 고지", p: "방침이 중요하게 바뀌면 이 페이지를 갱신하고 상단의 시행일을 수정합니다." },
+      ],
+      channels: [
+        { label: "개인정보 문의", value: "care@belovediamond.com", note: "1영업일 이내 회신" },
+      ],
+    },
+    zh: {
+      eyebrow: "法律条款",
+      title: ["隐私", "政策。"],
+      intro: "生效日期：2026 年 7 月 7 日。本政策说明 BeloveD（belovediamond.com）收集哪些个人数据、如何使用，以及你拥有的选择。",
+      sections: [
+        { h: "我们收集的信息", p: "当你询价或下单时，我们收集你的姓名、邮箱或电话、珠宝规格（含刻字内容与优惠码）、期望日期，以及你上传的参考照片或视频。若你创建账户，我们存储用于一次性验证码登录的邮箱；发表评价时，我们存储评价内容与媒体。" },
+        { h: "自动收集的信息", p: "为了解网站使用情况，我们分配随机访客标识（bd_aid）并记录页面浏览与向导选择等事件。服务器还会出于安全与限流目的记录 IP 地址与浏览器信息。" },
+        { h: "使用目的", p: "用于准备报价与方案、制作并交付订单、发送交易邮件（下单确认、登录验证码、进度通知）、客户服务、防止滥用及改进网站。未经你的同意，我们不会发送营销邮件。" },
+        { h: "支付信息", p: "我们从不收集或存储银行卡号。付款通过 Zelle、Venmo 等外部渠道进行，并受相应服务条款约束。" },
+        { h: "第三方共享", p: "我们从不出售你的个人数据。制作合作方仅收到珠宝规格与参考图片 —— 共享前会先隐去联系方式。基础设施处理方按我们的指示运作：Vercel（托管）、Neon（数据库）、Cloudflare（媒体存储）、Resend（邮件发送）。" },
+        { h: "存储位置与期限", p: "数据存储在位于美国的服务器上。订单记录在履行订单与满足法律义务所需期间内保留；对无保留义务的数据，你可以申请删除。" },
+        { h: "Cookie 与本地存储", p: "我们使用浏览器本地存储而非广告 Cookie —— 包括主题偏好、进行中的订单草稿、登录会话与 bd_aid 分析标识。清除浏览器存储即会删除它们。" },
+        { h: "你的权利", p: "你可随时通过邮件申请查阅、更正或删除你的个人数据。我们会在合理期限内回复，并尊重 GDPR、CCPA 等适用地区法规赋予的权利。" },
+        { h: "儿童", p: "我们的服务不面向 13 岁以下儿童，也不会有意收集其数据。" },
+        { h: "政策变更", p: "若本政策发生重大变化，我们会更新本页面并修改上方的生效日期。" },
+      ],
+      channels: [
+        { label: "隐私咨询", value: "care@belovediamond.com", note: "一个工作日内回复" },
+      ],
+    },
+    es: {
+      eyebrow: "Legal",
+      title: ["Política de", "privacidad."],
+      intro: "Vigente desde el 7 de julio de 2026. Esta política explica qué datos personales recopila BeloveD (belovediamond.com), cómo los usamos y qué opciones tienes.",
+      sections: [
+        { h: "Qué recopilamos", p: "Cuando solicitas una cotización o haces un pedido recopilamos tu nombre, correo o teléfono, las especificaciones de la joya (incluido el texto de grabado y códigos de cupón), fechas preferidas y las fotos o videos de referencia que subas. Si creas una cuenta, guardamos tu correo para el inicio de sesión con código de un solo uso. Al dejar una reseña, guardamos su texto y medios." },
+        { h: "Recopilado automáticamente", p: "Asignamos un identificador aleatorio de visitante (bd_aid) y registramos vistas de página e interacciones, como selecciones del asistente, para entender el uso del sitio. Nuestros servidores también registran direcciones IP e información del navegador por seguridad y límites de peticiones." },
+        { h: "Cómo lo usamos", p: "Para preparar cotizaciones y propuestas, elaborar y entregar tu pedido, enviar correos transaccionales (confirmaciones, códigos de acceso, avisos de estado), dar atención al cliente, prevenir abusos y mejorar el sitio. No enviamos correos de marketing sin tu consentimiento." },
+        { h: "Pagos", p: "Nunca recopilamos ni almacenamos números de tarjeta. Los pagos se gestionan por canales externos como Zelle o Venmo, sujetos a los términos de esos proveedores." },
+        { h: "Compartición", p: "Nunca vendemos tus datos personales. Los talleres asociados reciben solo especificaciones e imágenes de referencia — los datos de contacto se enmascaran antes de compartir nada. Los procesadores de infraestructura actúan bajo nuestras instrucciones: Vercel (alojamiento), Neon (base de datos), Cloudflare (almacenamiento de medios) y Resend (envío de correo)." },
+        { h: "Dónde residen los datos y retención", p: "Los datos se almacenan en servidores ubicados en Estados Unidos. Los registros de pedidos se conservan el tiempo necesario para cumplir tu pedido y las obligaciones legales; puedes solicitar la eliminación de los datos que no estemos obligados a conservar." },
+        { h: "Cookies y almacenamiento local", p: "Usamos el almacenamiento local del navegador — no cookies publicitarias — para tu preferencia de tema, borradores de pedido en curso, la sesión de acceso y el identificador analítico bd_aid. Al limpiar el almacenamiento del navegador se eliminan." },
+        { h: "Tus derechos", p: "Puedes solicitar en cualquier momento el acceso, la corrección o la eliminación de tus datos personales por correo. Respondemos en un plazo razonable y respetamos los derechos locales aplicables (como los del RGPD o la CCPA)." },
+        { h: "Menores", p: "Nuestros servicios no están dirigidos a menores de 13 años y no recopilamos sus datos a sabiendas." },
+        { h: "Cambios", p: "Si esta política cambia de forma sustancial, actualizaremos esta página y revisaremos la fecha de vigencia indicada arriba." },
+      ],
+      channels: [
+        { label: "Consultas de privacidad", value: "care@belovediamond.com", note: "Respuesta en un día hábil" },
       ],
     },
   },

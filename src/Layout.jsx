@@ -235,6 +235,7 @@ export function Footer() {
         { to: "/about", label: n.about },
         { to: "/track", label: p.portal.guestTitle },
         { to: "/sign-in", label: p.nav.login },
+        { to: "/privacy", label: n.privacy },
       ],
     },
   ];
