@@ -4,6 +4,7 @@ import { createMagicLink, verifyMagicLink, loginWithPassword, setCustomerPasswor
 import { revokeSession } from "./session.js";
 import { rateLimit } from "./rateLimit.js";
 import { linkSessionToCustomer, recordAuthEvent } from "./activityRepository.js";
+import { linkChatToCustomer } from "./chatRepository.js";
 import {
   setSessionCookie, clearSessionCookie, requireCustomer,
   COOKIE_CUSTOMER, COOKIE_ADMIN,
@@ -28,11 +29,16 @@ export function authRouter() {
   // 로그인 성공 시 익명 방문 세션(bd_aid)을 회원과 연결하고 login 이벤트 기록.
   // 추적 실패가 로그인을 막으면 안 되므로 조용히 삼킨다.
   async function linkActivity(req, customerId) {
+    if (!customerId) return;
     const aid = req.cookies?.bd_aid;
-    if (!aid || !customerId) return;
+    const chatToken = req.cookies?.bd_chat;
     try {
-      await linkSessionToCustomer(aid, customerId);
-      await recordAuthEvent(aid, "login");
+      if (aid) {
+        await linkSessionToCustomer(aid, customerId);
+        await recordAuthEvent(aid, "login");
+      }
+      // 로그인 전 익명 채팅 스레드를 이 고객과 연결 (있으면)
+      if (chatToken) await linkChatToCustomer(chatToken, customerId);
     } catch { /* no-op */ }
   }
 

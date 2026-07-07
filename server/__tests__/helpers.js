@@ -15,3 +15,7 @@ export async function truncateActivity() {
   await query("truncate table activity_events, activity_daily restart identity");
   await query("delete from activity_sessions");
 }
+
+export async function truncateChat() {
+  await query("truncate table chat_messages, chat_threads restart identity cascade");
+}

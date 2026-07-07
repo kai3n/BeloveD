@@ -9,6 +9,8 @@ import { pendingCount } from "./lib/store.js";
 import { useDBVersion } from "./lib/useDB.js";
 import { useTheme } from "./theme.jsx";
 import { withBase } from "./components/ui.jsx";
+import { WITH_BACKOFFICE } from "./lib/flags.js";
+import ChatWidget from "./components/ChatWidget.jsx";
 
 // 비즈니스 로고 — 원본에서 배경을 키잉한 투명 PNG (글자만 얹혀 어떤 배경에서도 박스가 없다)
 function BrandLogo() {
@@ -349,6 +351,8 @@ export default function Layout() {
         <Outlet />
       </main>
       <Footer />
+      {/* 라이브챗 — 실서버 빌드에서만(정적 데모는 API 부재). 위젯 내부에서 어드민/게이트 경로는 숨김 */}
+      {WITH_BACKOFFICE && <ChatWidget />}
     </>
   );
 }

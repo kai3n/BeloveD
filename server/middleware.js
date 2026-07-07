@@ -3,6 +3,23 @@ import { ApiError } from "./errors.js";
 
 export const COOKIE_CUSTOMER = "bd_sid";
 export const COOKIE_ADMIN = "bd_admin";
+export const COOKIE_CHAT = "bd_chat";
+
+// 라이브챗 익명 스레드 토큰 — httpOnly라 JS가 읽지 못하고, 서버가 token_hash로만 대조한다.
+// 매직링크 콜백처럼 사이트 내 이동에도 붙도록 sameSite=lax.
+export function setChatCookie(res, token) {
+  res.cookie(COOKIE_CHAT, token, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 1000 * 60 * 60 * 24 * 90, // 90d
+    path: "/",
+  });
+}
+
+export function clearChatCookie(res) {
+  res.clearCookie(COOKIE_CHAT, { path: "/" });
+}
 
 export function setSessionCookie(res, name, session) {
   res.cookie(name, session.id, {

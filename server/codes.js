@@ -9,6 +9,7 @@ const SEQUENCE_BY_PREFIX = {
   TL: "timeline_code_seq",
   MED: "media_code_seq",
   REV: "review_code_seq",
+  CHAT: "chat_code_seq",
 };
 
 export async function nextCode(client, prefix) {

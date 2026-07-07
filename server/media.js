@@ -41,7 +41,7 @@ function client() {
 }
 
 // scope: 업로드 용도별 키 프리픽스 (경로 추측 방지를 위해 랜덤 토큰 포함)
-const SCOPES = new Set(["reference", "review", "proposal", "cad", "qc", "style"]);
+const SCOPES = new Set(["reference", "review", "proposal", "cad", "qc", "style", "chat"]);
 
 export async function createUploadUrl({ scope, contentType, size }) {
   if (!r2Configured()) throw new ApiError("MEDIA_NOT_CONFIGURED", 503);
