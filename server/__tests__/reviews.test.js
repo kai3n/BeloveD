@@ -139,4 +139,22 @@ describe("리뷰 인증·제출·게시", () => {
     expect(del.status).toBe(200);
     expect((await request(app).get("/v1/reviews")).body.reviews).toHaveLength(0);
   });
+
+  it("공개 피드는 평점 내림차순, 동점은 최신순", async () => {
+    const admin = await adminCookie();
+    const mk = async (rating, quote) => {
+      const res = await request(app).post("/v1/admin/reviews").set("Cookie", admin)
+        .send({ name: "A", rating, quote });
+      return res.body.review.id;
+    };
+    const low = await mk(4, "four");
+    const oldTop = await mk(5, "five old");
+    const newTop = await mk(5, "five new");
+    await query("update customer_reviews set created_at = $2 where review_code = $1", [low, "2026-01-03"]);
+    await query("update customer_reviews set created_at = $2 where review_code = $1", [oldTop, "2026-01-01"]);
+    await query("update customer_reviews set created_at = $2 where review_code = $1", [newTop, "2026-01-02"]);
+
+    const feed = await request(app).get("/v1/reviews");
+    expect(feed.body.reviews.map((r) => r.id)).toEqual([newTop, oldTop, low]);
+  });
 });

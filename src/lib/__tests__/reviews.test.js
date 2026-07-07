@@ -36,4 +36,20 @@ describe("고객 리뷰 — 인증·검수 규칙", () => {
   it("시드 데모 리뷰가 공개 상태로 존재한다", () => {
     expect(listReviews({ publishedOnly: true }).length).toBeGreaterThanOrEqual(6);
   });
+
+  it("공개 목록은 평점 내림차순, 동점이면 최신순", () => {
+    updateOpsOrder("DM-000001", { status: "DELIVERED" });
+    const low = submitReview("DM-000001", { rating: 3, quote: "good" });
+    setReviewStatus(low.id, "published");
+    const rows = listReviews({ publishedOnly: true });
+    for (let i = 1; i < rows.length; i += 1) {
+      const prev = rows[i - 1];
+      const cur = rows[i];
+      expect(prev.rating).toBeGreaterThanOrEqual(cur.rating);
+      if (prev.rating === cur.rating) {
+        expect((prev.createdAt || "") >= (cur.createdAt || "")).toBe(true);
+      }
+    }
+    expect(rows[rows.length - 1].id).toBe(low.id); // 3점 리뷰가 맨 뒤
+  });
 });

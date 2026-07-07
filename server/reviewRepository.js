@@ -94,8 +94,9 @@ export async function submitCustomerReview({ orderCode, tracking, customerId, ra
 }
 
 export async function listPublishedReviews() {
+  // 평점 우선 정렬 — limit에 걸릴 만큼 리뷰가 쌓여도 고평점 리뷰가 먼저 노출된다
   const { rows } = await query(
-    "select * from customer_reviews where status = 'published' order by created_at desc limit 60",
+    "select * from customer_reviews where status = 'published' order by rating desc, created_at desc limit 60",
   );
   return rows.map(publicReviewView);
 }

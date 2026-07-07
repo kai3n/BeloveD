@@ -1840,7 +1840,7 @@ export function listReviews(filter = {}) {
   let rows = [...(db().reviews || [])];
   if (filter.orderId) rows = rows.filter((r) => r.orderId === filter.orderId);
   if (filter.publishedOnly) rows = rows.filter((r) => r.status === "published");
-  return rows.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+  return rows.sort((a, b) => ((b.rating || 0) - (a.rating || 0)) || (b.createdAt || "").localeCompare(a.createdAt || ""));
 }
 // 배송 완료된 주문만, 주문당 1건 — 주문번호가 곧 인증(Verified)
 export function submitReview(orderId, { rating, quote, body, media, name, location }, actor = "customer") {
