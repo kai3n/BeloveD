@@ -3,6 +3,7 @@
 // 경쟁사(Blue Nile / Brilliant Earth)는 BeloveD 추정에 고정 배수를 적용해 비교 표시.
 import { benchmarkFor, getSettings, listStyleSpecs } from "./store.js";
 import { quoteCompute } from "./ops.js";
+import { applyCoupon, findCoupon } from "./coupons.js";
 
 // 컬러/클래리티에 따른 소폭 보정 — 등급이 높을수록 비싸진다(표시용 추정).
 const COLOR_FACTOR = { D: 1.12, E: 1.06, F: 1.0, G: 0.95, H: 0.9 };
@@ -51,18 +52,25 @@ export function estimateQuoteRange(form) {
     benchmarkUsdPerCt = (benchmarkFor("round", 1.0)?.unitUsdPerCt ?? 320) * 0.8;
   }
 
-  const { totalUsd } = quoteCompute({
+  const { totalUsd, diamondAmountUsd } = quoteCompute({
     carat, benchmarkUsdPerCt, multiplier,
     estWeightG, metalRefUsdPerG, lossRatePct, nonMetalUsd, depositRate,
   });
 
-  const low = round10(totalUsd * 0.92);
-  const high = round10(totalUsd * 1.1);
+  // 쿠폰 — 스프레드 전 총액에 적용해 절감액을 단일 수치로 보여준다.
+  // 경쟁사 범위는 미할인 기준 유지(경쟁사에 내 쿠폰은 없다) — 절감폭이 자연히 커진다.
+  const coupon = findCoupon(form.couponCode);
+  const applied = applyCoupon({ totalUsd, diamondAmountUsd, multiplier }, coupon);
+
+  const low = round10(applied.totalUsd * 0.92);
+  const high = round10(applied.totalUsd * 1.1);
+  const baseLow = round10(totalUsd * 0.92);
+  const baseHigh = round10(totalUsd * 1.1);
 
   const competitors = COMPETITORS.map((c) => ({
     name: c.name,
-    low: round10(low * c.lo),
-    high: round10(high * c.hi),
+    low: round10(baseLow * c.lo),
+    high: round10(baseHigh * c.hi),
   }));
   const top = competitors.reduce((a, b) => (b.high > a.high ? b : a));
 
@@ -72,5 +80,6 @@ export function estimateQuoteRange(form) {
     competitors,
     topName: top.name,
     savingsTop: top.high - low, // "Up to $X less than <top>"
+    coupon: coupon ? { code: coupon.code, labelKey: coupon.labelKey, savedUsd: round10(applied.discountUsd) } : null,
   };
 }

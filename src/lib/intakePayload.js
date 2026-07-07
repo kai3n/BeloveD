@@ -4,6 +4,7 @@ import {
   BRACELET_WRIST_OPTIONS, CHAIN_LENGTHS, CHAIN_STYLE_OPTIONS, CLASP_OPTIONS,
   EARRING_PAIRING_OPTIONS,
 } from "./ops.js";
+import { normalizeCouponCode } from "./coupons.js";
 
 export const DEFAULT_MULTI_STANDARD = "F-G / VS+";
 export const MAX_REFERENCE_MEDIA = 5;
@@ -72,6 +73,7 @@ export function buildIntakePayload(form, refs, user) {
     ...form,
     ...contactDetails,
     engraving: (form.engraving || "").trim(),
+    couponCode: normalizeCouponCode(form.couponCode),
     stonePrefs: solitaire ? { ...form.stonePrefs, carat: Number(form.stonePrefs?.carat) || null } : null,
     multiSpec,
     referenceMedia: sanitizeReferenceMedia(refs),

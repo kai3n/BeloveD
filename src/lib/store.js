@@ -2,6 +2,7 @@ import { seed } from "./seed.js";
 import { styleSeedData } from "./styleSeedData.js";
 import { maskContacts } from "./masking.js";
 import { validateAnnotation } from "./chips.js";
+import { applyCoupon, findCoupon } from "./coupons.js";
 import {
   MILESTONE_STAGES, publicDiamondView, customerOrderView, supplierTaskView,
   quoteCompute, reconcileDelta, randomQueryCode, tierForCarat,
@@ -1398,11 +1399,21 @@ export function createQuote(orderId, { estWeightG, metalRefUsdPerG, lossRatePct,
   const order = getOpsOrder(orderId);
   const dia = getQuoteDiamondCandidate(orderId);
   const bench = dia ? benchmarkFor(dia.shape, dia.carat) : null;
+  const multiplier = internal?.multiplier ?? db().settings.opsMultiplier;
   const computed = quoteCompute({
     carat: dia?.carat || 0, benchmarkUsdPerCt: bench?.unitUsdPerCt || 0,
-    multiplier: internal?.multiplier ?? db().settings.opsMultiplier,
+    multiplier,
     estWeightG, metalRefUsdPerG, lossRatePct, nonMetalUsd, depositRate: db().settings.opsDepositRate,
   });
+  // 인테이크 쿠폰은 '견적 약속' — 이 주문의 모든 견적 버전이 자동 존중한다 (원가 breakdown 미노출 유지)
+  const coupon = findCoupon(getIntake(order?.intakeId)?.couponCode);
+  if (coupon) {
+    const applied = applyCoupon({ totalUsd: computed.totalUsd, diamondAmountUsd: computed.diamondAmountUsd, multiplier }, coupon);
+    computed.totalUsd = applied.totalUsd;
+    computed.depositUsd = Math.round(applied.totalUsd * db().settings.opsDepositRate);
+    computed.balanceUsd = applied.totalUsd - computed.depositUsd;
+    computed.coupon = { code: coupon.code, discountUsd: applied.discountUsd }; // ...computed 스프레드로 quote에 실린다
+  }
   const version = listQuotes(orderId).length + 1;
   const quote = {
     id: `Q-${orderId}-V${version}`, orderId, version, status: "draft",

@@ -66,6 +66,12 @@ describe("buildIntakePayload — createIntake 호환", () => {
     const without = buildIntakePayload(ringForm({ name: "G", contact: "g@x.com" }), [], null);
     expect(without.engraving).toBe("");
   });
+
+  it("쿠폰 코드는 정규화되어 실린다 (미등록 코드도 캡처)", () => {
+    expect(buildIntakePayload(ringForm({ name: "G", contact: "g@x.com", couponCode: " welcome5 " }), [], null).couponCode).toBe("WELCOME5");
+    expect(buildIntakePayload(ringForm({ name: "G", contact: "g@x.com", couponCode: "unknown-x" }), [], null).couponCode).toBe("UNKNOWN-X");
+    expect(buildIntakePayload(ringForm({ name: "G", contact: "g@x.com" }), [], null).couponCode).toBe("");
+  });
 });
 
 describe("conditionalComplete — 카테고리별 필수 사이즈/핏", () => {
