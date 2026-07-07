@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ImagePlus, Send } from "lucide-react";
 import { apiFetch, uploadMedia } from "../../lib/api.js";
 import { useLocale } from "../../i18n.jsx";
+import ChatThumb from "../../components/ChatThumb.jsx";
 import { ConsoleHead } from "./console.jsx";
 import "../../chat.css";
 
@@ -176,7 +177,7 @@ export default function AdminChat() {
                 {messages.map((m) => (
                   <div key={m.id} className={`achat-msg ${m.sender}`}>
                     {m.body && <span>{m.body}</span>}
-                    {(m.attachments || []).map((a, i) => <img key={i} src={a.url} alt={a.name || "attachment"} loading="lazy" />)}
+                    {(m.attachments || []).map((a, i) => <ChatThumb key={i} a={a} />)}
                     {m.sender !== "system" && <span className="achat-msg-time">{hhmm(m.createdAt)}</span>}
                   </div>
                 ))}

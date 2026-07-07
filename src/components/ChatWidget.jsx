@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Check, HelpCircle, Home, ImagePlus, Mail, MessageCircle, Send, UserRound, X } from "lucide-react";
 import { useLocale } from "../i18n.jsx";
-import { fetchThread, saveChatEmail, sendChatMessage, uploadChatImage, chatMediaFiles, CHAT_MAX_BYTES } from "../lib/chat.js";
+import { fetchThread, saveChatEmail, sendChatMessage, uploadChatImage, chatMediaFiles, CHAT_MAX_BYTES, CHAT_VIDEO_MAX_BYTES } from "../lib/chat.js";
 import { faqChips } from "../lib/chatFaq.js";
+import ChatThumb from "./ChatThumb.jsx";
 import "../chat.css";
 
 // 위젯을 숨길 경로 — 어드민 콘솔·스태프 게이트(같은 Layout 안에서 렌더되므로 여기서 차단)
@@ -16,7 +17,7 @@ const COPY = {
     greeting: "Hi! Questions about a design, sizing, or an order? Our team usually replies within a few minutes.",
     placeholder: "Write a message…", emailToggle: "Get a reply by email too?", emailPh: "your@email.com", emailSaved: "We'll reply by email too ✓",
     powered: "BeloveD concierge", drop: "Drop a photo or video", attach: "Attach photo or video",
-    tooLarge: "That file is too large (max 100MB).",
+    tooLarge: "That file is too large (max 100MB).", tooLargeVideo: "Videos must be under 30MB.",
     menu: "Menu", backToChat: "Back to chat", talk: "Talk to a person", talkMsg: "I'd like to talk to a person.",
     quickTitle: "Or jump to",
     quick: [
@@ -31,7 +32,7 @@ const COPY = {
     greeting: "안녕하세요! 디자인·사이즈·주문 관련 무엇이든 물어보세요. 보통 몇 분 안에 답장드려요.",
     placeholder: "메시지를 입력하세요…", emailToggle: "이메일로도 답장받기", emailPh: "your@email.com", emailSaved: "이메일로도 답장드릴게요 ✓",
     powered: "BeloveD 컨시어지", drop: "사진·영상을 여기에 놓으세요", attach: "사진·영상 첨부",
-    tooLarge: "파일이 너무 커요 (최대 100MB).",
+    tooLarge: "파일이 너무 커요 (최대 100MB).", tooLargeVideo: "영상은 30MB까지 올릴 수 있어요.",
     menu: "메뉴", backToChat: "대화로 돌아가기", talk: "상담원 연결", talkMsg: "상담원과 연결해 주세요.",
     quickTitle: "바로가기",
     quick: [
@@ -46,7 +47,7 @@ const COPY = {
     greeting: "您好！关于设计、尺寸或订单有任何问题都可以问我们，通常几分钟内回复。",
     placeholder: "输入消息…", emailToggle: "也用邮件回复我", emailPh: "your@email.com", emailSaved: "我们也会邮件回复您 ✓",
     powered: "BeloveD 礼宾", drop: "拖放照片或视频到此处", attach: "添加照片或视频",
-    tooLarge: "文件过大（最大 100MB）。",
+    tooLarge: "文件过大（最大 100MB）。", tooLargeVideo: "视频需小于 30MB。",
     menu: "菜单", backToChat: "返回对话", talk: "联系人工", talkMsg: "我想联系人工客服。",
     quickTitle: "快捷前往",
     quick: [
@@ -61,7 +62,7 @@ const COPY = {
     greeting: "¡Hola! ¿Preguntas sobre un diseño, tallas o un pedido? Solemos responder en unos minutos.",
     placeholder: "Escribe un mensaje…", emailToggle: "¿Respuesta por correo también?", emailPh: "tu@email.com", emailSaved: "También responderemos por correo ✓",
     powered: "BeloveD concierge", drop: "Suelta una foto o video", attach: "Adjuntar foto o video",
-    tooLarge: "Ese archivo es muy grande (máx. 100MB).",
+    tooLarge: "Ese archivo es muy grande (máx. 100MB).", tooLargeVideo: "Los videos deben ser menores de 30MB.",
     menu: "Menú", backToChat: "Volver al chat", talk: "Hablar con una persona", talkMsg: "Quiero hablar con una persona.",
     quickTitle: "O ve a",
     quick: [
@@ -200,7 +201,10 @@ export default function ChatWidget() {
     setUploading(true); setError("");
     try {
       for (const file of files) {
-        if (file.size > CHAT_MAX_BYTES) { setError(t.tooLarge); continue; }
+        const isVideo = file.type.startsWith("video/");
+        if (file.size > (isVideo ? CHAT_VIDEO_MAX_BYTES : CHAT_MAX_BYTES)) {
+          setError(isVideo ? t.tooLargeVideo : t.tooLarge); continue;
+        }
         try {
           const url = await uploadChatImage(file, file.type);
           setPending((p) => [...p, { url, contentType: file.type, name: file.name }]);
@@ -332,7 +336,7 @@ export default function ChatWidget() {
             messages.map((m) => (
               <div key={m.id} className={`chat-msg ${m.sender}`}>
                 {m.body && <span>{m.body}</span>}
-                {(m.attachments || []).map((a, i) => <AttachMedia key={i} a={a} />)}
+                {(m.attachments || []).map((a, i) => <ChatThumb key={i} a={a} />)}
                 {m.sender !== "system" && <span className="chat-msg-time">{hhmm(m.createdAt)}</span>}
               </div>
             ))

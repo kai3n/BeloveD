@@ -24,8 +24,9 @@ export async function saveChatEmail(email, locale) {
   return apiFetch("/chat/email", { method: "POST", body: { email, locale } });
 }
 
-// 서버 media.js ALLOWED_TYPES와 정렬 — 이미지·영상만 첨부 허용. 최대 100MB.
-export const CHAT_MAX_BYTES = 100 * 1024 * 1024;
+// 서버 media.js ALLOWED_TYPES와 정렬 — 이미지·영상만 첨부 허용.
+export const CHAT_MAX_BYTES = 100 * 1024 * 1024;       // 이미지 상한
+export const CHAT_VIDEO_MAX_BYTES = 30 * 1024 * 1024;  // 영상 상한 30MB
 
 // File/DataTransfer 목록에서 이미지·영상 파일만 골라낸다(드래그앤드롭·붙여넣기·파일선택 공용).
 export function chatMediaFiles(list) {
