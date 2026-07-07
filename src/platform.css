@@ -5281,6 +5281,10 @@ html[data-theme="day"] .gflow-carat-range { accent-color: #16130f; }
 .lw-agg { display: flex; align-items: baseline; justify-content: center; gap: 12px; color: var(--muted); font-size: 12.5px; margin-top: 10px; }
 .lw-agg strong { font-family: var(--serif); font-size: 22px; color: var(--accent-bright); }
 .lw-stars { color: var(--accent); letter-spacing: 3px; }
+/* 하프스타 — 옅은 베이스 별 위에 골드 별을 폭으로 클리핑 (색은 테마 토큰 --star-*) */
+.stars { display: inline-flex; gap: 3px; line-height: 1; color: var(--star-empty); }
+.stars .star { position: relative; }
+.stars .star-fill { position: absolute; left: 0; top: 0; height: 100%; overflow: hidden; color: var(--star-fill); pointer-events: none; }
 .lw-feed { position: relative; width: min(100%, 1240px); margin: 0 auto; padding: 0 clamp(16px, 3vw, 24px); }
 .lw-nav { display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 12px; }
 .lw-track { display: grid; grid-auto-flow: column; grid-auto-columns: calc((100% - 30px) / 4); gap: 10px; overflow-x: auto; scrollbar-width: none; scroll-snap-type: x mandatory; }
@@ -5359,10 +5363,14 @@ html[data-theme="day"] .lw-lightbox { background: rgba(250, 250, 249, 0.82); }
 html[data-theme="day"] .client-media-arrow { background: rgba(255, 255, 255, 0.85); color: #15130f; border-color: var(--line-strong); }
 html[data-theme="day"] .client-media-counter { background: rgba(255, 255, 255, 0.9); color: #5f5133; border-color: var(--line-strong); }
 
-/* 리뷰 별점 입력 */
-.review-stars { display: flex; gap: 6px; }
-.review-stars button { background: none; border: none; cursor: pointer; font-size: 26px; color: var(--quiet); padding: 0; }
-.review-stars button.is-on { color: var(--accent); }
+/* 리뷰 별점 입력 — 별당 좌/우 절반 히트존으로 0.5 단위 선택 */
+.review-stars { display: flex; align-items: center; gap: 6px; }
+.review-stars .rs-star { position: relative; font-size: 26px; line-height: 1; color: var(--star-empty); }
+.review-stars .rs-fill { position: absolute; left: 0; top: 0; height: 100%; overflow: hidden; color: var(--star-fill); pointer-events: none; }
+.review-stars .rs-half, .review-stars .rs-full { position: absolute; top: 0; height: 100%; width: 50%; margin: 0; padding: 0; background: none; border: none; cursor: pointer; }
+.review-stars .rs-half { left: 0; }
+.review-stars .rs-full { right: 0; }
+.review-stars .rs-value { font-size: 13px; color: var(--quiet); min-width: 26px; font-variant-numeric: tabular-nums; }
 
 /* Day: 첨부 파일 행 — 다크 반투명 패널이 회색 슬래브로 보이던 것을 화이트 카드로 */
 html[data-theme="day"] .picker-list-item {

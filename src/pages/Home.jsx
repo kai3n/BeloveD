@@ -6,7 +6,7 @@ import {
   Play,
 } from "lucide-react";
 import { useLocale } from "../i18n.jsx";
-import { MediaThumb, withBase } from "../components/ui.jsx";
+import { MediaThumb, Stars, withBase } from "../components/ui.jsx";
 import { listReviews } from "../lib/store.js";
 import { apiFetch } from "../lib/api.js";
 import { useDBVersion } from "../lib/useDB.js";
@@ -455,7 +455,7 @@ function LovedWorn({ locale }) {
           <a href={social.instagram.url} target="_blank" rel="noopener noreferrer">{social.instagram.handle}</a>
           {" — "}{copy.sub}
         </p>
-        <div className="lw-agg"><strong>{avg}</strong><span className="lw-stars">{"★".repeat(5)}</span><span>{reviews.length} {copy.verified}</span></div>
+        <div className="lw-agg"><strong>{avg}</strong><Stars value={Number(avg)} /><span>{reviews.length} {copy.verified}</span></div>
       </div>
       <div className="lw-feed">
         <div className="lw-nav">
@@ -475,7 +475,7 @@ function LovedWorn({ locale }) {
             <button className="lw-cell" type="button" key={review.id} onClick={() => { setOpen(review); setMIdx(0); }}>
               <MediaThumb media={review.media[0]} ratio="4 / 5" alt={review.quote} />
               <span className="lw-veil">
-                <span className="lw-stars">{"★".repeat(review.rating)}</span>
+                <Stars value={review.rating} />
                 <q>{review.quote}</q>
                 <span className="lw-who"><b>{review.name}</b>{review.location ? ` · ${review.location}` : ""}</span>
                 <span className="lw-verified">{copy.verifiedOne}</span>
@@ -504,7 +504,7 @@ function LovedWorn({ locale }) {
               )}
             </div>
             <div className="lw-lightbox-copy">
-              <span className="lw-stars">{"★".repeat(open.rating)}</span>
+              <Stars value={open.rating} />
               <blockquote>“{open.quote}”</blockquote>
               {open.body && <p>{open.body}</p>}
               <span className="lw-who"><b>{open.name}</b>{open.location ? ` · ${open.location}` : ""}</span>

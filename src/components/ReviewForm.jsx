@@ -35,8 +35,14 @@ export default function ReviewForm({ orderId, rc, onDone, submit: submitOverride
       <div className="field"><span>{rc.rating}</span>
         <div className="review-stars" role="radiogroup" aria-label={rc.rating}>
           {[1, 2, 3, 4, 5].map((n) => (
-            <button key={n} type="button" className={n <= rating ? "is-on" : ""} aria-label={`${n}`} onClick={() => setRating(n)}>★</button>
+            <span className="rs-star" key={n}>
+              <span aria-hidden="true">★</span>
+              <span className="rs-fill" aria-hidden="true" style={{ width: `${Math.max(0, Math.min(1, rating - n + 1)) * 100}%` }}>★</span>
+              <button type="button" className="rs-half" role="radio" aria-checked={rating === n - 0.5} aria-label={`${n - 0.5}`} onClick={() => setRating(n - 0.5)} />
+              <button type="button" className="rs-full" role="radio" aria-checked={rating === n} aria-label={`${n}`} onClick={() => setRating(n)} />
+            </span>
           ))}
+          <span className="rs-value">{rating.toFixed(1)}</span>
         </div>
       </div>
       <label className="field"><span>{rc.quoteLbl}</span>

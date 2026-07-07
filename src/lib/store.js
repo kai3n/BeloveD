@@ -1852,7 +1852,7 @@ export function submitReview(orderId, { rating, quote, body, media, name, locati
     id: nextSeqId("REV"), orderId,
     name: (name || order.customerName || "Client").trim(),
     location: (location || "").trim(),
-    rating: Math.min(5, Math.max(1, Number(rating) || 5)),
+    rating: Math.min(5, Math.max(1, Math.round((Number(rating) || 5) * 2) / 2)), // 0.5 단위 스냅
     quote: maskContacts((quote || "").trim()),
     body: maskContacts((body || "").trim()),
     media: normalizeOrderMedia(media || []).slice(0, 5),

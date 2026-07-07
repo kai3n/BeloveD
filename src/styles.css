@@ -13,6 +13,8 @@
   --quiet: #7b7264;
   --accent: #c8a86a;
   --accent-bright: #ebd8aa;
+  --star-fill: #d9b56f;
+  --star-empty: rgba(217, 181, 111, 0.24);
   --gold-deep: #9c7a2e;
   --gold-soft: #ebd8aa;
   --silver: #b6ac99;
@@ -83,6 +85,8 @@ html[data-theme="day"] {
   --quiet: #8e897e;
   --accent: #8f7d54;
   --accent-bright: #6f6040;
+  --star-fill: #a4832f;
+  --star-empty: rgba(60, 56, 48, 0.18);
   --gold-deep: #5f5133;
   --gold-soft: #cfc4a4;
   --silver: #85817a;

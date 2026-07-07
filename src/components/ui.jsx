@@ -219,6 +219,20 @@ export function MediaZoomModal({ mediaItems, activeIndex = 0, onActiveIndexChang
     </div>
   );
 }
+// 별점 표시 — 0.5 단위(평균 등 임의 소수 포함)를 별 폭 클리핑으로 렌더
+export function Stars({ value = 5, className = "" }) {
+  const v = Math.max(0, Math.min(5, Number(value) || 0));
+  return (
+    <span className={`stars${className ? ` ${className}` : ""}`} role="img" aria-label={`${v} / 5`}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <span className="star" key={n} aria-hidden="true">
+          ★<span className="star-fill" style={{ width: `${Math.max(0, Math.min(1, v - n + 1)) * 100}%` }}>★</span>
+        </span>
+      ))}
+    </span>
+  );
+}
+
 export function StatusBadge({ status }) {
   const { p } = useLocale();
   return <span className={`status-badge st-${status}`}>{p.status[status] || status}</span>;

@@ -140,6 +140,19 @@ describe("리뷰 인증·제출·게시", () => {
     expect((await request(app).get("/v1/reviews")).body.reviews).toHaveLength(0);
   });
 
+  it("하프스타: 0.5 단위 저장, 어중간한 값은 스냅, 공개 뷰는 숫자 타입", async () => {
+    const admin = await adminCookie();
+    const half = await request(app).post("/v1/admin/reviews").set("Cookie", admin)
+      .send({ name: "H", rating: 4.5, quote: "half star" });
+    expect(half.body.review.rating).toBe(4.5);
+    const snapped = await request(app).post("/v1/admin/reviews").set("Cookie", admin)
+      .send({ name: "S", rating: 4.3, quote: "snapped" });
+    expect(snapped.body.review.rating).toBe(4.5);
+
+    const feed = await request(app).get("/v1/reviews");
+    expect(feed.body.reviews.map((r) => r.rating)).toEqual([4.5, 4.5]);
+  });
+
   it("공개 피드는 평점 내림차순, 동점은 최신순", async () => {
     const admin = await adminCookie();
     const mk = async (rating, quote) => {
@@ -148,6 +161,7 @@ describe("리뷰 인증·제출·게시", () => {
       return res.body.review.id;
     };
     const low = await mk(4, "four");
+    const mid = await mk(4.5, "four and a half");
     const oldTop = await mk(5, "five old");
     const newTop = await mk(5, "five new");
     await query("update customer_reviews set created_at = $2 where review_code = $1", [low, "2026-01-03"]);
@@ -155,6 +169,6 @@ describe("리뷰 인증·제출·게시", () => {
     await query("update customer_reviews set created_at = $2 where review_code = $1", [newTop, "2026-01-02"]);
 
     const feed = await request(app).get("/v1/reviews");
-    expect(feed.body.reviews.map((r) => r.id)).toEqual([newTop, oldTop, low]);
+    expect(feed.body.reviews.map((r) => r.id)).toEqual([newTop, oldTop, mid, low]);
   });
 });

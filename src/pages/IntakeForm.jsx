@@ -179,6 +179,9 @@ export default function IntakeForm() {
   const [resumeTarget, setResumeTarget] = useState(() => (
     !hasEntryParams && draft?.screen && draft.screen !== "category" ? draft.screen : ""
   ));
+  // 첫 질문은 명시적으로 고르기 전까지 무선택으로 보인다 — 드래프트 복원값이나 기본값(ring)이
+  // 테두리로 미리 켜져 있으면 버그처럼 읽힌다. ?style=/?category= 진입은 명시적 선택으로 취급.
+  const [categoryPicked, setCategoryPicked] = useState(() => Boolean(styleFromParam || categoryFromParam));
   const [done, setDone] = useState(null);
   const [refs, setRefs] = useState(() => sanitizeReferenceMedia(draft?.refs));
   const [stepError, setStepError] = useState("");
@@ -240,12 +243,14 @@ export default function IntakeForm() {
   function resumeDraft() {
     setScreen(screens.includes(resumeTarget) ? resumeTarget : "review");
     setResumeTarget("");
+    setCategoryPicked(true); // 이어하기 = 드래프트 답변을 명시적으로 승인 → 뒤로 와도 선택 표시
   }
   function startFresh() {
     window.localStorage.removeItem(DRAFT_KEY);
     setForm(baseForm);
     setRefs([]);
     setResumeTarget("");
+    setCategoryPicked(false);
     setScreen("category");
   }
 
@@ -416,19 +421,22 @@ export default function IntakeForm() {
         <ImageOptionGrid
           columns={4}
           options={categoryOptions}
-          value={form.category}
-          onSelect={(value) => selectAndAdvance(
-            // 같은 피스 재선택이면 이미 고른 디자인·사이즈 답변을 버리지 않는다
-            value === form.category
-              ? { category: value }
-              : {
-                category: value,
-                subcategory: defaultSubcategoryFor(value),
-                conditional: categoryDefaults(value),
-                styleId: "",
-              },
-            "category",
-          )}
+          value={categoryPicked ? form.category : ""}
+          onSelect={(value) => {
+            setCategoryPicked(true);
+            selectAndAdvance(
+              // 같은 피스 재선택이면 이미 고른 디자인·사이즈 답변을 버리지 않는다
+              value === form.category
+                ? { category: value }
+                : {
+                  category: value,
+                  subcategory: defaultSubcategoryFor(value),
+                  conditional: categoryDefaults(value),
+                  styleId: "",
+                },
+              "category",
+            );
+          }}
         />
       ))}
 

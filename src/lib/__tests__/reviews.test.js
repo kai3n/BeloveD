@@ -33,6 +33,12 @@ describe("고객 리뷰 — 인증·검수 규칙", () => {
     expect(again.id).toBe(review.id);
   });
 
+  it("별점은 0.5 단위 — 하프스타 저장, 어중간한 값은 스냅", () => {
+    updateOpsOrder("DM-000001", { status: "DELIVERED" });
+    const review = submitReview("DM-000001", { rating: 4.3, quote: "almost five" });
+    expect(review.rating).toBe(4.5);
+  });
+
   it("시드 데모 리뷰가 공개 상태로 존재한다", () => {
     expect(listReviews({ publishedOnly: true }).length).toBeGreaterThanOrEqual(6);
   });

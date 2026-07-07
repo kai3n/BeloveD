@@ -11,6 +11,9 @@ const normalizeTracking = (s) => String(s || "").replace(/[^0-9a-z]/gi, "").toUp
 // 절대 URL 또는 루트 상대(/assets/.. 셀프호스팅) — base64/blob 프리뷰는 저장하지 않는다
 const SRC_OK = /^(https?:\/\/|\/(?!\/))/;
 
+// 별점은 0.5 단위로 스냅, 1~5 클램프 — 잘못된 값은 5
+const clampRating = (v) => Math.min(5, Math.max(1, Math.round((Number(v) || 5) * 2) / 2));
+
 function sanitizeMedia(media) {
   if (!Array.isArray(media)) return [];
   return media
@@ -25,7 +28,7 @@ function sanitizeMedia(media) {
 
 function publicReviewView(row) {
   return {
-    id: row.review_code, name: row.name, location: row.location, rating: row.rating,
+    id: row.review_code, name: row.name, location: row.location, rating: Number(row.rating),
     quote: row.quote, body: row.body, media: row.media || [], createdAt: row.created_at,
   };
 }
@@ -77,7 +80,7 @@ export async function submitCustomerReview({ orderCode, tracking, customerId, ra
     const reviewCode = await nextCode(client, "REV");
     const displayName = maskContacts(String(name || order.customer_name || "Client").trim().slice(0, 80)) || "Client";
     const loc = maskContacts(String(location || "").trim().slice(0, 80));
-    const ratingNum = Math.min(5, Math.max(1, Number(rating) || 5));
+    const ratingNum = clampRating(rating);
     try {
       const { rows } = await client.query(
         `insert into customer_reviews (review_code, order_id, name, location, rating, quote, body, media, status)
@@ -117,7 +120,7 @@ export async function saveAdminReview(payload = {}) {
   const fields = {
     ...(payload.name !== undefined ? { name: String(payload.name).trim().slice(0, 80) } : {}),
     ...(payload.location !== undefined ? { location: String(payload.location).trim().slice(0, 80) } : {}),
-    ...(payload.rating !== undefined ? { rating: Math.min(5, Math.max(1, Number(payload.rating) || 5)) } : {}),
+    ...(payload.rating !== undefined ? { rating: clampRating(payload.rating) } : {}),
     ...(payload.quote !== undefined ? { quote: String(payload.quote).trim().slice(0, 200) } : {}),
     ...(payload.body !== undefined ? { body: String(payload.body).trim().slice(0, 2000) } : {}),
     ...(payload.media !== undefined ? { media: JSON.stringify(sanitizeMedia(payload.media)) } : {}),
