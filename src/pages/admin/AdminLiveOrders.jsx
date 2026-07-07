@@ -29,6 +29,7 @@ const COPY = {
     unavailable: "API unreachable — run the local API server or check the deployment.",
     customer: "Customer", stage: "Stage", waiting: "Waiting on", updated: "Updated", category: "Category",
     back: "← Live orders", intake: "Request", budget: "Budget", requiredDate: "Requested date", refNotes: "In their words",
+    consultBadge: "Consult", consultOpenBrief: "✦ Open brief — advisor needs to propose styles",
     referenceMedia: "Customer references", console: "Move the order forward",
     consoleHint: "Each step advances the stage and emails the customer in their language.",
     artifacts: "Published to customer", actions: "Customer confirmations", timeline: "Timeline", shippingAddr: "Shipping address",
@@ -64,6 +65,7 @@ const COPY = {
     unavailable: "API에 연결할 수 없습니다 — 로컬 API 서버를 켜거나 배포 상태를 확인하세요.",
     customer: "고객", stage: "단계", waiting: "대기", updated: "업데이트", category: "카테고리",
     back: "← 실주문 목록", intake: "요청 내용", budget: "예산", requiredDate: "희망일", refNotes: "고객 요청 메모",
+    consultBadge: "상담", consultOpenBrief: "✦ 오픈 브리프 — 어드바이저 스타일 제안 필요",
     referenceMedia: "고객 레퍼런스", console: "주문 진행",
     consoleHint: "각 단계는 stage를 전이시키고 고객 언어로 상태 메일을 보냅니다.",
     artifacts: "고객에게 발행됨", actions: "고객 컨펌", timeline: "타임라인", shippingAddr: "배송지",
@@ -99,6 +101,7 @@ const COPY = {
     unavailable: "无法连接 API — 请启动本地 API 服务器或检查部署。",
     customer: "客户", stage: "阶段", waiting: "等待方", updated: "更新", category: "类别",
     back: "← 实时订单", intake: "请求内容", budget: "预算", requiredDate: "期望日期", refNotes: "客户留言",
+    consultBadge: "咨询", consultOpenBrief: "✦ 开放式需求 — 需顾问提案款式",
     referenceMedia: "客户参考图", console: "推进订单",
     consoleHint: "每一步都会推进阶段，并以客户语言发送状态邮件。",
     artifacts: "已向客户发布", actions: "客户确认", timeline: "时间线", shippingAddr: "收货地址",
@@ -134,6 +137,7 @@ const COPY = {
     unavailable: "API inalcanzable — inicia el servidor local o revisa el despliegue.",
     customer: "Cliente", stage: "Etapa", waiting: "Esperando a", updated: "Actualizado", category: "Categoría",
     back: "← Pedidos en vivo", intake: "Solicitud", budget: "Presupuesto", requiredDate: "Fecha deseada", refNotes: "En sus palabras",
+    consultBadge: "Consulta", consultOpenBrief: "✦ Brief abierto — el asesor debe proponer estilos",
     referenceMedia: "Referencias del cliente", console: "Avanzar el pedido",
     consoleHint: "Cada paso avanza la etapa y envía un correo al cliente en su idioma.",
     artifacts: "Publicado al cliente", actions: "Confirmaciones del cliente", timeline: "Cronología", shippingAddr: "Dirección de envío",
@@ -212,7 +216,13 @@ function OrdersTable({ orders, t, navigate, withTotal = false }) {
             >
               <td><Link className="text-link con-code" to={`/bo-4q9z7m/live/${o.orderCode}`} onClick={(e) => e.stopPropagation()}><strong>{o.orderCode}</strong></Link></td>
               <td>{o.customerName || o.customerEmail}<br /><span className="form-hint">{o.customerEmail} · {o.locale}</span></td>
-              <td>{o.intake?.category || o.summary?.category || "—"}</td>
+              <td>
+                {o.intake?.category || o.summary?.category || "—"}
+                {/* 오픈 브리프 = 스타일 미정 상담 주문 — 목록에서 바로 골라낼 수 있게 */}
+                {!(o.intake?.styleCode || o.intake?.formPayload?.styleId) && (
+                  <span style={{ color: "var(--accent-bright)", marginLeft: 6, whiteSpace: "nowrap" }}>✦ {t.consultBadge}</span>
+                )}
+              </td>
               <td><span className={`status-badge ${o.stage === "DELIVERED" ? "mst-done" : "mst-inProgress"}`}>{o.stage}</span></td>
               {withTotal
                 ? <td>{o.totalUsd ? usd(o.totalUsd) : "—"}</td>
@@ -536,7 +546,11 @@ export function AdminLiveOrderDetail() {
     const { order } = state.data;
     const fp = order.intake?.formPayload || {};
     const sp = fp.stonePrefs || {};
+    // 스타일 행 — 오픈 브리프(스타일 미정)는 상담 주문임을 명시해 "누락"으로 오독되지 않게 한다
+    const styleId = fp.styleId || order.intake?.styleCode || "";
+    const style = styleId ? getOpsStyle(styleId) : null;
     return [
+      ["Style", styleId ? (style ? pickI18n(style.name, "en") : styleId) : t.consultOpenBrief],
       [t.category, [order.intake?.category, fp.productLine].filter(Boolean).join(" · ")],
       ["Stone", [sp.shape, sp.carat && `${sp.carat}ct`, sp.color, sp.clarity, sp.growth].filter(Boolean).join(" · ")],
       ["Fit", Object.entries(fp.conditional || {}).map(([k, v]) => `${k}: ${v}`).join(" · ")],
