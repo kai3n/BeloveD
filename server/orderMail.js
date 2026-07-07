@@ -12,6 +12,43 @@ const CHROME = {
 
 export { CHROME };
 
+// 고객 여정 6단계 — 상태 메일마다 전체 여정 중 현재 위치를 화살표 스트립으로 보여준다.
+// 포털 마일스톤(13종)보다 굵은 단위: 메일에서는 "전체 중 어디까지 왔나"만 한눈에 보이면 된다.
+const JOURNEY = ["request", "proposal", "design", "crafting", "finalCheck", "delivery"];
+export const JOURNEY_LABELS = {
+  en: { request: "Request", proposal: "Proposal", design: "Design", crafting: "Crafting", finalCheck: "Final check", delivery: "Delivery", progress: (n, total) => `Order progress — step ${n} of ${total}` },
+  ko: { request: "접수", proposal: "제안", design: "디자인", crafting: "제작", finalCheck: "최종 확인", delivery: "배송", progress: (n, total) => `주문 진행 — ${total}단계 중 ${n}단계` },
+  zh: { request: "接单", proposal: "方案", design: "设计", crafting: "制作", finalCheck: "终检", delivery: "配送", progress: (n, total) => `订单进度 — 共 ${total} 步 · 第 ${n} 步` },
+  es: { request: "Solicitud", proposal: "Propuesta", design: "Diseño", crafting: "Fabricación", finalCheck: "Revisión final", delivery: "Entrega", progress: (n, total) => `Progreso del pedido — paso ${n} de ${total}` },
+};
+// 이벤트 → 여정 단계. 취소 계열은 매핑하지 않는다 — 취소 메일에 진행 스트립은 어울리지 않는다.
+const EVENT_STAGE = {
+  received: "request",
+  proposal_sent: "proposal",
+  deposit_confirmed: "design", diamond_locked: "design", cad_ready: "design",
+  production_started: "crafting",
+  qc_ready: "finalCheck", balance_requested: "finalCheck", balance_confirmed: "finalCheck",
+  shipped: "delivery", delivered: "delivery",
+};
+
+// 이메일 클라이언트 호환을 위해 인라인 스타일 + 텍스트 화살표만 사용 (flex/grid 금지).
+// 완료 ✓(잉크) → 현재 ●(샴페인 볼드) → 남은 단계(회색). delivered는 전 단계 완료로 표시.
+export function journeyStrip(type, loc) {
+  const stageKey = EVENT_STAGE[type];
+  if (!stageKey) return "";
+  const L = JOURNEY_LABELS[loc] || JOURNEY_LABELS.en;
+  const cur = JOURNEY.indexOf(stageKey);
+  const allDone = type === "delivered";
+  const parts = JOURNEY.map((k, i) => {
+    if (i < cur || (i === cur && allDone)) return `<span style="color:#15130f;white-space:nowrap">✓ ${L[k]}</span>`;
+    if (i === cur) return `<strong style="color:#8f7d54;white-space:nowrap">● ${L[k]}</strong>`;
+    return `<span style="color:#b9b4a9;white-space:nowrap">${L[k]}</span>`;
+  });
+  return `
+    <p style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#8e897e;margin:22px 0 8px">${L.progress(cur + 1, JOURNEY.length)}</p>
+    <p style="font-size:13px;line-height:2;margin:0 0 6px">${parts.join(' <span style="color:#b9b4a9">→</span> ')}</p>`;
+}
+
 export const ORDER_MAIL = {
   received: {
     en: { subject: (o) => `We received your request — ${o}`, line: () => "Your custom request is in. Our team is reviewing it and will follow up with a proposal shortly." },
@@ -103,7 +140,7 @@ export async function sendOrderEventMail({ email, locale, orderCode, type, data 
   const link = `${origin}/track/${orderCode}`;
   const inner = `
     <p style="font-size:15px;line-height:1.6">${t.line(orderCode, data)}</p>
-    <p style="font-size:13px;color:#8e897e;margin:6px 0 0">Order ${orderCode}</p>
+    <p style="font-size:13px;color:#8e897e;margin:6px 0 0">Order ${orderCode}</p>${journeyStrip(type, loc)}
     <p style="margin:24px 0"><a href="${link}" style="background:#16130f;color:#f8f7f5;padding:14px 26px;text-decoration:none;letter-spacing:.12em;font-size:13px">${chrome.cta}</a></p>
     <p style="font-size:13px;color:#8e897e">${chrome.tail}</p>${loc !== "en" ? `
     <p style="font-size:12px;color:#8e897e">${chrome.ignore}</p>` : ""}`;

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { sendOrderEventMail, ORDER_MAIL, CHROME } from "../orderMail.js";
+import { sendOrderEventMail, ORDER_MAIL, CHROME, journeyStrip, JOURNEY_LABELS } from "../orderMail.js";
 import { drainMail } from "../mailer.js";
 
 beforeEach(() => { drainMail(); });
@@ -38,5 +38,47 @@ describe("orderMail", () => {
     expect(CHROME.zh.ignore).toBe("如果您不记得此订单，可以忽略此邮件。");
     expect(CHROME.es.ignore).toBe("Si no reconoces este pedido, puedes ignorar este correo.");
     expect(CHROME.en.ignore).toBeUndefined();
+  });
+
+  describe("journeyStrip — 전체 여정 중 현재 단계 표시", () => {
+    it("received/ko: 1/6 단계, 현재만 ● 강조, 완료 ✓ 없음", () => {
+      const html = journeyStrip("received", "ko");
+      expect(html).toContain("6단계 중 1단계");
+      expect(html).toContain("● 접수");
+      expect(html).not.toContain("✓");
+      expect(html).toContain("→");
+    });
+
+    it("production_started/en: step 4 of 6, 앞 3단계 ✓, 현재 ● Crafting", () => {
+      const html = journeyStrip("production_started", "en");
+      expect(html).toContain("step 4 of 6");
+      expect(html.match(/✓/g)).toHaveLength(3);
+      expect(html).toContain("● Crafting");
+    });
+
+    it("delivered: 6단계 전부 ✓, ● 없음", () => {
+      const html = journeyStrip("delivered", "en");
+      expect(html.match(/✓/g)).toHaveLength(6);
+      expect(html).not.toContain("●");
+      expect(html).toContain("step 6 of 6");
+    });
+
+    it("취소 계열 이벤트에는 여정 스트립을 넣지 않는다", () => {
+      expect(journeyStrip("order_cancelled", "en")).toBe("");
+      expect(journeyStrip("cancel_requested", "ko")).toBe("");
+    });
+
+    it("4개 언어 라벨 파리티 — 6단계 + progress 문구", () => {
+      for (const loc of ["en", "ko", "zh", "es"]) {
+        for (const k of ["request", "proposal", "design", "crafting", "finalCheck", "delivery"]) {
+          expect(typeof JOURNEY_LABELS[loc][k], `${loc}/${k}`).toBe("string");
+        }
+        expect(JOURNEY_LABELS[loc].progress(2, 6)).toContain("2");
+      }
+    });
+
+    it("미지원 로케일은 en 라벨로 폴백한다", () => {
+      expect(journeyStrip("shipped", "fr")).toContain("Delivery");
+    });
   });
 });
