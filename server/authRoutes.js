@@ -46,10 +46,10 @@ export function authRouter() {
     rateLimit({ limit: 5, windowMs: MINUTE }),
     async (req, res, next) => {
     try {
-      const { email, orderCode } = req.body || {};
+      const { email, orderCode, locale } = req.body || {};
       if (typeof email !== "string") throw new ApiError("VALIDATION_ERROR", 400);
       if (orderCode != null && typeof orderCode !== "string") throw new ApiError("VALIDATION_ERROR", 400);
-      const { link } = await createMagicLink(email, { origin: originOf(), orderCode: orderCode || null });
+      const { link } = await createMagicLink(email, { origin: originOf(), orderCode: orderCode || null, locale });
       const body = { ok: true };
       if (process.env.NODE_ENV !== "production") body.devLink = link; // dev surfaces the link
       res.status(201).json(body);

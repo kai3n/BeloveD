@@ -49,7 +49,7 @@ export async function ensureCustomer(client, email, name, locale) {
   return rows[0];
 }
 
-export async function createMagicLink(email, { origin, intent = "login", orderCode = null }) {
+export async function createMagicLink(email, { origin, intent = "login", orderCode = null, locale = "en" }) {
   const normalized = normalizeEmail(email);
   if (!normalized) throw new ApiError("EMAIL_REQUIRED", 400);
   const raw = randomBytes(32).toString("hex");
@@ -60,7 +60,7 @@ export async function createMagicLink(email, { origin, intent = "login", orderCo
     [hashToken(raw), normalized, intent, orderCode, expiresAt],
   );
   const link = `${origin}/auth/callback?token=${raw}`;
-  await sendMagicLink(normalized, link);
+  await sendMagicLink(normalized, link, normalizeLocale(locale) || "en");
   return { email: normalized, link, raw, expiresAt };
 }
 

@@ -54,6 +54,18 @@ describe("auth routes", () => {
     expect(cb.headers["set-cookie"].join()).toMatch(/SameSite=Lax/i);
   });
 
+  // 매직링크 메일도 OTP처럼 사이트 언어로 발송 — 미지원/누락 로케일은 en 폴백
+  it("magic-link locale은 메일 로케일로 전달되고, 미지원 값은 en 폴백", async () => {
+    const { drainMail } = await import("../mailer.js");
+    drainMail();
+    await request(app).post("/v1/auth/magic-link").send({ email: "ko@b.com", locale: "ko" });
+    await request(app).post("/v1/auth/magic-link").send({ email: "fr@b.com", locale: "fr" });
+    const sent = drainMail();
+    expect(sent.find((m) => m.to === "ko@b.com").locale).toBe("ko");
+    expect(sent.find((m) => m.to === "ko@b.com").subject).toContain("로그인 링크");
+    expect(sent.find((m) => m.to === "fr@b.com").locale).toBe("en");
+  });
+
   it("admin password login sets bd_admin and is rejected on customer routes", async () => {
     await query("insert into admin_users (email,name,password_hash) values ($1,$2,$3)",
       ["admin@b.com", "A", hashPassword("admin12345")]);

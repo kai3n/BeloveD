@@ -30,14 +30,17 @@ describe("orderMail", () => {
     expect(drainMail()[0].subject).toContain("We received");
   });
 
-  // 왜: dev sink는 html을 저장하지 않고 meta만 저장한다(mailer.js deliver) — 본문 조립은
-  // sendOrderEventMail의 loc !== "en" 분기로 구성되므로, 템플릿 레벨에서 로케일별 면책 문구가
-  // 존재하는지 확인한다. en은 mailer.wrap()이 영어 면책 문구를 이미 항상 붙이므로 별도 문구가 없다.
-  it("ko/zh/es CHROME에 로케일별 면책 문구가 존재하고, en은 별도 문구를 두지 않는다", () => {
+  // 면책 문구는 wrap(disclaimer)로 로케일당 정확히 한 번만 붙는다 — 4개 언어 모두 주문용 문구 보유.
+  // (과거엔 wrap이 영어 문구를 항상 붙여 비영어 메일에 이중 표기되던 것을 제거)
+  it("4개 언어 CHROME 전부에 주문용 면책 문구와 support 문의 tail이 존재한다", () => {
     expect(CHROME.ko.ignore).toBe("이 주문을 기억하지 못하시면 이 메일을 무시하셔도 됩니다.");
     expect(CHROME.zh.ignore).toBe("如果您不记得此订单，可以忽略此邮件。");
     expect(CHROME.es.ignore).toBe("Si no reconoces este pedido, puedes ignorar este correo.");
-    expect(CHROME.en.ignore).toBeUndefined();
+    expect(CHROME.en.ignore).toContain("don't recognize this order");
+    for (const loc of ["en", "ko", "zh", "es"]) {
+      expect(CHROME[loc].tail).toContain("support@belovediamond.com");
+      expect(CHROME[loc].tail).not.toMatch(/reply|회신|回复|[Rr]esponde/);
+    }
   });
 
   describe("journeyStrip — 전체 여정 중 현재 단계 표시", () => {
