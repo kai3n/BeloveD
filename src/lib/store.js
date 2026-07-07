@@ -2,7 +2,7 @@ import { seed } from "./seed.js";
 import { styleSeedData } from "./styleSeedData.js";
 import { maskContacts } from "./masking.js";
 import { validateAnnotation } from "./chips.js";
-import { applyCoupon, findCoupon } from "./coupons.js";
+import { applyCoupon, isCouponActive, normalizeCouponCode } from "./coupons.js";
 import {
   MILESTONE_STAGES, publicDiamondView, customerOrderView, supplierTaskView,
   quoteCompute, reconcileDelta, randomQueryCode, tierForCarat,
@@ -159,6 +159,12 @@ function isValidDB(d) {
 
 function migrateDB(d) {
   let changed = false;
+
+  // 쿠폰 카탈로그 — v16 이전에 심어진 로컬 DB에 시드 주입 (1회)
+  if (d?.settings && !Array.isArray(d.settings.coupons)) {
+    d.settings.coupons = seed().settings.coupons;
+    changed = true;
+  }
 
   const shouldAuditStyleMedia = d?.settings?.styleMediaAuditVersion !== STYLE_MEDIA_AUDIT_VERSION;
   if (restoreOriginalStyleMedia(d, shouldAuditStyleMedia)) {
@@ -1869,3 +1875,41 @@ export function setReviewStatus(reviewId, status, actor = "ops") {
 
 export function getSettings() { return db().settings; }
 export function updateSettings(patch) { Object.assign(db().settings, patch); persist(); }
+
+// ---------- 쿠폰 카탈로그 (settings.coupons) ----------
+// 어드민 콘솔에서 관리 — 서버가 있으면 write-through(pushSettingsToServer)로 전 고객에 배포된다.
+export function listCoupons() { return db().settings.coupons || []; }
+
+// 정규화 → 조회 → 만료 제외 (expiresAt 당일까지 유효)
+export function findCoupon(raw) {
+  const code = normalizeCouponCode(raw);
+  if (!code) return null;
+  const coupon = listCoupons().find((c) => c.code === code);
+  return coupon && isCouponActive(coupon, today()) ? coupon : null;
+}
+
+// 이벤트성 percent 쿠폰 등록 — 코드 중복·값 범위(1~99) 검증, 실패 시 null
+export function addCoupon({ code, value, expiresAt }) {
+  const normalized = normalizeCouponCode(code);
+  const pct = Number(value);
+  if (!normalized || !Number.isFinite(pct) || pct < 1 || pct > 99) return null;
+  if (listCoupons().some((c) => c.code === normalized)) return null;
+  const coupon = {
+    code: normalized, kind: "percent", value: Math.round(pct),
+    expiresAt: expiresAt || null, createdAt: now(),
+  };
+  db().settings.coupons = [...listCoupons(), coupon];
+  audit("ops", "coupon", normalized, "create", null, `${coupon.value}%`);
+  persist();
+  return coupon;
+}
+
+export function removeCoupon(code) {
+  const normalized = normalizeCouponCode(code);
+  const before = listCoupons();
+  if (!before.some((c) => c.code === normalized)) return false;
+  db().settings.coupons = before.filter((c) => c.code !== normalized);
+  audit("ops", "coupon", normalized, "delete", null, null);
+  persist();
+  return true;
+}

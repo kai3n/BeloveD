@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { applyCoupon, findCoupon, normalizeCouponCode } from "../coupons.js";
-import { createIntake, createQuote, resetDB } from "../store.js";
+import { applyCoupon, isCouponActive, normalizeCouponCode } from "../coupons.js";
+import { addCoupon, createIntake, createQuote, findCoupon, listCoupons, removeCoupon, resetDB } from "../store.js";
 import { buildIntakePayload } from "../intakePayload.js";
 import { estimateQuoteRange } from "../quoteEstimate.js";
+
+beforeEach(() => resetDB());
 
 function ringForm(overrides = {}) {
   return {
@@ -15,13 +17,46 @@ function ringForm(overrides = {}) {
   };
 }
 
-describe("normalizeCouponCode / findCoupon", () => {
-  it("trim·대문자·내부 공백 제거 후 카탈로그 조회 (대소문자 무시)", () => {
+describe("normalizeCouponCode / findCoupon (settings.coupons)", () => {
+  it("trim·대문자·내부 공백 제거 후 시드 카탈로그 조회 (대소문자 무시)", () => {
     expect(normalizeCouponCode("  bd-atcost ")).toBe("BD-ATCOST");
     expect(findCoupon("welcome5")?.code).toBe("WELCOME5");
     expect(findCoupon(" bd - private ")?.code).toBe("BD-PRIVATE");
     expect(findCoupon("NOPE")).toBeNull();
     expect(findCoupon("")).toBeNull();
+  });
+
+  it("만료된 쿠폰은 조회되지 않는다 (당일까지는 유효)", () => {
+    const today = new Date().toISOString().slice(0, 10);
+    addCoupon({ code: "past10", value: 10, expiresAt: "2020-01-01" });
+    addCoupon({ code: "today10", value: 10, expiresAt: today });
+    addCoupon({ code: "open10", value: 10 });
+    expect(findCoupon("PAST10")).toBeNull();
+    expect(findCoupon("TODAY10")?.code).toBe("TODAY10");
+    expect(findCoupon("OPEN10")?.code).toBe("OPEN10");
+    expect(isCouponActive({ expiresAt: "2020-01-01" }, today)).toBe(false);
+    expect(isCouponActive({ expiresAt: null }, today)).toBe(true);
+  });
+});
+
+describe("addCoupon / removeCoupon", () => {
+  it("등록: percent 쿠폰 정규화 저장, 중복·범위 밖 값은 거절", () => {
+    const c = addCoupon({ code: " summer 20 ", value: 20, expiresAt: "2099-12-31" });
+    expect(c).toMatchObject({ code: "SUMMER20", kind: "percent", value: 20, expiresAt: "2099-12-31" });
+    expect(listCoupons().some((x) => x.code === "SUMMER20")).toBe(true);
+    expect(addCoupon({ code: "SUMMER20", value: 10 })).toBeNull(); // 중복
+    expect(addCoupon({ code: "welcome5", value: 10 })).toBeNull(); // 시드와 중복
+    expect(addCoupon({ code: "BAD", value: 0 })).toBeNull();
+    expect(addCoupon({ code: "BAD", value: 100 })).toBeNull();
+    expect(addCoupon({ code: "", value: 10 })).toBeNull();
+  });
+
+  it("삭제: 코드로 제거되고 findCoupon에서 사라진다", () => {
+    addCoupon({ code: "GONE10", value: 10 });
+    expect(findCoupon("GONE10")).not.toBeNull();
+    expect(removeCoupon("gone10")).toBe(true);
+    expect(findCoupon("GONE10")).toBeNull();
+    expect(removeCoupon("GONE10")).toBe(false);
   });
 });
 
@@ -42,9 +77,7 @@ describe("applyCoupon", () => {
 });
 
 describe("쿠폰 → 예상 견적/로컬 견적 반영", () => {
-  beforeEach(() => resetDB());
-
-  it("쿠폰이 예상 견적을 낮춘다 — BD-ATCOST(마진0)가 WELCOME5보다 크게", () => {
+  it("쿠폰이 예상 견적을 낮춘다 — BD-ATCOST(마진0)가 WELCOME5보다 크게, 어드민 쿠폰도 동작", () => {
     const base = estimateQuoteRange(ringForm());
     const welcome = estimateQuoteRange(ringForm({ couponCode: "welcome5" }));
     const atcost = estimateQuoteRange(ringForm({ couponCode: "BD-ATCOST" }));
@@ -53,6 +86,11 @@ describe("쿠폰 → 예상 견적/로컬 견적 반영", () => {
     expect(atcost.beloved.low).toBeLessThan(welcome.beloved.low);
     expect(welcome.coupon).toMatchObject({ code: "WELCOME5", labelKey: "welcome" });
     expect(welcome.coupon.savedUsd).toBeGreaterThan(0);
+    // 어드민 등록 이벤트 쿠폰(라벨키 없음)도 견적에 반영
+    addCoupon({ code: "EVENT20", value: 20 });
+    const event = estimateQuoteRange(ringForm({ couponCode: "event20" }));
+    expect(event.beloved.low).toBeLessThan(welcome.beloved.low);
+    expect(event.coupon.code).toBe("EVENT20");
   });
 
   it("인테이크 쿠폰은 로컬 견적(createQuote)에 자동 반영된다", () => {

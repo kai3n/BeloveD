@@ -5,7 +5,7 @@ import {
   CHAIN_LENGTHS, CHAIN_STYLE_OPTIONS, CLASP_OPTIONS,
   EARRING_PAIRING_OPTIONS, BRACELET_WRIST_OPTIONS, OPS_CATEGORIES,
 } from "../lib/ops.js";
-import { createIntake, getDiamond, listOpsStyles } from "../lib/store.js";
+import { createIntake, findCoupon, getDiamond, listOpsStyles } from "../lib/store.js";
 import { apiFetch } from "../lib/api.js";
 import {
   MAX_REFERENCE_MEDIA, RING_SIZE_OPTIONS, buildIntakePayload, conditionalComplete,
@@ -20,7 +20,7 @@ import QuoteCompare from "../components/QuoteCompare.jsx";
 import GalleryStep from "../components/intake/GalleryStep.jsx";
 import { CaratSlider, ImageOptionGrid, MetalSwatches, ScalePicker, ShapeSilhouette, ShapeTiles } from "../components/intake/pickers.jsx";
 import { defaultSubcategoryFor, styleSubcategoryKey, subcategoryKeysFor } from "../lib/designSlots.js";
-import { findCoupon, normalizeCouponCode } from "../lib/coupons.js";
+import { normalizeCouponCode } from "../lib/coupons.js";
 
 const DRAFT_KEY = "lumina-intake-draft";
 
@@ -692,7 +692,7 @@ export default function IntakeForm() {
             </label>
             <p className="form-hint" style={{ margin: 0 }}>
               {activeCoupon
-                ? `✓ ${g.couponNames[activeCoupon.labelKey]} — ${g.couponAppliedNote}`
+                ? `✓ ${activeCoupon.labelKey ? g.couponNames[activeCoupon.labelKey] : `${activeCoupon.code} · −${activeCoupon.value}%`} — ${g.couponAppliedNote}`
                 : normalizeCouponCode(form.couponCode) ? g.couponInvalid : g.couponHint}
             </p>
           </section>

@@ -1,5 +1,6 @@
 import { defaultBenchmark } from "./ops.js";
 import { defaultChipCatalog } from "./chips.js";
+import { BASE_COUPONS } from "./coupons.js";
 import { styleSeedData } from "./styleSeedData.js";
 
 // 스타일별 제품 라인 — solitaire = 고객이 센터스톤(셰입·캐럿)을 고른다 / multi = 완성형 디자인(스톤 스텝 없음).
@@ -259,6 +260,8 @@ export function seed() {
       // Operations Manual
       opsDepositRate: 0.5, opsMultiplier: 1.8, defaultLossRatePct: 8, productionLeadDays: 10,
       metalRefUsdPerG: { "14ky": 62, "18ky": 80, "14kr": 62, "18kr": 80, "18kw": 85, "pt": 38 },
+      // 쿠폰 카탈로그 — 어드민 콘솔에서 등록/삭제/만료 관리, 서버 settings로 write-through
+      coupons: BASE_COUPONS.map((c) => ({ ...c })),
       designChangeFeeUsd: 15, cancelAfterProductionMinUsd: 140, freeMinorRevisions: 1,
       // 어드민 최소 개입 자동화: 전 주문이 기본 벤더로 자동 매칭 (스타일별 supplierId로 오버라이드 가능)
       defaultSupplierId: "u-supplier1", autoDueDays: 3, batchValidDays: 10,

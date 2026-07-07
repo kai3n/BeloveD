@@ -1,9 +1,9 @@
 // 인테이크 리뷰용 예상 견적 — 확정 견적 이전의 '예비 추정'.
 // 워크숍 가격 공식(quoteCompute)을 그대로 쓰되, 스톤이 확정 전이라 ±범위로 제시.
 // 경쟁사(Blue Nile / Brilliant Earth)는 BeloveD 추정에 고정 배수를 적용해 비교 표시.
-import { benchmarkFor, getSettings, listStyleSpecs } from "./store.js";
+import { benchmarkFor, findCoupon, getSettings, listStyleSpecs } from "./store.js";
 import { quoteCompute } from "./ops.js";
-import { applyCoupon, findCoupon } from "./coupons.js";
+import { applyCoupon } from "./coupons.js";
 
 // 컬러/클래리티에 따른 소폭 보정 — 등급이 높을수록 비싸진다(표시용 추정).
 const COLOR_FACTOR = { D: 1.12, E: 1.06, F: 1.0, G: 0.95, H: 0.9 };
