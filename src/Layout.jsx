@@ -11,6 +11,7 @@ import { useTheme } from "./theme.jsx";
 import { withBase } from "./components/ui.jsx";
 import { WITH_BACKOFFICE } from "./lib/flags.js";
 import ChatWidget from "./components/ChatWidget.jsx";
+import SaleBanner from "./components/SaleBanner.jsx";
 
 // 비즈니스 로고 — 원본에서 배경을 키잉한 투명 PNG (글자만 얹혀 어떤 배경에서도 박스가 없다)
 function BrandLogo() {
@@ -346,6 +347,7 @@ export default function Layout() {
     <>
       <ScrollManager />
       <EscapeBack />
+      <SaleBanner />
       <Header />
       <main>
         <Outlet />
