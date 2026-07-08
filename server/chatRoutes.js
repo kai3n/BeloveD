@@ -17,7 +17,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // 위젯 헤더에 보여줄 응대 스태프 페르소나 (v1은 단일 공유 페르소나)
 export const STAFF_AGENT = {
-  name: process.env.CHAT_AGENT_NAME || "Sophie",
+  name: process.env.CHAT_AGENT_NAME || "Emma",
   title: process.env.CHAT_AGENT_TITLE || "BeloveD concierge",
   avatar: process.env.CHAT_AGENT_AVATAR || null, // 없으면 위젯이 이니셜 아바타 렌더
 };
