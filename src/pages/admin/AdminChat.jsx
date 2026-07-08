@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ImagePlus, MessageSquareText, Send, Tag, UserCheck, X } from "lucide-react";
+import { Bell, ImagePlus, MessageSquareText, Send, UserCheck } from "lucide-react";
 import { apiFetch, uploadMedia } from "../../lib/api.js";
+import { pushSupported, currentPushState, enablePush, disablePush } from "../../lib/push.js";
 import { useLocale } from "../../i18n.jsx";
 import ChatThumb from "../../components/ChatThumb.jsx";
 import { ConsoleHead, StatStrip } from "./console.jsx";
@@ -8,10 +9,10 @@ import "../../chat.css";
 
 // 라이브챗 인박스 — 스레드 목록 | 대화 | 컨텍스트. 실서버(/v1/admin/chat) 폴링.
 const COPY = {
-  en: { title: "Messages", sub: "Live chat from the site. Reply here — visitors see it instantly; offline ones get an email.", open: "Open", all: "All", guest: "Guest", empty: "Select a conversation.", none: "No conversations yet.", placeholder: "Type a reply…  (Enter to send)", close: "Close", reopen: "Reopen", customer: "Customer", orders: "Orders", activity: "Recent activity", since: "since", noEmail: "no email on file", assignMe: "Assign to me", assigned: "Assigned", unassign: "Unassign", addTag: "+ tag", tagPh: "tag name", quick: "Quick replies", sOpen: "Open", sToday: "24h", sUnread: "Unread", sResp: "Avg reply (min)", sCsat: "CSAT" },
-  ko: { title: "메시지", sub: "사이트 라이브챗. 여기서 답장하면 방문자에게 즉시 표시되고, 오프라인이면 이메일로도 갑니다.", open: "진행중", all: "전체", guest: "방문자", empty: "대화를 선택하세요.", none: "아직 대화가 없어요.", placeholder: "답장 입력…  (Enter 전송)", close: "종료", reopen: "다시 열기", customer: "고객", orders: "주문", activity: "최근 활동", since: "가입", noEmail: "이메일 없음", assignMe: "나에게 배정", assigned: "담당", unassign: "배정 해제", addTag: "+ 태그", tagPh: "태그 이름", quick: "빠른 답변", sOpen: "진행중", sToday: "24시간", sUnread: "미확인", sResp: "평균 응답(분)", sCsat: "만족도" },
-  zh: { title: "消息", sub: "网站在线聊天。在此回复，访客即时可见；离线访客会收到邮件。", open: "进行中", all: "全部", guest: "访客", empty: "选择一个对话。", none: "还没有对话。", placeholder: "输入回复…（Enter 发送）", close: "关闭", reopen: "重新打开", customer: "客户", orders: "订单", activity: "近期活动", since: "注册", noEmail: "无邮箱", assignMe: "分配给我", assigned: "负责", unassign: "取消分配", addTag: "+ 标签", tagPh: "标签名", quick: "快捷回复", sOpen: "进行中", sToday: "24小时", sUnread: "未读", sResp: "平均响应(分)", sCsat: "满意度" },
-  es: { title: "Mensajes", sub: "Chat en vivo del sitio. Responde aquí — los visitantes lo ven al instante; los desconectados reciben un correo.", open: "Abierto", all: "Todos", guest: "Visitante", empty: "Selecciona una conversación.", none: "Aún no hay conversaciones.", placeholder: "Escribe una respuesta…  (Enter para enviar)", close: "Cerrar", reopen: "Reabrir", customer: "Cliente", orders: "Pedidos", activity: "Actividad reciente", since: "desde", noEmail: "sin correo", assignMe: "Asignarme", assigned: "Asignado", unassign: "Quitar", addTag: "+ etiqueta", tagPh: "nombre", quick: "Respuestas rápidas", sOpen: "Abiertos", sToday: "24h", sUnread: "Sin leer", sResp: "Resp. media (min)", sCsat: "CSAT" },
+  en: { title: "Messages", sub: "Live chat from the site. Reply here — visitors see it instantly; offline ones get an email.", open: "Open", all: "All", guest: "Guest", empty: "Select a conversation.", none: "No conversations yet.", placeholder: "Type a reply…  (Enter to send)", close: "Close", reopen: "Reopen", customer: "Customer", orders: "Orders", activity: "Recent activity", since: "since", noEmail: "no email on file", assignMe: "Assign to me", assigned: "Assigned", unassign: "Unassign", addTag: "+ tag", tagPh: "tag name", quick: "Quick replies", sOpen: "Open", sToday: "24h", sUnread: "Unread", sResp: "Avg reply (min)", sCsat: "CSAT", pushOn: "Alerts on", pushOff: "Desktop alerts", pushDenied: "Notifications are blocked in your browser." },
+  ko: { title: "메시지", sub: "사이트 라이브챗. 여기서 답장하면 방문자에게 즉시 표시되고, 오프라인이면 이메일로도 갑니다.", open: "진행중", all: "전체", guest: "방문자", empty: "대화를 선택하세요.", none: "아직 대화가 없어요.", placeholder: "답장 입력…  (Enter 전송)", close: "종료", reopen: "다시 열기", customer: "고객", orders: "주문", activity: "최근 활동", since: "가입", noEmail: "이메일 없음", assignMe: "나에게 배정", assigned: "담당", unassign: "배정 해제", addTag: "+ 태그", tagPh: "태그 이름", quick: "빠른 답변", sOpen: "진행중", sToday: "24시간", sUnread: "미확인", sResp: "평균 응답(분)", sCsat: "만족도", pushOn: "알림 켜짐", pushOff: "데스크톱 알림", pushDenied: "브라우저에서 알림이 차단되어 있어요." },
+  zh: { title: "消息", sub: "网站在线聊天。在此回复，访客即时可见；离线访客会收到邮件。", open: "进行中", all: "全部", guest: "访客", empty: "选择一个对话。", none: "还没有对话。", placeholder: "输入回复…（Enter 发送）", close: "关闭", reopen: "重新打开", customer: "客户", orders: "订单", activity: "近期活动", since: "注册", noEmail: "无邮箱", assignMe: "分配给我", assigned: "负责", unassign: "取消分配", addTag: "+ 标签", tagPh: "标签名", quick: "快捷回复", sOpen: "进行中", sToday: "24小时", sUnread: "未读", sResp: "平均响应(分)", sCsat: "满意度", pushOn: "提醒已开", pushOff: "桌面提醒", pushDenied: "浏览器已屏蔽通知。" },
+  es: { title: "Mensajes", sub: "Chat en vivo del sitio. Responde aquí — los visitantes lo ven al instante; los desconectados reciben un correo.", open: "Abierto", all: "Todos", guest: "Visitante", empty: "Selecciona una conversación.", none: "Aún no hay conversaciones.", placeholder: "Escribe una respuesta…  (Enter para enviar)", close: "Cerrar", reopen: "Reabrir", customer: "Cliente", orders: "Pedidos", activity: "Actividad reciente", since: "desde", noEmail: "sin correo", assignMe: "Asignarme", assigned: "Asignado", unassign: "Quitar", addTag: "+ etiqueta", tagPh: "nombre", quick: "Respuestas rápidas", sOpen: "Abiertos", sToday: "24h", sUnread: "Sin leer", sResp: "Resp. media (min)", sCsat: "CSAT", pushOn: "Alertas activas", pushOff: "Alertas de escritorio", pushDenied: "Las notificaciones están bloqueadas en tu navegador." },
 };
 
 // 스태프 빠른 답변 템플릿 (로케일별)
@@ -43,6 +44,7 @@ export default function AdminChat() {
   const [tagFilter, setTagFilter] = useState(null);
   const [tagDraft, setTagDraft] = useState("");
   const [showQuick, setShowQuick] = useState(false);
+  const [pushState, setPushState] = useState("off"); // unsupported|denied|on|off
 
   const lastIdRef = useRef(0);
   const threadBodyRef = useRef(null);
@@ -81,6 +83,17 @@ export default function AdminChat() {
     const id = window.setInterval(() => { loadThreads(); loadStats(); }, 8000);
     return () => window.clearInterval(id);
   }, [loadThreads, loadStats]);
+
+  useEffect(() => { currentPushState().then(setPushState).catch(() => {}); }, []);
+
+  async function togglePush() {
+    try {
+      setPushState(await (pushState === "on" ? disablePush() : enablePush()));
+    } catch (e) {
+      setPushState(await currentPushState());
+      setError(e.message === "denied" ? c.pushDenied : (e.code || e.message));
+    }
+  }
 
   const loadActive = useCallback(async () => {
     if (!activeCode) return;
@@ -189,6 +202,13 @@ export default function AdminChat() {
                 {s === "open" ? c.open : c.all}
               </button>
             ))}
+            {pushSupported() && pushState !== "unsupported" && (
+              <button className={`achat-push${pushState === "on" ? " is-on" : ""}`}
+                onClick={togglePush} disabled={pushState === "denied"}
+                title={pushState === "denied" ? c.pushDenied : ""}>
+                <Bell size={12} strokeWidth={1.9} /> {pushState === "on" ? c.pushOn : c.pushOff}
+              </button>
+            )}
           </div>
           {stats?.topTags?.length > 0 && (
             <div className="achat-filter achat-tagfilter">

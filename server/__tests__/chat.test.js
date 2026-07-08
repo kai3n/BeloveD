@@ -244,4 +244,19 @@ describe("라이브챗", () => {
     const stats = await request(app).get("/v1/admin/chat/stats").set("Cookie", admin);
     expect(stats.body.stats.avgCsat).toBeGreaterThanOrEqual(1);
   });
+
+  it("웹푸시 — 공개키/구독 API + 미설정(VAPID 없음) 환경에서도 안전", async () => {
+    const admin = await adminCookie();
+    const key = await request(app).get("/v1/admin/chat/push/key").set("Cookie", admin);
+    expect(key.status).toBe(200);
+    expect(key.body).toHaveProperty("enabled"); // 테스트엔 VAPID 미설정 → false
+    const sub = { endpoint: "https://example.com/ep-test", keys: { p256dh: "abc", auth: "def" } };
+    expect((await request(app).post("/v1/admin/chat/push/subscribe").set("Cookie", admin).send({ subscription: sub })).status).toBe(200);
+    const { rows } = await query("select admin_id from push_subscriptions where endpoint = $1", ["https://example.com/ep-test"]);
+    expect(rows.length).toBe(1);
+    // 인바운드 메시지가 push no-op에도 정상 동작(201)
+    expect((await request(app).post("/v1/chat/messages").send({ body: "an unusual question zzz" })).status).toBe(201);
+    // 어드민 전용
+    expect((await request(app).get("/v1/admin/chat/push/key")).status).toBe(401);
+  });
 });

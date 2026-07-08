@@ -9,6 +9,7 @@ import {
   appendMessage, threadContext, setThreadStatus, customerIsOffline, threadView,
   setThreadTags, assignThread, chatStats,
 } from "./chatRepository.js";
+import { vapidPublicKey, saveSubscription, removeSubscription, pushEnabled } from "./push.js";
 
 const MINUTE = 60 * 1000;
 
@@ -98,6 +99,19 @@ export function adminChatRouter() {
       try { res.json({ ok: true, stats: await chatStats() }); }
       catch (e) { next(e); }
     });
+
+  // 웹푸시 — VAPID 공개키 + 활성 여부
+  r.get("/chat/push/key", (_req, res) => res.json({ ok: true, key: vapidPublicKey(), enabled: pushEnabled }));
+
+  // 데스크톱 알림 구독 등록 / 해제
+  r.post("/chat/push/subscribe", async (req, res, next) => {
+    try { await saveSubscription(req.principal.id, req.body?.subscription); res.json({ ok: true }); }
+    catch (e) { next(e); }
+  });
+  r.post("/chat/push/unsubscribe", async (req, res, next) => {
+    try { await removeSubscription(req.body?.endpoint); res.json({ ok: true }); }
+    catch (e) { next(e); }
+  });
 
   return r;
 }

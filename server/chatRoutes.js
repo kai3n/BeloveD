@@ -5,6 +5,7 @@ import { createUploadUrl } from "./media.js";
 import { query } from "./db.js";
 import { COOKIE_CHAT, setChatCookie, clearChatCookie } from "./middleware.js";
 import { notifyConsultation } from "./chatMail.js";
+import { sendPushToStaff } from "./push.js";
 import { matchFaq } from "../src/lib/chatFaq.js";
 import {
   newThreadToken, findThreadByToken, findCustomerThread, createVisitorThread,
@@ -69,6 +70,16 @@ export function chatRouter() {
         let autoReply = null;
         const faq = matchFaq(body, thread.visitor_locale || locale || "en");
         if (faq) autoReply = await appendMessage(thread.id, { sender: "staff", body: faq.answer });
+
+        // 스태프 데스크톱 알림(웹푸시) — 자동응답이 못 한(사람 필요) 또는 미디어 포함 메시지에 즉시 알림.
+        const hasMediaPush = Array.isArray(attachments) && attachments.length > 0;
+        if (!faq || hasMediaPush) {
+          sendPushToStaff({
+            title: `New chat · ${thread.thread_code.replace("CHAT-", "#")}`,
+            body: body && String(body).trim() ? String(body).slice(0, 120) : "📎 Attachment",
+            code: thread.thread_code,
+          }).catch(() => {});
+        }
 
         // 상담 요청을 support@로 전달 — 신규/스로틀 해제 또는 사진·영상 포함 시,
         // 전체 대화 내용 + 모든 미디어를 함께 보낸다.
@@ -139,6 +150,11 @@ export function chatRouter() {
         const message = await appendMessage(thread.id, { sender: "system", body: lines.join("\n") });
         await addThreadTag(thread.id, "consultation");
         await query("update chat_threads set staff_unread = staff_unread + 1 where id = $1", [thread.id]);
+        sendPushToStaff({
+          title: `Consultation · ${thread.thread_code.replace("CHAT-", "#")}`,
+          body: when ? `Requested: ${String(when).slice(0, 100)}` : "New video consultation request",
+          code: thread.thread_code,
+        }).catch(() => {});
         const cust = thread.customer_id
           ? (await query("select name from customers where id = $1", [thread.customer_id])).rows[0] : null;
         const transcript = await listMessages(thread.id, 0);

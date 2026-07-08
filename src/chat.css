@@ -244,6 +244,9 @@
 .achat-tag-input:focus { outline: none; border-color: var(--accent); }
 .achat-tagfilter { flex-wrap: wrap; border-bottom: 1px solid var(--hair); }
 .achat-tagfilter button { font-size: 11px; }
+.achat-push { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; font-size: 11px; }
+.achat-push.is-on { color: var(--accent); border-color: var(--accent); }
+.achat-push:disabled { opacity: .5; cursor: default; }
 .button.secondary.small.is-on { border-color: var(--accent); color: var(--accent); }
 .achat-quick { display: flex; flex-direction: column; gap: 5px; padding: 8px 10px; border-top: 1px solid var(--line); background: var(--surface-2); max-height: 190px; overflow-y: auto; }
 .achat-quick button { text-align: left; font-size: 12.5px; color: var(--text); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; cursor: pointer; font-family: var(--sans); }
