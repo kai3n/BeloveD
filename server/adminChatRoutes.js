@@ -13,10 +13,6 @@ import { vapidPublicKey, saveSubscription, removeSubscription, pushEnabled } fro
 
 const MINUTE = 60 * 1000;
 
-function fireMail(promise, label) {
-  Promise.resolve(promise).catch((e) => console.error(`[chatMail] ${label}: ${e.message}`));
-}
-
 export function adminChatRouter() {
   const r = Router();
   r.use(requireAdmin); // 라우터 레벨 백스톱 — 이 아래 모든 경로는 어드민 전용
@@ -57,9 +53,10 @@ export function adminChatRouter() {
           sender: "staff", senderAdminId: req.principal.id, body, attachments,
         });
         if (customerIsOffline(t) && t.visitor_email) {
-          fireMail(notifyCustomerReply({
+          // 응답 전에 await로 확실히 발송(서버리스 fire-and-forget 유실 방지). 실패는 로그만.
+          await notifyCustomerReply({
             to: t.visitor_email, locale: t.visitor_locale, preview: message.body || "(image)",
-          }), "customer-reply");
+          }).catch((e) => console.error(`[chatMail] customer-reply: ${e.message}`));
         }
         res.status(201).json({ ok: true, message });
       } catch (e) { next(e); }

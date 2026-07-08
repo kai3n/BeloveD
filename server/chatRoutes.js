@@ -25,9 +25,6 @@ export const STAFF_AGENT = {
   avatar: process.env.CHAT_AGENT_AVATAR || null, // 없으면 위젯이 이니셜 아바타 렌더
 };
 
-function fireMail(promise, label) {
-  Promise.resolve(promise).catch((e) => console.error(`[chatMail] ${label}: ${e.message}`));
-}
 
 // 현재 요청자의 스레드 해석 — 로그인 고객이면 고객 스레드, 아니면 bd_chat 토큰
 async function resolveThread(req) {
@@ -103,12 +100,13 @@ export function chatRouter() {
             ? (await query("select name from customers where id = $1", [thread.customer_id])).rows[0]
             : null;
           const transcript = await listMessages(thread.id, 0);
-          fireMail(notifyConsultation({
+          // 응답 전에 await로 확실히 발송(서버리스 fire-and-forget 유실 방지). 실패는 로그만.
+          await notifyConsultation({
             threadCode: thread.thread_code,
             visitorEmail: validEmail || thread.visitor_email || null,
             customerName: cust?.name || null,
             messages: transcript,
-          }), "consultation");
+          }).catch((e) => console.error(`[chatMail] consultation: ${e.message}`));
         }
 
         const fresh = await findThreadByCode(thread.thread_code);
@@ -192,19 +190,22 @@ export function chatRouter() {
         const cust = thread.customer_id
           ? (await query("select name from customers where id = $1", [thread.customer_id])).rows[0] : null;
         const transcript = await listMessages(thread.id, 0);
-        fireMail(notifyConsultation({
-          threadCode: thread.thread_code,
-          visitorEmail: email || thread.visitor_email || null,
-          customerName: cust?.name || name || null,
-          messages: transcript,
-        }), "consultation-booking");
-        if (email) {
-          const loc = thread.visitor_locale || locale || "en";
-          fireMail(notifyBookingConfirmed({
+        const loc = thread.visitor_locale || locale || "en";
+        // 예약 확정·스태프 알림 메일은 응답 전에 await로 확실히 발송한다 —
+        // 서버리스(Vercel)에서 응답 직후 인스턴스가 얼려 fire-and-forget 메일이 유실되는 것을 방지.
+        // allSettled로 메일 실패가 예약 자체를 깨지 않게 격리.
+        await Promise.allSettled([
+          notifyConsultation({
+            threadCode: thread.thread_code,
+            visitorEmail: email || thread.visitor_email || null,
+            customerName: cust?.name || name || null,
+            messages: transcript,
+          }),
+          email ? notifyBookingConfirmed({
             to: email, locale: loc, when: formatSlot(slot, tz, loc),
             meetingUrl: process.env.CONSULTATION_MEETING_URL || null,
-          }), "booking-confirmed");
-        }
+          }) : Promise.resolve(),
+        ]);
         const fresh = await findThreadByCode(thread.thread_code);
         res.status(201).json({ ok: true, thread: threadView(fresh), message, slot, staffAgent: STAFF_AGENT });
       } catch (e) { next(e); }
