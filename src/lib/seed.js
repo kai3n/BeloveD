@@ -264,6 +264,18 @@ export function seed() {
       coupons: BASE_COUPONS.map((c) => ({ ...c })),
       // 멀티스톤 총캐럿 견적용 멜리(스몰 스톤) 단가 — 어드민 벤치마크 페이지에서 조정
       meleeUsdPerCt: 150,
+      // 상단 세일 배너 — 어드민 쿠폰 페이지에서 온/오프·문구 관리, 서버 write-through로 전 고객 배포
+      saleBanner: {
+        enabled: true,
+        code: "LAUNCH25",
+        copy: {
+          en: "Launch Sale: 25% Off All Lab Diamond Jewelry",
+          ko: "런칭 세일: 랩다이아 주얼리 전 품목 25% 할인",
+          zh: "开业特惠：培育钻石珠宝全场七五折",
+          es: "Oferta de lanzamiento: 25% en toda la joyería de diamantes de laboratorio",
+        },
+      },
+      launchSaleSeedVersion: 1,
       designChangeFeeUsd: 15, cancelAfterProductionMinUsd: 140, freeMinorRevisions: 1,
       // 어드민 최소 개입 자동화: 전 주문이 기본 벤더로 자동 매칭 (스타일별 supplierId로 오버라이드 가능)
       defaultSupplierId: "u-supplier1", autoDueDays: 3, batchValidDays: 10,

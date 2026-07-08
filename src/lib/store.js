@@ -228,6 +228,17 @@ function migrateDB(d) {
     changed = true;
   }
 
+  // 런칭 세일(2026-07) — LAUNCH25 쿠폰 + 상단 세일 배너를 기존 브라우저에 1회 주입.
+  // 어드민이 이후 삭제/수정해도 재주입하지 않도록 버전 플래그로만 판단한다.
+  if (d?.settings && d.settings.launchSaleSeedVersion !== 1) {
+    if (Array.isArray(d.settings.coupons) && !d.settings.coupons.some((c) => c.code === "LAUNCH25")) {
+      d.settings.coupons = [...d.settings.coupons, { code: "LAUNCH25", kind: "percent", value: 25, labelKey: "launch", expiresAt: null }];
+    }
+    if (!d.settings.saleBanner) d.settings.saleBanner = seed().settings.saleBanner;
+    d.settings.launchSaleSeedVersion = 1;
+    changed = true;
+  }
+
   // v13 hotfix: operator-proxy diamond candidates are published for the
   // customer to choose, but older records marked them as already stock-confirmed.
   // That combination leaves the customer with a visible card and a disabled

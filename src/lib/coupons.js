@@ -6,6 +6,7 @@ export const BASE_COUPONS = [
   { code: "BD-ATCOST", kind: "margin0", labelKey: "staff", expiresAt: null },
   { code: "BD-PRIVATE", kind: "percent", value: 15, labelKey: "private", expiresAt: null },
   { code: "WELCOME5", kind: "percent", value: 5, labelKey: "welcome", expiresAt: null },
+  { code: "LAUNCH25", kind: "percent", value: 25, labelKey: "launch", expiresAt: null },
 ];
 
 export function normalizeCouponCode(raw) {
