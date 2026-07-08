@@ -1,4 +1,5 @@
 // Diamond Operations Manual 순수 로직 — 주문 상태/마일스톤/견적 공식/보안 프로젝션
+import { formatGradeRange } from "./gradeScale.js";
 
 export const ORDER_STATUSES = [
   "STYLE_SELECTION", "STONE_SELECTION", "QUOTATION", "CAD", "PRODUCTION",
@@ -143,8 +144,11 @@ export function supplierTaskView(pr, order, style, intake = null, revisionReview
 export function autoBrief(intake) {
   if (intake.productLine === "solitaire" && intake.stonePrefs) {
     const s = intake.stonePrefs;
+    // 등급은 range 라벨 우선, 레거시 단일값 폴백
+    const colorLbl = formatGradeRange(s.colorRange) || s.color;
+    const clarityLbl = formatGradeRange(s.clarityRange) || s.clarity;
     return [
-      s.carat && `${s.carat}ct ${s.shape}`, s.color && `${s.color}/${s.clarity}`, s.growth, s.lab,
+      s.carat && `${s.carat}ct ${s.shape}`, colorLbl && `${colorLbl}/${clarityLbl}`, s.growth, s.lab,
       s.colorTreatment === "disclosed" ? "post-growth treatment OK" : s.colorTreatment,
       s.fluorescence && s.fluorescence !== "none" && `fluor ${s.fluorescence}`,
       s.lwRatio && `L/W ${s.lwRatio}`,
@@ -152,7 +156,11 @@ export function autoBrief(intake) {
   }
   if (intake.multiSpec) {
     const m = intake.multiSpec;
-    return [m.meleeSpec && `melee: ${m.meleeSpec}`, m.overallDims, m.arrangement, m.standard].filter(Boolean).join(" · ");
+    return [
+      m.totalCarat && `${m.totalCarat}ct total`,
+      m.meleeSpec && `melee: ${m.meleeSpec}`,
+      m.overallDims, m.arrangement, m.standard,
+    ].filter(Boolean).join(" · ");
   }
   return "see style reference";
 }
@@ -205,8 +213,12 @@ export function poolStoneMatches(stone, prefs, opts) {
   if (stone.shape !== prefs.shape) return false;
   const carat = Number(stone.carat), want = Number(prefs.carat);
   if (!(carat >= want - opts.caratUnder && carat <= want + opts.caratOver)) return false;
-  if (!gradeAtLeast(COLOR_ORDER, stone.color, prefs.color)) return false;
-  if (!gradeAtLeast(CLARITY_ORDER, stone.clarity, prefs.clarity)) return false;
+  // 등급 range면 하한 기준 매칭 — "IF-FL" 눈금은 CLARITY_ORDER의 "IF"로 매핑
+  const colorMin = Array.isArray(prefs.colorRange) ? prefs.colorRange[0] : prefs.color;
+  const clarityMinRaw = Array.isArray(prefs.clarityRange) ? prefs.clarityRange[0] : prefs.clarity;
+  const clarityMin = clarityMinRaw === "IF-FL" ? "IF" : clarityMinRaw;
+  if (!gradeAtLeast(COLOR_ORDER, stone.color, colorMin)) return false;
+  if (!gradeAtLeast(CLARITY_ORDER, stone.clarity, clarityMin)) return false;
   if (prefs.growth && stone.growth !== prefs.growth) return false;
   return true;
 }
