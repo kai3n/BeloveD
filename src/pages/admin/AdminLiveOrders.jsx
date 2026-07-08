@@ -5,19 +5,15 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { apiFetch, ApiUnavailableError } from "../../lib/api.js";
 import { MediaPicker, MediaThumb, usd } from "../../components/ui.jsx";
 import { getOpsStyle } from "../../lib/store.js";
+import { estimateProposalQuote, METAL_LABELS } from "../../lib/proposalEstimate.js";
 import { stepGate } from "../../lib/orderFlow.js";
 import { pickI18n, useLocale } from "../../i18n.jsx";
 import { ConsoleHead, Pager, StatStrip } from "./console.jsx";
 
-// 견적 컴포저 셀렉트 옵션 · 메탈 코드 → 라벨 (인테이크 프리필용)
+// 견적 컴포저 셀렉트 옵션 (메탈 코드 → 라벨은 proposalEstimate.js가 단일 소스)
 const SHAPES = ["round", "oval", "cushion", "princess", "emerald", "pear", "marquise", "radiant", "asscher", "heart"];
 const COLORS = ["D", "E", "F", "G", "H", "I"];
 const CLARITIES = ["IF", "VVS1", "VVS2", "VS1", "VS2", "SI1", "SI2"];
-const METAL_LABELS = {
-  "18kw": "18K White Gold", "18ky": "18K Yellow Gold", "18kr": "18K Rose Gold",
-  "14kw": "14K White Gold", "14ky": "14K Yellow Gold", "14kr": "14K Rose Gold",
-  pt950: "Platinum 950",
-};
 
 const COPY = {
   en: {
@@ -40,6 +36,7 @@ const COPY = {
     designNote: "Design adjustment note", centerStone: "Center stone (one component of the piece)",
     shape: "shape", caratMin: "carat (min)", caratMax: "carat (max)", color: "color", clarity: "clarity", growth: "growth", lab: "lab",
     subNote: "Stone substitution note (blank = default policy text)", deposit: "Deposit ($, blank = 30%)",
+    estHint: "Auto estimate", estDiamond: "diamond", estMetal: "metal", estLabor: "labor", estOverride: "edit to override",
     media: "Media (published to the portal)",
     fire: "Send", done: "Done", current: "Current", sentLabel: "Sent ✓",
     resend: "Send revised proposal", changesRequested: "Customer requested changes",
@@ -80,6 +77,7 @@ const COPY = {
     designNote: "디자인 조정 노트", centerStone: "센터 스톤 (제품 구성 요소)",
     shape: "셰이프", caratMin: "캐럿 (min)", caratMax: "캐럿 (max)", color: "컬러", clarity: "클래리티", growth: "성장", lab: "감정기관",
     subNote: "스톤 대체 안내 (비우면 기본 문구)", deposit: "디파짓 ($, 비우면 30%)",
+    estHint: "자동 추정", estDiamond: "다이아", estMetal: "메탈", estLabor: "공임", estOverride: "직접 수정 가능",
     media: "미디어 (포털에 공개)",
     fire: "보내기", done: "완료", current: "현재", sentLabel: "보냄 ✓",
     resend: "수정 제안 보내기", changesRequested: "고객이 수정을 요청했습니다",
@@ -120,6 +118,7 @@ const COPY = {
     designNote: "设计调整备注", centerStone: "中心钻石（作品部件之一）",
     shape: "形状", caratMin: "克拉 (min)", caratMax: "克拉 (max)", color: "颜色", clarity: "净度", growth: "生长方式", lab: "鉴定机构",
     subNote: "替代说明（留空用默认文案）", deposit: "定金（$，留空按 30%）",
+    estHint: "自动估算", estDiamond: "钻石", estMetal: "金属", estLabor: "工费", estOverride: "可手动修改",
     media: "媒体（发布到订单页面）",
     fire: "发送", done: "完成", current: "当前", sentLabel: "已发送 ✓",
     resend: "发送修改后的方案", changesRequested: "客户请求修改",
@@ -160,6 +159,7 @@ const COPY = {
     designNote: "Nota de ajuste de diseño", centerStone: "Piedra central (componente de la pieza)",
     shape: "forma", caratMin: "quilates (min)", caratMax: "quilates (max)", color: "color", clarity: "claridad", growth: "crecimiento", lab: "laboratorio",
     subNote: "Nota de sustitución (vacío = texto por defecto)", deposit: "Depósito ($, vacío = 30%)",
+    estHint: "Estimación automática", estDiamond: "diamante", estMetal: "metal", estLabor: "mano de obra", estOverride: "editable",
     media: "Medios (publicados al portal)",
     fire: "Enviar", done: "Hecho", current: "Actual", sentLabel: "Enviado ✓",
     resend: "Enviar propuesta revisada", changesRequested: "El cliente pidió cambios",
@@ -343,6 +343,32 @@ function StepCard({ step, index, order, done, locked, awaitingCustomer, changeRe
   const [error, setError] = useState("");
   // 발송 확인 다이얼로그 — 버튼 오클릭 한 번이 고객 메일로 직행하는 걸 막는 마지막 관문
   const [confirmOpen, setConfirmOpen] = useState(false);
+  // Total/Deposit 자동 견적 — 어드민이 직접 고친 필드는 건드리지 않는다(비우면 자동 갱신 재개)
+  const [manual, setManual] = useState({ total: false, deposit: false });
+  const estimate = useMemo(
+    () => (step.composer === "proposal"
+      ? estimateProposalQuote({
+        metalSpec: f.metalSpec, estWeightG: f.estWeightG,
+        shape: f.shape, caratMin: f.caratMin, caratMax: f.caratMax,
+        color: f.color, clarity: f.clarity, growth: f.growth, lab: f.lab,
+        styleId: fp.styleId, category: order.intake?.category,
+      })
+      : null),
+    [step.composer, f.metalSpec, f.estWeightG, f.shape, f.caratMin, f.caratMax,
+      f.color, f.clarity, f.growth, f.lab, fp.styleId, order.intake?.category],
+  );
+  useEffect(() => {
+    if (step.composer !== "proposal") return;
+    setF((prev) => {
+      const total = manual.total || !estimate ? prev.total : String(estimate.totalUsd);
+      const totalNum = Number(total) || 0;
+      // 디파짓은 서버 규칙(빈 값 = 보낸 Total의 30%)을 미리 보여준다 — 수동 Total에도 따라간다
+      const deposit = manual.deposit || !totalNum
+        ? prev.deposit
+        : String(Math.round((totalNum * 0.3) / 10) * 10);
+      return total === prev.total && deposit === prev.deposit ? prev : { ...prev, total, deposit };
+    });
+  }, [step.composer, estimate, manual.total, manual.deposit, f.total]);
   // 한 번 보낸 스텝은 잠근다 — 중복 발송(중복 메일·중복 컨펌)이 재발송 필요보다 훨씬 흔한 사고다.
   // done은 stage가 아니라 "이 이벤트가 실제 발사됐는가"(타임라인) 기준 — 같은 stage에 도달하는
   // 스텝들(디파짓/다이아 둘 다 CAD)이 한꺼번에 체크되는 오판 방지.
@@ -502,11 +528,27 @@ function StepCard({ step, index, order, done, locked, awaitingCustomer, changeRe
           <div className="filter-grid" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
             {step.fields?.includes("total") && (
               <label className="field"><span>{t.total}</span>
-                <input type="number" value={f.total} onChange={(e) => setF({ ...f, total: e.target.value })} /></label>
+                <input
+                  type="number"
+                  value={f.total}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setManual((m) => ({ ...m, total: v.trim() !== "" }));
+                    setF((prev) => ({ ...prev, total: v }));
+                  }}
+                /></label>
             )}
             {step.composer === "proposal" && (
               <label className="field"><span>{t.deposit}</span>
-                <input type="number" value={f.deposit} onChange={(e) => setF({ ...f, deposit: e.target.value })} /></label>
+                <input
+                  type="number"
+                  value={f.deposit}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setManual((m) => ({ ...m, deposit: v.trim() !== "" }));
+                    setF((prev) => ({ ...prev, deposit: v }));
+                  }}
+                /></label>
             )}
             {step.fields?.includes("igi") && (
               <label className="field"><span>{t.igi}</span>
@@ -517,6 +559,11 @@ function StepCard({ step, index, order, done, locked, awaitingCustomer, changeRe
                 <input value={f.tracking} onChange={(e) => setF({ ...f, tracking: e.target.value })} /></label>
             )}
           </div>
+          {estimate && (
+            <p className="form-hint" style={{ margin: 0 }}>
+              {t.estHint} ≈ {t.estDiamond} {usd(estimate.diamondUsd)} + {t.estMetal} {usd(estimate.metalUsd)} + {t.estLabor} {usd(estimate.laborUsd)} · {t.estOverride}
+            </p>
+          )}
           {error && <p className="form-error">{error}</p>}
           <button
             className={`button ${done && !unlocked ? "secondary" : "primary"}`}
