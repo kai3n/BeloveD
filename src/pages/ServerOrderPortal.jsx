@@ -576,7 +576,12 @@ export default function ServerOrderPortal({ orderCode }) {
         </div>
         <div className="client-actionbar-meta">
           <span>{order.orderCode}</span>
-          <span className="status-badge mst-inProgress">{t.stages[order.stage] || order.stage}</span>
+          {/* 송금 보고 후엔 stage 라벨("Awaiting your deposit")이 거짓 신호 — '확인 중'으로 오버라이드 */}
+          <span className="status-badge mst-inProgress">{
+            (order.stage === "DEPOSIT" && depositReported) || (order.stage === "BALANCE" && balanceReported)
+              ? t.events.payment_reported
+              : t.stages[order.stage] || order.stage
+          }</span>
         </div>
       </section>
 
