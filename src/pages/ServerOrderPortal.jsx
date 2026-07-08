@@ -676,13 +676,14 @@ export default function ServerOrderPortal({ orderCode }) {
         </section>
       )}
 
-      {/* 3-2 배송 — 운송장 번호 (배송 중·수령 완료 모두 표시) */}
+      {/* 3-2 배송 — 운송장 번호 (배송 중·수령 완료 모두 표시), 수령 완료면 접힘(done) */}
       {shipmentVisible && (
         <Checkpoint
           id="bd-shipment"
           index="3-2"
           title={t.shipmentTitle}
-          state="active"
+          state={order.stage === "DELIVERED" ? "done" : "active"}
+          summary={trackingNo || ""}
           badgeOverride={t.stages[order.stage] || order.stage}
         >
           {trackingNo && (

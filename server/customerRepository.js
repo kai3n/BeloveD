@@ -101,8 +101,9 @@ function phaseViews(stage) {
   ];
   const activeIndex = stage === "CANCELLED"
     ? -1
+    // DELIVERED는 여정 종료 — 세 칸 모두 complete(✓)로 접는다
     : stage === "DELIVERED"
-      ? 2
+      ? 3
       // DEPOSIT(디파짓 대기)은 아직 '피스 확정' 단계 — 제작은 입금 확인부터
       : ["CAD", "PRODUCTION", "FINAL_QC"].includes(stage)
         ? 1
