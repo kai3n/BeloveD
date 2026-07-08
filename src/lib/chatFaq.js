@@ -55,10 +55,10 @@ export const FAQ = [
     keywords: ["ring size", "my size", "finger size", "resize", "resizing", "반지 사이즈", "반지 호수", "손가락", "사이즈 조절", "戒指尺寸", "戒指大小", "手寸", "改圈", "talla de anillo", "medida del dedo"],
     q: { en: "How do I find my ring size?", ko: "반지 사이즈는 어떻게 아나요?", zh: "如何知道戒指尺寸？", es: "¿Cómo sé mi talla de anillo?" },
     a: {
-      en: "Measure the inner diameter of a ring that already fits, or wrap a string around your finger and match the length to our chart (US 4–11). We'll double-check with you during the order, and your first resize within 60 days is complimentary.",
-      ko: "지금 잘 맞는 반지의 안지름을 재거나, 실을 손가락에 감아 길이를 우리 표(US 4–11)에 맞춰보세요. 주문 중 함께 재확인하고, 수령 60일 내 첫 사이즈 조절은 무료예요.",
-      zh: "量一枚合适戒指的内直径，或用绳绕手指对照我们的尺码表（US 4–11）。下单时会再次核对，收货 60 天内首次改圈免费。",
-      es: "Mide el diámetro interior de un anillo que te quede bien, o rodea el dedo con un hilo y coteja el largo con nuestra tabla (US 4–11). Lo verificamos contigo durante el pedido, y tu primer ajuste dentro de 60 días es gratis.",
+      en: "Measure the inner diameter of a ring that already fits, or wrap a string around your finger and match the length to our chart (US 4–11). We'll double-check with you during the order. Resizing later is available on request — we quote before any work begins.",
+      ko: "지금 잘 맞는 반지의 안지름을 재거나, 실을 손가락에 감아 길이를 우리 표(US 4–11)에 맞춰보세요. 주문 중 함께 재확인해요. 이후 리사이즈는 요청 시 진행되며, 작업 전에 먼저 견적을 안내드려요.",
+      zh: "量一枚合适戒指的内直径，或用绳绕手指对照我们的尺码表（US 4–11）。下单时会再次核对。之后如需改圈可按需申请，动工前先行报价。",
+      es: "Mide el diámetro interior de un anillo que te quede bien, o rodea el dedo con un hilo y coteja el largo con nuestra tabla (US 4–11). Lo verificamos contigo durante el pedido. El ajuste posterior está disponible bajo pedido — cotizamos antes de empezar.",
     },
   },
   {
@@ -178,10 +178,10 @@ export const FAQ = [
     keywords: ["how does it work", "process", "custom ring", "custom design", "customize", "custom order", "custom made", "bespoke", "how do i order", "place an order", "ordering", "make a ring", "get started", "steps", "과정", "어떻게 진행", "주문 제작", "맞춤", "의뢰", "시작", "단계", "流程", "定制", "怎么下单", "如何开始", "步骤", "proceso", "cómo funciona", "personalizado", "empezar"],
     q: { en: "How does a custom order work?", ko: "주문 제작은 어떻게 진행되나요?", zh: "定制流程是怎样的？", es: "¿Cómo funciona un pedido personalizado?" },
     a: {
-      en: "1) Tell us the piece, stone and design (attach up to 5 reference photos/videos). 2) We send one proposal — certified stone, setting, all-inclusive price, timeline — usually within 24–48h; nothing is charged until you accept. 3) 50% deposit locks the stone. 4) You approve the CAD. 5) We craft it, send finished-piece photos + certificate for your OK. 6) Balance, then insured shipping. Start from 'Start a custom request'.",
-      ko: "1) 원하는 피스·스톤·디자인을 알려주세요(레퍼런스 사진·영상 최대 5개). 2) 인증 스톤·세팅·올인클루시브 가격·일정을 담은 제안을 보통 24–48시간 내 한 번 보내드려요(수락 전까진 청구 없음). 3) 50% 디파짓으로 스톤 확보. 4) CAD 승인. 5) 제작 후 완성품 사진·감정서로 확인. 6) 잔금 후 보험 배송. '주문제작 시작'에서 시작하세요.",
-      zh: "1) 告诉我们款式、钻石与设计（可附最多 5 张参考图/视频）。2) 我们通常 24–48 小时内发送一份方案——认证钻石、镶嵌、全含价格、周期；接受前不收费。3) 50% 订金锁定钻石。4) 您确认 CAD。5) 制作后发送成品照片与证书供确认。6) 付尾款后含保险配送。从「开始定制」下单。",
-      es: "1) Cuéntanos la pieza, piedra y diseño (adjunta hasta 5 fotos/videos). 2) Enviamos una propuesta — piedra certificada, engaste, precio todo incluido, plazo — normalmente en 24–48h; no se cobra hasta que aceptes. 3) El depósito del 50% asegura la piedra. 4) Apruebas el CAD. 5) La elaboramos y enviamos fotos + certificado para tu visto bueno. 6) El saldo y envío asegurado. Empieza en 'Iniciar pedido personalizado'.",
+      en: "1) Tell us the piece, stone and design (attach up to 5 reference photos/videos). 2) We send one proposal — certified stone, setting, all-inclusive price, timeline — usually within 24–48h; nothing is charged until you accept. 3) A 30% deposit locks the stone. 4) You approve the CAD. 5) We craft it, send finished-piece photos + certificate for your OK. 6) Balance, then insured shipping. Start from 'Start a custom request'.",
+      ko: "1) 원하는 피스·스톤·디자인을 알려주세요(레퍼런스 사진·영상 최대 5개). 2) 인증 스톤·세팅·올인클루시브 가격·일정을 담은 제안을 보통 24–48시간 내 한 번 보내드려요(수락 전까진 청구 없음). 3) 30% 디파짓으로 스톤 확보. 4) CAD 승인. 5) 제작 후 완성품 사진·감정서로 확인. 6) 잔금 후 보험 배송. '주문제작 시작'에서 시작하세요.",
+      zh: "1) 告诉我们款式、钻石与设计（可附最多 5 张参考图/视频）。2) 我们通常 24–48 小时内发送一份方案——认证钻石、镶嵌、全含价格、周期；接受前不收费。3) 30% 订金锁定钻石。4) 您确认 CAD。5) 制作后发送成品照片与证书供确认。6) 付尾款后含保险配送。从「开始定制」下单。",
+      es: "1) Cuéntanos la pieza, piedra y diseño (adjunta hasta 5 fotos/videos). 2) Enviamos una propuesta — piedra certificada, engaste, precio todo incluido, plazo — normalmente en 24–48h; no se cobra hasta que aceptes. 3) El depósito del 30% asegura la piedra. 4) Apruebas el CAD. 5) La elaboramos y enviamos fotos + certificado para tu visto bueno. 6) El saldo y envío asegurado. Empieza en 'Iniciar pedido personalizado'.",
     },
   },
   {
@@ -222,10 +222,10 @@ export const FAQ = [
     keywords: ["warranty", "guarantee", "lifetime", "repair", "insurance", "appraisal", "보증", "품질보증", "평생", "수리", "보험", "감정가", "保修", "保证", "终身", "维修", "保险", "评估", "garantía", "reparación", "seguro", "tasación"],
     q: { en: "Is there a warranty?", ko: "보증이 있나요?", zh: "有保修吗？", es: "¿Hay garantía?" },
     a: {
-      en: "Yes — a lifetime manufacturing warranty covers defects like a loose setting or broken prong at no charge, plus free annual cleaning, polishing and prong checks (first resize within 60 days is free too). Everyday wear, loss, theft or accidental damage aren't covered, so we recommend insuring the piece — we provide appraisal documentation for that.",
-      ko: "네 — 평생 제조 보증으로 세팅 헐거움·프롱 파손 같은 하자를 무상 처리하고, 연간 세척·광택·프롱 점검도 무료예요(수령 60일 내 첫 사이즈 조절도 무료). 일상 마모·분실·도난·사고 파손은 보증 대상이 아니라 보험 가입을 권해드리며, 이를 위한 감정 서류를 제공해요.",
-      zh: "有——终身制造保修免费涵盖镶口松动、断爪等缺陷，另含免费年度清洗、抛光与检爪（收货 60 天内首次改圈也免费）。日常磨损、遗失、被盗或意外损坏不在保修内，故建议投保，我们提供评估文件以供投保。",
-      es: "Sí — una garantía de fabricación de por vida cubre sin costo defectos como un engaste flojo o una garra rota, además de limpieza, pulido y revisión de garras anuales gratis (el primer ajuste dentro de 60 días también es gratis). El desgaste, pérdida, robo o daño accidental no están cubiertos, así que recomendamos asegurar la pieza — entregamos documentación de tasación para ello.",
+      en: "Yes — a lifetime manufacturing warranty covers defects like a loose setting or broken prong at no charge, plus free annual cleaning, polishing and prong checks (resizing is available on request, quoted before work begins). Everyday wear, loss, theft or accidental damage aren't covered, so we recommend insuring the piece — we provide appraisal documentation for that.",
+      ko: "네 — 평생 제조 보증으로 세팅 헐거움·프롱 파손 같은 하자를 무상 처리하고, 연간 세척·광택·프롱 점검도 무료예요(리사이즈는 요청 시 견적 후 진행돼요). 일상 마모·분실·도난·사고 파손은 보증 대상이 아니라 보험 가입을 권해드리며, 이를 위한 감정 서류를 제공해요.",
+      zh: "有——终身制造保修免费涵盖镶口松动、断爪等缺陷，另含免费年度清洗、抛光与检爪（改圈可按需申请，动工前先报价）。日常磨损、遗失、被盗或意外损坏不在保修内，故建议投保，我们提供评估文件以供投保。",
+      es: "Sí — una garantía de fabricación de por vida cubre sin costo defectos como un engaste flojo o una garra rota, además de limpieza, pulido y revisión de garras anuales gratis (el ajuste de talla se cotiza antes de empezar). El desgaste, pérdida, robo o daño accidental no están cubiertos, así que recomendamos asegurar la pieza — entregamos documentación de tasación para ello.",
     },
   },
   {
@@ -233,10 +233,10 @@ export const FAQ = [
     keywords: ["payment", "pay", "installment", "financ", "affirm", "klarna", "payment plan", "monthly payment", "deposit", "zelle", "venmo", "credit card", "how do i pay", "결제", "지불", "할부", "디파짓", "계약금", "송금", "카드", "分期付款", "付款", "支付", "分期", "定金", "信用卡", "pago", "pagar", "plazos", "depósito", "financiación", "tarjeta"],
     q: { en: "How do I pay?", ko: "결제는 어떻게 하나요?", zh: "如何付款？", es: "¿Cómo pago?" },
     a: {
-      en: "A 50% deposit begins the order and the balance is due before shipping. We currently accept Zelle and Venmo (scan the QR or copy the recipient) — your payment memo must include the order number so we can confirm it — and secure card payment is coming soon. We never collect or store card numbers.",
-      ko: "50% 디파짓으로 주문을 시작하고 잔금은 배송 전에 결제해요. 현재 Zelle와 Venmo를 받아요(QR 스캔 또는 수취인 복사) — 결제 메모에 주문번호가 있어야 확인이 돼요 — 안전한 카드 결제도 곧 지원돼요. 카드 번호는 절대 수집·저장하지 않아요.",
-      zh: "50% 订金启动订单，尾款于发货前支付。目前接受 Zelle 与 Venmo（扫码或复制收款人）——付款备注须含订单号以便确认——安全银行卡支付即将上线。我们绝不收集或存储卡号。",
-      es: "Un depósito del 50% inicia el pedido y el saldo se paga antes del envío. Aceptamos Zelle y Venmo (escanea el QR o copia el destinatario) — tu memo de pago debe incluir el número de pedido para confirmarlo — y el pago con tarjeta seguro llegará pronto. Nunca recopilamos ni almacenamos números de tarjeta.",
+      en: "A 30% deposit begins the order (non-refundable once paid) and the balance is due before shipping. We currently accept Zelle and Venmo (scan the QR or copy the recipient) — your payment memo must include the order number so we can confirm it — and secure card payment is coming soon. We never collect or store card numbers.",
+      ko: "30% 디파짓으로 주문을 시작하고(결제 후 환불 불가) 잔금은 배송 전에 결제해요. 현재 Zelle와 Venmo를 받아요(QR 스캔 또는 수취인 복사) — 결제 메모에 주문번호가 있어야 확인이 돼요 — 안전한 카드 결제도 곧 지원돼요. 카드 번호는 절대 수집·저장하지 않아요.",
+      zh: "30% 订金启动订单（支付后不退），尾款于发货前支付。目前接受 Zelle 与 Venmo（扫码或复制收款人）——付款备注须含订单号以便确认——安全银行卡支付即将上线。我们绝不收集或存储卡号。",
+      es: "Un depósito del 30% inicia el pedido (no reembolsable una vez pagado) y el saldo se paga antes del envío. Aceptamos Zelle y Venmo (escanea el QR o copia el destinatario) — tu memo de pago debe incluir el número de pedido para confirmarlo — y el pago con tarjeta seguro llegará pronto. Nunca recopilamos ni almacenamos números de tarjeta.",
     },
   },
   {
