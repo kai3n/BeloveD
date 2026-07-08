@@ -5,6 +5,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { apiFetch, ApiUnavailableError } from "../../lib/api.js";
 import { MediaPicker, MediaThumb, usd } from "../../components/ui.jsx";
 import { getOpsStyle } from "../../lib/store.js";
+import { stepGate } from "../../lib/orderFlow.js";
 import { pickI18n, useLocale } from "../../i18n.jsx";
 import { ConsoleHead, Pager, StatStrip } from "./console.jsx";
 
@@ -51,6 +52,10 @@ const COPY = {
       shipped: "Shipped", delivered: "Delivered",
     },
     sent: "Event sent — the customer has been emailed.",
+    awaitCustomer: "Waiting on customer",
+    confirmTitle: "Send this step?",
+    confirmBody: "The order will advance and the customer will get an email in their language. This can't be undone.",
+    confirmSend: "Yes, send",
     cancelOrderBtn: "Cancel order", refundNoteLbl: "Refund note to customer (optional — included in the email)",
     cancelConfirmBtn: "Confirm cancellation", cancelKeepBtn: "Back",
     cancelRequestedBanner: "Customer requested cancellation",
@@ -87,6 +92,10 @@ const COPY = {
       shipped: "발송됨", delivered: "수령 완료",
     },
     sent: "이벤트가 반영됐습니다 — 고객에게 메일이 발송됩니다.",
+    awaitCustomer: "고객 응답 대기",
+    confirmTitle: "이 단계를 보낼까요?",
+    confirmBody: "주문 단계가 진행되고 고객에게 해당 언어로 메일이 발송됩니다. 되돌릴 수 없어요.",
+    confirmSend: "네, 보내기",
     cancelOrderBtn: "주문 취소", refundNoteLbl: "환불 안내 문구 (선택 — 고객 메일에 포함)",
     cancelConfirmBtn: "취소 확정", cancelKeepBtn: "뒤로",
     cancelRequestedBanner: "고객이 취소를 요청했습니다",
@@ -123,6 +132,10 @@ const COPY = {
       shipped: "已发货", delivered: "已送达",
     },
     sent: "事件已生效 — 已向客户发送邮件。",
+    awaitCustomer: "等待客户回应",
+    confirmTitle: "确认发送此步骤？",
+    confirmBody: "订单将推进，并以客户的语言发送邮件。此操作无法撤销。",
+    confirmSend: "确认发送",
     cancelOrderBtn: "取消订单", refundNoteLbl: "退款说明（可选 — 写入客户邮件）",
     cancelConfirmBtn: "确认取消", cancelKeepBtn: "返回",
     cancelRequestedBanner: "客户已申请取消",
@@ -159,6 +172,10 @@ const COPY = {
       shipped: "Enviado", delivered: "Entregado",
     },
     sent: "Evento aplicado — se envió el correo al cliente.",
+    awaitCustomer: "Esperando al cliente",
+    confirmTitle: "¿Enviar este paso?",
+    confirmBody: "El pedido avanzará y el cliente recibirá un correo en su idioma. No se puede deshacer.",
+    confirmSend: "Sí, enviar",
     cancelOrderBtn: "Cancelar pedido", refundNoteLbl: "Nota de reembolso (opcional — va en el correo)",
     cancelConfirmBtn: "Confirmar cancelación", cancelKeepBtn: "Atrás",
     cancelRequestedBanner: "El cliente solicitó la cancelación",
@@ -301,7 +318,7 @@ export default function AdminLiveOrders() {
 }
 
 // 이벤트 스텝 카드 — 필요한 입력(미디어/노트/금액/IGI/운송장)만 노출
-function StepCard({ step, index, order, done, changeRequest, expanded, onToggle, t, onSent }) {
+function StepCard({ step, index, order, done, locked, awaitingCustomer, changeRequest, expanded, onToggle, t, onSent }) {
   const [media, setMedia] = useState([]);
   // 견적 컴포저는 인테이크에서 프리필 — 어드민은 확인·수정만 하고 보낸다
   const fp = order.intake?.formPayload || {};
@@ -324,6 +341,8 @@ function StepCard({ step, index, order, done, changeRequest, expanded, onToggle,
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  // 발송 확인 다이얼로그 — 버튼 오클릭 한 번이 고객 메일로 직행하는 걸 막는 마지막 관문
+  const [confirmOpen, setConfirmOpen] = useState(false);
   // 한 번 보낸 스텝은 잠근다 — 중복 발송(중복 메일·중복 컨펌)이 재발송 필요보다 훨씬 흔한 사고다.
   // done은 stage가 아니라 "이 이벤트가 실제 발사됐는가"(타임라인) 기준 — 같은 stage에 도달하는
   // 스텝들(디파짓/다이아 둘 다 CAD)이 한꺼번에 체크되는 오판 방지.
@@ -384,8 +403,8 @@ function StepCard({ step, index, order, done, changeRequest, expanded, onToggle,
     <section className={`panel checkpoint client-stage-section ${sectionState}`}>
       <div
         className="client-stage-head"
-        onClick={!open && !done ? onToggle : undefined}
-        style={!open && !done ? { cursor: "pointer" } : undefined}
+        onClick={!open && !done && !locked ? onToggle : undefined}
+        style={!open && !done && !locked ? { cursor: "pointer" } : undefined}
       >
         <span className="client-stage-number">{done && !unlocked ? "✓" : step.num}</span>
         <div><h3>{t.steps[step.type]}</h3></div>
@@ -395,7 +414,9 @@ function StepCard({ step, index, order, done, changeRequest, expanded, onToggle,
             ? <span className="status-badge mst-done">{t.sentLabel}</span>
             : open
               ? <span className="status-badge mst-inProgress">{t.current}</span>
-              : <span className="status-badge mst-pending">{step.reaches}</span>}
+              : awaitingCustomer
+                ? <span className="status-badge mst-waitingClient">{t.awaitCustomer}</span>
+                : <span className="status-badge mst-pending">{step.reaches}</span>}
       </div>
       {open && (
         <div className="form-stack" style={{ marginTop: 14 }}>
@@ -501,10 +522,23 @@ function StepCard({ step, index, order, done, changeRequest, expanded, onToggle,
             className={`button ${done && !unlocked ? "secondary" : "primary"}`}
             type="button"
             disabled={busy || (done && !unlocked)}
-            onClick={fire}
+            onClick={() => setConfirmOpen(true)}
           >
             {unlocked ? t.resend : done ? t.sentLabel : t.fire}
           </button>
+          {confirmOpen && (
+            <div className="con-confirm-backdrop" role="dialog" aria-modal="true" aria-label={t.confirmTitle} onClick={() => setConfirmOpen(false)}>
+              <div className="con-confirm" onClick={(e) => e.stopPropagation()}>
+                <h4>{t.confirmTitle}</h4>
+                <p><strong>{t.steps[step.type]}</strong> — {t.confirmBody}</p>
+                <div className="con-confirm-actions">
+                  {/* 뒤로가 기본 포커스 — Enter 연타가 발송으로 이어지지 않게 */}
+                  <button className="button secondary small" type="button" autoFocus onClick={() => setConfirmOpen(false)}>{t.cancelKeepBtn}</button>
+                  <button className="button primary small" type="button" disabled={busy} onClick={() => { setConfirmOpen(false); fire(); }}>{t.confirmSend}</button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </section>
@@ -657,9 +691,13 @@ export function AdminLiveOrderDetail() {
             : null;
           const changeRequest = lastResponded?.responsePayload?.response === "REQUEST_CHANGES" ? lastResponded : null;
           const done = firedTypes.has(step.type);
-          const expanded = !done && (expandedStep ? expandedStep === step.type : step.type === firstOpenType);
+          // 순차 게이트 — 이전 스텝이 모두 발사됐고, 고객 컨펌이 걸린 스텝은 승인까지 받아야 다음이 열린다
+          const gate = stepGate(FLOW, i, firedTypes, actions);
+          const locked = !done && gate.locked;
+          const expanded = !done && !locked && (expandedStep ? expandedStep === step.type : step.type === firstOpenType);
           return (
             <StepCard key={step.type} step={step} index={i + 1} order={order} t={t} done={done}
+              locked={locked} awaitingCustomer={locked && gate.awaitingCustomer}
               changeRequest={changeRequest} expanded={expanded}
               onToggle={() => setExpandedStep(step.type)}
               onSent={() => { setNotice(t.sent); setExpandedStep(null); load(); }} />

@@ -706,6 +706,43 @@
 .admin-media-manager { justify-items: start; }
 .admin-media-manager > * { width: 100%; }
 
+/* ── 스텝 발송 확인 다이얼로그 ───────────────────────────── */
+.con-confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(2, 3, 3, 0.55);
+  backdrop-filter: blur(5px);
+}
+.con-confirm {
+  width: min(430px, 92vw);
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-line-strong);
+  padding: 26px 28px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+}
+.con-confirm h4 {
+  margin: 0 0 8px;
+  font-family: var(--serif);
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--admin-ink);
+}
+.con-confirm p {
+  margin: 0 0 18px;
+  color: var(--admin-muted);
+  font-size: 13.5px;
+  line-height: 1.65;
+}
+.con-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 /* ── 반응형 ──────────────────────────────────────────────── */
 @media (max-width: 1180px) {
   .con-workbench { grid-template-columns: 1fr; }
