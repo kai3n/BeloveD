@@ -63,7 +63,7 @@ export const FAQ = [
   },
   {
     id: "lab",
-    keywords: ["lab grown", "lab-grown", "labgrown", "grown diamond", "real diamond", "natural vs", "mined", "cvd", "hpht", "fake", "랩그로운", "랩다이아", "랩 다이아", "천연", "진짜 다이아", "가짜", "실험실", "培育", "实验室", "人造", "真钻", "cultivado", "laboratorio", "real"],
+    keywords: ["lab grown", "lab-grown", "labgrown", "lab diamond", "lab created", "lab-created", "grown diamond", "real diamond", "synthetic", "natural vs", "mined", "cvd", "hpht", "fake", "랩그로운", "랩다이아", "랩 다이아", "천연", "진짜 다이아", "가짜", "실험실", "培育", "实验室", "人造", "真钻", "cultivado", "laboratorio"],
     q: { en: "Are lab diamonds real?", ko: "랩다이아몬드는 진짜인가요?", zh: "培育钻石是真的吗？", es: "¿Son reales los diamantes de laboratorio?" },
     a: {
       en: "Yes — a lab-grown diamond is a real diamond, physically and chemically identical to a mined one (Mohs 10 hardness, same fire) and it tests as a diamond because it is one. It's grown in weeks by CVD or HPHT instead of over a billion years. Every BeloveD stone is IGI or GIA certified.",
@@ -211,10 +211,10 @@ export const FAQ = [
     keywords: ["return", "refund", "exchange", "money back", "cancel", "반품", "환불", "교환", "취소", "退货", "退款", "换货", "取消", "devolución", "reembolso", "cambio", "cancelar"],
     q: { en: "What's the return policy?", ko: "반품 정책은 어떻게 되나요?", zh: "退货政策如何？", es: "¿Cuál es la política de devolución?" },
     a: {
-      en: "Ready-to-ship loose diamonds and non-engraved designs can be returned within 30 days of delivery for a full refund, in original condition with the certificate. Bespoke pieces are final once production begins — but before that, during quote review and CAD approval, you can cancel for a full deposit refund. We arrange free insured return shipping and confirm refunds within 5 business days of inspection.",
-      ko: "즉시 배송 루스 다이아몬드와 각인 없는 디자인은 수령 후 30일 내 원상태·감정서 동반 시 전액 환불돼요. 맞춤 제품은 제작 시작 후 확정이지만, 그전(견적 검토·CAD 승인 단계)엔 디파짓 전액 환불로 취소 가능해요. 무료 보험 반송을 준비해 드리고 검수 후 5영업일 내 환불을 확정해요.",
-      zh: "现货裸钻与未刻字设计可在收货 30 天内、原状并附证书全额退款。定制作品自开始制作即为最终——但在此前（报价审核与 CAD 确认阶段）可取消并全额退还订金。我们安排免费保险退运，验收后 5 个工作日内确认退款。",
-      es: "Los diamantes sueltos listos para enviar y los diseños sin grabado se devuelven dentro de 30 días de la entrega con reembolso total, en estado original y con el certificado. Las piezas a medida son definitivas al iniciar producción — pero antes, en la revisión de cotización y aprobación del CAD, puedes cancelar con reembolso total del depósito. Gestionamos el envío de devolución asegurado y confirmamos el reembolso en 5 días hábiles tras la inspección.",
+      en: "Because every piece is made to your specification, custom orders are final sale after delivery, and the 30% deposit is non-refundable at every stage. You can cancel before production begins — the deposit covers the design work already done. Ready-to-ship items and loose diamonds are also final sale. If a piece arrives defective or doesn't match your approved spec, contact us and we'll repair or replace it under warranty.",
+      ko: "모든 피스가 고객님 사양대로 제작되기 때문에 주문 제작 피스는 배송 후 최종 판매이며, 디파짓(30%)은 어느 단계에서도 환불되지 않아요. 제작 시작 전에는 취소할 수 있고, 디파짓은 이미 진행된 디자인 작업을 충당해요. 즉시 출고 상품·루스 다이아몬드도 최종 판매예요. 결함이 있거나 승인한 사양과 다르게 도착하면 연락 주세요 — 보증에 따라 수리·교체해 드려요.",
+      zh: "每件作品都按你的规格制作，因此定制订单交付后为最终销售，订金（30%）在任何阶段均不退还。投产前可以取消 —— 订金用于抵付已完成的设计工作。现货商品与裸钻同为最终销售。若作品有缺陷或与确认规格不符，请联系我们，我们将按保修修复或更换。",
+      es: "Como cada pieza se hace según tu especificación, los pedidos a medida son venta final tras la entrega, y el depósito (30%) no es reembolsable en ninguna etapa. Puedes cancelar antes de que empiece la producción — el depósito cubre el diseño ya realizado. Los artículos en stock y diamantes sueltos también son venta final. Si una pieza llega defectuosa o no coincide con tu especificación aprobada, contáctanos y la repararemos o reemplazaremos bajo garantía.",
     },
   },
   {

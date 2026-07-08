@@ -8,6 +8,7 @@ import { track } from "./lib/track.js";
 // 공개 스토어프론트 — 모든 방문자가 즉시 보는 화면은 eager 로드
 import Home from "./pages/Home.jsx";
 import Login from "./pages/Login.jsx";
+import MagicCallback from "./pages/MagicCallback.jsx";
 import StyleCatalog from "./pages/StyleCatalog.jsx";
 import StyleDetail from "./pages/StyleDetail.jsx";
 import IntakeForm from "./pages/IntakeForm.jsx";
@@ -59,6 +60,7 @@ export default function App() {
           <Route index element={<Home />} />
           <Route path="login" element={<Login />} />
           <Route path="sign-in" element={<Login />} />
+          <Route path="auth/callback" element={<MagicCallback />} />
           {/* 어드민 게이트 — 추측 불가 경로. 어디에도 링크하지 않는다(직접 접속/북마크 전용). */}
           {WITH_BACKOFFICE && <Route path="gate-7f3k9x" element={<StaffLogin />} />}
           <Route path="designs" element={<StyleCatalog />} />

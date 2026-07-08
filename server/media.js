@@ -60,8 +60,14 @@ export async function createUploadUrl({ scope, contentType, size }) {
     Bucket: process.env.R2_BUCKET,
     Key: key,
     ContentType: contentType,
+    // content-length를 서명에 포함 → R2가 실제 업로드 바디를 이 크기로 강제한다.
+    // (없으면 presigned PUT은 선언 size만 검사하고 실제로는 임의 크기 업로드가 가능 — 용량 남용)
+    ContentLength: bytes,
   });
-  const uploadUrl = await getSignedUrl(client(), command, { expiresIn: SIGN_TTL_SECONDS });
+  const uploadUrl = await getSignedUrl(client(), command, {
+    expiresIn: SIGN_TTL_SECONDS,
+    unhoistableHeaders: new Set(["content-length"]),
+  });
   const publicUrl = `${process.env.R2_PUBLIC_URL.replace(/\/$/, "")}/${key}`;
   return { uploadUrl, publicUrl, key, expiresIn: SIGN_TTL_SECONDS };
 }
