@@ -173,17 +173,29 @@ export default function ChatWidget() {
   const bodyRef = useRef(null);
   const fileRef = useRef(null);
   const missRef = useRef(0); // 연속 FAQ 미스 카운트
+  const threadCodeRef = useRef(null); // 현재 스레드 코드 — 서버가 다른 스레드로 바뀌면 커서 리셋
 
   function ingest(data) {
     if (!data) return;
     if (data.staffAgent) setAgent(data.staffAgent);
     if (data.thread !== undefined) {
+      const prevCode = threadCodeRef.current;
+      const nextCode = data.thread?.code || null;
+      threadCodeRef.current = nextCode;
       setThread(data.thread);
-      if (data.thread) setUnread(data.thread.customerUnread || 0);
-      else {
+      if (!data.thread) {
         // 스레드가 사라짐(로그아웃 등으로 bd_chat 제거) → 로컬 대화도 즉시 초기화
         setMessages([]); lastIdRef.current = 0; setUnread(0); setEmailSaved(false); setConsultOpen(false); setRated(false);
+        return;
       }
+      if (prevCode && prevCode !== nextCode) {
+        // 서버가 다른 스레드로 전환 → 초기화하고 이번 응답 메시지는 버린다
+        // (다음 폴이 since=0으로 새 스레드를 온전히 로드해 이전 대화 잔존·커서 가림 방지)
+        setMessages([]); lastIdRef.current = 0; setEmailSaved(false); setConsultOpen(false); setRated(false);
+        setUnread(data.thread.customerUnread || 0);
+        return;
+      }
+      setUnread(data.thread.customerUnread || 0);
     }
     if (data.messages?.length) {
       setMessages((prev) => {
@@ -511,7 +523,8 @@ export default function ChatWidget() {
         {!showMenu && !consultOpen && (
           <div className="chat-actionbar">
             <button type="button" onClick={() => setMenuOpen(true)}><HelpCircle size={14} strokeWidth={1.9} /> {t.menu}</button>
-            <button type="button" onClick={() => doSend(t.talkMsg)}><UserRound size={14} strokeWidth={1.9} /> {t.talk}</button>
+            {/* 에스컬레이션 카드가 이미 '상담원 연결'을 노출 중이면 중복 버튼 숨김 */}
+            {!escalate && <button type="button" onClick={() => doSend(t.talkMsg)}><UserRound size={14} strokeWidth={1.9} /> {t.talk}</button>}
           </div>
         )}
 

@@ -109,7 +109,7 @@ export function adminChatRouter() {
     catch (e) { next(e); }
   });
   r.post("/chat/push/unsubscribe", async (req, res, next) => {
-    try { await removeSubscription(req.body?.endpoint); res.json({ ok: true }); }
+    try { await removeSubscription(req.body?.endpoint, req.principal.id); res.json({ ok: true }); }
     catch (e) { next(e); }
   });
 

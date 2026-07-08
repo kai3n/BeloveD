@@ -175,7 +175,7 @@ export const FAQ = [
   },
   {
     id: "process",
-    keywords: ["how does it work", "process", "custom", "bespoke", "order", "make a ring", "get started", "steps", "과정", "어떻게 진행", "주문 제작", "맞춤", "의뢰", "시작", "단계", "流程", "定制", "怎么下单", "如何开始", "步骤", "proceso", "cómo funciona", "personalizado", "empezar"],
+    keywords: ["how does it work", "process", "custom ring", "custom design", "customize", "custom order", "custom made", "bespoke", "how do i order", "place an order", "ordering", "make a ring", "get started", "steps", "과정", "어떻게 진행", "주문 제작", "맞춤", "의뢰", "시작", "단계", "流程", "定制", "怎么下单", "如何开始", "步骤", "proceso", "cómo funciona", "personalizado", "empezar"],
     q: { en: "How does a custom order work?", ko: "주문 제작은 어떻게 진행되나요?", zh: "定制流程是怎样的？", es: "¿Cómo funciona un pedido personalizado?" },
     a: {
       en: "1) Tell us the piece, stone and design (attach up to 5 reference photos/videos). 2) We send one proposal — certified stone, setting, all-inclusive price, timeline — usually within 24–48h; nothing is charged until you accept. 3) 50% deposit locks the stone. 4) You approve the CAD. 5) We craft it, send finished-piece photos + certificate for your OK. 6) Balance, then insured shipping. Start from 'Start a custom request'.",
@@ -230,7 +230,7 @@ export const FAQ = [
   },
   {
     id: "payment",
-    keywords: ["payment", "pay", "installment", "deposit", "zelle", "venmo", "credit card", "how do i pay", "결제", "지불", "할부", "디파짓", "계약금", "송금", "카드", "付款", "支付", "分期", "定金", "信用卡", "pago", "pagar", "plazos", "depósito", "tarjeta"],
+    keywords: ["payment", "pay", "installment", "financ", "affirm", "klarna", "payment plan", "monthly payment", "deposit", "zelle", "venmo", "credit card", "how do i pay", "결제", "지불", "할부", "디파짓", "계약금", "송금", "카드", "分期付款", "付款", "支付", "分期", "定金", "信用卡", "pago", "pagar", "plazos", "depósito", "financiación", "tarjeta"],
     q: { en: "How do I pay?", ko: "결제는 어떻게 하나요?", zh: "如何付款？", es: "¿Cómo pago?" },
     a: {
       en: "A 50% deposit begins the order and the balance is due before shipping. We currently accept Zelle and Venmo (scan the QR or copy the recipient) — your payment memo must include the order number so we can confirm it — and secure card payment is coming soon. We never collect or store card numbers.",

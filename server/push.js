@@ -25,9 +25,10 @@ export async function saveSubscription(adminId, sub) {
   );
 }
 
-export async function removeSubscription(endpoint) {
-  if (!endpoint) return;
-  await query("delete from push_subscriptions where endpoint = $1", [String(endpoint)]);
+export async function removeSubscription(endpoint, adminId) {
+  if (!endpoint || adminId == null) return;
+  // 본인 구독만 해제 — 다른 스태프의 구독을 삭제하지 못하도록 admin_id로 스코프
+  await query("delete from push_subscriptions where endpoint = $1 and admin_id = $2", [String(endpoint), adminId]);
 }
 
 // 모든 스태프 구독으로 발송(fire-and-forget 용). 만료(404/410) 구독은 정리한다.
