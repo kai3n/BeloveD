@@ -6,6 +6,7 @@ import { query } from "../db.js";
 import { hashPassword } from "../passwords.js";
 import { __resetRateLimit } from "../rateLimit.js";
 import { drainMail } from "../mailer.js";
+import { issueSession } from "../session.js";
 import { truncateAuth, truncateChat } from "./helpers.js";
 
 const app = createApp();
@@ -132,10 +133,16 @@ describe("라이브챗", () => {
   it("상담 요청은 대화 내용·첨부와 함께 support@belovediamond.com 로 전송", async () => {
     const res = await request(app).post("/v1/chat/messages").send({
       body: "Here is my inspiration photo",
-      attachments: [{ url: "https://cdn.example.com/ring.jpg", contentType: "image/jpeg", name: "ring.jpg" }],
+      attachments: [
+        { url: "https://cdn.example.com/ring.jpg", contentType: "image/jpeg", name: "ring.jpg" },
+        { url: "https://evil.example.net/tracker.gif", contentType: "image/gif", name: "x.gif" },
+      ],
       locale: "en",
     });
     expect(res.status).toBe(201);
+    // 외부(비 R2) URL은 제거되고 R2 오리진만 저장된다
+    expect(res.body.message.attachments).toHaveLength(1);
+    expect(res.body.message.attachments[0].url).toContain("cdn.example.com");
     await flush();
     const mails = drainMail().filter((m) => m.type === "chat_consultation");
     expect(mails.length).toBeGreaterThanOrEqual(1);
@@ -243,6 +250,36 @@ describe("라이브챗", () => {
     const admin = await adminCookie();
     const stats = await request(app).get("/v1/admin/chat/stats").set("Cookie", admin);
     expect(stats.body.stats.avgCsat).toBeGreaterThanOrEqual(1);
+  });
+
+  it("공용 브라우저 — 로그인 고객은 남의 bd_chat 스레드를 볼 수 없다(소유권 검사)", async () => {
+    const a = await request(app).post("/v1/chat/messages").send({ body: "A's private note" });
+    const aChat = a.headers["set-cookie"].find((c) => c.startsWith("bd_chat="));
+    const codeA = a.body.thread.code;
+    const { rows } = await query(
+      "insert into customers (email, name, customer_code) values ('a@t.co','A','CUSTA'),('b@t.co','B','CUSTB') returning id",
+    );
+    const [aId, bId] = rows.map((r) => r.id);
+    await query("update chat_threads set customer_id = $1 where thread_code = $2", [aId, codeA]);
+    // 고객 B가 A의 bd_chat 쿠키를 그대로 가진 채 조회 → A 대화 노출 안 됨
+    const bSess = await issueSession("customer", bId);
+    const asB = await request(app).get("/v1/chat/thread").set("Cookie", [aChat, `bd_sid=${bSess.id}`]);
+    expect(asB.body.thread).toBeNull();
+    // 반면 A 본인은 자기 스레드를 본다
+    const aSess = await issueSession("customer", aId);
+    const asA = await request(app).get("/v1/chat/thread").set("Cookie", [aChat, `bd_sid=${aSess.id}`]);
+    expect(asA.body.thread?.code).toBe(codeA);
+  });
+
+  it("명시적 '상담원 연결'은 자동응답이 있어도 스태프 알림 이메일이 나간다(스로틀 무시)", async () => {
+    const first = await request(app).post("/v1/chat/messages").send({ body: "hello" });
+    const cookie = first.headers["set-cookie"];
+    await flush(); drainMail(); // 첫 알림 소진
+    const talk = await request(app).post("/v1/chat/messages").set("Cookie", cookie)
+      .send({ body: "I'd like to talk to a person." });
+    expect(talk.body.autoReply).toBeTruthy(); // consultation 자동응답
+    await flush();
+    expect(drainMail().filter((m) => m.type === "chat_consultation").length).toBeGreaterThanOrEqual(1);
   });
 
   it("웹푸시 — 공개키/구독 API + 미설정(VAPID 없음) 환경에서도 안전", async () => {

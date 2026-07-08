@@ -34,7 +34,16 @@ async function resolveThread(req) {
     if (t) return t;
   }
   const token = req.cookies?.[COOKIE_CHAT];
-  return token ? findThreadByToken(token) : null;
+  if (!token) return null;
+  const t = await findThreadByToken(token);
+  if (!t) return null;
+  // 로그인 고객인데 토큰 스레드가 '다른 고객' 소유면 무시 — 공용/키오스크 브라우저에서
+  // (로그아웃 없이) 이전 사용자의 대화가 새 로그인 사용자에게 노출되는 것을 막는다.
+  if (req.principal?.type === "customer" && t.customer_id != null
+      && Number(t.customer_id) !== Number(req.principal.id)) {
+    return null;
+  }
+  return t;
 }
 
 // 없으면 새 스레드 + bd_chat 쿠키 발급 (항상 소유자 스코프가 보장됨)
@@ -71,9 +80,11 @@ export function chatRouter() {
         const faq = matchFaq(body, thread.visitor_locale || locale || "en");
         if (faq) autoReply = await appendMessage(thread.id, { sender: "staff", body: faq.answer });
 
-        // 스태프 데스크톱 알림(웹푸시) — 자동응답이 못 한(사람 필요) 또는 미디어 포함 메시지에 즉시 알림.
+        // 스태프 데스크톱 알림(웹푸시) — 자동응답이 못 한(사람 필요)·미디어 포함, 또는
+        // 명시적 '상담원 연결' 요청(consultation 매칭)이면 자동응답이 있어도 즉시 알린다.
+        const wantsHuman = faq?.id === "consultation";
         const hasMediaPush = Array.isArray(attachments) && attachments.length > 0;
-        if (!faq || hasMediaPush) {
+        if (!faq || wantsHuman || hasMediaPush) {
           sendPushToStaff({
             title: `New chat · ${thread.thread_code.replace("CHAT-", "#")}`,
             body: body && String(body).trim() ? String(body).slice(0, 120) : "📎 Attachment",
@@ -84,7 +95,7 @@ export function chatRouter() {
         // 상담 요청을 support@로 전달 — 신규/스로틀 해제 또는 사진·영상 포함 시,
         // 전체 대화 내용 + 모든 미디어를 함께 보낸다.
         const hasMedia = Array.isArray(attachments) && attachments.length > 0;
-        if (shouldNotifyStaff(thread) || hasMedia) {
+        if (shouldNotifyStaff(thread) || hasMedia || wantsHuman) {
           await markStaffNotified(thread.id);
           const cust = thread.customer_id
             ? (await query("select name from customers where id = $1", [thread.customer_id])).rows[0]

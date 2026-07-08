@@ -23,8 +23,12 @@ export function cleanBody(body) {
 
 export function sanitizeAttachments(list) {
   if (!Array.isArray(list)) return [];
+  // 첨부 URL은 우리 R2 오리진에서 업로드된 것만 허용 — 외부 URL 주입(추적 픽셀·외부 콘텐츠가
+  // 어드민 콘솔/상담 이메일에 렌더되는 것) 차단. 업로드는 presigned PUT로만 발급되므로 정상.
+  const base = (process.env.R2_PUBLIC_URL || "").replace(/\/$/, "");
   return list
     .filter((a) => a && typeof a.url === "string" && a.url)
+    .filter((a) => base && a.url.startsWith(`${base}/`))
     .slice(0, ATTACH_MAX)
     .map((a) => ({
       url: String(a.url).slice(0, 600),
@@ -56,6 +60,7 @@ export function threadView(row) {
     customerUnread: row.customer_unread,
     tags: row.tags || [],
     assignedAdminId: row.assigned_admin_id != null ? Number(row.assigned_admin_id) : null,
+    csat: row.csat != null ? Number(row.csat) : null,
     createdAt: row.created_at,
   };
 }
@@ -240,7 +245,8 @@ export async function addThreadTag(threadId, tag) {
 export async function setThreadCsat(threadId, rating) {
   const r = Math.round(Number(rating));
   if (!(r >= 1 && r <= 5)) throw new ApiError("VALIDATION_ERROR", 400, "rating 1-5");
-  await query("update chat_threads set csat = $2 where id = $1", [threadId, r]);
+  // 최초 평가만 반영(덮어쓰기 방지) — 재제출은 무시된다
+  await query("update chat_threads set csat = $2 where id = $1 and csat is null", [threadId, r]);
 }
 
 export async function assignThread(code, adminId) {

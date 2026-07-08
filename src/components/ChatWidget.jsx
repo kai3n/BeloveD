@@ -487,7 +487,7 @@ export default function ChatWidget() {
                   <button type="button" onClick={() => { setEscalate(false); doSend(t.talkMsg); }}>{t.talk}</button>
                 </div>
               )}
-              {thread?.status === "closed" && messages.length > 0 && (
+              {thread?.status === "closed" && !thread?.csat && messages.length > 0 && (
                 <div className="chat-csat">
                   {rated ? (
                     <span className="chat-csat-thanks">✓ {t.csatThanks}</span>

@@ -41,7 +41,7 @@ export const FAQ = [
   },
   {
     id: "earrings",
-    keywords: ["earring", "stud", "hoop", "huggie", "drop earring", "pierced", "clip on", "귀걸이", "이어링", "스터드", "후프", "귀 안 뚫", "耳环", "耳钉", "耳圈", "arete", "pendiente", "aro"],
+    keywords: ["earring", "stud", "hoop", "huggie", "drop earring", "pierced", "clip on", "귀걸이", "이어링", "스터드", "후프", "귀 안 뚫", "耳环", "耳钉", "耳圈", "arete", "pendiente"],
     q: { en: "What earring styles?", ko: "이어링 종류가 어떻게 되나요?", zh: "有哪些耳饰款式？", es: "¿Qué estilos de aretes?" },
     a: {
       en: "We make studs (sit on the lobe), huggies/hoops, and drops/dangles (up to ~15mm and beyond). Pierced or clip-on both work — just tell us, and whether the pair must match. Popular picks: round studs, inside-out hoops, and halo drops.",
@@ -276,12 +276,24 @@ export const FAQ = [
 
 const norm = (s) => String(s || "").toLowerCase().trim();
 
+// 키워드 매칭 — 라틴 문자로 시작하는 키워드는 '단어 시작' 경계에서만 매칭한다.
+// 짧은 키워드의 중간-단어 부분일치 오탐을 막는다: origin→igi, display→pay, Georgia→gia,
+// flibbertigibbet→igi 등. 스템 접두(payment←pay, engraving←engrav)는 그대로 매칭.
+// CJK 등 비라틴 키워드(각인·耳环 등)는 단어 경계가 없으므로 부분일치를 유지한다.
+function keywordHit(t, k) {
+  if (/^[a-z]/.test(k)) {
+    const esc = k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(`(?:^|[^a-z])${esc}`).test(t);
+  }
+  return t.includes(k);
+}
+
 // 방문자 메시지를 지식베이스와 매칭 — 첫 일치 항목의 답변을 반환(없으면 null → 사람이 응대)
 export function matchFaq(text, locale = "en") {
   const t = norm(text);
   if (!t) return null;
   for (const entry of FAQ) {
-    if (entry.keywords.some((k) => t.includes(k))) {
+    if (entry.keywords.some((k) => keywordHit(t, k))) {
       return { id: entry.id, answer: entry.a[locale] || entry.a.en };
     }
   }

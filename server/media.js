@@ -14,7 +14,8 @@ const ALLOWED_TYPES = new Map([
   ["video/quicktime", "mov"],
   ["video/webm", "webm"],
 ]);
-const MAX_BYTES = 100 * 1024 * 1024; // 100MB (영상 리뷰 감안)
+const MAX_BYTES = 100 * 1024 * 1024; // 100MB (이미지 상한)
+const VIDEO_MAX_BYTES = 30 * 1024 * 1024; // 영상 30MB (클라이언트 CHAT_VIDEO_MAX_BYTES와 정렬)
 const SIGN_TTL_SECONDS = 60 * 10;
 
 export function r2Configured(env = process.env) {
@@ -46,10 +47,12 @@ const SCOPES = new Set(["reference", "review", "proposal", "cad", "qc", "style",
 export async function createUploadUrl({ scope, contentType, size }) {
   if (!r2Configured()) throw new ApiError("MEDIA_NOT_CONFIGURED", 503);
   if (!SCOPES.has(scope)) throw new ApiError("VALIDATION_ERROR", 400, "bad scope");
-  const ext = ALLOWED_TYPES.get(String(contentType || "").toLowerCase());
+  const ct = String(contentType || "").toLowerCase();
+  const ext = ALLOWED_TYPES.get(ct);
   if (!ext) throw new ApiError("UNSUPPORTED_MEDIA_TYPE", 400);
   const bytes = Number(size);
-  if (!Number.isFinite(bytes) || bytes <= 0 || bytes > MAX_BYTES) {
+  const cap = ct.startsWith("video/") ? VIDEO_MAX_BYTES : MAX_BYTES; // 영상은 서버에서도 30MB 강제
+  if (!Number.isFinite(bytes) || bytes <= 0 || bytes > cap) {
     throw new ApiError("MEDIA_TOO_LARGE", 400);
   }
   const key = `${scope}/${new Date().toISOString().slice(0, 10)}/${randomBytes(12).toString("hex")}.${ext}`;

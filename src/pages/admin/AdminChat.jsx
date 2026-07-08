@@ -47,6 +47,7 @@ export default function AdminChat() {
   const [pushState, setPushState] = useState("off"); // unsupported|denied|on|off
 
   const lastIdRef = useRef(0);
+  const activeRef = useRef(null); // 현재 선택 스레드 — 폴링 레이스 가드
   const threadBodyRef = useRef(null);
   const fileRef = useRef(null);
   const achatRef = useRef(null);
@@ -97,8 +98,10 @@ export default function AdminChat() {
 
   const loadActive = useCallback(async () => {
     if (!activeCode) return;
+    const code = activeCode;
     try {
-      const d = await apiFetch(`/admin/chat/threads/${activeCode}?since=${lastIdRef.current}`);
+      const d = await apiFetch(`/admin/chat/threads/${code}?since=${lastIdRef.current}`);
+      if (activeRef.current !== code) return; // 응답 도착 전 다른 스레드로 전환됨 → 폐기(메시지 섞임 방지)
       setThread(d.thread);
       setContext(d.context || null);
       if (d.messages?.length) {
@@ -109,12 +112,13 @@ export default function AdminChat() {
         });
         lastIdRef.current = Math.max(lastIdRef.current, ...d.messages.map((m) => m.id));
       }
-    } catch (e) { setError(e.code || e.message); }
+    } catch (e) { if (activeRef.current === code) setError(e.code || e.message); }
   }, [activeCode]);
 
   // 선택 스레드 폴링
   useEffect(() => {
     if (!activeCode) return undefined;
+    activeRef.current = activeCode; // 동기 갱신 — 인플라이트 이전 스레드 응답을 폐기시킨다
     lastIdRef.current = 0;
     setMessages([]);
     loadActive();
