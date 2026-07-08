@@ -43,6 +43,8 @@ export default function QuoteCompare({ form }) {
         ))}
       </div>
       <p className="qc-note">{t.note}</p>
+      {/* 멀티스톤 — 견적은 총 캐럿 기준, 퀄리티 range는 확정 제안에서 확정된다는 안내 */}
+      {!est.solitaire && <p className="qc-note">{p.intake.gflow.qualityRangeNote}</p>}
     </div>
   );
 }

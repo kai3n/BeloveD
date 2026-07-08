@@ -18,7 +18,12 @@ import StoneEduPanel from "../components/StoneEducation.jsx";
 import { track } from "../lib/track.js";
 import QuoteCompare from "../components/QuoteCompare.jsx";
 import GalleryStep from "../components/intake/GalleryStep.jsx";
-import { CaratSlider, ImageOptionGrid, MetalSwatches, ScalePicker, ShapeSilhouette, ShapeTiles } from "../components/intake/pickers.jsx";
+import { CaratSlider, GradeRangeSlider, ImageOptionGrid, MetalSwatches, ShapeSilhouette, ShapeTiles, TotalCaratSlider } from "../components/intake/pickers.jsx";
+import {
+  CLARITY_SCALE, COLOR_SCALE, MULTI_CLARITY_DEFAULT, MULTI_COLOR_DEFAULT,
+  SOLITAIRE_CLARITY_DEFAULT, SOLITAIRE_COLOR_DEFAULT, TOTAL_CARAT_RANGES,
+  clampGradeRange, clampTotalCarat, formatGradeRange,
+} from "../lib/gradeScale.js";
 import { defaultSubcategoryFor, styleSubcategoryKey, subcategoryKeysFor } from "../lib/designSlots.js";
 import { normalizeCouponCode } from "../lib/coupons.js";
 
@@ -95,14 +100,33 @@ function readDraft() {
   }
 }
 
-// 질문 순서 — 멀티스톤 디자인이면 셰입/캐럿을 건너뛰고, 비회원은 리뷰 직전에 연락처를 받는다
+// 질문 순서 — 멀티스톤 디자인은 셰입/캐럿 대신 총캐럿·퀄리티 '스톤' 스텝, 비회원은 리뷰 직전에 연락처
 function screenList(productLine, isGuest) {
   const list = ["category", "design", "metal"];
   if (productLine === "solitaire") list.push("shape", "carat");
+  else list.push("stones");
   list.push("inspiration");
   if (isGuest) list.push("contact");
   list.push("review");
   return list;
+}
+
+// 구 드래프트(단일 color/clarity·range 없음)·카테고리 불일치 총캐럿을 기본값으로 정규화
+function normalizeStoneSelections(form) {
+  return {
+    ...form,
+    stonePrefs: {
+      ...form.stonePrefs,
+      colorRange: clampGradeRange(COLOR_SCALE, form.stonePrefs?.colorRange ?? form.stonePrefs?.color, SOLITAIRE_COLOR_DEFAULT),
+      clarityRange: clampGradeRange(CLARITY_SCALE, form.stonePrefs?.clarityRange ?? form.stonePrefs?.clarity, SOLITAIRE_CLARITY_DEFAULT),
+    },
+    multiSpec: {
+      ...form.multiSpec,
+      totalCarat: String(clampTotalCarat(form.category, form.multiSpec?.totalCarat)),
+      colorRange: clampGradeRange(COLOR_SCALE, form.multiSpec?.colorRange, MULTI_COLOR_DEFAULT),
+      clarityRange: clampGradeRange(CLARITY_SCALE, form.multiSpec?.clarityRange, MULTI_CLARITY_DEFAULT),
+    },
+  };
 }
 
 export default function IntakeForm() {
@@ -133,10 +157,16 @@ export default function IntakeForm() {
     conditional: categoryDefaults(initialCategory),
     stonePrefs: {
       shape: refDiamond?.shape || "round", carat: String(refDiamond?.carat || "1.5"),
-      color: refDiamond?.color || "E", clarity: refDiamond?.clarity || "VS1",
+      // 쇼케이스 다이아 프리필은 단일값 → [v,v] range로 승격
+      colorRange: clampGradeRange(COLOR_SCALE, refDiamond?.color, SOLITAIRE_COLOR_DEFAULT),
+      clarityRange: clampGradeRange(CLARITY_SCALE, refDiamond?.clarity, SOLITAIRE_CLARITY_DEFAULT),
       growth: "CVD", lab: "IGI India", colorTreatment: "disclosed", fluorescence: "none", lwRatio: "",
     },
-    multiSpec: { meleeSpec: "", overallDims: "", arrangement: "", standard: "" },
+    multiSpec: {
+      totalCarat: String(TOTAL_CARAT_RANGES[initialCategory]?.default ?? 1.5),
+      colorRange: [...MULTI_COLOR_DEFAULT], clarityRange: [...MULTI_CLARITY_DEFAULT],
+      meleeSpec: "", overallDims: "", arrangement: "", standard: "",
+    },
     inspirationNotes: "",
     engraving: "",
     couponCode: "",
@@ -155,7 +185,7 @@ export default function IntakeForm() {
       nextCategory,
       styleFromParam ? styleSubcategoryKey(styleFromParam) : draft.form.subcategory,
     );
-    return {
+    return normalizeStoneSelections({
       ...baseForm,
       ...draft.form,
       category: nextCategory,
@@ -165,7 +195,7 @@ export default function IntakeForm() {
       stonePrefs: { ...baseForm.stonePrefs, ...draft.form.stonePrefs },
       multiSpec: { ...baseForm.multiSpec, ...draft.form.multiSpec },
       termsAccepted: false,
-    };
+    });
   });
   // 딥링크 진입 — 스타일이 정해져 있으면(상세 페이지 "Start custom order") 피스·디자인 질문은
   // 이미 답이 있으므로 메탈부터, 카테고리만 알면(카탈로그 CTA) 디자인부터 시작한다.
@@ -191,6 +221,7 @@ export default function IntakeForm() {
   const setF = (patch) => setForm((f) => ({ ...f, ...patch }));
   const setC = (patch) => setForm((f) => ({ ...f, conditional: { ...f.conditional, ...patch } }));
   const setS = (patch) => setForm((f) => ({ ...f, stonePrefs: { ...f.stonePrefs, ...patch } }));
+  const setM = (patch) => setForm((f) => ({ ...f, multiSpec: { ...f.multiSpec, ...patch } }));
 
   const solitaire = form.productLine === "solitaire";
   const isGuest = !user;
@@ -379,11 +410,10 @@ export default function IntakeForm() {
     { value: "", label: g.notSureTitle, sub: g.notSureSub, media: null },
   ];
 
-  const colorOptions = ["D", "E", "F", "G"].map((v) => ({ value: v }));
-  const clarityOptions = ["IF", "VVS1", "VVS2", "VS1", "VS2"].map((v) => ({ value: v }));
+  const totalCaratRange = TOTAL_CARAT_RANGES[form.category] || TOTAL_CARAT_RANGES.ring;
   const sectionKicker = {
     category: g.pieceCard, design: g.pieceCard, metal: t.metal,
-    shape: g.stoneCard, carat: g.stoneCard, inspiration: g.inspirationCard, contact: t.contactTitle, review: t.reviewStep,
+    shape: g.stoneCard, carat: g.stoneCard, stones: g.stoneCard, inspiration: g.inspirationCard, contact: t.contactTitle, review: t.reviewStep,
   };
   const kicker = `${String(screenIdx + 1).padStart(2, "0")} — ${sectionKicker[screen] || ""}`;
   const stepShell = (title, hint, children, extra = {}) => (
@@ -439,6 +469,8 @@ export default function IntakeForm() {
                   subcategory: defaultSubcategoryFor(value),
                   conditional: categoryDefaults(value),
                   styleId: "",
+                  // 총캐럿 범위가 카테고리마다 달라 기본값으로 리셋
+                  multiSpec: { ...form.multiSpec, totalCarat: String(TOTAL_CARAT_RANGES[value]?.default ?? 1.5) },
                 },
               "category",
             );
@@ -495,6 +527,31 @@ export default function IntakeForm() {
       {activeScreen === "carat" && stepShell(g.qCarat, g.caratHint, (
         <>
           <CaratSlider value={form.stonePrefs.carat} shape={form.stonePrefs.shape} onChange={(value) => setS({ carat: value })} />
+          <button className="button primary" type="button" onClick={goNext}>{t.next}</button>
+          <details className="gflow-edu-toggle">
+            <summary>{g.whatsThis}</summary>
+            <div className="gflow-edu-body"><StoneEduPanel field="carat" prefs={form.stonePrefs} /></div>
+          </details>
+        </>
+      ))}
+
+      {/* 멀티스톤 — 총 캐럿 + 퀄리티 range 한 화면 (센터 캐럿 스텝의 멀티 버전) */}
+      {activeScreen === "stones" && stepShell(g.qStones, g.stonesHint, (
+        <>
+          <TotalCaratSlider
+            value={form.multiSpec.totalCarat}
+            min={totalCaratRange.min} max={totalCaratRange.max} step={totalCaratRange.step}
+            unitLabel={g.totalCaratUnit}
+            onChange={(value) => setM({ totalCarat: value })}
+          />
+          <div className="gflow-grange-fields">
+            <label className="field"><span>{g.colorRangeLbl}</span>
+              <GradeRangeSlider scale={COLOR_SCALE} ariaLabel={t.color} value={form.multiSpec.colorRange} onChange={(v) => setM({ colorRange: v })} />
+            </label>
+            <label className="field"><span>{g.clarityRangeLbl}</span>
+              <GradeRangeSlider scale={CLARITY_SCALE} ariaLabel={t.clarity} value={form.multiSpec.clarityRange} onChange={(v) => setM({ clarityRange: v })} />
+            </label>
+          </div>
           <button className="button primary" type="button" onClick={goNext}>{t.next}</button>
           <details className="gflow-edu-toggle">
             <summary>{g.whatsThis}</summary>
@@ -577,11 +634,11 @@ export default function IntakeForm() {
                 {solitaire ? (
                   <>
                     <strong>{p.shapes[form.stonePrefs.shape] || form.stonePrefs.shape} {Number(form.stonePrefs.carat).toFixed(2)}ct</strong>
-                    <small>{form.stonePrefs.color} · {form.stonePrefs.clarity} · {form.stonePrefs.growth} · IGI</small>
+                    <small>{formatGradeRange(form.stonePrefs.colorRange)} · {formatGradeRange(form.stonePrefs.clarityRange)} · {form.stonePrefs.growth} · IGI</small>
                   </>
                 ) : (
                   <>
-                    <strong>{t.multiDefaultStandard}</strong>
+                    <strong>{Number(form.multiSpec.totalCarat).toFixed(2)}ct · {formatGradeRange(form.multiSpec.colorRange)} · {formatGradeRange(form.multiSpec.clarityRange)}</strong>
                     <small>{g.multiNote}</small>
                   </>
                 )}
@@ -689,19 +746,23 @@ export default function IntakeForm() {
             </div>
           </section>
 
-          {/* 센터스톤 퀄리티 — 추천 기본값 + 인라인 조정 */}
+          {/* 센터스톤 퀄리티 — 추천 기본 range + 인라인 조정 (브릴리언스식 듀얼 핸들) */}
           {solitaire && (
             <section className="gflow-review-section">
               <h4>{g.quality}</h4>
               <div className="gflow-quality-row">
-                <strong>{form.stonePrefs.color} · {form.stonePrefs.clarity} · {form.stonePrefs.growth} · IGI</strong>
+                <strong>{formatGradeRange(form.stonePrefs.colorRange)} · {formatGradeRange(form.stonePrefs.clarityRange)} · {form.stonePrefs.growth} · IGI</strong>
                 <button className="button secondary small" type="button" onClick={() => setAdjustQuality((v) => !v)}>{g.adjust}</button>
               </div>
               {adjustQuality && (
-                <>
-                  <ScalePicker ariaLabel={t.color} options={colorOptions} value={form.stonePrefs.color} onSelect={(value) => setS({ color: value })} />
-                  <ScalePicker ariaLabel={t.clarity} options={clarityOptions} value={form.stonePrefs.clarity} onSelect={(value) => setS({ clarity: value })} />
-                </>
+                <div className="gflow-grange-fields">
+                  <label className="field"><span>{g.colorRangeLbl}</span>
+                    <GradeRangeSlider scale={COLOR_SCALE} ariaLabel={t.color} value={form.stonePrefs.colorRange} onChange={(v) => setS({ colorRange: v })} />
+                  </label>
+                  <label className="field"><span>{g.clarityRangeLbl}</span>
+                    <GradeRangeSlider scale={CLARITY_SCALE} ariaLabel={t.clarity} value={form.stonePrefs.clarityRange} onChange={(v) => setS({ clarityRange: v })} />
+                  </label>
+                </div>
               )}
               <p className="form-hint" style={{ margin: 0 }}>{g.qualityDefaultNote}</p>
             </section>

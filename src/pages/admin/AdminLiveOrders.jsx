@@ -6,6 +6,7 @@ import { apiFetch, ApiUnavailableError } from "../../lib/api.js";
 import { MediaPicker, MediaThumb, usd } from "../../components/ui.jsx";
 import { getOpsStyle } from "../../lib/store.js";
 import { estimateProposalQuote, METAL_LABELS } from "../../lib/proposalEstimate.js";
+import { formatGradeRange } from "../../lib/gradeScale.js";
 import { stepGate } from "../../lib/orderFlow.js";
 import { pickI18n, useLocale } from "../../i18n.jsx";
 import { ConsoleHead, Pager, StatStrip } from "./console.jsx";
@@ -324,6 +325,10 @@ function StepCard({ step, index, order, done, locked, awaitingCustomer, changeRe
   const fp = order.intake?.formPayload || {};
   const sp = fp.stonePrefs || {};
   const style = fp.styleId ? getOpsStyle(fp.styleId) : null;
+  // 등급 range 인테이크는 하한(고객 허용 최소 등급)으로 프리필 — IF-FL 눈금은 셀렉트의 IF로
+  const prefColor = Array.isArray(sp.colorRange) ? sp.colorRange[0] : sp.color;
+  const prefClarityRaw = Array.isArray(sp.clarityRange) ? sp.clarityRange[0] : sp.clarity;
+  const prefClarity = prefClarityRaw === "IF-FL" ? "IF" : prefClarityRaw;
   const [f, setF] = useState({
     note: "", total: "", igi: "", tracking: "",
     setting: [
@@ -336,7 +341,7 @@ function StepCard({ step, index, order, done, locked, awaitingCustomer, changeRe
     shape: sp.shape || "round",
     caratMin: sp.carat ? String(sp.carat) : "",
     caratMax: sp.carat ? (Number(sp.carat) + 0.05).toFixed(2) : "",
-    color: sp.color || "D", clarity: sp.clarity || "VS1", growth: sp.growth || "CVD",
+    color: prefColor || "D", clarity: prefClarity || "VS1", growth: sp.growth || "CVD",
     lab: "IGI", igiNo: "", subNote: "", deposit: "",
   });
   const [busy, setBusy] = useState(false);
@@ -627,13 +632,17 @@ export function AdminLiveOrderDetail() {
     const { order } = state.data;
     const fp = order.intake?.formPayload || {};
     const sp = fp.stonePrefs || {};
+    const ms = fp.multiSpec || {};
     // 스타일 행 — 오픈 브리프(스타일 미정)는 상담 주문임을 명시해 "누락"으로 오독되지 않게 한다
     const styleId = fp.styleId || order.intake?.styleCode || "";
     const style = styleId ? getOpsStyle(styleId) : null;
+    // 솔리테어는 셰입/캐럿/등급(range 라벨 우선), 멀티는 총캐럿+파생 스탠다드
+    const stoneLine = [sp.shape, sp.carat && `${sp.carat}ct`, formatGradeRange(sp.colorRange) || sp.color, formatGradeRange(sp.clarityRange) || sp.clarity, sp.growth].filter(Boolean).join(" · ")
+      || [ms.totalCarat && `${ms.totalCarat}ct total`, ms.standard].filter(Boolean).join(" · ");
     return [
       ["Style", styleId ? (style ? pickI18n(style.name, "en") : styleId) : t.consultOpenBrief],
       [t.category, [order.intake?.category, fp.productLine].filter(Boolean).join(" · ")],
-      ["Stone", [sp.shape, sp.carat && `${sp.carat}ct`, sp.color, sp.clarity, sp.growth].filter(Boolean).join(" · ")],
+      ["Stone", stoneLine],
       ["Fit", Object.entries(fp.conditional || {}).map(([k, v]) => `${k}: ${v}`).join(" · ")],
       ["Engraving", (fp.engraving || "").trim()],
       ["Coupon", (fp.couponCode || "").trim()],
