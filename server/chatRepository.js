@@ -237,6 +237,12 @@ export async function addThreadTag(threadId, tag) {
   );
 }
 
+export async function setThreadCsat(threadId, rating) {
+  const r = Math.round(Number(rating));
+  if (!(r >= 1 && r <= 5)) throw new ApiError("VALIDATION_ERROR", 400, "rating 1-5");
+  await query("update chat_threads set csat = $2 where id = $1", [threadId, r]);
+}
+
 export async function assignThread(code, adminId) {
   const { rows } = await query(
     "update chat_threads set assigned_admin_id = $2 where thread_code = $1 returning *",
@@ -247,7 +253,7 @@ export async function assignThread(code, adminId) {
 }
 
 export async function chatStats() {
-  const [open, today, unread, firstResp, topTags] = await Promise.all([
+  const [open, today, unread, firstResp, topTags, csat] = await Promise.all([
     query("select count(*)::int n from chat_threads where status = 'open'"),
     query("select count(*)::int n from chat_threads where created_at >= now() - interval '24 hours'"),
     query("select count(*)::int n from chat_threads where staff_unread > 0 and status = 'open'"),
@@ -261,12 +267,15 @@ export async function chatStats() {
       select round(avg(extract(epoch from (s0 - v0)) / 60.0)::numeric, 1) as mins
       from firsts where v0 is not null and s0 is not null and s0 >= v0`),
     query("select unnest(tags) as tag, count(*)::int n from chat_threads group by 1 order by n desc limit 6"),
+    query("select round(avg(csat)::numeric, 1) as avg, count(csat)::int n from chat_threads where csat is not null"),
   ]);
   return {
     open: open.rows[0].n,
     today: today.rows[0].n,
     unread: unread.rows[0].n,
     avgFirstResponseMin: firstResp.rows[0].mins != null ? Number(firstResp.rows[0].mins) : null,
+    avgCsat: csat.rows[0].avg != null ? Number(csat.rows[0].avg) : null,
+    csatCount: csat.rows[0].n,
     topTags: topTags.rows.map((r) => ({ tag: r.tag, count: r.n })),
   };
 }

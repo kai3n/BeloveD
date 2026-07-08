@@ -231,4 +231,17 @@ describe("라이브챗", () => {
     // 로그아웃 응답이 bd_chat 을 만료시켜 비운다
     expect((out.headers["set-cookie"] || []).some((c) => /^bd_chat=;/.test(c))).toBe(true);
   });
+
+  it("CSAT — 1~5 저장, 범위 밖 거부, 쿠키 없으면 404, 통계 반영", async () => {
+    const v = await request(app).post("/v1/chat/messages").send({ body: "thanks!" });
+    const cookie = v.headers["set-cookie"];
+    expect((await request(app).post("/v1/chat/csat").set("Cookie", cookie).send({ rating: 5 })).status).toBe(200);
+    const { rows } = await query("select csat from chat_threads where thread_code = $1", [v.body.thread.code]);
+    expect(rows[0].csat).toBe(5);
+    expect((await request(app).post("/v1/chat/csat").set("Cookie", cookie).send({ rating: 9 })).status).toBe(400);
+    expect((await request(app).post("/v1/chat/csat").send({ rating: 4 })).status).toBe(404);
+    const admin = await adminCookie();
+    const stats = await request(app).get("/v1/admin/chat/stats").set("Cookie", admin);
+    expect(stats.body.stats.avgCsat).toBeGreaterThanOrEqual(1);
+  });
 });

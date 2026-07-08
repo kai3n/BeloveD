@@ -118,6 +118,14 @@
 }
 .chat-nudge-x { position: absolute; top: 5px; right: 7px; background: none; border: none; color: var(--quiet); font-size: 15px; line-height: 1; cursor: pointer; padding: 2px; }
 .chat-nudge-x:hover { color: var(--text); }
+
+/* CSAT 별점 카드 (대화 종료 시) */
+.chat-csat { align-self: center; text-align: center; margin: 8px auto; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+.chat-csat > span { font-size: 13px; color: var(--muted); }
+.chat-csat-stars { display: flex; flex-direction: row-reverse; justify-content: center; gap: 3px; }
+.chat-csat-stars button { background: none; border: none; font-size: 24px; line-height: 1; color: var(--line); cursor: pointer; padding: 0 1px; transition: color .12s; }
+.chat-csat-stars button:hover, .chat-csat-stars button:hover ~ button { color: #e0b83a; }
+.chat-csat-thanks { font-size: 13px; color: #3fae6a; }
 /* 대화 첨부 썸네일 — 인라인엔 작은 썸네일만, 원본은 클릭 시 새 탭 (위젯·어드민 공용) */
 .chat-thumb-link { display: inline-block; position: relative; margin-top: 6px; margin-right: 6px; line-height: 0; }
 .chat-thumb-link .chat-thumb { margin: 0; }

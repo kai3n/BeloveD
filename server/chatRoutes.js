@@ -9,7 +9,7 @@ import { matchFaq } from "../src/lib/chatFaq.js";
 import {
   newThreadToken, findThreadByToken, findCustomerThread, createVisitorThread,
   appendMessage, listMessages, markCustomerSeen, findThreadByCode,
-  shouldNotifyStaff, markStaffNotified, setThreadStatus, setVisitorEmail, threadView, addThreadTag,
+  shouldNotifyStaff, markStaffNotified, setThreadStatus, setVisitorEmail, threadView, addThreadTag, setThreadCsat,
 } from "./chatRepository.js";
 
 const MINUTE = 60 * 1000;
@@ -176,6 +176,20 @@ export function chatRouter() {
       res.json({ ok: true, thread: updated });
     } catch (e) { next(e); }
   });
+
+  // CSAT — 대화 만족도(1~5). 스레드 소유자(쿠키/로그인)만.
+  r.post("/csat",
+    rateLimit({ limit: 10, windowMs: MINUTE, keyFn: (req) => `chat-csat:${req.cookies?.[COOKIE_CHAT] || req.ip}` }),
+    async (req, res, next) => {
+      try {
+        const rating = Math.round(Number(req.body?.rating));
+        if (!(rating >= 1 && rating <= 5)) throw new ApiError("VALIDATION_ERROR", 400, "rating 1-5");
+        const thread = await resolveThread(req);
+        if (!thread) throw new ApiError("NOT_FOUND", 404);
+        await setThreadCsat(thread.id, rating);
+        res.json({ ok: true });
+      } catch (e) { next(e); }
+    });
 
   return r;
 }

@@ -2,7 +2,7 @@ import { Fragment, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Check, HelpCircle, Home, ImagePlus, Mail, MessageCircle, Send, UserRound, Video, X } from "lucide-react";
 import { useLocale } from "../i18n.jsx";
-import { bookConsultation, fetchThread, saveChatEmail, sendChatMessage, uploadChatImage, chatMediaFiles, CHAT_MAX_BYTES, CHAT_VIDEO_MAX_BYTES } from "../lib/chat.js";
+import { bookConsultation, fetchThread, saveChatEmail, sendChatMessage, submitCsat, uploadChatImage, chatMediaFiles, CHAT_MAX_BYTES, CHAT_VIDEO_MAX_BYTES } from "../lib/chat.js";
 import { faqChips } from "../lib/chatFaq.js";
 import ChatThumb from "./ChatThumb.jsx";
 import "../chat.css";
@@ -26,6 +26,7 @@ const COPY = {
     joined: "A BeloveD specialist has joined the conversation",
     escalateLead: "Sorry I couldn't quite help — would you like to talk to a person?",
     nudgeMsg: "Questions? I'm here to help — ask me anything.",
+    csatLead: "How was this conversation?", csatThanks: "Thanks for your feedback!",
     quickTitle: "Or jump to",
     quick: [
       { id: "order", label: "Start a custom order", to: "/custom/new" },
@@ -48,6 +49,7 @@ const COPY = {
     joined: "BeloveD 상담원이 대화에 참여했어요",
     escalateLead: "제가 잘 못 도와드린 것 같아요 — 상담원과 연결해 드릴까요?",
     nudgeMsg: "궁금한 점 있으세요? 편하게 물어보세요 :)",
+    csatLead: "이 대화, 어떠셨나요?", csatThanks: "평가 감사합니다!",
     quickTitle: "바로가기",
     quick: [
       { id: "order", label: "주문제작 시작하기", to: "/custom/new" },
@@ -70,6 +72,7 @@ const COPY = {
     joined: "BeloveD 顾问已加入对话",
     escalateLead: "抱歉没能帮到您——需要联系人工吗？",
     nudgeMsg: "有疑问吗？随时问我 :)",
+    csatLead: "这次对话怎么样？", csatThanks: "感谢您的反馈！",
     quickTitle: "快捷前往",
     quick: [
       { id: "order", label: "开始定制", to: "/custom/new" },
@@ -92,6 +95,7 @@ const COPY = {
     joined: "Un especialista de BeloveD se unió a la conversación",
     escalateLead: "Perdón si no pude ayudarte — ¿quieres hablar con una persona?",
     nudgeMsg: "¿Preguntas? Estoy aquí para ayudarte.",
+    csatLead: "¿Qué tal esta conversación?", csatThanks: "¡Gracias por tu opinión!",
     quickTitle: "O ve a",
     quick: [
       { id: "order", label: "Iniciar pedido personalizado", to: "/custom/new" },
@@ -163,6 +167,7 @@ export default function ChatWidget() {
   const [notice, setNotice] = useState(""); // 성공 안내(예약 접수 등)
   const [escalate, setEscalate] = useState(false); // 자동응답 연속 실패 → 상담원 연결 제안
   const [nudge, setNudge] = useState(false); // 선제 인사
+  const [rated, setRated] = useState(false); // CSAT 평가 완료
 
   const lastIdRef = useRef(0);
   const bodyRef = useRef(null);
@@ -177,7 +182,7 @@ export default function ChatWidget() {
       if (data.thread) setUnread(data.thread.customerUnread || 0);
       else {
         // 스레드가 사라짐(로그아웃 등으로 bd_chat 제거) → 로컬 대화도 즉시 초기화
-        setMessages([]); lastIdRef.current = 0; setUnread(0); setEmailSaved(false); setConsultOpen(false);
+        setMessages([]); lastIdRef.current = 0; setUnread(0); setEmailSaved(false); setConsultOpen(false); setRated(false);
       }
     }
     if (data.messages?.length) {
@@ -269,6 +274,12 @@ export default function ChatWidget() {
   function dismissNudge() {
     setNudge(false);
     try { window.sessionStorage.setItem("bd_chat_nudged", "1"); } catch { /* no-op */ }
+  }
+
+  // CSAT — 낙관적: 즉시 감사로 전환 후 전송(실패해도 UI 유지)
+  async function rateCsat(n) {
+    setRated(true);
+    try { await submitCsat(n); } catch { /* 무시 */ }
   }
 
   // 파일 업로드 공용 — 파일선택·드래그앤드롭·붙여넣기 모두 여기로. 이미지·영상만, 다중 지원.
@@ -474,6 +485,22 @@ export default function ChatWidget() {
                 <div className="chat-escalate">
                   <span>{t.escalateLead}</span>
                   <button type="button" onClick={() => { setEscalate(false); doSend(t.talkMsg); }}>{t.talk}</button>
+                </div>
+              )}
+              {thread?.status === "closed" && messages.length > 0 && (
+                <div className="chat-csat">
+                  {rated ? (
+                    <span className="chat-csat-thanks">✓ {t.csatThanks}</span>
+                  ) : (
+                    <>
+                      <span>{t.csatLead}</span>
+                      <div className="chat-csat-stars">
+                        {[5, 4, 3, 2, 1].map((n) => (
+                          <button key={n} type="button" aria-label={`${n} / 5`} onClick={() => rateCsat(n)}>★</button>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
             </>
