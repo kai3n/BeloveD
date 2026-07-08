@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
-  DEFAULT_MULTI_STANDARD, accountDisplayName, buildIntakePayload, conditionalComplete,
+  accountDisplayName, buildIntakePayload, conditionalComplete,
   sanitizeReferenceMedia, submissionContact,
 } from "../intakePayload.js";
 import { createIntake, resetDB } from "../store.js";
@@ -35,18 +35,44 @@ describe("buildIntakePayload — createIntake 호환", () => {
     expect(intake.subcategory).toBe("engagementRing");
   });
 
-  it("멀티: stonePrefs null, multiSpec 기본 등급 채움 (자유입력 없이 제출 가능)", () => {
+  it("멀티: stonePrefs null, totalCarat 숫자화 + 등급 range 클램프 + standard 파생", () => {
     const payload = buildIntakePayload(
-      ringForm({ productLine: "multi", category: "necklace", styleId: "NECK-001", conditional: { chainStyle: "cable", chainLength: "18in", clasp: "lobster" } }),
+      ringForm({
+        productLine: "multi", category: "necklace", styleId: "NECK-001",
+        conditional: { chainStyle: "cable", chainLength: "18in", clasp: "lobster" },
+        multiSpec: { totalCarat: "10", colorRange: ["G", "E"], clarityRange: ["VS2", "VVS1"], meleeSpec: "", overallDims: "", arrangement: "", standard: "" },
+      }),
       [],
       { name: "Noah", email: "noah@x.com" },
     );
     expect(payload.stonePrefs).toBeNull();
-    expect(payload.multiSpec.standard).toBe(DEFAULT_MULTI_STANDARD);
+    expect(payload.multiSpec.totalCarat).toBe(10);
+    expect(payload.multiSpec.standard).toBe("E–G / VVS1–VS2");
     expect(payload.multiSpec.meleeSpec).toBe("");
     expect(payload.contact).toBe("noah@x.com"); // 로그인 사용자 이메일 우선
     const { order } = createIntake(payload, "u-customer");
     expect(order.status).toBe("QUOTATION");
+  });
+
+  it("멀티: range 누락(구 드래프트)이면 기본 range·기본 캐럿으로 채운다", () => {
+    const payload = buildIntakePayload(
+      ringForm({
+        productLine: "multi", category: "bangle", styleId: "BAN-001",
+        conditional: { wristSize: "6.5in" },
+        multiSpec: { meleeSpec: "", overallDims: "", arrangement: "", standard: "" },
+        name: "Jiwon", contact: "j@x.com",
+      }),
+      [], null,
+    );
+    expect(payload.multiSpec.totalCarat).toBe(5); // bangle 기본
+    expect(payload.multiSpec.colorRange).toEqual(["G", "E"]);
+    expect(payload.multiSpec.standard).toBe("E–G / VVS1–VS2");
+  });
+
+  it("솔리테어: 단일 color/clarity(레거시 폼)를 range로 승격한다", () => {
+    const payload = buildIntakePayload(ringForm({ name: "J", contact: "j@x.com" }), [], null);
+    expect(payload.stonePrefs.colorRange).toEqual(["E", "E"]);
+    expect(payload.stonePrefs.clarityRange).toEqual(["VS1", "VS1"]);
   });
 
   it("스타일 미정(open brief)은 STYLE_SELECTION으로 접수된다", () => {

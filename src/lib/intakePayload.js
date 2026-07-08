@@ -5,6 +5,11 @@ import {
   EARRING_PAIRING_OPTIONS,
 } from "./ops.js";
 import { normalizeCouponCode } from "./coupons.js";
+import {
+  CLARITY_SCALE, COLOR_SCALE, MULTI_CLARITY_DEFAULT, MULTI_COLOR_DEFAULT,
+  SOLITAIRE_CLARITY_DEFAULT, SOLITAIRE_COLOR_DEFAULT,
+  clampGradeRange, clampTotalCarat, formatGradeRange,
+} from "./gradeScale.js";
 
 export const DEFAULT_MULTI_STANDARD = "F-G / VS+";
 export const MAX_REFERENCE_MEDIA = 5;
@@ -59,22 +64,33 @@ export function conditionalComplete(category, conditional = {}) {
 }
 
 // createIntake에 넘길 최종 페이로드 — solitaire는 stonePrefs, multi는 multiSpec만 채운다.
-// multi의 meleeSpec/overallDims 자유입력은 폐지: 상담·확정 제안 단계에서 어드민이 확정한다.
+// 등급은 [하한,상한] range로 정규화하고, multi.standard는 range에서 파생한 라벨이다.
 export function buildIntakePayload(form, refs, user) {
   const contactDetails = submissionContact(form, user);
   const solitaire = form.productLine === "solitaire";
+  const multiColor = clampGradeRange(COLOR_SCALE, form.multiSpec?.colorRange, MULTI_COLOR_DEFAULT);
+  const multiClarity = clampGradeRange(CLARITY_SCALE, form.multiSpec?.clarityRange, MULTI_CLARITY_DEFAULT);
   const multiSpec = solitaire ? null : {
+    totalCarat: clampTotalCarat(form.category, form.multiSpec?.totalCarat),
+    colorRange: multiColor,
+    clarityRange: multiClarity,
     meleeSpec: form.multiSpec?.meleeSpec || "",
     overallDims: form.multiSpec?.overallDims || "",
     arrangement: form.multiSpec?.arrangement || "",
-    standard: (form.multiSpec?.standard || "").trim() || DEFAULT_MULTI_STANDARD,
+    standard: `${formatGradeRange(multiColor)} / ${formatGradeRange(multiClarity)}`,
   };
   return {
     ...form,
     ...contactDetails,
     engraving: (form.engraving || "").trim(),
     couponCode: normalizeCouponCode(form.couponCode),
-    stonePrefs: solitaire ? { ...form.stonePrefs, carat: Number(form.stonePrefs?.carat) || null } : null,
+    stonePrefs: solitaire ? {
+      ...form.stonePrefs,
+      carat: Number(form.stonePrefs?.carat) || null,
+      // 구 드래프트의 단일값(color/clarity)은 [v,v] range로 승격
+      colorRange: clampGradeRange(COLOR_SCALE, form.stonePrefs?.colorRange ?? form.stonePrefs?.color, SOLITAIRE_COLOR_DEFAULT),
+      clarityRange: clampGradeRange(CLARITY_SCALE, form.stonePrefs?.clarityRange ?? form.stonePrefs?.clarity, SOLITAIRE_CLARITY_DEFAULT),
+    } : null,
     multiSpec,
     referenceMedia: sanitizeReferenceMedia(refs),
   };
