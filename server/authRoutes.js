@@ -6,7 +6,7 @@ import { rateLimit } from "./rateLimit.js";
 import { linkSessionToCustomer, recordAuthEvent } from "./activityRepository.js";
 import { linkChatToCustomer } from "./chatRepository.js";
 import {
-  setSessionCookie, clearSessionCookie, requireCustomer,
+  setSessionCookie, clearSessionCookie, clearChatCookie, requireCustomer,
   COOKIE_CUSTOMER, COOKIE_ADMIN,
 } from "./middleware.js";
 
@@ -130,6 +130,8 @@ export function authRouter() {
       await revokeSession(req.cookies?.[COOKIE_ADMIN]);
       clearSessionCookie(res, COOKIE_CUSTOMER);
       clearSessionCookie(res, COOKIE_ADMIN);
+      // 로그아웃 시 라이브챗 스레드 쿠키도 제거 — 같은 브라우저에서 이전 대화가 남지 않게(개인정보)
+      clearChatCookie(res);
       res.json({ ok: true });
     } catch (e) { next(e); }
   });

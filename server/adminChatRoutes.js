@@ -7,6 +7,7 @@ import { notifyCustomerReply } from "./chatMail.js";
 import {
   listInboxThreads, findThreadByCode, listMessages, markStaffRead,
   appendMessage, threadContext, setThreadStatus, customerIsOffline, threadView,
+  setThreadTags, assignThread, chatStats,
 } from "./chatRepository.js";
 
 const MINUTE = 60 * 1000;
@@ -25,7 +26,7 @@ export function adminChatRouter() {
     async (req, res, next) => {
       try {
         const status = req.query.status === "all" || req.query.status === "closed" ? req.query.status : "open";
-        res.json({ ok: true, threads: await listInboxThreads({ status }) });
+        res.json({ ok: true, threads: await listInboxThreads({ status, tag: req.query.tag || null }) });
       } catch (e) { next(e); }
     });
 
@@ -70,6 +71,32 @@ export function adminChatRouter() {
       try {
         res.json({ ok: true, thread: await setThreadStatus(req.params.code, req.body?.status) });
       } catch (e) { next(e); }
+    });
+
+  // 태그 설정 (전체 교체)
+  r.post("/chat/threads/:code/tags",
+    rateLimit({ limit: 60, windowMs: MINUTE, keyFn: (req) => `admin-chat:${req.ip}` }),
+    async (req, res, next) => {
+      try { res.json({ ok: true, thread: await setThreadTags(req.params.code, req.body?.tags) }); }
+      catch (e) { next(e); }
+    });
+
+  // 담당자 배정 — self=true면 로그인 스태프에게, 아니면 해제
+  r.post("/chat/threads/:code/assign",
+    rateLimit({ limit: 60, windowMs: MINUTE, keyFn: (req) => `admin-chat:${req.ip}` }),
+    async (req, res, next) => {
+      try {
+        const adminId = req.body?.self ? req.principal.id : null;
+        res.json({ ok: true, thread: await assignThread(req.params.code, adminId) });
+      } catch (e) { next(e); }
+    });
+
+  // 인박스 통계 (스탯 스트립)
+  r.get("/chat/stats",
+    rateLimit({ limit: 120, windowMs: MINUTE, keyFn: (req) => `admin-chat:${req.ip}` }),
+    async (_req, res, next) => {
+      try { res.json({ ok: true, stats: await chatStats() }); }
+      catch (e) { next(e); }
     });
 
   return r;

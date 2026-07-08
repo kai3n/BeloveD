@@ -9,7 +9,7 @@ import { matchFaq } from "../src/lib/chatFaq.js";
 import {
   newThreadToken, findThreadByToken, findCustomerThread, createVisitorThread,
   appendMessage, listMessages, markCustomerSeen, findThreadByCode,
-  shouldNotifyStaff, markStaffNotified, setThreadStatus, setVisitorEmail, threadView,
+  shouldNotifyStaff, markStaffNotified, setThreadStatus, setVisitorEmail, threadView, addThreadTag,
 } from "./chatRepository.js";
 
 const MINUTE = 60 * 1000;
@@ -116,6 +116,40 @@ export function chatRouter() {
         await resolveOrCreateThread(req, res, locale);
         const signed = await createUploadUrl({ scope: "chat", contentType, size });
         res.status(201).json({ ok: true, ...signed });
+      } catch (e) { next(e); }
+    });
+
+  // 화상 상담 예약 요청 — 위젯 폼 제출. 시스템 요약 메시지 + 'consultation' 태그 + support@ 이메일.
+  r.post("/consultation",
+    rateLimit({ limit: 8, windowMs: MINUTE, keyFn: (req) => `chat-consult:${req.cookies?.bd_chat || req.ip}` }),
+    async (req, res, next) => {
+      try {
+        const { name, when, contact, note, locale } = req.body || {};
+        if (!when && !contact && !name) throw new ApiError("VALIDATION_ERROR", 400, "empty request");
+        const thread = await resolveOrCreateThread(req, res, locale);
+        const email = contact && EMAIL_RE.test(String(contact)) ? String(contact).slice(0, 200) : null;
+        if (email) await setVisitorEmail(thread.id, email);
+        const lines = [
+          "📅 Consultation request",
+          name ? `• Name: ${String(name).slice(0, 80)}` : null,
+          when ? `• Preferred time: ${String(when).slice(0, 140)}` : null,
+          contact ? `• Contact: ${String(contact).slice(0, 140)}` : null,
+          note ? `• Note: ${String(note).slice(0, 500)}` : null,
+        ].filter(Boolean);
+        const message = await appendMessage(thread.id, { sender: "system", body: lines.join("\n") });
+        await addThreadTag(thread.id, "consultation");
+        await query("update chat_threads set staff_unread = staff_unread + 1 where id = $1", [thread.id]);
+        const cust = thread.customer_id
+          ? (await query("select name from customers where id = $1", [thread.customer_id])).rows[0] : null;
+        const transcript = await listMessages(thread.id, 0);
+        fireMail(notifyConsultation({
+          threadCode: thread.thread_code,
+          visitorEmail: email || thread.visitor_email || null,
+          customerName: cust?.name || name || null,
+          messages: transcript,
+        }), "consultation-booking");
+        const fresh = await findThreadByCode(thread.thread_code);
+        res.status(201).json({ ok: true, thread: threadView(fresh), message, staffAgent: STAFF_AGENT });
       } catch (e) { next(e); }
     });
 

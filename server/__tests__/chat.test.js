@@ -182,4 +182,53 @@ describe("라이브챗", () => {
     const { rows } = await query("select visitor_email from chat_threads where thread_code = $1", [code]);
     expect(rows[0].visitor_email).toBe("later@test.com");
   });
+
+  it("상담 예약 요청 — 시스템 메시지 + consultation 태그 + support 이메일", async () => {
+    await adminCookie();
+    const res = await request(app).post("/v1/chat/consultation").send({
+      name: "Jiwon", when: "This Saturday 2pm", contact: "jiwon@test.com", note: "oval ring", locale: "en",
+    });
+    expect(res.status).toBe(201);
+    expect(res.body.message.sender).toBe("system");
+    expect(res.body.message.body).toContain("Consultation request");
+    expect(res.body.thread.tags).toContain("consultation");
+    await flush();
+    expect(drainMail().filter((m) => m.type === "chat_consultation").length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("어드민 태그 설정·필터 + 담당자 배정 + 통계", async () => {
+    const admin = await adminCookie();
+    const v = await request(app).post("/v1/chat/messages").send({ body: "hi" });
+    const code = v.body.thread.code;
+
+    const tagged = await request(app).post(`/v1/admin/chat/threads/${code}/tags`).set("Cookie", admin)
+      .send({ tags: ["pricing", "vip", "pricing"] });
+    expect([...tagged.body.thread.tags].sort()).toEqual(["pricing", "vip"]);
+
+    expect((await request(app).get("/v1/admin/chat/threads?status=all&tag=vip").set("Cookie", admin))
+      .body.threads.some((t) => t.code === code)).toBe(true);
+    expect((await request(app).get("/v1/admin/chat/threads?status=all&tag=nope").set("Cookie", admin))
+      .body.threads.some((t) => t.code === code)).toBe(false);
+
+    const assigned = await request(app).post(`/v1/admin/chat/threads/${code}/assign`).set("Cookie", admin).send({ self: true });
+    expect(assigned.body.thread.assignedAdminId).toBeTruthy();
+    const unassigned = await request(app).post(`/v1/admin/chat/threads/${code}/assign`).set("Cookie", admin).send({ self: false });
+    expect(unassigned.body.thread.assignedAdminId).toBeNull();
+
+    const stats = await request(app).get("/v1/admin/chat/stats").set("Cookie", admin);
+    expect(stats.status).toBe(200);
+    expect(typeof stats.body.stats.open).toBe("number");
+    expect(Array.isArray(stats.body.stats.topTags)).toBe(true);
+    expect((await request(app).get("/v1/admin/chat/stats")).status).toBe(401);
+  });
+
+  it("로그아웃하면 bd_chat 쿠키가 초기화된다 — 같은 브라우저에 이전 대화가 남지 않음", async () => {
+    const v = await request(app).post("/v1/chat/messages").send({ body: "private note" });
+    const vCookie = v.headers["set-cookie"];
+    expect(vCookie.some((c) => /^bd_chat=[^;]+/.test(c) && !/^bd_chat=;/.test(c))).toBe(true); // 설정됨
+    const out = await request(app).post("/v1/auth/logout").set("Cookie", vCookie);
+    expect(out.status).toBe(200);
+    // 로그아웃 응답이 bd_chat 을 만료시켜 비운다
+    expect((out.headers["set-cookie"] || []).some((c) => /^bd_chat=;/.test(c))).toBe(true);
+  });
 });

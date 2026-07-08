@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Check, HelpCircle, Home, ImagePlus, Mail, MessageCircle, Send, UserRound, X } from "lucide-react";
+import { Check, HelpCircle, Home, ImagePlus, Mail, MessageCircle, Send, UserRound, Video, X } from "lucide-react";
 import { useLocale } from "../i18n.jsx";
-import { fetchThread, saveChatEmail, sendChatMessage, uploadChatImage, chatMediaFiles, CHAT_MAX_BYTES, CHAT_VIDEO_MAX_BYTES } from "../lib/chat.js";
+import { bookConsultation, fetchThread, saveChatEmail, sendChatMessage, uploadChatImage, chatMediaFiles, CHAT_MAX_BYTES, CHAT_VIDEO_MAX_BYTES } from "../lib/chat.js";
 import { faqChips } from "../lib/chatFaq.js";
 import ChatThumb from "./ChatThumb.jsx";
 import "../chat.css";
@@ -19,6 +19,10 @@ const COPY = {
     powered: "BeloveD concierge", drop: "Drop a photo or video", attach: "Attach photo or video",
     tooLarge: "That file is too large (max 100MB).", tooLargeVideo: "Videos must be under 30MB.",
     menu: "Menu", backToChat: "Back to chat", talk: "Talk to a person", talkMsg: "I'd like to talk to a person.",
+    book: "Book a video consultation", bookLead: "Tell us when works and we'll set up a video call.",
+    bookName: "Your name", bookWhen: "Preferred time (e.g. Sat afternoon)", bookContact: "Email or phone",
+    bookNote: "Anything to prepare? (optional)", bookSend: "Request consultation", bookCancel: "Cancel",
+    bookDone: "Got your request — we'll follow up with a video link soon.",
     quickTitle: "Or jump to",
     quick: [
       { id: "order", label: "Start a custom order", to: "/custom/new" },
@@ -34,6 +38,10 @@ const COPY = {
     powered: "BeloveD 컨시어지", drop: "사진·영상을 여기에 놓으세요", attach: "사진·영상 첨부",
     tooLarge: "파일이 너무 커요 (최대 100MB).", tooLargeVideo: "영상은 30MB까지 올릴 수 있어요.",
     menu: "메뉴", backToChat: "대화로 돌아가기", talk: "상담원 연결", talkMsg: "상담원과 연결해 주세요.",
+    book: "화상 상담 예약", bookLead: "편한 시간을 알려주시면 화상 상담을 잡아드려요.",
+    bookName: "이름", bookWhen: "희망 시간 (예: 토요일 오후)", bookContact: "이메일 또는 전화번호",
+    bookNote: "미리 준비할 내용이 있나요? (선택)", bookSend: "상담 예약 요청", bookCancel: "취소",
+    bookDone: "요청 받았어요 — 곧 화상 링크와 함께 연락드릴게요.",
     quickTitle: "바로가기",
     quick: [
       { id: "order", label: "주문제작 시작하기", to: "/custom/new" },
@@ -49,6 +57,10 @@ const COPY = {
     powered: "BeloveD 礼宾", drop: "拖放照片或视频到此处", attach: "添加照片或视频",
     tooLarge: "文件过大（最大 100MB）。", tooLargeVideo: "视频需小于 30MB。",
     menu: "菜单", backToChat: "返回对话", talk: "联系人工", talkMsg: "我想联系人工客服。",
+    book: "预约视频咨询", bookLead: "告诉我们方便的时间，我们安排视频通话。",
+    bookName: "您的姓名", bookWhen: "期望时间（如周六下午）", bookContact: "邮箱或电话",
+    bookNote: "需要提前准备什么吗？（可选）", bookSend: "预约咨询", bookCancel: "取消",
+    bookDone: "已收到您的请求——我们会尽快附上视频链接联系您。",
     quickTitle: "快捷前往",
     quick: [
       { id: "order", label: "开始定制", to: "/custom/new" },
@@ -64,6 +76,10 @@ const COPY = {
     powered: "BeloveD concierge", drop: "Suelta una foto o video", attach: "Adjuntar foto o video",
     tooLarge: "Ese archivo es muy grande (máx. 100MB).", tooLargeVideo: "Los videos deben ser menores de 30MB.",
     menu: "Menú", backToChat: "Volver al chat", talk: "Hablar con una persona", talkMsg: "Quiero hablar con una persona.",
+    book: "Reservar videoconsulta", bookLead: "Dinos cuándo te viene bien y agendamos una videollamada.",
+    bookName: "Tu nombre", bookWhen: "Hora preferida (p. ej. sábado tarde)", bookContact: "Correo o teléfono",
+    bookNote: "¿Algo que preparar? (opcional)", bookSend: "Solicitar consulta", bookCancel: "Cancelar",
+    bookDone: "Recibimos tu solicitud — te enviaremos un enlace de video pronto.",
     quickTitle: "O ve a",
     quick: [
       { id: "order", label: "Iniciar pedido personalizado", to: "/custom/new" },
@@ -130,6 +146,9 @@ export default function ChatWidget() {
   const [dockH, setDockH] = useState(0); // 모바일 스티키 독(.noir-dock) 높이 — 최소화 버블을 그 위로
   const [pastHero, setPastHero] = useState(true); // 홈 히어로 구간에선 버블 숨김(스크롤하면 등장)
   const [menuOpen, setMenuOpen] = useState(false); // 홈/메뉴 뷰 — 헤더 ⌂로 토글, 대화 후 막다른 길 방지
+  const [consultOpen, setConsultOpen] = useState(false); // 화상 상담 예약 폼
+  const [consult, setConsult] = useState({ name: "", when: "", contact: "", note: "" });
+  const [notice, setNotice] = useState(""); // 성공 안내(예약 접수 등)
 
   const lastIdRef = useRef(0);
   const bodyRef = useRef(null);
@@ -141,6 +160,10 @@ export default function ChatWidget() {
     if (data.thread !== undefined) {
       setThread(data.thread);
       if (data.thread) setUnread(data.thread.customerUnread || 0);
+      else {
+        // 스레드가 사라짐(로그아웃 등으로 bd_chat 제거) → 로컬 대화도 즉시 초기화
+        setMessages([]); lastIdRef.current = 0; setUnread(0); setEmailSaved(false); setConsultOpen(false);
+      }
     }
     if (data.messages?.length) {
       setMessages((prev) => {
@@ -279,6 +302,21 @@ export default function ChatWidget() {
     catch { setError("Could not save email — try again."); }
   }
 
+  // 화상 상담 예약 요청 제출
+  async function submitConsult() {
+    if ((!consult.when.trim() && !consult.contact.trim() && !consult.name.trim()) || sending) return;
+    setSending(true); setError("");
+    try {
+      const data = await bookConsultation({ ...consult, locale });
+      setConsult({ name: "", when: "", contact: "", note: "" });
+      setConsultOpen(false); setMenuOpen(false);
+      ingest({ staffAgent: data.staffAgent, thread: data.thread, messages: [data.message] });
+      setNotice(t.bookDone);
+      window.setTimeout(() => setNotice(""), 6000);
+    } catch { setError("Could not send — please try again."); }
+    finally { setSending(false); }
+  }
+
   if (hidden) return null;
 
   const showEmail = !thread?.customerId && !thread?.visitorEmail;
@@ -328,7 +366,26 @@ export default function ChatWidget() {
         </div>
 
         <div className="chat-body" ref={bodyRef}>
-          {showMenu ? (
+          {consultOpen ? (
+            <div className="chat-consult">
+              <div className="chat-consult-lead">{t.bookLead}</div>
+              <input className="chat-consult-input" placeholder={t.bookName} value={consult.name}
+                onChange={(e) => setConsult((s) => ({ ...s, name: e.target.value }))} />
+              <input className="chat-consult-input" placeholder={t.bookWhen} value={consult.when}
+                onChange={(e) => setConsult((s) => ({ ...s, when: e.target.value }))} />
+              <input className="chat-consult-input" placeholder={t.bookContact} value={consult.contact}
+                onChange={(e) => setConsult((s) => ({ ...s, contact: e.target.value }))} />
+              <textarea className="chat-consult-input" rows={2} placeholder={t.bookNote} value={consult.note}
+                onChange={(e) => setConsult((s) => ({ ...s, note: e.target.value }))} />
+              <div className="chat-consult-actions">
+                <button type="button" className="chat-quick-btn" onClick={() => setConsultOpen(false)}>{t.bookCancel}</button>
+                <button type="button" className="chat-consult-send"
+                  disabled={sending || (!consult.when.trim() && !consult.contact.trim())} onClick={submitConsult}>
+                  {t.bookSend}
+                </button>
+              </div>
+            </div>
+          ) : showMenu ? (
             <div className="chat-greeting">
               <Avatar agent={agent} className="chat-greeting-avatar" />
               {messages.length === 0 && <div>{t.greeting}</div>}
@@ -340,6 +397,9 @@ export default function ChatWidget() {
                 ))}
               </div>
               {quickActions}
+              <button type="button" className="chat-quick-btn chat-book" onClick={() => setConsultOpen(true)}>
+                <Video size={15} strokeWidth={1.9} /> {t.book}
+              </button>
               <button type="button" className="chat-quick-btn chat-talk" onClick={() => doSend(t.talkMsg)}>
                 <UserRound size={15} strokeWidth={1.9} /> {t.talk}
               </button>
@@ -356,7 +416,7 @@ export default function ChatWidget() {
         </div>
 
         {/* 대화 뷰에서 늘 보이는 액션 바 — 막다른 길 방지(메뉴로 돌아가기 / 상담원 연결) */}
-        {!showMenu && (
+        {!showMenu && !consultOpen && (
           <div className="chat-actionbar">
             <button type="button" onClick={() => setMenuOpen(true)}><HelpCircle size={14} strokeWidth={1.9} /> {t.menu}</button>
             <button type="button" onClick={() => doSend(t.talkMsg)}><UserRound size={14} strokeWidth={1.9} /> {t.talk}</button>
@@ -365,6 +425,8 @@ export default function ChatWidget() {
 
         <div className="chat-foot">
           {error && <div className="chat-error">{error}</div>}
+          {notice && <div className="chat-notice">{notice}</div>}
+          {!consultOpen && <>
           {pending.length > 0 && (
             <div className="chat-attachments">
               {pending.map((a, i) => (
@@ -410,6 +472,7 @@ export default function ChatWidget() {
             </button>
           </div>
           <div className="chat-powered">✦ {t.powered}</div>
+          </>}
         </div>
       </div>
     </div>

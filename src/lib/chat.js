@@ -24,6 +24,11 @@ export async function saveChatEmail(email, locale) {
   return apiFetch("/chat/email", { method: "POST", body: { email, locale } });
 }
 
+// 화상 상담 예약 요청
+export async function bookConsultation({ name, when, contact, note, locale } = {}) {
+  return apiFetch("/chat/consultation", { method: "POST", body: { name, when, contact, note, locale } });
+}
+
 // 서버 media.js ALLOWED_TYPES와 정렬 — 이미지·영상만 첨부 허용.
 export const CHAT_MAX_BYTES = 100 * 1024 * 1024;       // 이미지 상한
 export const CHAT_VIDEO_MAX_BYTES = 30 * 1024 * 1024;  // 영상 상한 30MB

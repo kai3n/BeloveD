@@ -54,6 +54,8 @@ export function threadView(row) {
     lastMessageAt: row.last_message_at,
     staffUnread: row.staff_unread,
     customerUnread: row.customer_unread,
+    tags: row.tags || [],
+    assignedAdminId: row.assigned_admin_id != null ? Number(row.assigned_admin_id) : null,
     createdAt: row.created_at,
   };
 }
@@ -184,25 +186,89 @@ export async function setVisitorEmail(threadId, email) {
 }
 
 // ── 어드민 인박스 ────────────────────────────────────────────────────────
-export async function listInboxThreads({ status = "open" } = {}) {
+export async function listInboxThreads({ status = "open", tag = null } = {}) {
+  const where = [];
+  const params = [];
+  if (status !== "all") { params.push(status); where.push(`t.status = $${params.length}`); }
+  if (tag) { params.push(String(tag)); where.push(`$${params.length} = any(t.tags)`); }
   const { rows } = await query(
-    `select t.*, c.name as customer_name, c.email as customer_email,
+    `select t.*, c.name as customer_name, c.email as customer_email, a.name as assignee_name,
        (select body from chat_messages m where m.thread_id = t.id order by m.id desc limit 1) as last_body,
        (select sender from chat_messages m where m.thread_id = t.id order by m.id desc limit 1) as last_sender
      from chat_threads t
      left join customers c on c.id = t.customer_id
-     ${status === "all" ? "" : "where t.status = $1"}
+     left join admin_users a on a.id = t.assigned_admin_id
+     ${where.length ? `where ${where.join(" and ")}` : ""}
      order by t.staff_unread > 0 desc, t.last_message_at desc
      limit 100`,
-    status === "all" ? [] : [status],
+    params,
   );
   return rows.map((r) => ({
     ...threadView(r),
     customerName: r.customer_name || null,
     customerEmail: r.customer_email || null,
+    assigneeName: r.assignee_name || null,
     preview: (r.last_body || "").slice(0, 120),
     lastSender: r.last_sender || null,
   }));
+}
+
+// ── 태그·담당자·통계 ─────────────────────────────────────────────────────
+const TAG_MAX = 8;
+export async function setThreadTags(code, tags) {
+  const clean = Array.isArray(tags)
+    ? [...new Set(tags.map((x) => String(x).trim().slice(0, 24)).filter(Boolean))].slice(0, TAG_MAX)
+    : [];
+  const { rows } = await query(
+    "update chat_threads set tags = $2 where thread_code = $1 returning *",
+    [String(code), clean],
+  );
+  if (!rows[0]) throw new ApiError("NOT_FOUND", 404);
+  return threadView(rows[0]);
+}
+
+// 스레드에 태그 하나 추가(중복·빈값 제거) — 상담예약 자동 태깅 등에 사용
+export async function addThreadTag(threadId, tag) {
+  await query(
+    `update chat_threads set tags =
+       (select array(select distinct e from unnest(array_append(tags, $2)) as e where e is not null and e <> ''))
+     where id = $1`,
+    [threadId, String(tag).slice(0, 24)],
+  );
+}
+
+export async function assignThread(code, adminId) {
+  const { rows } = await query(
+    "update chat_threads set assigned_admin_id = $2 where thread_code = $1 returning *",
+    [String(code), adminId || null],
+  );
+  if (!rows[0]) throw new ApiError("NOT_FOUND", 404);
+  return threadView(rows[0]);
+}
+
+export async function chatStats() {
+  const [open, today, unread, firstResp, topTags] = await Promise.all([
+    query("select count(*)::int n from chat_threads where status = 'open'"),
+    query("select count(*)::int n from chat_threads where created_at >= now() - interval '24 hours'"),
+    query("select count(*)::int n from chat_threads where staff_unread > 0 and status = 'open'"),
+    query(`
+      with firsts as (
+        select thread_id,
+          min(created_at) filter (where sender = 'visitor') as v0,
+          min(created_at) filter (where sender = 'staff' and sender_admin_id is not null) as s0
+        from chat_messages group by thread_id
+      )
+      select round(avg(extract(epoch from (s0 - v0)) / 60.0)::numeric, 1) as mins
+      from firsts where v0 is not null and s0 is not null and s0 >= v0`),
+    query("select unnest(tags) as tag, count(*)::int n from chat_threads group by 1 order by n desc limit 6"),
+  ]);
+  return {
+    open: open.rows[0].n,
+    today: today.rows[0].n,
+    unread: unread.rows[0].n,
+    avgFirstResponseMin: firstResp.rows[0].mins != null ? Number(firstResp.rows[0].mins) : null,
+    topTags: topTags.rows.map((r) => ({ tag: r.tag, count: r.n })),
+  };
 }
 
 // 스레드 컨텍스트 — 연결된 고객·주문·최근 활동 (스태프 사이드 패널)
