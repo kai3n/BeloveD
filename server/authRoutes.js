@@ -5,6 +5,7 @@ import { revokeSession } from "./session.js";
 import { rateLimit } from "./rateLimit.js";
 import { linkSessionToCustomer, recordAuthEvent } from "./activityRepository.js";
 import { linkChatToCustomer } from "./chatRepository.js";
+import { query } from "./db.js";
 import {
   setSessionCookie, clearSessionCookie, clearChatCookie, requireCustomer,
   COOKIE_CUSTOMER, COOKIE_ADMIN,
@@ -136,8 +137,16 @@ export function authRouter() {
     } catch (e) { next(e); }
   });
 
-  r.get("/me", (req, res) => {
-    res.json({ principal: req.principal || null });
+  r.get("/me", async (req, res, next) => {
+    try {
+      const p = req.principal;
+      if (p?.type === "customer") {
+        // 이메일 포함 반환 — 클라가 로컬 스토리지 없이도 세션을 복원할 수 있게(정합 강화)
+        const { rows } = await query("select email from customers where id = $1", [p.id]);
+        return res.json({ principal: { type: "customer", id: p.id, email: rows[0]?.email || null } });
+      }
+      res.json({ principal: p || null });
+    } catch (e) { next(e); }
   });
 
   return r;

@@ -36,6 +36,14 @@ describe("consultation slots", () => {
     expect(filtered.length).toBe(all.length - 1);
   });
 
+  it("DST 봄 전환일 wallToUtc 오프셋 정확(2회 보정) + 전환 주간 중복 슬롯 없음", () => {
+    // 2026-03-08 09:00 PT는 전환 후 PDT(UTC-7) = 16:00Z. 1회 보정 버그면 17:00Z가 됐다.
+    // (해당일은 일요일이라 실제 슬롯은 안 생기지만 wallToUtc 정확성은 반드시 보장돼야 함)
+    expect(wallToUtc(2026, 2, 8, 9, 0, TZ).toISOString()).toBe("2026-03-08T16:00:00.000Z");
+    const slots = generateAvailableSlots(new Date("2026-03-07T12:00:00Z"), new Set(), { tz: TZ, days: 4 });
+    expect(new Set(slots).size).toBe(slots.length); // 중복 ISO 없음
+  });
+
   it("isValidSlot: 생성 슬롯은 유효, 과거·비경계는 무효", () => {
     const all = generateAvailableSlots(now, new Set(), { tz: TZ });
     expect(isValidSlot(all[0], now, { tz: TZ })).toBe(true);

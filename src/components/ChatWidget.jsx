@@ -20,7 +20,7 @@ const COPY = {
     tooLarge: "That file is too large (max 100MB).", tooLargeVideo: "Videos must be under 30MB.",
     menu: "Menu", backToChat: "Back to chat", talk: "Talk to a person", talkMsg: "I'd like to talk to a person.",
     book: "Book a video consultation", bookLead: "Tell us when works and we'll set up a video call.",
-    bookName: "Your name", bookWhen: "Preferred time (e.g. Sat afternoon)", bookContact: "Email or phone",
+    bookName: "Your name", bookWhen: "Preferred time (e.g. Sat afternoon)", bookContact: "Email (for the video link)",
     bookNote: "Anything to prepare? (optional)", bookSend: "Request consultation", bookCancel: "Cancel",
     bookDone: "Booked! We've emailed the details and video link.",
     bookPick: "Pick a 20-min slot", bookNoSlots: "No open times right now — leave a note and we'll reach out.",
@@ -45,7 +45,7 @@ const COPY = {
     tooLarge: "파일이 너무 커요 (최대 100MB).", tooLargeVideo: "영상은 30MB까지 올릴 수 있어요.",
     menu: "메뉴", backToChat: "대화로 돌아가기", talk: "상담원 연결", talkMsg: "상담원과 연결해 주세요.",
     book: "화상 상담 예약", bookLead: "편한 시간을 알려주시면 화상 상담을 잡아드려요.",
-    bookName: "이름", bookWhen: "희망 시간 (예: 토요일 오후)", bookContact: "이메일 또는 전화번호",
+    bookName: "이름", bookWhen: "희망 시간 (예: 토요일 오후)", bookContact: "이메일 (화상 링크 받을 주소)",
     bookNote: "미리 준비할 내용이 있나요? (선택)", bookSend: "상담 예약 요청", bookCancel: "취소",
     bookDone: "예약 완료! 상세 내용과 화상 링크를 이메일로 보냈어요.",
     bookPick: "20분 슬롯을 선택하세요", bookNoSlots: "지금은 빈 시간이 없어요 — 메모를 남겨주시면 연락드릴게요.",
@@ -70,7 +70,7 @@ const COPY = {
     tooLarge: "文件过大（最大 100MB）。", tooLargeVideo: "视频需小于 30MB。",
     menu: "菜单", backToChat: "返回对话", talk: "联系人工", talkMsg: "我想联系人工客服。",
     book: "预约视频咨询", bookLead: "告诉我们方便的时间，我们安排视频通话。",
-    bookName: "您的姓名", bookWhen: "期望时间（如周六下午）", bookContact: "邮箱或电话",
+    bookName: "您的姓名", bookWhen: "期望时间（如周六下午）", bookContact: "邮箱（接收视频链接）",
     bookNote: "需要提前准备什么吗？（可选）", bookSend: "预约咨询", bookCancel: "取消",
     bookDone: "预约成功！详情与视频链接已发送至您的邮箱。",
     bookPick: "选择一个 20 分钟时段", bookNoSlots: "暂无空闲时段——留言给我们，我们会联系您。",
@@ -95,7 +95,7 @@ const COPY = {
     tooLarge: "Ese archivo es muy grande (máx. 100MB).", tooLargeVideo: "Los videos deben ser menores de 30MB.",
     menu: "Menú", backToChat: "Volver al chat", talk: "Hablar con una persona", talkMsg: "Quiero hablar con una persona.",
     book: "Reservar videoconsulta", bookLead: "Dinos cuándo te viene bien y agendamos una videollamada.",
-    bookName: "Tu nombre", bookWhen: "Hora preferida (p. ej. sábado tarde)", bookContact: "Correo o teléfono",
+    bookName: "Tu nombre", bookWhen: "Hora preferida (p. ej. sábado tarde)", bookContact: "Correo (para el enlace de video)",
     bookNote: "¿Algo que preparar? (opcional)", bookSend: "Solicitar consulta", bookCancel: "Cancelar",
     bookDone: "¡Reservado! Te enviamos los detalles y el enlace de video por correo.",
     bookPick: "Elige un espacio de 20 min", bookNoSlots: "No hay horarios disponibles — deja una nota y te contactamos.",
@@ -393,7 +393,7 @@ export default function ChatWidget() {
   useEffect(() => { if (consultOpen) loadSlots(); }, [consultOpen]);
 
   async function submitConsult() {
-    if (!consult.slot || !consult.contact.trim() || sending) return;
+    if (!consult.slot || !EMAIL_RE.test(consult.contact.trim()) || sending) return;
     setSending(true); setError("");
     try {
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -525,7 +525,7 @@ export default function ChatWidget() {
               <div className="chat-consult-actions">
                 <button type="button" className="chat-quick-btn" onClick={() => setConsultOpen(false)}>{t.bookCancel}</button>
                 <button type="button" className="chat-consult-send"
-                  disabled={sending || !consult.slot || !consult.contact.trim()} onClick={submitConsult}>
+                  disabled={sending || !consult.slot || !EMAIL_RE.test(consult.contact.trim())} onClick={submitConsult}>
                   {t.bookSend}
                 </button>
               </div>

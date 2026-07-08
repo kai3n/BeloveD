@@ -53,8 +53,9 @@ export function AuthProvider({ children }) {
       }
       if (userId) return; // 양쪽 다 세션 있음 → 유지
       if (principal.type === "admin") { commitServerPrincipal("admin"); return; }
-      const savedEmail = localStorage.getItem(EMAIL_KEY);
-      if (savedEmail) commitServerPrincipal("customer", savedEmail);
+      // 서버가 준 이메일 우선 — 로컬 스토리지가 비워진 기기에서도 유효 쿠키면 복원 가능.
+      const email = principal.email || localStorage.getItem(EMAIL_KEY);
+      if (email) commitServerPrincipal("customer", email);
     }).catch(() => { /* 서버 부재(정적 데모) → 로컬 유지 */ })
       .finally(() => { if (!cancelled) setHydrating(false); });
     return () => { cancelled = true; };
@@ -115,8 +116,10 @@ export function AuthProvider({ children }) {
     return commit(addUser({ email, name, role: "customer" }));
   }
 
-  function logout() {
-    apiFetch("/auth/logout", { method: "POST" }).catch(() => {}); // 서버 세션도 폐기 (없으면 무시)
+  async function logout() {
+    // 서버 세션 폐기를 기다린 뒤 로컬 정리 — fire-and-forget면 요청 유실 시 서버 세션이 살아남아
+    // 다음 로드의 정합에서 재로그인될 수 있다(특히 어드민). 실패해도 로컬은 best-effort로 정리.
+    try { await apiFetch("/auth/logout", { method: "POST" }); } catch { /* best effort */ }
     localStorage.removeItem(SESSION_KEY);
     try { localStorage.removeItem(EMAIL_KEY); } catch { /* no-op */ }
     setUserId(null);

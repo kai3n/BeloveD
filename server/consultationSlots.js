@@ -8,15 +8,21 @@ const END_HOUR = 18;       // 마지막 슬롯 시작 17:40 (18:00 종료)
 const DAYS = 14;
 const LEAD_MS = 2 * 60 * 60 * 1000; // 최소 2시간 뒤부터 예약 가능
 
-// 특정 타임존의 벽시계(y, monthIndex, day, hour, minute)를 UTC Date로 — DST 오프셋 자동 반영.
+// 특정 타임존의 벽시계(y, monthIndex, day, hour, minute)를 UTC Date로 — DST 오프셋 반영.
+// 2회 보정: 첫 추정 시각의 오프셋으로 근사한 뒤, 그 시각에서 오프셋을 다시 구해 확정한다.
+// (1회 보정은 DST 봄 전환일 09:00 슬롯이 +1h 밀려 중복 슬롯을 만드는 버그가 있었다.)
 export function wallToUtc(y, mo, d, h, mi, tz = TZ) {
-  const guess = new Date(Date.UTC(y, mo, d, h, mi));
-  const p = new Intl.DateTimeFormat("en-US", {
-    timeZone: tz, year: "numeric", month: "numeric", day: "numeric",
-    hour: "numeric", minute: "numeric", second: "numeric", hour12: false,
-  }).formatToParts(guess).reduce((a, x) => { a[x.type] = x.value; return a; }, {});
-  const asIfUtc = Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour % 24, +p.minute, +p.second);
-  return new Date(guess.getTime() - (asIfUtc - guess.getTime()));
+  const targetWall = Date.UTC(y, mo, d, h, mi);
+  const offsetAt = (utcMs) => {
+    const p = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz, year: "numeric", month: "numeric", day: "numeric",
+      hour: "numeric", minute: "numeric", second: "numeric", hour12: false,
+    }).formatToParts(new Date(utcMs)).reduce((a, x) => { a[x.type] = x.value; return a; }, {});
+    return Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour % 24, +p.minute, +p.second) - utcMs;
+  };
+  let utc = targetWall - offsetAt(targetWall);
+  utc = targetWall - offsetAt(utc); // DST 경계 재보정
+  return new Date(utc);
 }
 
 // UTC Date가 tz에서 며칠·무슨 요일인지

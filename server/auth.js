@@ -42,8 +42,12 @@ export async function ensureCustomer(client, email, name, locale) {
     return existing.rows[0];
   }
   const code = await nextCode(client, "CUS");
+  // 동시 최초 로그인 레이스에서 SELECT-후-INSERT가 UNIQUE 충돌로 500 나지 않게 upsert —
+  // 다른 요청이 먼저 만들었으면 기존 행을 반환(트랜잭션 abort 방지).
   const { rows } = await client.query(
-    "insert into customers (customer_code, email, name, locale) values ($1,$2,$3,$4) returning *",
+    `insert into customers (customer_code, email, name, locale) values ($1,$2,$3,$4)
+     on conflict (email) do update set updated_at = now()
+     returning *`,
     [code, normalized, name || normalized, lang || "en"],
   );
   return rows[0];
