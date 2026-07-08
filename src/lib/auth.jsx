@@ -4,6 +4,7 @@ import { addUser, findUserByEmail, findUserByAccessCode, getUser } from "./store
 import { ApiUnavailableError, apiFetch } from "./api.js";
 
 const SESSION_KEY = "lumina-session";
+const EMAIL_KEY = "lumina-email"; // 서버 세션 복원용(고객 이메일 매핑)
 const AuthContext = createContext(null);
 const DEMO_PASSWORD = "demo1234"; // mock: 이메일 로그인 데모 공통 비밀번호
 
@@ -14,6 +15,7 @@ export const LOGIN_FOR = { customer: "/sign-in", admin: "/gate-7f3k9x" };
 
 export function AuthProvider({ children }) {
   const [userId, setUserId] = useState(() => localStorage.getItem(SESSION_KEY));
+  const [hydrating, setHydrating] = useState(true); // 서버 세션 정합 대기 중 여부
   const user = userId ? getUser(userId) : null;
 
   function commit(found) {
@@ -24,26 +26,37 @@ export function AuthProvider({ children }) {
 
   // 서버 principal(customer/admin)을 데모 스토어 유저로 브리지 — 기존 UI(포털·어드민) 호환 유지
   function commitServerPrincipal(principal, email) {
+    const remember = (e) => { try { localStorage.setItem(EMAIL_KEY, e); } catch { /* no-op */ } };
     if (principal === "admin") {
       const admin = findUserByEmail("admin@demo.com");
-      if (admin) return commit(admin);
+      if (admin) { remember("admin@demo.com"); return commit(admin); }
     }
     const normalized = String(email || "").trim().toLowerCase();
+    remember(normalized);
     const found = findUserByEmail(normalized);
     if (found) return commit(found);
     return commit(addUser({ email: normalized, name: normalized.split("@")[0], role: "customer" }));
   }
 
-  // 부팅 시 서버 세션 하이드레이션 — 쿠키가 살아 있으면 로컬 세션 복원
+  // 부팅 시 서버 세션과 로컬 세션을 정합 — 서버 세션이 진실의 원천.
+  //  · 서버가 "세션 없음"(reachable & principal=null) → 로컬 세션도 폐기(로그아웃/만료 후 스테일 로그인 방지)
+  //  · 서버 세션 있음 + 로컬 없음 → 복원(어드민, 또는 로그인 때 저장한 이메일로 고객)
+  //  · 서버 접속 불가(정적 데모) → throw → 로컬 세션 그대로 유지
   useEffect(() => {
-    if (userId) return; // 로컬 세션이 이미 있으면 유지
     let cancelled = false;
     apiFetch("/auth/me").then((data) => {
-      if (cancelled || !data?.principal) return;
-      // 서버는 이메일을 안 주므로(id만) 데모 스토어 매핑은 로그인 시점에 저장된 이메일에 의존.
-      // 하이드레이션은 어드민만 확실히 복원 가능.
-      if (data.principal.type === "admin") commitServerPrincipal("admin");
-    }).catch(() => {});
+      if (cancelled) return;
+      const principal = data?.principal || null;
+      if (!principal) {
+        if (localStorage.getItem(SESSION_KEY)) { localStorage.removeItem(SESSION_KEY); setUserId(null); }
+        return;
+      }
+      if (userId) return; // 양쪽 다 세션 있음 → 유지
+      if (principal.type === "admin") { commitServerPrincipal("admin"); return; }
+      const savedEmail = localStorage.getItem(EMAIL_KEY);
+      if (savedEmail) commitServerPrincipal("customer", savedEmail);
+    }).catch(() => { /* 서버 부재(정적 데모) → 로컬 유지 */ })
+      .finally(() => { if (!cancelled) setHydrating(false); });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -105,11 +118,12 @@ export function AuthProvider({ children }) {
   function logout() {
     apiFetch("/auth/logout", { method: "POST" }).catch(() => {}); // 서버 세션도 폐기 (없으면 무시)
     localStorage.removeItem(SESSION_KEY);
+    try { localStorage.removeItem(EMAIL_KEY); } catch { /* no-op */ }
     setUserId(null);
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, loginWithCode, signup, logout, requestLoginCode, verifyLoginCode, loginServer }}>
+    <AuthContext.Provider value={{ user, hydrating, login, loginWithCode, signup, logout, requestLoginCode, verifyLoginCode, loginServer }}>
       {children}
     </AuthContext.Provider>
   );
@@ -120,8 +134,10 @@ export function useAuth() {
 }
 
 export function RequireRole({ role, children }) {
-  const { user } = useAuth();
+  const { user, hydrating } = useAuth();
   const location = useLocation();
+  // 서버 세션 정합이 끝나기 전엔 리다이렉트 보류 — 유효 쿠키 사용자가 조기 리다이렉트되는 것 방지
+  if (!user && hydrating) return null;
   // admin은 로그인 페이지로 리다이렉트하지 않는다 — 게이트 경로 노출 방지 (직접 접속만 허용)
   if (!user) {
     if (role === "admin") return <Navigate to="/" replace />;
