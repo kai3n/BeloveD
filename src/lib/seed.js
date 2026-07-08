@@ -262,6 +262,8 @@ export function seed() {
       metalRefUsdPerG: { "14ky": 62, "18ky": 80, "14kr": 62, "18kr": 80, "18kw": 85, "pt": 38 },
       // 쿠폰 카탈로그 — 어드민 콘솔에서 등록/삭제/만료 관리, 서버 settings로 write-through
       coupons: BASE_COUPONS.map((c) => ({ ...c })),
+      // 멀티스톤 총캐럿 견적용 멜리(스몰 스톤) 단가 — 어드민 벤치마크 페이지에서 조정
+      meleeUsdPerCt: 150,
       designChangeFeeUsd: 15, cancelAfterProductionMinUsd: 140, freeMinorRevisions: 1,
       // 어드민 최소 개입 자동화: 전 주문이 기본 벤더로 자동 매칭 (스타일별 supplierId로 오버라이드 가능)
       defaultSupplierId: "u-supplier1", autoDueDays: 3, batchValidDays: 10,

@@ -222,6 +222,12 @@ function migrateDB(d) {
     changed = true;
   }
 
+  // 멜리 단가(2026-07 총캐럿 스텝) — 구버전 저장 DB에 기본값 주입
+  if (d?.settings && d.settings.meleeUsdPerCt == null) {
+    d.settings.meleeUsdPerCt = 150;
+    changed = true;
+  }
+
   // v13 hotfix: operator-proxy diamond candidates are published for the
   // customer to choose, but older records marked them as already stock-confirmed.
   // That combination leaves the customer with a visible card and a disabled

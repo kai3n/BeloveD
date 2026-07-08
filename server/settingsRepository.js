@@ -14,6 +14,7 @@ export const PUBLIC_SETTINGS_KEYS = [
   "payment",
   "styleSpecs",
   "coupons", // 쿠폰 카탈로그 — 위저드 견적 추정이 소비 (코드는 공개돼도 되는 '약속')
+  "meleeUsdPerCt", // 멀티스톤 총캐럿 견적 단가 — 위저드 견적 추정이 소비
 ];
 
 export async function getSettingsValues(keys) {

@@ -4,10 +4,19 @@
 import { benchmarkFor, findCoupon, getSettings, listStyleSpecs } from "./store.js";
 import { quoteCompute } from "./ops.js";
 import { applyCoupon } from "./coupons.js";
+import { clampTotalCarat } from "./gradeScale.js";
 
 // 컬러/클래리티에 따른 소폭 보정 — 등급이 높을수록 비싸진다(표시용 추정).
 const COLOR_FACTOR = { D: 1.12, E: 1.06, F: 1.0, G: 0.95, H: 0.9 };
-const CLARITY_FACTOR = { IF: 1.12, VVS1: 1.08, VVS2: 1.05, VS1: 1.0, VS2: 0.96, SI1: 0.9 };
+const CLARITY_FACTOR = { "IF-FL": 1.12, IF: 1.12, VVS1: 1.08, VVS2: 1.05, VS1: 1.0, VS2: 0.96, SI1: 0.9 };
+
+// range 양끝 factor 평균 — 레거시 단일값(form.color)은 그대로 조회
+function rangeFactor(factors, range, legacy) {
+  if (Array.isArray(range) && range.length) {
+    return ((factors[range[0]] ?? 1.0) + (factors[range[1]] ?? 1.0)) / 2;
+  }
+  return factors[legacy] ?? 1.0;
+}
 // 스펙이 없을 때의 카테고리별 기본 세팅 중량(g)/공임(USD)
 const DEFAULT_WEIGHT_G = { ring: 4.2, necklace: 3.0, bangle: 9.0, earrings: 3.4 };
 const DEFAULT_LABOR_USD = { ring: 320, necklace: 260, bangle: 520, earrings: 300 };
@@ -44,12 +53,12 @@ export function estimateQuoteRange(form) {
     const bench = benchmarkFor(form.stonePrefs?.shape || "round", carat);
     const unit = bench?.unitUsdPerCt ?? 400;
     benchmarkUsdPerCt = unit
-      * (COLOR_FACTOR[form.stonePrefs?.color] ?? 1.0)
-      * (CLARITY_FACTOR[form.stonePrefs?.clarity] ?? 1.0);
+      * rangeFactor(COLOR_FACTOR, form.stonePrefs?.colorRange, form.stonePrefs?.color)
+      * rangeFactor(CLARITY_FACTOR, form.stonePrefs?.clarityRange, form.stonePrefs?.clarity);
   } else {
-    // 멀티스톤: 멜레 총합을 약 1ct 상당으로 가정하고 멜레 할인 적용
-    carat = 1.0;
-    benchmarkUsdPerCt = (benchmarkFor("round", 1.0)?.unitUsdPerCt ?? 320) * 0.8;
+    // 멀티스톤: 고객이 고른 총 캐럿 × 멜리 단가 — 퀄리티 range는 상담에서 확정(견적 미반영)
+    carat = clampTotalCarat(form.category, form.multiSpec?.totalCarat);
+    benchmarkUsdPerCt = s.meleeUsdPerCt ?? 150;
   }
 
   const { totalUsd, diamondAmountUsd } = quoteCompute({
