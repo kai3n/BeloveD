@@ -99,6 +99,25 @@
 .chat-msg.staff { align-self: flex-start; background: var(--surface); color: var(--text); border: 1px solid var(--line); border-bottom-left-radius: 4px; }
 .chat-msg.system { align-self: center; background: none; color: var(--quiet); font-size: 12px; padding: 2px; }
 .chat-joined { align-self: center; text-align: center; font-size: 11.5px; color: var(--accent); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 4px 13px; margin: 6px auto; }
+
+/* 3-스트라이크 에스컬레이션 카드 */
+.chat-escalate {
+  align-self: center; text-align: center; max-width: 94%; margin: 8px auto;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px;
+  display: flex; flex-direction: column; gap: 9px;
+}
+.chat-escalate span { font-size: 13px; color: var(--muted); line-height: 1.5; }
+.chat-escalate button { background: var(--accent); color: #fff; border: none; border-radius: 10px; padding: 9px 14px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: var(--sans); }
+
+/* 선제 인사 말풍선 (최소화 버블 위) */
+.chat-nudge {
+  position: absolute; right: 0; bottom: 70px; max-width: 240px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow);
+  padding: 11px 32px 11px 14px; font-size: 13px; color: var(--text); line-height: 1.45; cursor: pointer;
+  animation: chat-pop .2s ease;
+}
+.chat-nudge-x { position: absolute; top: 5px; right: 7px; background: none; border: none; color: var(--quiet); font-size: 15px; line-height: 1; cursor: pointer; padding: 2px; }
+.chat-nudge-x:hover { color: var(--text); }
 /* 대화 첨부 썸네일 — 인라인엔 작은 썸네일만, 원본은 클릭 시 새 탭 (위젯·어드민 공용) */
 .chat-thumb-link { display: inline-block; position: relative; margin-top: 6px; margin-right: 6px; line-height: 0; }
 .chat-thumb-link .chat-thumb { margin: 0; }

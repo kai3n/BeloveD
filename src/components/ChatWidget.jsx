@@ -24,6 +24,8 @@ const COPY = {
     bookNote: "Anything to prepare? (optional)", bookSend: "Request consultation", bookCancel: "Cancel",
     bookDone: "Got your request — we'll follow up with a video link soon.",
     joined: "A BeloveD specialist has joined the conversation",
+    escalateLead: "Sorry I couldn't quite help — would you like to talk to a person?",
+    nudgeMsg: "Questions? I'm here to help — ask me anything.",
     quickTitle: "Or jump to",
     quick: [
       { id: "order", label: "Start a custom order", to: "/custom/new" },
@@ -44,6 +46,8 @@ const COPY = {
     bookNote: "미리 준비할 내용이 있나요? (선택)", bookSend: "상담 예약 요청", bookCancel: "취소",
     bookDone: "요청 받았어요 — 곧 화상 링크와 함께 연락드릴게요.",
     joined: "BeloveD 상담원이 대화에 참여했어요",
+    escalateLead: "제가 잘 못 도와드린 것 같아요 — 상담원과 연결해 드릴까요?",
+    nudgeMsg: "궁금한 점 있으세요? 편하게 물어보세요 :)",
     quickTitle: "바로가기",
     quick: [
       { id: "order", label: "주문제작 시작하기", to: "/custom/new" },
@@ -64,6 +68,8 @@ const COPY = {
     bookNote: "需要提前准备什么吗？（可选）", bookSend: "预约咨询", bookCancel: "取消",
     bookDone: "已收到您的请求——我们会尽快附上视频链接联系您。",
     joined: "BeloveD 顾问已加入对话",
+    escalateLead: "抱歉没能帮到您——需要联系人工吗？",
+    nudgeMsg: "有疑问吗？随时问我 :)",
     quickTitle: "快捷前往",
     quick: [
       { id: "order", label: "开始定制", to: "/custom/new" },
@@ -84,6 +90,8 @@ const COPY = {
     bookNote: "¿Algo que preparar? (opcional)", bookSend: "Solicitar consulta", bookCancel: "Cancelar",
     bookDone: "Recibimos tu solicitud — te enviaremos un enlace de video pronto.",
     joined: "Un especialista de BeloveD se unió a la conversación",
+    escalateLead: "Perdón si no pude ayudarte — ¿quieres hablar con una persona?",
+    nudgeMsg: "¿Preguntas? Estoy aquí para ayudarte.",
     quickTitle: "O ve a",
     quick: [
       { id: "order", label: "Iniciar pedido personalizado", to: "/custom/new" },
@@ -153,10 +161,13 @@ export default function ChatWidget() {
   const [consultOpen, setConsultOpen] = useState(false); // 화상 상담 예약 폼
   const [consult, setConsult] = useState({ name: "", when: "", contact: "", note: "" });
   const [notice, setNotice] = useState(""); // 성공 안내(예약 접수 등)
+  const [escalate, setEscalate] = useState(false); // 자동응답 연속 실패 → 상담원 연결 제안
+  const [nudge, setNudge] = useState(false); // 선제 인사
 
   const lastIdRef = useRef(0);
   const bodyRef = useRef(null);
   const fileRef = useRef(null);
+  const missRef = useRef(0); // 연속 FAQ 미스 카운트
 
   function ingest(data) {
     if (!data) return;
@@ -177,6 +188,10 @@ export default function ChatWidget() {
         return [...prev, ...fresh].sort((a, b) => a.id - b.id);
       });
       lastIdRef.current = Math.max(lastIdRef.current, ...data.messages.map((m) => m.id));
+      // 실제 상담원이 붙으면 에스컬레이션 상태 해제
+      if (data.messages.some((m) => m.sender === "staff" && m.senderAdminId != null)) {
+        missRef.current = 0; setEscalate(false);
+      }
     }
   }
 
@@ -241,6 +256,21 @@ export default function ChatWidget() {
     return () => { window.removeEventListener("scroll", check); window.removeEventListener("resize", check); };
   }, [pathname]);
 
+  // 선제 인사 — 인텐트 페이지(디자인·주문·가이드)에서 25초 체류 후, 세션당 1회, 대화 없을 때만.
+  useEffect(() => {
+    if (open) return undefined;
+    let dismissed = false;
+    try { dismissed = window.sessionStorage.getItem("bd_chat_nudged") === "1"; } catch { /* no-op */ }
+    if (dismissed || !/^\/(designs|custom|orders|track|guide)/.test(pathname)) return undefined;
+    const id = window.setTimeout(() => { if (messages.length === 0) setNudge(true); }, 25000);
+    return () => window.clearTimeout(id);
+  }, [pathname, open, messages.length]);
+
+  function dismissNudge() {
+    setNudge(false);
+    try { window.sessionStorage.setItem("bd_chat_nudged", "1"); } catch { /* no-op */ }
+  }
+
   // 파일 업로드 공용 — 파일선택·드래그앤드롭·붙여넣기 모두 여기로. 이미지·영상만, 다중 지원.
   async function uploadFiles(list) {
     const files = chatMediaFiles(list);
@@ -288,6 +318,9 @@ export default function ChatWidget() {
         staffAgent: data.staffAgent, thread: data.thread,
         messages: [data.message, ...(data.autoReply ? [data.autoReply] : [])],
       });
+      // 3-스트라이크: 자동응답이 못 맞추면 미스 누적 → 2회면 상담원 연결 제안
+      if (data.autoReply) { missRef.current = 0; setEscalate(false); }
+      else { missRef.current += 1; if (missRef.current >= 2) setEscalate(true); }
     } catch { setError("Could not send — please try again."); }
     finally { setSending(false); }
   }
@@ -337,7 +370,15 @@ export default function ChatWidget() {
   if (!open) {
     return (
       <div className={`chat-root${pastHero ? "" : " chat-root--hidden"}`} style={dockH ? { bottom: `calc(${dockH + 14}px + env(safe-area-inset-bottom))` } : undefined}>
-        <button className="chat-launcher" aria-label={t.open} onClick={() => setOpen(true)}>
+        {nudge && (
+          <div className="chat-nudge" role="button" tabIndex={0}
+            onClick={() => { setNudge(false); setOpen(true); }}
+            onKeyDown={(e) => { if (e.key === "Enter") { setNudge(false); setOpen(true); } }}>
+            <span>{t.nudgeMsg}</span>
+            <button className="chat-nudge-x" aria-label="Dismiss" onClick={(e) => { e.stopPropagation(); dismissNudge(); }}>×</button>
+          </div>
+        )}
+        <button className="chat-launcher" aria-label={t.open} onClick={() => { setNudge(false); setOpen(true); }}>
           <MessageCircle size={26} strokeWidth={1.8} />
           {unread > 0 && <span className="chat-badge">{unread > 9 ? "9+" : unread}</span>}
         </button>
@@ -418,16 +459,24 @@ export default function ChatWidget() {
               </button>
             </div>
           ) : (
-            messages.map((m) => (
-              <Fragment key={m.id}>
-                {m.id === firstHumanId && <div className="chat-joined">✦ {t.joined}</div>}
-                <div className={`chat-msg ${m.sender}`}>
-                  {m.body && <span>{m.body}</span>}
-                  {(m.attachments || []).map((a, i) => <ChatThumb key={i} a={a} />)}
-                  {m.sender !== "system" && <span className="chat-msg-time">{hhmm(m.createdAt)}</span>}
+            <>
+              {messages.map((m) => (
+                <Fragment key={m.id}>
+                  {m.id === firstHumanId && <div className="chat-joined">✦ {t.joined}</div>}
+                  <div className={`chat-msg ${m.sender}`}>
+                    {m.body && <span>{m.body}</span>}
+                    {(m.attachments || []).map((a, i) => <ChatThumb key={i} a={a} />)}
+                    {m.sender !== "system" && <span className="chat-msg-time">{hhmm(m.createdAt)}</span>}
+                  </div>
+                </Fragment>
+              ))}
+              {escalate && (
+                <div className="chat-escalate">
+                  <span>{t.escalateLead}</span>
+                  <button type="button" onClick={() => { setEscalate(false); doSend(t.talkMsg); }}>{t.talk}</button>
                 </div>
-              </Fragment>
-            ))
+              )}
+            </>
           )}
         </div>
 
