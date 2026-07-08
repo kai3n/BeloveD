@@ -5097,6 +5097,37 @@ button.text-link:hover {
 .gflow-carat-readout small { font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--quiet); }
 .gflow-carat-range { width: 100%; accent-color: var(--accent); }
 
+/* 등급 range 슬라이더 — 듀얼 핸들 (겹친 두 range 인풋, 썸만 클릭) */
+.gflow-grange { width: min(100%, 520px); display: grid; gap: 10px; }
+.gflow-grange-track { position: relative; height: 24px; }
+.gflow-grange-track::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 3px;
+  transform: translateY(-50%); background: var(--line); border-radius: 2px;
+}
+.gflow-grange-fill {
+  position: absolute; top: 50%; height: 3px; transform: translateY(-50%);
+  background: var(--accent); border-radius: 2px;
+}
+.gflow-grange-track input[type="range"] {
+  position: absolute; inset: 0; width: 100%; height: 24px; margin: 0;
+  -webkit-appearance: none; appearance: none; background: none; pointer-events: none;
+}
+.gflow-grange-track input[type="range"]:focus-visible { outline: 1px solid var(--accent); outline-offset: 4px; }
+.gflow-grange-track input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none; pointer-events: auto;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--surface); border: 1px solid var(--accent);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.28); cursor: grab;
+}
+.gflow-grange-track input[type="range"]::-moz-range-thumb {
+  pointer-events: auto; width: 18px; height: 18px; border-radius: 50%;
+  background: var(--surface); border: 1px solid var(--accent);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.28); cursor: grab;
+}
+.gflow-grange-labels { display: flex; justify-content: space-between; font-size: 12px; letter-spacing: 0.04em; color: var(--quiet); }
+.gflow-grange-labels .is-active { color: var(--accent); font-weight: 600; }
+.gflow-grange-fields { display: grid; gap: 22px; width: min(100%, 520px); }
+
 /* 등급 스케일 */
 .gflow-scale { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 5px; width: min(100%, 520px); }
 .gflow-scale-step {

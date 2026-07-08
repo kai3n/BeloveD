@@ -120,6 +120,58 @@ export function CaratSlider({ value, onChange, min = 0.5, max = 4, step = 0.1, s
   );
 }
 
+// 등급 range 슬라이더 — 브릴리언스식 듀얼 핸들. 겹친 두 개의 네이티브 range 인풋으로
+// 키보드 접근성을 공짜로 얻고, 썸만 포인터를 받는다. 값은 [하한, 상한] 등급 문자열.
+export function GradeRangeSlider({ scale, value, onChange, ariaLabel = "" }) {
+  const loRaw = scale.indexOf(value?.[0]);
+  const hiRaw = scale.indexOf(value?.[1]);
+  const lo = loRaw < 0 ? 0 : loRaw;
+  const hi = hiRaw < 0 ? scale.length - 1 : hiRaw;
+  const maxIdx = scale.length - 1;
+  const pct = (i) => (maxIdx === 0 ? 0 : (i / maxIdx) * 100);
+  const commit = (nextLo, nextHi) => onChange([scale[nextLo], scale[nextHi]]);
+  return (
+    <div className="gflow-grange" role="group" aria-label={ariaLabel}>
+      <div className="gflow-grange-track">
+        <span className="gflow-grange-fill" style={{ left: `${pct(lo)}%`, width: `${pct(hi) - pct(lo)}%` }} aria-hidden="true" />
+        <input
+          type="range" min="0" max={maxIdx} step="1" value={lo}
+          aria-label={`${ariaLabel} min`}
+          onChange={(e) => commit(Math.min(Number(e.target.value), hi), hi)}
+        />
+        <input
+          type="range" min="0" max={maxIdx} step="1" value={hi}
+          aria-label={`${ariaLabel} max`}
+          onChange={(e) => commit(lo, Math.max(Number(e.target.value), lo))}
+        />
+      </div>
+      <div className="gflow-grange-labels" aria-hidden="true">
+        {scale.map((grade, i) => (
+          <span key={grade} className={i >= lo && i <= hi ? "is-active" : ""}>{grade}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// 총 캐럿 슬라이더 — 멀티스톤은 합계 중량이라 실물 프리뷰 없이 리드아웃만 (CaratSlider 비주얼 문법 재사용)
+export function TotalCaratSlider({ value, onChange, min, max, step, unitLabel = "ct total" }) {
+  const ct = Number(value) || min;
+  return (
+    <div className="gflow-carat">
+      <div className="gflow-carat-visual">
+        <span className="gflow-carat-readout"><strong>{ct.toFixed(2)}</strong><small>{unitLabel}</small></span>
+      </div>
+      <input
+        className="gflow-carat-range"
+        type="range" min={min} max={max} step={step} value={ct}
+        aria-label="total carat"
+        onChange={(e) => onChange(e.target.value)}
+      />
+    </div>
+  );
+}
+
 // 등급 스케일 (컬러/클래리티) — options: [{ value, label?, sub? }]
 export function ScalePicker({ options, value, onSelect, ariaLabel = "" }) {
   return (
