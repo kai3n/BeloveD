@@ -413,7 +413,7 @@ export default function IntakeForm() {
   const totalCaratRange = TOTAL_CARAT_RANGES[form.category] || TOTAL_CARAT_RANGES.ring;
   const sectionKicker = {
     category: g.pieceCard, design: g.pieceCard, metal: t.metal,
-    shape: g.stoneCard, carat: g.stoneCard, stones: g.stoneCard, inspiration: g.inspirationCard, contact: t.contactTitle, review: t.reviewStep,
+    shape: g.stoneCard, carat: g.stoneCard, stones: g.stonesCard, inspiration: g.inspirationCard, contact: t.contactTitle, review: t.reviewStep,
   };
   const kicker = `${String(screenIdx + 1).padStart(2, "0")} — ${sectionKicker[screen] || ""}`;
   const stepShell = (title, hint, children, extra = {}) => (
@@ -630,7 +630,7 @@ export default function IntakeForm() {
                 <ShapeSilhouette shape={solitaire ? form.stonePrefs.shape : "round"} />
               </div>
               <div className="rc-body">
-                <span>{g.stoneCard}</span>
+                <span>{solitaire ? g.stoneCard : g.stonesCard}</span>
                 {solitaire ? (
                   <>
                     <strong>{p.shapes[form.stonePrefs.shape] || form.stonePrefs.shape} {Number(form.stonePrefs.carat).toFixed(2)}ct</strong>

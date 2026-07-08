@@ -228,14 +228,20 @@ function migrateDB(d) {
     changed = true;
   }
 
-  // 런칭 세일(2026-07) — LAUNCH25 쿠폰 + 상단 세일 배너를 기존 브라우저에 1회 주입.
-  // 어드민이 이후 삭제/수정해도 재주입하지 않도록 버전 플래그로만 판단한다.
+  // 런칭 세일(2026-07) — LAUNCH25 쿠폰을 기존 브라우저에 1회 주입.
+  // 어드민이 이후 삭제해도 재주입하지 않도록 버전 플래그로만 판단한다.
   if (d?.settings && d.settings.launchSaleSeedVersion !== 1) {
     if (Array.isArray(d.settings.coupons) && !d.settings.coupons.some((c) => c.code === "LAUNCH25")) {
       d.settings.coupons = [...d.settings.coupons, { code: "LAUNCH25", kind: "percent", value: 25, labelKey: "launch", expiresAt: null }];
     }
-    if (!d.settings.saleBanner) d.settings.saleBanner = seed().settings.saleBanner;
     d.settings.launchSaleSeedVersion = 1;
+    changed = true;
+  }
+
+  // 세일 배너 설정 — 객체 자체가 없으면 시드 주입 (있으면 어드민의 온/오프·문구 상태 존중).
+  // 쿠폰 플래그와 분리: 플래그가 먼저 소모돼도 배너 주입이 누락되지 않게 한다.
+  if (d?.settings && !d.settings.saleBanner) {
+    d.settings.saleBanner = seed().settings.saleBanner;
     changed = true;
   }
 
