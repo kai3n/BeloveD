@@ -17,5 +17,5 @@ export async function truncateActivity() {
 }
 
 export async function truncateChat() {
-  await query("truncate table chat_messages, chat_threads restart identity cascade");
+  await query("truncate table chat_messages, chat_threads, consultation_bookings, push_subscriptions restart identity cascade");
 }

@@ -190,17 +190,27 @@ describe("라이브챗", () => {
     expect(rows[0].visitor_email).toBe("later@test.com");
   });
 
-  it("상담 예약 요청 — 시스템 메시지 + consultation 태그 + support 이메일", async () => {
-    await adminCookie();
+  it("상담 예약 — 슬롯 확정 + consultation 태그 + 스태프/고객 이메일, 더블부킹·잘못된 슬롯 거부", async () => {
+    const slotsRes = await request(app).get("/v1/chat/consultation/slots");
+    expect(slotsRes.status).toBe(200);
+    expect(slotsRes.body.slots.length).toBeGreaterThan(0);
+    const slot = slotsRes.body.slots[0];
     const res = await request(app).post("/v1/chat/consultation").send({
-      name: "Jiwon", when: "This Saturday 2pm", contact: "jiwon@test.com", note: "oval ring", locale: "en",
+      name: "Jiwon", contact: "jiwon@test.com", note: "oval ring", slot, tz: "America/New_York", locale: "en",
     });
     expect(res.status).toBe(201);
     expect(res.body.message.sender).toBe("system");
-    expect(res.body.message.body).toContain("Consultation request");
+    expect(res.body.message.body).toContain("Consultation booked");
     expect(res.body.thread.tags).toContain("consultation");
     await flush();
-    expect(drainMail().filter((m) => m.type === "chat_consultation").length).toBeGreaterThanOrEqual(1);
+    const mails = drainMail();
+    expect(mails.filter((m) => m.type === "chat_consultation").length).toBeGreaterThanOrEqual(1);
+    expect(mails.filter((m) => m.type === "chat_booking_confirmed").length).toBeGreaterThanOrEqual(1);
+    // 같은 슬롯 재예약 → 409, 잘못된 슬롯 → 400
+    expect((await request(app).post("/v1/chat/consultation").send({ contact: "b@test.com", slot, locale: "en" })).status).toBe(409);
+    expect((await request(app).post("/v1/chat/consultation").send({ slot: "not-a-slot", locale: "en" })).status).toBe(400);
+    // 슬롯 목록에서 방금 예약분은 빠진다
+    expect((await request(app).get("/v1/chat/consultation/slots")).body.slots).not.toContain(slot);
   });
 
   it("어드민 태그 설정·필터 + 담당자 배정 + 통계", async () => {

@@ -242,6 +242,27 @@ export async function addThreadTag(threadId, tag) {
   );
 }
 
+// ── 상담 예약 ────────────────────────────────────────────────────────────
+export async function listBookedSlots(fromISO, toISO) {
+  const { rows } = await query(
+    "select slot_start from consultation_bookings where status = 'booked' and slot_start >= $1 and slot_start < $2",
+    [fromISO, toISO],
+  );
+  return rows.map((r) => new Date(r.slot_start).toISOString());
+}
+
+// 슬롯 예약 — 파셜 유니크(booked)로 더블부킹 방지. null이면 이미 잡힌 슬롯.
+export async function createBooking({ threadId, slotStart, name, contact, note }) {
+  const { rows } = await query(
+    `insert into consultation_bookings (thread_id, slot_start, name, contact, note)
+     values ($1, $2, $3, $4, $5)
+     on conflict (slot_start) where status = 'booked' do nothing
+     returning id, slot_start`,
+    [threadId || null, slotStart, name || null, contact || null, note || null],
+  );
+  return rows[0] || null;
+}
+
 export async function setThreadCsat(threadId, rating) {
   const r = Math.round(Number(rating));
   if (!(r >= 1 && r <= 5)) throw new ApiError("VALIDATION_ERROR", 400, "rating 1-5");

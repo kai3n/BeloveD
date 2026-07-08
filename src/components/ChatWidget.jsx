@@ -2,7 +2,7 @@ import { Fragment, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Check, HelpCircle, Home, ImagePlus, Mail, MessageCircle, Send, UserRound, Video, X } from "lucide-react";
 import { useLocale } from "../i18n.jsx";
-import { bookConsultation, fetchThread, saveChatEmail, sendChatMessage, submitCsat, uploadChatImage, chatMediaFiles, CHAT_MAX_BYTES, CHAT_VIDEO_MAX_BYTES } from "../lib/chat.js";
+import { bookConsultation, fetchConsultationSlots, fetchThread, saveChatEmail, sendChatMessage, submitCsat, uploadChatImage, chatMediaFiles, CHAT_MAX_BYTES, CHAT_VIDEO_MAX_BYTES } from "../lib/chat.js";
 import { faqChips } from "../lib/chatFaq.js";
 import ChatThumb from "./ChatThumb.jsx";
 import "../chat.css";
@@ -22,7 +22,9 @@ const COPY = {
     book: "Book a video consultation", bookLead: "Tell us when works and we'll set up a video call.",
     bookName: "Your name", bookWhen: "Preferred time (e.g. Sat afternoon)", bookContact: "Email or phone",
     bookNote: "Anything to prepare? (optional)", bookSend: "Request consultation", bookCancel: "Cancel",
-    bookDone: "Got your request — we'll follow up with a video link soon.",
+    bookDone: "Booked! We've emailed the details and video link.",
+    bookPick: "Pick a 20-min slot", bookNoSlots: "No open times right now — leave a note and we'll reach out.",
+    bookTaken: "That time was just taken — please pick another.", bookTzPrefix: "Your timezone:",
     joined: "A BeloveD specialist has joined the conversation",
     escalateLead: "Sorry I couldn't quite help — would you like to talk to a person?",
     nudgeMsg: "Questions? I'm here to help — ask me anything.",
@@ -45,7 +47,9 @@ const COPY = {
     book: "화상 상담 예약", bookLead: "편한 시간을 알려주시면 화상 상담을 잡아드려요.",
     bookName: "이름", bookWhen: "희망 시간 (예: 토요일 오후)", bookContact: "이메일 또는 전화번호",
     bookNote: "미리 준비할 내용이 있나요? (선택)", bookSend: "상담 예약 요청", bookCancel: "취소",
-    bookDone: "요청 받았어요 — 곧 화상 링크와 함께 연락드릴게요.",
+    bookDone: "예약 완료! 상세 내용과 화상 링크를 이메일로 보냈어요.",
+    bookPick: "20분 슬롯을 선택하세요", bookNoSlots: "지금은 빈 시간이 없어요 — 메모를 남겨주시면 연락드릴게요.",
+    bookTaken: "방금 예약된 시간이에요 — 다른 시간을 골라주세요.", bookTzPrefix: "내 시간대:",
     joined: "BeloveD 상담원이 대화에 참여했어요",
     escalateLead: "제가 잘 못 도와드린 것 같아요 — 상담원과 연결해 드릴까요?",
     nudgeMsg: "궁금한 점 있으세요? 편하게 물어보세요 :)",
@@ -68,7 +72,9 @@ const COPY = {
     book: "预约视频咨询", bookLead: "告诉我们方便的时间，我们安排视频通话。",
     bookName: "您的姓名", bookWhen: "期望时间（如周六下午）", bookContact: "邮箱或电话",
     bookNote: "需要提前准备什么吗？（可选）", bookSend: "预约咨询", bookCancel: "取消",
-    bookDone: "已收到您的请求——我们会尽快附上视频链接联系您。",
+    bookDone: "预约成功！详情与视频链接已发送至您的邮箱。",
+    bookPick: "选择一个 20 分钟时段", bookNoSlots: "暂无空闲时段——留言给我们，我们会联系您。",
+    bookTaken: "该时段刚被预约——请另选一个。", bookTzPrefix: "您的时区：",
     joined: "BeloveD 顾问已加入对话",
     escalateLead: "抱歉没能帮到您——需要联系人工吗？",
     nudgeMsg: "有疑问吗？随时问我 :)",
@@ -91,7 +97,9 @@ const COPY = {
     book: "Reservar videoconsulta", bookLead: "Dinos cuándo te viene bien y agendamos una videollamada.",
     bookName: "Tu nombre", bookWhen: "Hora preferida (p. ej. sábado tarde)", bookContact: "Correo o teléfono",
     bookNote: "¿Algo que preparar? (opcional)", bookSend: "Solicitar consulta", bookCancel: "Cancelar",
-    bookDone: "Recibimos tu solicitud — te enviaremos un enlace de video pronto.",
+    bookDone: "¡Reservado! Te enviamos los detalles y el enlace de video por correo.",
+    bookPick: "Elige un espacio de 20 min", bookNoSlots: "No hay horarios disponibles — deja una nota y te contactamos.",
+    bookTaken: "Ese horario se acaba de reservar — elige otro.", bookTzPrefix: "Tu zona horaria:",
     joined: "Un especialista de BeloveD se unió a la conversación",
     escalateLead: "Perdón si no pude ayudarte — ¿quieres hablar con una persona?",
     nudgeMsg: "¿Preguntas? Estoy aquí para ayudarte.",
@@ -163,7 +171,10 @@ export default function ChatWidget() {
   const [pastHero, setPastHero] = useState(true); // 홈 히어로 구간에선 버블 숨김(스크롤하면 등장)
   const [menuOpen, setMenuOpen] = useState(false); // 홈/메뉴 뷰 — 헤더 ⌂로 토글, 대화 후 막다른 길 방지
   const [consultOpen, setConsultOpen] = useState(false); // 화상 상담 예약 폼
-  const [consult, setConsult] = useState({ name: "", when: "", contact: "", note: "" });
+  const [consult, setConsult] = useState({ name: "", contact: "", note: "", slot: "" });
+  const [slots, setSlots] = useState([]); // 예약 가능 슬롯(UTC ISO)
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const [slotDay, setSlotDay] = useState(""); // 선택한 로컬 날짜 키
   const [notice, setNotice] = useState(""); // 성공 안내(예약 접수 등)
   const [escalate, setEscalate] = useState(false); // 자동응답 연속 실패 → 상담원 연결 제안
   const [nudge, setNudge] = useState(false); // 선제 인사
@@ -371,24 +382,54 @@ export default function ChatWidget() {
   }
 
   // 화상 상담 예약 요청 제출
+  // 예약 가능 슬롯 로드 — 폼 열릴 때 + 더블부킹 시 갱신
+  function loadSlots() {
+    setSlotsLoading(true);
+    fetchConsultationSlots()
+      .then((d) => setSlots(d.slots || []))
+      .catch(() => setSlots([]))
+      .finally(() => setSlotsLoading(false));
+  }
+  useEffect(() => { if (consultOpen) loadSlots(); }, [consultOpen]);
+
   async function submitConsult() {
-    if ((!consult.when.trim() && !consult.contact.trim() && !consult.name.trim()) || sending) return;
+    if (!consult.slot || !consult.contact.trim() || sending) return;
     setSending(true); setError("");
     try {
-      const data = await bookConsultation({ ...consult, locale });
-      setConsult({ name: "", when: "", contact: "", note: "" });
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const data = await bookConsultation({ ...consult, tz, locale });
+      setConsult({ name: "", contact: "", note: "", slot: "" });
       setConsultOpen(false); setMenuOpen(false);
       ingest({ staffAgent: data.staffAgent, thread: data.thread, messages: [data.message] });
       setNotice(t.bookDone);
-      window.setTimeout(() => setNotice(""), 6000);
-    } catch { setError("Could not send — please try again."); }
-    finally { setSending(false); }
+      window.setTimeout(() => setNotice(""), 7000);
+    } catch (e) {
+      if (e?.status === 409 || e?.code === "SLOT_TAKEN") {
+        setError(t.bookTaken); setConsult((s) => ({ ...s, slot: "" })); loadSlots();
+      } else setError("Could not send — please try again.");
+    } finally { setSending(false); }
   }
 
   if (hidden) return null;
 
   const showEmail = !thread?.customerId && !thread?.visitorEmail;
   const firstHumanId = messages.find((m) => m.sender === "staff" && m.senderAdminId != null)?.id;
+
+  // 슬롯 캘린더 — 서버 슬롯(UTC)을 방문자 로컬 시간대로 날짜/시간 그룹핑
+  const visitorTz = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { return "UTC"; } })();
+  const slotGroups = (() => {
+    const byDay = {}; const days = [];
+    const dayKey = new Intl.DateTimeFormat("en-CA", { timeZone: visitorTz, year: "numeric", month: "2-digit", day: "2-digit" });
+    const dayLbl = new Intl.DateTimeFormat(locale, { timeZone: visitorTz, weekday: "short", month: "short", day: "numeric" });
+    const timeLbl = new Intl.DateTimeFormat(locale, { timeZone: visitorTz, hour: "numeric", minute: "2-digit" });
+    for (const iso of slots) {
+      const d = new Date(iso); const k = dayKey.format(d);
+      if (!byDay[k]) { byDay[k] = []; days.push({ key: k, label: dayLbl.format(d) }); }
+      byDay[k].push({ iso, label: timeLbl.format(d) });
+    }
+    return { byDay, days };
+  })();
+  const activeDay = slotDay && slotGroups.byDay[slotDay] ? slotDay : (slotGroups.days[0]?.key || "");
 
   if (!open) {
     return (
@@ -448,8 +489,35 @@ export default function ChatWidget() {
               <div className="chat-consult-lead">{t.bookLead}</div>
               <input className="chat-consult-input" placeholder={t.bookName} value={consult.name}
                 onChange={(e) => setConsult((s) => ({ ...s, name: e.target.value }))} />
-              <input className="chat-consult-input" placeholder={t.bookWhen} value={consult.when}
-                onChange={(e) => setConsult((s) => ({ ...s, when: e.target.value }))} />
+
+              {/* 20분 슬롯 캘린더 — 방문자 로컬 시간대로 표시 */}
+              <div className="chat-slot-picker">
+                <div className="chat-slot-title">{t.bookPick}</div>
+                {slotsLoading ? (
+                  <div className="chat-slot-empty">…</div>
+                ) : slotGroups.days.length === 0 ? (
+                  <div className="chat-slot-empty">{t.bookNoSlots}</div>
+                ) : (
+                  <>
+                    <div className="chat-slot-days">
+                      {slotGroups.days.map((d) => (
+                        <button key={d.key} type="button"
+                          className={`chat-slot-day${activeDay === d.key ? " on" : ""}`}
+                          onClick={() => setSlotDay(d.key)}>{d.label}</button>
+                      ))}
+                    </div>
+                    <div className="chat-slot-times">
+                      {(slotGroups.byDay[activeDay] || []).map((s) => (
+                        <button key={s.iso} type="button"
+                          className={`chat-slot-time${consult.slot === s.iso ? " on" : ""}`}
+                          onClick={() => setConsult((c) => ({ ...c, slot: s.iso }))}>{s.label}</button>
+                      ))}
+                    </div>
+                    <div className="chat-slot-tz">{t.bookTzPrefix} {visitorTz}</div>
+                  </>
+                )}
+              </div>
+
               <input className="chat-consult-input" placeholder={t.bookContact} value={consult.contact}
                 onChange={(e) => setConsult((s) => ({ ...s, contact: e.target.value }))} />
               <textarea className="chat-consult-input" rows={2} placeholder={t.bookNote} value={consult.note}
@@ -457,7 +525,7 @@ export default function ChatWidget() {
               <div className="chat-consult-actions">
                 <button type="button" className="chat-quick-btn" onClick={() => setConsultOpen(false)}>{t.bookCancel}</button>
                 <button type="button" className="chat-consult-send"
-                  disabled={sending || (!consult.when.trim() && !consult.contact.trim())} onClick={submitConsult}>
+                  disabled={sending || !consult.slot || !consult.contact.trim()} onClick={submitConsult}>
                   {t.bookSend}
                 </button>
               </div>

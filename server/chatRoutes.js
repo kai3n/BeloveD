@@ -4,13 +4,15 @@ import { rateLimit } from "./rateLimit.js";
 import { createUploadUrl } from "./media.js";
 import { query } from "./db.js";
 import { COOKIE_CHAT, setChatCookie, clearChatCookie } from "./middleware.js";
-import { notifyConsultation } from "./chatMail.js";
+import { notifyConsultation, notifyBookingConfirmed } from "./chatMail.js";
 import { sendPushToStaff } from "./push.js";
 import { matchFaq } from "../src/lib/chatFaq.js";
+import { generateAvailableSlots, isValidSlot, formatSlot } from "./consultationSlots.js";
 import {
   newThreadToken, findThreadByToken, findCustomerThread, createVisitorThread,
   appendMessage, listMessages, markCustomerSeen, findThreadByCode,
   shouldNotifyStaff, markStaffNotified, setThreadStatus, setVisitorEmail, threadView, addThreadTag, setThreadCsat,
+  listBookedSlots, createBooking,
 } from "./chatRepository.js";
 
 const MINUTE = 60 * 1000;
@@ -141,20 +143,41 @@ export function chatRouter() {
       } catch (e) { next(e); }
     });
 
-  // 화상 상담 예약 요청 — 위젯 폼 제출. 시스템 요약 메시지 + 'consultation' 태그 + support@ 이메일.
+  // 예약 가능한 20분 슬롯(UTC ISO) — 위젯 캘린더가 방문자 로컬 시간대로 렌더.
+  r.get("/consultation/slots",
+    rateLimit({ limit: 30, windowMs: MINUTE, keyFn: (req) => `chat-slots:${req.cookies?.bd_chat || req.ip}` }),
+    async (_req, res, next) => {
+      try {
+        const now = new Date();
+        const to = new Date(now.getTime() + 20 * 86400000).toISOString();
+        const booked = new Set(await listBookedSlots(now.toISOString(), to));
+        res.json({ ok: true, slots: generateAvailableSlots(now, booked) });
+      } catch (e) { next(e); }
+    });
+
+  // 화상 상담 예약 — 슬롯 확정. 시스템 메시지 + 'consultation' 태그 + 스태프 알림 + 고객 확정 메일(Zoom 링크).
   r.post("/consultation",
     rateLimit({ limit: 8, windowMs: MINUTE, keyFn: (req) => `chat-consult:${req.cookies?.bd_chat || req.ip}` }),
     async (req, res, next) => {
       try {
-        const { name, when, contact, note, locale } = req.body || {};
-        if (!when && !contact && !name) throw new ApiError("VALIDATION_ERROR", 400, "empty request");
+        const { name, contact, note, slot, tz, locale } = req.body || {};
+        const now = new Date();
+        if (!slot || !isValidSlot(String(slot), now)) throw new ApiError("VALIDATION_ERROR", 400, "invalid slot");
         const thread = await resolveOrCreateThread(req, res, locale);
         const email = contact && EMAIL_RE.test(String(contact)) ? String(contact).slice(0, 200) : null;
         if (email) await setVisitorEmail(thread.id, email);
+        const booking = await createBooking({
+          threadId: thread.id, slotStart: slot,
+          name: name && String(name).slice(0, 80),
+          contact: contact && String(contact).slice(0, 140),
+          note: note && String(note).slice(0, 500),
+        });
+        if (!booking) throw new ApiError("SLOT_TAKEN", 409, "slot already booked");
+        const ptLabel = formatSlot(slot); // 스태프용(영업 타임존 PT)
         const lines = [
-          "📅 Consultation request",
+          "📅 Consultation booked",
+          `• When: ${ptLabel}`,
           name ? `• Name: ${String(name).slice(0, 80)}` : null,
-          when ? `• Preferred time: ${String(when).slice(0, 140)}` : null,
           contact ? `• Contact: ${String(contact).slice(0, 140)}` : null,
           note ? `• Note: ${String(note).slice(0, 500)}` : null,
         ].filter(Boolean);
@@ -163,7 +186,7 @@ export function chatRouter() {
         await query("update chat_threads set staff_unread = staff_unread + 1 where id = $1", [thread.id]);
         sendPushToStaff({
           title: `Consultation · ${thread.thread_code.replace("CHAT-", "#")}`,
-          body: when ? `Requested: ${String(when).slice(0, 100)}` : "New video consultation request",
+          body: `Booked: ${ptLabel}`,
           code: thread.thread_code,
         }).catch(() => {});
         const cust = thread.customer_id
@@ -175,8 +198,15 @@ export function chatRouter() {
           customerName: cust?.name || name || null,
           messages: transcript,
         }), "consultation-booking");
+        if (email) {
+          const loc = thread.visitor_locale || locale || "en";
+          fireMail(notifyBookingConfirmed({
+            to: email, locale: loc, when: formatSlot(slot, tz, loc),
+            meetingUrl: process.env.CONSULTATION_MEETING_URL || null,
+          }), "booking-confirmed");
+        }
         const fresh = await findThreadByCode(thread.thread_code);
-        res.status(201).json({ ok: true, thread: threadView(fresh), message, staffAgent: STAFF_AGENT });
+        res.status(201).json({ ok: true, thread: threadView(fresh), message, slot, staffAgent: STAFF_AGENT });
       } catch (e) { next(e); }
     });
 
