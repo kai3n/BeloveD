@@ -9,6 +9,7 @@ import { PROPOSAL_FLOW_COPY } from "../lib/proposalFlowCopy.js";
 import { Checkpoint, PaymentCard, ShippingAddressPanel } from "./ClientPortal.jsx";
 import { isShippingAddressComplete } from "../lib/store.js";
 import { useLocale } from "../i18n.jsx";
+import RequestedSpecCard from "../components/RequestedSpecCard.jsx";
 
 const EMPTY_ADDRESS = {
   recipientName: "", phone: "", addressLine1: "", addressLine2: "",
@@ -68,6 +69,7 @@ const COPY = {
     receiptsTitle: "Payments", receiptDeposit: "Deposit received", receiptBalance: "Balance received", receiptPaidTotal: "Paid to date",
     artifactsTitle: "Shared with you",
     proposalTitle: "Your proposal",
+    requestedTitle: "Your request",
     specStone: "Stone", specMetal: "Metal", specTotal: "Total, all-inclusive",
     leadFmt: (d) => `≈ ${d} business days`,
     events: {
@@ -134,6 +136,7 @@ const COPY = {
     receiptsTitle: "결제 내역", receiptDeposit: "디파짓 결제 완료", receiptBalance: "잔금 결제 완료", receiptPaidTotal: "누적 결제액",
     artifactsTitle: "공유된 자료",
     proposalTitle: "제안",
+    requestedTitle: "요청하신 스펙",
     specStone: "스톤", specMetal: "메탈", specTotal: "총액 (올인클루시브)",
     leadFmt: (d) => `≈ ${d} 영업일`,
     events: {
@@ -200,6 +203,7 @@ const COPY = {
     receiptsTitle: "付款记录", receiptDeposit: "定金已收", receiptBalance: "尾款已收", receiptPaidTotal: "累计已付",
     artifactsTitle: "与您共享",
     proposalTitle: "您的方案",
+    requestedTitle: "您的需求",
     specStone: "钻石", specMetal: "金属", specTotal: "总价（全包）",
     leadFmt: (d) => `约 ${d} 个工作日`,
     events: {
@@ -266,6 +270,7 @@ const COPY = {
     receiptsTitle: "Pagos", receiptDeposit: "Depósito recibido", receiptBalance: "Saldo recibido", receiptPaidTotal: "Total pagado",
     artifactsTitle: "Compartido contigo",
     proposalTitle: "Tu propuesta",
+    requestedTitle: "Tu solicitud",
     specStone: "Piedra", specMetal: "Metal", specTotal: "Total, todo incluido",
     leadFmt: (d) => `≈ ${d} días hábiles`,
     events: {
@@ -594,6 +599,14 @@ export default function ServerOrderPortal({ orderCode }) {
           </article>
         ))}
       </section>
+
+      {/* 요청 스펙 — 인테이크에서 고른 총캐럿·퀄리티 range를 위저드와 같은 range 비주얼로 */}
+      {(order.requestedSpec?.stonePrefs || order.requestedSpec?.multiSpec) && (
+        <section className="panel form-stack">
+          <p className="section-label">{t.requestedTitle}</p>
+          <RequestedSpecCard spec={order.requestedSpec} p={p} />
+        </section>
+      )}
 
       {!cancelled && (<>
       {/* 01 제안 — 준비 중 안내 → 오더시트 카드 + 컨펌. 승인되면 접힘(done) */}

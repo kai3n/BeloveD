@@ -5081,7 +5081,7 @@ button.text-link:hover {
 .gflow-metal-dot.m-14kr { background: radial-gradient(circle at 30% 30%, #f9e4da, #eecab8 55%, #c08f78); }
 
 /* 캐럿 슬라이더 */
-.gflow-carat { width: min(100%, 460px); display: grid; gap: 18px; }
+.gflow-carat { width: min(100%, 520px); display: grid; gap: 18px; }
 .gflow-carat-visual { display: flex; align-items: center; justify-content: center; gap: 20px; min-height: 96px; }
 .gflow-carat-stone {
   flex: none;
@@ -5095,7 +5095,34 @@ button.text-link:hover {
 .gflow-carat-readout { display: grid; justify-items: center; }
 .gflow-carat-readout strong { font-family: var(--serif); font-size: 30px; font-weight: 600; }
 .gflow-carat-readout small { font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--quiet); }
-.gflow-carat-range { width: 100%; accent-color: var(--accent); }
+/* 캐럿 슬라이더 트랙/썸 — grange와 동일 문법 (얇은 트랙 + 골드 채움 + 흰 원형 핸들).
+   채움 비율은 컴포넌트가 --fill 인라인 변수로 내린다. */
+.gflow-carat-range {
+  width: 100%;
+  height: 24px;
+  margin: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  background: none;
+}
+.gflow-carat-range:focus-visible { outline: 1px solid var(--accent); outline-offset: 4px; }
+.gflow-carat-range::-webkit-slider-runnable-track {
+  height: 3px; border-radius: 2px;
+  background: linear-gradient(90deg, var(--accent) var(--fill, 50%), var(--line) var(--fill, 50%));
+}
+.gflow-carat-range::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 18px; height: 18px; border-radius: 50%; margin-top: -7.5px;
+  background: var(--surface); border: 1px solid var(--accent);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.28); cursor: grab;
+}
+.gflow-carat-range::-moz-range-track { height: 3px; border-radius: 2px; background: var(--line); }
+.gflow-carat-range::-moz-range-progress { height: 3px; border-radius: 2px; background: var(--accent); }
+.gflow-carat-range::-moz-range-thumb {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--surface); border: 1px solid var(--accent);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.28); cursor: grab;
+}
 
 /* 등급 range 슬라이더 — 듀얼 핸들 (겹친 두 range 인풋, 썸만 클릭) */
 .gflow-grange { width: min(100%, 520px); display: grid; gap: 10px; }
@@ -5127,6 +5154,22 @@ button.text-link:hover {
 .gflow-grange-labels { display: flex; justify-content: space-between; font-size: 12px; letter-spacing: 0.04em; color: var(--quiet); }
 .gflow-grange-labels .is-active { color: var(--accent); font-weight: 600; }
 .gflow-grange-fields { display: grid; gap: 22px; width: min(100%, 520px); }
+/* .field 공통 인풋 스킨(테두리·패딩·배경)이 슬라이더에 얹히지 않게 */
+.field input[type="range"] { border: 0; padding: 0; background: none; }
+/* 총 캐럿 필드 — 라벨 줄 오른쪽에 현재값 리드아웃 */
+.gflow-tcarat-field > span { display: flex; justify-content: space-between; align-items: baseline; }
+.gflow-tcarat-value {
+  font-style: normal; font-family: var(--serif);
+  font-size: 19px; color: var(--text); letter-spacing: 0.01em;
+}
+.gflow-tcarat { display: grid; gap: 10px; }
+/* 읽기전용 range 바 (주문 포털) — 트랙+채움+양끝 도트, 인터랙션 없음 */
+.gflow-grange-dot {
+  position: absolute; top: 50%; width: 14px; height: 14px;
+  transform: translate(-50%, -50%); border-radius: 50%;
+  background: var(--surface); border: 1px solid var(--accent);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.22);
+}
 
 /* 등급 스케일 */
 .gflow-scale { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 5px; width: min(100%, 520px); }

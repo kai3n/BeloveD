@@ -13,6 +13,7 @@ import ReviewForm from "../components/ReviewForm.jsx";
 import ServerOrderPortal from "./ServerOrderPortal.jsx";
 import { pickI18n, useLocale } from "../i18n.jsx";
 import { formatGradeRange } from "../lib/gradeScale.js";
+import RequestedSpecCard from "../components/RequestedSpecCard.jsx";
 import { PROPOSAL_FLOW_COPY } from "../lib/proposalFlowCopy.js";
 
 // 게스트 조회 입력 (Order ID + 쿼리코드)
@@ -961,6 +962,12 @@ function ClientPortal() {
             </div>
           ))}
         </dl>
+        {/* 요청 퀄리티 range — 위저드와 동일한 range 비주얼 (읽기전용) */}
+        {(intake?.stonePrefs || intake?.multiSpec) && (
+          <div style={{ marginTop: 16 }}>
+            <RequestedSpecCard spec={{ stonePrefs: intake?.stonePrefs, multiSpec: intake?.multiSpec }} p={p} />
+          </div>
+        )}
       </details>
 
       <div id="conversation">

@@ -535,16 +535,21 @@ export default function IntakeForm() {
         </>
       ))}
 
-      {/* 멀티스톤 — 총 캐럿 + 퀄리티 range 한 화면 (센터 캐럿 스텝의 멀티 버전) */}
+      {/* 멀티스톤 — 총 캐럿 + 퀄리티 range 한 화면 (센터 캐럿 스텝의 멀티 버전, 세 슬라이더 동일 문법) */}
       {activeScreen === "stones" && stepShell(g.qStones, g.stonesHint, (
         <>
-          <TotalCaratSlider
-            value={form.multiSpec.totalCarat}
-            min={totalCaratRange.min} max={totalCaratRange.max} step={totalCaratRange.step}
-            unitLabel={g.totalCaratUnit}
-            onChange={(value) => setM({ totalCarat: value })}
-          />
           <div className="gflow-grange-fields">
+            <label className="field gflow-tcarat-field">
+              <span>
+                {g.totalCaratLbl}
+                <em className="gflow-tcarat-value">{Number(form.multiSpec.totalCarat).toFixed(2)} ct</em>
+              </span>
+              <TotalCaratSlider
+                value={form.multiSpec.totalCarat}
+                min={totalCaratRange.min} max={totalCaratRange.max} step={totalCaratRange.step}
+                onChange={(value) => setM({ totalCarat: value })}
+              />
+            </label>
             <label className="field"><span>{g.colorRangeLbl}</span>
               <GradeRangeSlider scale={COLOR_SCALE} ariaLabel={t.color} value={form.multiSpec.colorRange} onChange={(v) => setM({ colorRange: v })} />
             </label>

@@ -390,15 +390,35 @@ export async function getCustomerOrder(orderCode, email) {
     const order = orderResult.rows[0];
     if (!order) throw new ApiError("ORDER_ACCESS_DENIED", 403);
 
-    const [actions, artifacts, timeline] = await Promise.all([
+    const [actions, artifacts, timeline, intakeRows] = await Promise.all([
       client.query("select * from customer_actions where order_id = $1 order by created_at desc", [order.id]),
       client.query("select * from published_artifacts where order_id = $1 order by published_at desc", [order.id]),
       client.query("select * from customer_timeline_events where order_id = $1 and visibility = 'customer' order by created_at desc", [order.id]),
+      client.query("select form_payload, product_line from customer_intakes where id = $1", [order.intake_id]),
     ]);
     const nextAction = actions.rows.find((row) => row.id === order.next_action_id) || actions.rows.find((row) => row.status === "OPEN");
 
+    // 고객이 인테이크에서 고른 요청 스펙 — 포털 '요청 스펙' 카드용 (본인 선택값만, 안전 필드 프로젝션)
+    const fp = intakeRows.rows[0]?.form_payload || {};
+    const sp = fp.stonePrefs || null;
+    const ms = fp.multiSpec || null;
+    const requestedSpec = {
+      productLine: fp.productLine || intakeRows.rows[0]?.product_line || null,
+      stonePrefs: sp ? {
+        shape: sp.shape || null, carat: sp.carat || null,
+        colorRange: sp.colorRange || null, clarityRange: sp.clarityRange || null,
+        color: sp.color || null, clarity: sp.clarity || null,
+      } : null,
+      multiSpec: ms ? {
+        totalCarat: ms.totalCarat || null,
+        colorRange: ms.colorRange || null, clarityRange: ms.clarityRange || null,
+        standard: ms.standard || null,
+      } : null,
+    };
+
     return {
       ...orderSummaryView(order, actionView(nextAction)),
+      requestedSpec,
       defaultShippingAddress: customer.default_address || null,
       phases: phaseViews(order.stage),
       publishedArtifacts: artifacts.rows.map(artifactView),

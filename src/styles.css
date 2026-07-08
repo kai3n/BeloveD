@@ -186,12 +186,15 @@ img {
   text-decoration: none;
 }
 .sale-banner:hover { color: #ffffff; }
+/* 버튼 렌더(코드 복사 모드) — 링크와 동일하게 보이도록 리셋 */
+button.sale-banner { border: 0; font: inherit; cursor: pointer; }
 .sale-banner-code {
   text-decoration: underline;
   text-underline-offset: 3px;
   font-weight: 600;
   white-space: nowrap;
 }
+.sale-banner-code.is-copied { text-decoration: none; color: #d6c5a0; }
 main { margin-top: var(--sale-banner-h, 0px); }
 
 .site-header {

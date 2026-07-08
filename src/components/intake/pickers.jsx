@@ -93,6 +93,12 @@ export function MetalSwatches({ value, onSelect, labels = {} }) {
   );
 }
 
+// 슬라이더 채움 비율 — 트랙의 골드 채움이 썸 위치를 따라가게 CSS 변수로 내린다
+function fillPct(value, min, max) {
+  const span = max - min || 1;
+  return Math.max(0, Math.min(100, ((value - min) / span) * 100));
+}
+
 // 캐럿 슬라이더 — 실물 비율 스톤 프리뷰
 export function CaratSlider({ value, onChange, min = 0.5, max = 4, step = 0.1, shape = "round" }) {
   const ct = Number(value) || min;
@@ -113,6 +119,7 @@ export function CaratSlider({ value, onChange, min = 0.5, max = 4, step = 0.1, s
         max={max}
         step={step}
         value={ct}
+        style={{ "--fill": `${fillPct(ct, min, max)}%` }}
         aria-label="carat"
         onChange={(e) => onChange(e.target.value)}
       />
@@ -154,20 +161,47 @@ export function GradeRangeSlider({ scale, value, onChange, ariaLabel = "" }) {
   );
 }
 
-// 총 캐럿 슬라이더 — 멀티스톤은 합계 중량이라 실물 프리뷰 없이 리드아웃만 (CaratSlider 비주얼 문법 재사용)
-export function TotalCaratSlider({ value, onChange, min, max, step, unitLabel = "ct total" }) {
+// 총 캐럿 슬라이더 — grange와 동일한 비주얼 문법 (얇은 트랙·골드 채움·흰 핸들 + 양끝 눈금).
+// 현재값 리드아웃은 필드 라벨 줄(gflow-tcarat-field)이 담당한다.
+export function TotalCaratSlider({ value, onChange, min, max, step }) {
   const ct = Number(value) || min;
   return (
-    <div className="gflow-carat">
-      <div className="gflow-carat-visual">
-        <span className="gflow-carat-readout"><strong>{ct.toFixed(2)}</strong><small>{unitLabel}</small></span>
-      </div>
+    <div className="gflow-tcarat">
       <input
         className="gflow-carat-range"
         type="range" min={min} max={max} step={step} value={ct}
+        style={{ "--fill": `${fillPct(ct, min, max)}%` }}
         aria-label="total carat"
         onChange={(e) => onChange(e.target.value)}
       />
+      <div className="gflow-grange-labels" aria-hidden="true">
+        <span>{min} ct</span>
+        <span>{max} ct</span>
+      </div>
+    </div>
+  );
+}
+
+// 읽기전용 등급 range 바 — 주문 포털에서 고객이 고른 허용 범위를 보여준다 (인터랙션 없음)
+export function GradeRangeBar({ scale, value }) {
+  const loRaw = scale.indexOf(value?.[0]);
+  const hiRaw = scale.indexOf(value?.[1]);
+  const lo = loRaw < 0 ? 0 : loRaw;
+  const hi = hiRaw < 0 ? scale.length - 1 : hiRaw;
+  const maxIdx = scale.length - 1;
+  const pct = (i) => (maxIdx === 0 ? 0 : (i / maxIdx) * 100);
+  return (
+    <div className="gflow-grange">
+      <div className="gflow-grange-track">
+        <span className="gflow-grange-fill" style={{ left: `${pct(lo)}%`, width: `${pct(hi) - pct(lo)}%` }} aria-hidden="true" />
+        <span className="gflow-grange-dot" style={{ left: `${pct(lo)}%` }} aria-hidden="true" />
+        <span className="gflow-grange-dot" style={{ left: `${pct(hi)}%` }} aria-hidden="true" />
+      </div>
+      <div className="gflow-grange-labels" aria-hidden="true">
+        {scale.map((grade, i) => (
+          <span key={grade} className={i >= lo && i <= hi ? "is-active" : ""}>{grade}</span>
+        ))}
+      </div>
     </div>
   );
 }
