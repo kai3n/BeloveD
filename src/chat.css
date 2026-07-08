@@ -98,6 +98,7 @@
 .chat-msg.visitor { align-self: flex-end; background: var(--text); color: var(--bg); border-bottom-right-radius: 4px; }
 .chat-msg.staff { align-self: flex-start; background: var(--surface); color: var(--text); border: 1px solid var(--line); border-bottom-left-radius: 4px; }
 .chat-msg.system { align-self: center; background: none; color: var(--quiet); font-size: 12px; padding: 2px; }
+.chat-joined { align-self: center; text-align: center; font-size: 11.5px; color: var(--accent); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 4px 13px; margin: 6px auto; }
 /* 대화 첨부 썸네일 — 인라인엔 작은 썸네일만, 원본은 클릭 시 새 탭 (위젯·어드민 공용) */
 .chat-thumb-link { display: inline-block; position: relative; margin-top: 6px; margin-right: 6px; line-height: 0; }
 .chat-thumb-link .chat-thumb { margin: 0; }

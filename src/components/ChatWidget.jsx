@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Check, HelpCircle, Home, ImagePlus, Mail, MessageCircle, Send, UserRound, Video, X } from "lucide-react";
 import { useLocale } from "../i18n.jsx";
@@ -23,6 +23,7 @@ const COPY = {
     bookName: "Your name", bookWhen: "Preferred time (e.g. Sat afternoon)", bookContact: "Email or phone",
     bookNote: "Anything to prepare? (optional)", bookSend: "Request consultation", bookCancel: "Cancel",
     bookDone: "Got your request — we'll follow up with a video link soon.",
+    joined: "A BeloveD specialist has joined the conversation",
     quickTitle: "Or jump to",
     quick: [
       { id: "order", label: "Start a custom order", to: "/custom/new" },
@@ -42,6 +43,7 @@ const COPY = {
     bookName: "이름", bookWhen: "희망 시간 (예: 토요일 오후)", bookContact: "이메일 또는 전화번호",
     bookNote: "미리 준비할 내용이 있나요? (선택)", bookSend: "상담 예약 요청", bookCancel: "취소",
     bookDone: "요청 받았어요 — 곧 화상 링크와 함께 연락드릴게요.",
+    joined: "BeloveD 상담원이 대화에 참여했어요",
     quickTitle: "바로가기",
     quick: [
       { id: "order", label: "주문제작 시작하기", to: "/custom/new" },
@@ -61,6 +63,7 @@ const COPY = {
     bookName: "您的姓名", bookWhen: "期望时间（如周六下午）", bookContact: "邮箱或电话",
     bookNote: "需要提前准备什么吗？（可选）", bookSend: "预约咨询", bookCancel: "取消",
     bookDone: "已收到您的请求——我们会尽快附上视频链接联系您。",
+    joined: "BeloveD 顾问已加入对话",
     quickTitle: "快捷前往",
     quick: [
       { id: "order", label: "开始定制", to: "/custom/new" },
@@ -80,6 +83,7 @@ const COPY = {
     bookName: "Tu nombre", bookWhen: "Hora preferida (p. ej. sábado tarde)", bookContact: "Correo o teléfono",
     bookNote: "¿Algo que preparar? (opcional)", bookSend: "Solicitar consulta", bookCancel: "Cancelar",
     bookDone: "Recibimos tu solicitud — te enviaremos un enlace de video pronto.",
+    joined: "Un especialista de BeloveD se unió a la conversación",
     quickTitle: "O ve a",
     quick: [
       { id: "order", label: "Iniciar pedido personalizado", to: "/custom/new" },
@@ -197,6 +201,14 @@ export default function ChatWidget() {
   useEffect(() => {
     if (open && !showMenu && bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
   }, [messages, open, showMenu]);
+
+  // 접근성 — 열렸을 때 Esc로 위젯 닫기(캡처 단계로 사이트 뒤로가기보다 먼저, 위젯만 닫는다)
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKey = (e) => { if (e.key === "Escape") { e.stopPropagation(); setOpen(false); } };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [open]);
 
   // 모바일 스티키 독(.noir-dock)이 보이면 최소화 버블을 독 높이만큼 위로 올려 '주문제작 시작'
   // 버튼과 겹치지 않게 한다. 스크롤 중 등장/리사이즈에도 대응(값이 그대로면 리렌더 없음).
@@ -320,6 +332,7 @@ export default function ChatWidget() {
   if (hidden) return null;
 
   const showEmail = !thread?.customerId && !thread?.visitorEmail;
+  const firstHumanId = messages.find((m) => m.sender === "staff" && m.senderAdminId != null)?.id;
 
   if (!open) {
     return (
@@ -365,7 +378,7 @@ export default function ChatWidget() {
           </button>
         </div>
 
-        <div className="chat-body" ref={bodyRef}>
+        <div className="chat-body" ref={bodyRef} role="log" aria-live="polite">
           {consultOpen ? (
             <div className="chat-consult">
               <div className="chat-consult-lead">{t.bookLead}</div>
@@ -406,11 +419,14 @@ export default function ChatWidget() {
             </div>
           ) : (
             messages.map((m) => (
-              <div key={m.id} className={`chat-msg ${m.sender}`}>
-                {m.body && <span>{m.body}</span>}
-                {(m.attachments || []).map((a, i) => <ChatThumb key={i} a={a} />)}
-                {m.sender !== "system" && <span className="chat-msg-time">{hhmm(m.createdAt)}</span>}
-              </div>
+              <Fragment key={m.id}>
+                {m.id === firstHumanId && <div className="chat-joined">✦ {t.joined}</div>}
+                <div className={`chat-msg ${m.sender}`}>
+                  {m.body && <span>{m.body}</span>}
+                  {(m.attachments || []).map((a, i) => <ChatThumb key={i} a={a} />)}
+                  {m.sender !== "system" && <span className="chat-msg-time">{hhmm(m.createdAt)}</span>}
+                </div>
+              </Fragment>
             ))
           )}
         </div>
