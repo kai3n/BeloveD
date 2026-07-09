@@ -4,7 +4,7 @@
 import { benchmarkFor, findCoupon, getSettings, listStyleSpecs } from "./store.js";
 import { quoteCompute } from "./ops.js";
 import { applyCoupon } from "./coupons.js";
-import { clampTotalCarat } from "./gradeScale.js";
+import { SOLITAIRE_CARAT, caratRangeMid, clampCaratRange, clampTotalCaratRange } from "./gradeScale.js";
 
 // 컬러/클래리티에 따른 소폭 보정 — 등급이 높을수록 비싸진다(표시용 추정).
 const COLOR_FACTOR = { D: 1.12, E: 1.06, F: 1.0, G: 0.95, H: 0.9 };
@@ -49,15 +49,16 @@ export function estimateQuoteRange(form) {
   let benchmarkUsdPerCt;
   let carat;
   if (solitaire) {
-    carat = Number(form.stonePrefs?.carat) || 1.0;
+    // 캐럿 range의 중간값으로 추정 — ±밴드가 범위의 불확실성을 표현한다
+    carat = caratRangeMid(clampCaratRange(SOLITAIRE_CARAT, form.stonePrefs?.caratRange ?? form.stonePrefs?.carat)) || 1.0;
     const bench = benchmarkFor(form.stonePrefs?.shape || "round", carat);
     const unit = bench?.unitUsdPerCt ?? 400;
     benchmarkUsdPerCt = unit
       * rangeFactor(COLOR_FACTOR, form.stonePrefs?.colorRange, form.stonePrefs?.color)
       * rangeFactor(CLARITY_FACTOR, form.stonePrefs?.clarityRange, form.stonePrefs?.clarity);
   } else {
-    // 멀티스톤: 고객이 고른 총 캐럿 × 멜리 단가 — 퀄리티 range는 상담에서 확정(견적 미반영)
-    carat = clampTotalCarat(form.category, form.multiSpec?.totalCarat);
+    // 멀티스톤: 총 캐럿 range 중간값 × 멜리 단가 — 퀄리티 range는 상담에서 확정(견적 미반영)
+    carat = caratRangeMid(clampTotalCaratRange(form.category, form.multiSpec?.totalCaratRange ?? form.multiSpec?.totalCarat));
     benchmarkUsdPerCt = s.meleeUsdPerCt ?? 150;
   }
 
@@ -91,4 +92,24 @@ export function estimateQuoteRange(form) {
     savingsTop: top.high - low, // "Up to $X less than <top>"
     coupon: coupon ? { code: coupon.code, labelKey: coupon.labelKey, savedUsd: round10(applied.discountUsd) } : null,
   };
+}
+
+// 홈 가격 비교 보드용 루스 스톤 시세 — 세팅·메탈 없이 스톤 단독 고객가.
+// 벤치마크·배수는 어드민 설정을 그대로 읽으므로 보드가 견적 엔진과 항상 정합.
+export function estimateLooseStoneCompare({ shape = "round", carat = 1.0, color = "F", clarity = "VS1" } = {}) {
+  const s = getSettings() || {};
+  const multiplier = s.opsMultiplier ?? 1.8;
+  const unit = (benchmarkFor(shape, carat)?.unitUsdPerCt ?? 400)
+    * (COLOR_FACTOR[color] ?? 1.0)
+    * (CLARITY_FACTOR[clarity] ?? 1.0);
+  const stoneUsd = unit * carat * multiplier;
+  const low = round10(stoneUsd * 0.92);
+  const high = round10(stoneUsd * 1.1);
+  const competitors = COMPETITORS.map((c) => ({
+    name: c.name,
+    low: round10(low * c.lo),
+    high: round10(high * c.hi),
+  }));
+  const top = competitors.reduce((a, b) => (b.high > a.high ? b : a));
+  return { beloved: { low, high }, competitors, topName: top.name, savingsTop: top.high - low };
 }

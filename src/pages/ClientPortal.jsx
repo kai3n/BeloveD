@@ -12,7 +12,7 @@ import { MediaPicker, MediaThumb, usd } from "../components/ui.jsx";
 import ReviewForm from "../components/ReviewForm.jsx";
 import ServerOrderPortal from "./ServerOrderPortal.jsx";
 import { pickI18n, useLocale } from "../i18n.jsx";
-import { formatGradeRange } from "../lib/gradeScale.js";
+import { formatCaratRange, formatGradeRange } from "../lib/gradeScale.js";
 import RequestedSpecCard from "../components/RequestedSpecCard.jsx";
 import { PROPOSAL_FLOW_COPY } from "../lib/proposalFlowCopy.js";
 
@@ -249,14 +249,18 @@ function compactStoneSummary({ selected, intake, p }) {
   }
   const prefs = intake?.stonePrefs;
   if (prefs) {
-    // 등급 range 라벨 우선, 레거시 단일값 폴백
+    // 캐럿·등급 range 라벨 우선, 레거시 단일값 폴백
+    const caratLbl = formatCaratRange(prefs.caratRange) || `${prefs.carat}ct`;
     const colorLbl = formatGradeRange(prefs.colorRange) || prefs.color;
     const clarityLbl = formatGradeRange(prefs.clarityRange) || prefs.clarity;
-    return `${p.shapes[prefs.shape] || prefs.shape} ${prefs.carat}ct · ${colorLbl}/${clarityLbl}`;
+    return `${p.shapes[prefs.shape] || prefs.shape} ${caratLbl} · ${colorLbl}/${clarityLbl}`;
   }
   const spec = intake?.multiSpec;
-  if (spec?.totalCarat || spec?.meleeSpec || spec?.overallDims) {
-    return [spec.totalCarat && `${spec.totalCarat}ct total`, spec.standard, spec.meleeSpec, spec.overallDims].filter(Boolean).join(" · ");
+  if (spec?.totalCaratRange || spec?.totalCarat || spec?.meleeSpec || spec?.overallDims) {
+    const totalLbl = formatCaratRange(spec.totalCaratRange)
+      ? `${formatCaratRange(spec.totalCaratRange)} total`
+      : (spec.totalCarat && `${spec.totalCarat}ct total`);
+    return [totalLbl, spec.standard, spec.meleeSpec, spec.overallDims].filter(Boolean).join(" · ");
   }
   return "";
 }

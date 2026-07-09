@@ -405,12 +405,12 @@ export async function getCustomerOrder(orderCode, email) {
     const requestedSpec = {
       productLine: fp.productLine || intakeRows.rows[0]?.product_line || null,
       stonePrefs: sp ? {
-        shape: sp.shape || null, carat: sp.carat || null,
+        shape: sp.shape || null, carat: sp.carat || null, caratRange: sp.caratRange || null,
         colorRange: sp.colorRange || null, clarityRange: sp.clarityRange || null,
         color: sp.color || null, clarity: sp.clarity || null,
       } : null,
       multiSpec: ms ? {
-        totalCarat: ms.totalCarat || null,
+        totalCarat: ms.totalCarat || null, totalCaratRange: ms.totalCaratRange || null,
         colorRange: ms.colorRange || null, clarityRange: ms.clarityRange || null,
         standard: ms.standard || null,
       } : null,

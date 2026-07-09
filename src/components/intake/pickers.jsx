@@ -93,16 +93,42 @@ export function MetalSwatches({ value, onSelect, labels = {} }) {
   );
 }
 
-// 슬라이더 채움 비율 — 트랙의 골드 채움이 썸 위치를 따라가게 CSS 변수로 내린다
-function fillPct(value, min, max) {
+// 캐럿 range 슬라이더 코어 — grange와 동일 문법의 듀얼 핸들, 연속 숫자값 [하한, 상한]
+function CaratRangeTrack({ value, onChange, min, max, step, ariaLabel = "carat" }) {
   const span = max - min || 1;
-  return Math.max(0, Math.min(100, ((value - min) / span) * 100));
+  const lo = Number.isFinite(Number(value?.[0])) ? Number(value[0]) : min;
+  const hi = Number.isFinite(Number(value?.[1])) ? Number(value[1]) : max;
+  const pct = (n) => Math.max(0, Math.min(100, ((n - min) / span) * 100));
+  return (
+    <div className="gflow-grange-track">
+      <span className="gflow-grange-fill" style={{ left: `${pct(lo)}%`, width: `${pct(hi) - pct(lo)}%` }} aria-hidden="true" />
+      <input
+        type="range" min={min} max={max} step={step} value={lo}
+        aria-label={`${ariaLabel} min`}
+        onChange={(e) => onChange([Math.min(Number(e.target.value), hi), hi])}
+      />
+      <input
+        type="range" min={min} max={max} step={step} value={hi}
+        aria-label={`${ariaLabel} max`}
+        onChange={(e) => onChange([lo, Math.max(Number(e.target.value), lo)])}
+      />
+    </div>
+  );
 }
 
-// 캐럿 슬라이더 — 실물 비율 스톤 프리뷰
+// 캐럿 range 라벨 — "1.50–2.00", 하한=상한이면 "1.50"
+function caratReadout(value) {
+  const lo = Number(value?.[0]);
+  const hi = Number(value?.[1] ?? value?.[0]);
+  if (!Number.isFinite(lo)) return "";
+  return lo === hi ? lo.toFixed(2) : `${lo.toFixed(2)}–${hi.toFixed(2)}`;
+}
+
+// 센터 캐럿 슬라이더 — 실물 비율 스톤 프리뷰(범위 중간값 기준) + 듀얼 핸들 range
 export function CaratSlider({ value, onChange, min = 0.5, max = 4, step = 0.1, shape = "round" }) {
-  const ct = Number(value) || min;
-  const px = Math.round(34 + Math.sqrt(ct) * 22);
+  const lo = Number(value?.[0]) || min;
+  const hi = Number(value?.[1]) || lo;
+  const px = Math.round(34 + Math.sqrt((lo + hi) / 2) * 22);
   return (
     <div className="gflow-carat">
       <div className="gflow-carat-visual">
@@ -110,19 +136,13 @@ export function CaratSlider({ value, onChange, min = 0.5, max = 4, step = 0.1, s
         <span className="gflow-carat-stone" style={{ width: px, height: px }} aria-hidden="true">
           <ShapeSilhouette shape={shape} />
         </span>
-        <span className="gflow-carat-readout"><strong>{ct.toFixed(2)}</strong><small>carat</small></span>
+        <span className="gflow-carat-readout"><strong>{caratReadout([lo, hi])}</strong><small>carat</small></span>
       </div>
-      <input
-        className="gflow-carat-range"
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={ct}
-        style={{ "--fill": `${fillPct(ct, min, max)}%` }}
-        aria-label="carat"
-        onChange={(e) => onChange(e.target.value)}
-      />
+      <CaratRangeTrack value={[lo, hi]} onChange={onChange} min={min} max={max} step={step} ariaLabel="carat" />
+      <div className="gflow-grange-labels" aria-hidden="true">
+        <span>{min} ct</span>
+        <span>{max} ct</span>
+      </div>
     </div>
   );
 }
@@ -161,19 +181,11 @@ export function GradeRangeSlider({ scale, value, onChange, ariaLabel = "" }) {
   );
 }
 
-// 총 캐럿 슬라이더 — grange와 동일한 비주얼 문법 (얇은 트랙·골드 채움·흰 핸들 + 양끝 눈금).
-// 현재값 리드아웃은 필드 라벨 줄(gflow-tcarat-field)이 담당한다.
+// 총 캐럿 range 슬라이더 — 듀얼 핸들, 현재값 리드아웃은 필드 라벨 줄(gflow-tcarat-field)이 담당
 export function TotalCaratSlider({ value, onChange, min, max, step }) {
-  const ct = Number(value) || min;
   return (
     <div className="gflow-tcarat">
-      <input
-        className="gflow-carat-range"
-        type="range" min={min} max={max} step={step} value={ct}
-        style={{ "--fill": `${fillPct(ct, min, max)}%` }}
-        aria-label="total carat"
-        onChange={(e) => onChange(e.target.value)}
-      />
+      <CaratRangeTrack value={value} onChange={onChange} min={min} max={max} step={step} ariaLabel="total carat" />
       <div className="gflow-grange-labels" aria-hidden="true">
         <span>{min} ct</span>
         <span>{max} ct</span>

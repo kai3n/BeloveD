@@ -22,10 +22,15 @@ describe("estimateQuoteRange — 멀티 총캐럿", () => {
     const bumped = estimateQuoteRange(multiForm());
     expect(bumped.beloved.low).toBeGreaterThan(base.beloved.low);
   });
-  it("범위 밖 totalCarat은 카테고리 기본값으로 견적한다", () => {
+  it("경계 밖 totalCarat은 카테고리 경계로 클램프해 견적한다", () => {
     const junk = estimateQuoteRange(multiForm({ multiSpec: { totalCarat: 999 } }));
-    const def = estimateQuoteRange(multiForm({ multiSpec: { totalCarat: 5 } }));
-    expect(junk.beloved.low).toBe(def.beloved.low);
+    const max = estimateQuoteRange(multiForm({ multiSpec: { totalCarat: 15 } })); // bangle 상한
+    expect(junk.beloved.low).toBe(max.beloved.low);
+  });
+  it("totalCaratRange가 있으면 중간값으로 견적한다", () => {
+    const ranged = estimateQuoteRange(multiForm({ multiSpec: { totalCaratRange: [4, 6] } }));
+    const mid = estimateQuoteRange(multiForm({ multiSpec: { totalCarat: 5 } }));
+    expect(ranged.beloved.low).toBe(mid.beloved.low);
   });
 });
 

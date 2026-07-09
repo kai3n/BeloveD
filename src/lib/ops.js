@@ -1,5 +1,5 @@
 // Diamond Operations Manual 순수 로직 — 주문 상태/마일스톤/견적 공식/보안 프로젝션
-import { formatGradeRange } from "./gradeScale.js";
+import { formatCaratRange, formatGradeRange } from "./gradeScale.js";
 
 export const ORDER_STATUSES = [
   "STYLE_SELECTION", "STONE_SELECTION", "QUOTATION", "CAD", "PRODUCTION",
@@ -144,11 +144,12 @@ export function supplierTaskView(pr, order, style, intake = null, revisionReview
 export function autoBrief(intake) {
   if (intake.productLine === "solitaire" && intake.stonePrefs) {
     const s = intake.stonePrefs;
-    // 등급은 range 라벨 우선, 레거시 단일값 폴백
+    // 캐럿·등급 모두 range 라벨 우선, 레거시 단일값 폴백
+    const caratLbl = formatCaratRange(s.caratRange) || (s.carat && `${s.carat}ct`);
     const colorLbl = formatGradeRange(s.colorRange) || s.color;
     const clarityLbl = formatGradeRange(s.clarityRange) || s.clarity;
     return [
-      s.carat && `${s.carat}ct ${s.shape}`, colorLbl && `${colorLbl}/${clarityLbl}`, s.growth, s.lab,
+      caratLbl && `${caratLbl} ${s.shape}`, colorLbl && `${colorLbl}/${clarityLbl}`, s.growth, s.lab,
       s.colorTreatment === "disclosed" ? "post-growth treatment OK" : s.colorTreatment,
       s.fluorescence && s.fluorescence !== "none" && `fluor ${s.fluorescence}`,
       s.lwRatio && `L/W ${s.lwRatio}`,
@@ -156,8 +157,11 @@ export function autoBrief(intake) {
   }
   if (intake.multiSpec) {
     const m = intake.multiSpec;
+    const totalLbl = formatCaratRange(m.totalCaratRange)
+      ? `${formatCaratRange(m.totalCaratRange)} total`
+      : (m.totalCarat && `${m.totalCarat}ct total`);
     return [
-      m.totalCarat && `${m.totalCarat}ct total`,
+      totalLbl,
       m.meleeSpec && `melee: ${m.meleeSpec}`,
       m.overallDims, m.arrangement, m.standard,
     ].filter(Boolean).join(" · ");
@@ -211,8 +215,11 @@ function gradeAtLeast(order, stoneGrade, prefGrade) {
 export function poolStoneMatches(stone, prefs, opts) {
   if (!stone || !prefs) return false;
   if (stone.shape !== prefs.shape) return false;
-  const carat = Number(stone.carat), want = Number(prefs.carat);
-  if (!(carat >= want - opts.caratUnder && carat <= want + opts.caratOver)) return false;
+  // 캐럿도 range 우선 — 허용 [하한-여유, 상한+여유] 창으로 매칭 (레거시 단일값은 [v,v])
+  const carat = Number(stone.carat);
+  const wantLo = Number(Array.isArray(prefs.caratRange) ? prefs.caratRange[0] : prefs.carat);
+  const wantHi = Number(Array.isArray(prefs.caratRange) ? prefs.caratRange[1] : prefs.carat);
+  if (!(carat >= wantLo - opts.caratUnder && carat <= wantHi + opts.caratOver)) return false;
   // 등급 range면 하한 기준 매칭 — "IF-FL" 눈금은 CLARITY_ORDER의 "IF"로 매핑
   const colorMin = Array.isArray(prefs.colorRange) ? prefs.colorRange[0] : prefs.color;
   const clarityMinRaw = Array.isArray(prefs.clarityRange) ? prefs.clarityRange[0] : prefs.clarity;

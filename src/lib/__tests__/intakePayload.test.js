@@ -69,10 +69,35 @@ describe("buildIntakePayload — createIntake 호환", () => {
     expect(payload.multiSpec.standard).toBe("E–G / VVS1–VS2");
   });
 
-  it("솔리테어: 단일 color/clarity(레거시 폼)를 range로 승격한다", () => {
+  it("솔리테어: 단일 color/clarity/carat(레거시 폼)을 range로 승격한다", () => {
     const payload = buildIntakePayload(ringForm({ name: "J", contact: "j@x.com" }), [], null);
     expect(payload.stonePrefs.colorRange).toEqual(["E", "E"]);
     expect(payload.stonePrefs.clarityRange).toEqual(["VS1", "VS1"]);
+    expect(payload.stonePrefs.caratRange).toEqual([1.5, 1.5]);
+    expect(payload.stonePrefs.carat).toBe(1.5); // 레거시 소비처용 중간값
+  });
+
+  it("솔리테어: caratRange를 그대로 싣고 carat은 중간값", () => {
+    const payload = buildIntakePayload(
+      ringForm({ name: "J", contact: "j@x.com", stonePrefs: { shape: "round", caratRange: [1, 2], colorRange: ["F", "D"], clarityRange: ["VS1", "IF-FL"], growth: "CVD", lab: "IGI India", colorTreatment: "disclosed", fluorescence: "none", lwRatio: "" } }),
+      [], null,
+    );
+    expect(payload.stonePrefs.caratRange).toEqual([1, 2]);
+    expect(payload.stonePrefs.carat).toBe(1.5);
+  });
+
+  it("멀티: totalCaratRange 클램프 + totalCarat 중간값", () => {
+    const payload = buildIntakePayload(
+      ringForm({
+        productLine: "multi", category: "bangle", styleId: "BAN-001",
+        conditional: { wristSize: "6.5in" },
+        multiSpec: { totalCaratRange: [4, 8], colorRange: ["G", "E"], clarityRange: ["VS2", "VVS1"], meleeSpec: "", overallDims: "", arrangement: "", standard: "" },
+        name: "J", contact: "j@x.com",
+      }),
+      [], null,
+    );
+    expect(payload.multiSpec.totalCaratRange).toEqual([4, 8]);
+    expect(payload.multiSpec.totalCarat).toBe(6);
   });
 
   it("스타일 미정(open brief)은 STYLE_SELECTION으로 접수된다", () => {

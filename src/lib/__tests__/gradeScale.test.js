@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   CLARITY_SCALE, COLOR_SCALE, MULTI_COLOR_DEFAULT, TOTAL_CARAT_RANGES,
-  clampGradeRange, clampTotalCarat, formatGradeRange,
+  caratRangeMid, clampCaratRange, clampGradeRange, clampTotalCaratRange, formatCaratRange, formatGradeRange,
 } from "../gradeScale.js";
 
 describe("clampGradeRange", () => {
@@ -33,13 +33,27 @@ describe("formatGradeRange", () => {
   it("빈 입력은 빈 문자열", () => expect(formatGradeRange(null)).toBe(""));
 });
 
-describe("clampTotalCarat", () => {
-  it("범위 밖 → 카테고리 기본값", () => {
-    expect(clampTotalCarat("ring", 99)).toBe(TOTAL_CARAT_RANGES.ring.default);
-    expect(clampTotalCarat("ring", null)).toBe(TOTAL_CARAT_RANGES.ring.default);
+describe("clampCaratRange / clampTotalCaratRange", () => {
+  it("단일 레거시 값 → [v,v] (문자열 숫자화)", () => {
+    expect(clampTotalCaratRange("bangle", "5")).toEqual([5, 5]);
   });
-  it("정상 문자열 값 통과(숫자화)", () => expect(clampTotalCarat("bangle", "5")).toBe(5));
-  it("모르는 카테고리는 ring 기준", () => {
-    expect(clampTotalCarat("watch", 2)).toBe(2);
+  it("경계 밖 값은 경계로 클램프", () => {
+    expect(clampTotalCaratRange("ring", [0.1, 99])).toEqual([0.5, 5]);
   });
+  it("역전 입력 정렬", () => {
+    expect(clampTotalCaratRange("bangle", [6, 4])).toEqual([4, 6]);
+  });
+  it("무효 입력 → 카테고리 기본 range", () => {
+    expect(clampTotalCaratRange("necklace", null)).toEqual(TOTAL_CARAT_RANGES.necklace.defaultRange);
+  });
+  it("한쪽만 유효하면 그 값으로 채운다", () => {
+    expect(clampCaratRange(TOTAL_CARAT_RANGES.ring, [2, "x"])).toEqual([2, 2]);
+  });
+});
+
+describe("formatCaratRange / caratRangeMid", () => {
+  it("range 라벨", () => expect(formatCaratRange([1.5, 2])).toBe("1.50–2.00ct"));
+  it("단일 라벨", () => expect(formatCaratRange([1.5, 1.5])).toBe("1.50ct"));
+  it("빈 입력은 빈 문자열", () => expect(formatCaratRange(null)).toBe(""));
+  it("중간값", () => expect(caratRangeMid([1, 2])).toBe(1.5));
 });

@@ -4,7 +4,7 @@
 import { GradeRangeBar } from "./intake/pickers.jsx";
 import {
   CLARITY_SCALE, COLOR_SCALE, MULTI_CLARITY_DEFAULT, MULTI_COLOR_DEFAULT,
-  clampGradeRange,
+  clampGradeRange, formatCaratRange,
 } from "../lib/gradeScale.js";
 
 export default function RequestedSpecCard({ spec, p }) {
@@ -20,9 +20,11 @@ export default function RequestedSpecCard({ spec, p }) {
   const clarityRange = (src.clarityRange || src.clarity)
     ? clampGradeRange(CLARITY_SCALE, src.clarityRange ?? src.clarity, MULTI_CLARITY_DEFAULT)
     : null;
+  const spCarat = formatCaratRange(sp?.caratRange) || (sp?.carat && `${Number(sp.carat).toFixed(2)}ct`);
+  const msCarat = formatCaratRange(ms?.totalCaratRange) || (ms?.totalCarat && `${Number(ms.totalCarat).toFixed(2)}ct`);
   const headline = sp
-    ? [p.shapes?.[sp.shape] || sp.shape, sp.carat && `${Number(sp.carat).toFixed(2)}ct`].filter(Boolean).join(" · ")
-    : [ms.totalCarat && `${Number(ms.totalCarat).toFixed(2)} ct`, g.totalCaratLbl].filter(Boolean).join(" — ");
+    ? [p.shapes?.[sp.shape] || sp.shape, spCarat].filter(Boolean).join(" · ")
+    : [msCarat, g.totalCaratLbl].filter(Boolean).join(" — ");
   if (!headline && !colorRange && !clarityRange) return null;
 
   return (

@@ -21,8 +21,8 @@ import GalleryStep from "../components/intake/GalleryStep.jsx";
 import { CaratSlider, GradeRangeSlider, ImageOptionGrid, MetalSwatches, ShapeSilhouette, ShapeTiles, TotalCaratSlider } from "../components/intake/pickers.jsx";
 import {
   CLARITY_SCALE, COLOR_SCALE, MULTI_CLARITY_DEFAULT, MULTI_COLOR_DEFAULT,
-  SOLITAIRE_CLARITY_DEFAULT, SOLITAIRE_COLOR_DEFAULT, TOTAL_CARAT_RANGES,
-  clampGradeRange, clampTotalCarat, formatGradeRange,
+  SOLITAIRE_CARAT, SOLITAIRE_CLARITY_DEFAULT, SOLITAIRE_COLOR_DEFAULT, TOTAL_CARAT_RANGES,
+  clampCaratRange, clampGradeRange, clampTotalCaratRange, formatCaratRange, formatGradeRange,
 } from "../lib/gradeScale.js";
 import { defaultSubcategoryFor, styleSubcategoryKey, subcategoryKeysFor } from "../lib/designSlots.js";
 import { normalizeCouponCode } from "../lib/coupons.js";
@@ -117,12 +117,13 @@ function normalizeStoneSelections(form) {
     ...form,
     stonePrefs: {
       ...form.stonePrefs,
+      caratRange: clampCaratRange(SOLITAIRE_CARAT, form.stonePrefs?.caratRange ?? form.stonePrefs?.carat),
       colorRange: clampGradeRange(COLOR_SCALE, form.stonePrefs?.colorRange ?? form.stonePrefs?.color, SOLITAIRE_COLOR_DEFAULT),
       clarityRange: clampGradeRange(CLARITY_SCALE, form.stonePrefs?.clarityRange ?? form.stonePrefs?.clarity, SOLITAIRE_CLARITY_DEFAULT),
     },
     multiSpec: {
       ...form.multiSpec,
-      totalCarat: String(clampTotalCarat(form.category, form.multiSpec?.totalCarat)),
+      totalCaratRange: clampTotalCaratRange(form.category, form.multiSpec?.totalCaratRange ?? form.multiSpec?.totalCarat),
       colorRange: clampGradeRange(COLOR_SCALE, form.multiSpec?.colorRange, MULTI_COLOR_DEFAULT),
       clarityRange: clampGradeRange(CLARITY_SCALE, form.multiSpec?.clarityRange, MULTI_CLARITY_DEFAULT),
     },
@@ -156,14 +157,15 @@ export default function IntakeForm() {
     styleId: styleFromParam ? styleParam : "", metal: "18kw",
     conditional: categoryDefaults(initialCategory),
     stonePrefs: {
-      shape: refDiamond?.shape || "round", carat: String(refDiamond?.carat || "1.5"),
+      shape: refDiamond?.shape || "round",
       // 쇼케이스 다이아 프리필은 단일값 → [v,v] range로 승격
+      caratRange: refDiamond?.carat ? clampCaratRange(SOLITAIRE_CARAT, refDiamond.carat) : [...SOLITAIRE_CARAT.defaultRange],
       colorRange: clampGradeRange(COLOR_SCALE, refDiamond?.color, SOLITAIRE_COLOR_DEFAULT),
       clarityRange: clampGradeRange(CLARITY_SCALE, refDiamond?.clarity, SOLITAIRE_CLARITY_DEFAULT),
       growth: "CVD", lab: "IGI India", colorTreatment: "disclosed", fluorescence: "none", lwRatio: "",
     },
     multiSpec: {
-      totalCarat: String(TOTAL_CARAT_RANGES[initialCategory]?.default ?? 1.5),
+      totalCaratRange: [...(TOTAL_CARAT_RANGES[initialCategory] || TOTAL_CARAT_RANGES.ring).defaultRange],
       colorRange: [...MULTI_COLOR_DEFAULT], clarityRange: [...MULTI_CLARITY_DEFAULT],
       meleeSpec: "", overallDims: "", arrangement: "", standard: "",
     },
@@ -469,8 +471,8 @@ export default function IntakeForm() {
                   subcategory: defaultSubcategoryFor(value),
                   conditional: categoryDefaults(value),
                   styleId: "",
-                  // 총캐럿 범위가 카테고리마다 달라 기본값으로 리셋
-                  multiSpec: { ...form.multiSpec, totalCarat: String(TOTAL_CARAT_RANGES[value]?.default ?? 1.5) },
+                  // 총캐럿 범위가 카테고리마다 달라 기본 range로 리셋
+                  multiSpec: { ...form.multiSpec, totalCaratRange: [...(TOTAL_CARAT_RANGES[value] || TOTAL_CARAT_RANGES.ring).defaultRange] },
                 },
               "category",
             );
@@ -526,7 +528,16 @@ export default function IntakeForm() {
 
       {activeScreen === "carat" && stepShell(g.qCarat, g.caratHint, (
         <>
-          <CaratSlider value={form.stonePrefs.carat} shape={form.stonePrefs.shape} onChange={(value) => setS({ carat: value })} />
+          <CaratSlider min={SOLITAIRE_CARAT.min} max={SOLITAIRE_CARAT.max} step={SOLITAIRE_CARAT.step} value={form.stonePrefs.caratRange} shape={form.stonePrefs.shape} onChange={(value) => setS({ caratRange: value })} />
+          {/* 퀄리티 range — 멀티 '스톤' 스텝과 동일하게 스텝에서 바로 노출 (리뷰의 '조정'은 재편집용) */}
+          <div className="gflow-grange-fields">
+            <label className="field"><span>{g.colorRangeLbl}</span>
+              <GradeRangeSlider scale={COLOR_SCALE} ariaLabel={t.color} value={form.stonePrefs.colorRange} onChange={(v) => setS({ colorRange: v })} />
+            </label>
+            <label className="field"><span>{g.clarityRangeLbl}</span>
+              <GradeRangeSlider scale={CLARITY_SCALE} ariaLabel={t.clarity} value={form.stonePrefs.clarityRange} onChange={(v) => setS({ clarityRange: v })} />
+            </label>
+          </div>
           <button className="button primary" type="button" onClick={goNext}>{t.next}</button>
           <details className="gflow-edu-toggle">
             <summary>{g.whatsThis}</summary>
@@ -542,12 +553,12 @@ export default function IntakeForm() {
             <label className="field gflow-tcarat-field">
               <span>
                 {g.totalCaratLbl}
-                <em className="gflow-tcarat-value">{Number(form.multiSpec.totalCarat).toFixed(2)} ct</em>
+                <em className="gflow-tcarat-value">{formatCaratRange(form.multiSpec.totalCaratRange)}</em>
               </span>
               <TotalCaratSlider
-                value={form.multiSpec.totalCarat}
+                value={form.multiSpec.totalCaratRange}
                 min={totalCaratRange.min} max={totalCaratRange.max} step={totalCaratRange.step}
-                onChange={(value) => setM({ totalCarat: value })}
+                onChange={(value) => setM({ totalCaratRange: value })}
               />
             </label>
             <label className="field"><span>{g.colorRangeLbl}</span>
@@ -638,12 +649,12 @@ export default function IntakeForm() {
                 <span>{solitaire ? g.stoneCard : g.stonesCard}</span>
                 {solitaire ? (
                   <>
-                    <strong>{p.shapes[form.stonePrefs.shape] || form.stonePrefs.shape} {Number(form.stonePrefs.carat).toFixed(2)}ct</strong>
+                    <strong>{p.shapes[form.stonePrefs.shape] || form.stonePrefs.shape} {formatCaratRange(form.stonePrefs.caratRange)}</strong>
                     <small>{formatGradeRange(form.stonePrefs.colorRange)} · {formatGradeRange(form.stonePrefs.clarityRange)} · {form.stonePrefs.growth} · IGI</small>
                   </>
                 ) : (
                   <>
-                    <strong>{Number(form.multiSpec.totalCarat).toFixed(2)}ct · {formatGradeRange(form.multiSpec.colorRange)} · {formatGradeRange(form.multiSpec.clarityRange)}</strong>
+                    <strong>{formatCaratRange(form.multiSpec.totalCaratRange)} · {formatGradeRange(form.multiSpec.colorRange)} · {formatGradeRange(form.multiSpec.clarityRange)}</strong>
                     <small>{g.multiNote}</small>
                   </>
                 )}

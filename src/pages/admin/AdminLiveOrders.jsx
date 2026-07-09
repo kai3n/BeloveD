@@ -6,7 +6,7 @@ import { apiFetch, ApiUnavailableError } from "../../lib/api.js";
 import { MediaPicker, MediaThumb, usd } from "../../components/ui.jsx";
 import { getOpsStyle } from "../../lib/store.js";
 import { estimateProposalQuote, METAL_LABELS } from "../../lib/proposalEstimate.js";
-import { formatGradeRange } from "../../lib/gradeScale.js";
+import { formatCaratRange, formatGradeRange } from "../../lib/gradeScale.js";
 import { stepGate } from "../../lib/orderFlow.js";
 import { pickI18n, useLocale } from "../../i18n.jsx";
 import { ConsoleHead, Pager, StatStrip } from "./console.jsx";
@@ -329,6 +329,11 @@ function StepCard({ step, index, order, done, locked, awaitingCustomer, changeRe
   const prefColor = Array.isArray(sp.colorRange) ? sp.colorRange[0] : sp.color;
   const prefClarityRaw = Array.isArray(sp.clarityRange) ? sp.clarityRange[0] : sp.clarity;
   const prefClarity = prefClarityRaw === "IF-FL" ? "IF" : prefClarityRaw;
+  // 캐럿 range는 그대로 min/max 프리필, 레거시 단일값은 [v, v+0.05]
+  const prefCaratMin = Array.isArray(sp.caratRange) ? sp.caratRange[0] : sp.carat;
+  const prefCaratMax = Array.isArray(sp.caratRange)
+    ? sp.caratRange[1]
+    : (sp.carat ? (Number(sp.carat) + 0.05).toFixed(2) : "");
   const [f, setF] = useState({
     note: "", total: "", igi: "", tracking: "",
     setting: [
@@ -339,8 +344,8 @@ function StepCard({ step, index, order, done, locked, awaitingCustomer, changeRe
     metalSpec: METAL_LABELS[fp.metal] || fp.metal || "18K White Gold",
     estWeightG: "", leadDays: "10",
     shape: sp.shape || "round",
-    caratMin: sp.carat ? String(sp.carat) : "",
-    caratMax: sp.carat ? (Number(sp.carat) + 0.05).toFixed(2) : "",
+    caratMin: prefCaratMin ? String(prefCaratMin) : "",
+    caratMax: prefCaratMax ? String(prefCaratMax) : "",
     color: prefColor || "D", clarity: prefClarity || "VS1", growth: sp.growth || "CVD",
     lab: "IGI", igiNo: "", subNote: "", deposit: "",
   });
@@ -637,8 +642,8 @@ export function AdminLiveOrderDetail() {
     const styleId = fp.styleId || order.intake?.styleCode || "";
     const style = styleId ? getOpsStyle(styleId) : null;
     // 솔리테어는 셰입/캐럿/등급(range 라벨 우선), 멀티는 총캐럿+파생 스탠다드
-    const stoneLine = [sp.shape, sp.carat && `${sp.carat}ct`, formatGradeRange(sp.colorRange) || sp.color, formatGradeRange(sp.clarityRange) || sp.clarity, sp.growth].filter(Boolean).join(" · ")
-      || [ms.totalCarat && `${ms.totalCarat}ct total`, ms.standard].filter(Boolean).join(" · ");
+    const stoneLine = [sp.shape, formatCaratRange(sp.caratRange) || (sp.carat && `${sp.carat}ct`), formatGradeRange(sp.colorRange) || sp.color, formatGradeRange(sp.clarityRange) || sp.clarity, sp.growth].filter(Boolean).join(" · ")
+      || [formatCaratRange(ms.totalCaratRange) ? `${formatCaratRange(ms.totalCaratRange)} total` : (ms.totalCarat && `${ms.totalCarat}ct total`), ms.standard].filter(Boolean).join(" · ");
     return [
       ["Style", styleId ? (style ? pickI18n(style.name, "en") : styleId) : t.consultOpenBrief],
       [t.category, [order.intake?.category, fp.productLine].filter(Boolean).join(" · ")],
