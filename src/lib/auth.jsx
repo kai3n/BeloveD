@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { addUser, findUserByEmail, findUserByAccessCode, getUser } from "./store.js";
 import { ApiUnavailableError, apiFetch } from "./api.js";
+import { WITH_BACKOFFICE } from "./flags.js";
 
 const SESSION_KEY = "lumina-session";
 const EMAIL_KEY = "lumina-email"; // 서버 세션 복원용(고객 이메일 매핑)
@@ -107,7 +108,12 @@ export function AuthProvider({ children }) {
       if (allow && !allow.includes(role)) throw new Error("wrongPortal");
       return commitServerPrincipal(data.principal, email);
     } catch (e) {
-      if (e instanceof ApiUnavailableError) return login(email, password, allow); // 정적 데모 폴백
+      if (e instanceof ApiUnavailableError) {
+        // 데모 비밀번호 폴백은 서버 없는 정적 데모 빌드 전용 — 실서버 빌드에서
+        // API 장애 시 demo1234로 로컬 어드민 셸이 열리면 안 된다
+        if (WITH_BACKOFFICE) throw new Error("serverUnavailable");
+        return login(email, password, allow);
+      }
       if (e.code === "INVALID_CREDENTIALS") throw new Error("badCredentials");
       if (e.code === "RATE_LIMITED") throw new Error("rateLimited");
       throw e;

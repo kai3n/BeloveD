@@ -28,7 +28,7 @@ const en = {
     codeLabel: "Access code", codeBtn: "Enter",
     staffLink: "Staff sign-in", vendorLink: "Workshop sign-in", customerLink: "Customer sign-in",
     dealerApplyHint: "Want to partner as a dealer?", dealerApplyLink: "Apply here",
-    errors: { rateLimited: "Too many attempts — try again in a minute.", badCredentials: "Invalid email or password. (Demo password: demo1234)", emailExists: "This email is already registered.", wrongPortal: "This account uses a different sign-in.", badCode: "Invalid or inactive access code.", accountSuspended: "This account is suspended." },
+    errors: { rateLimited: "Too many attempts — try again in a minute.", badCredentials: "Invalid email or password.", serverUnavailable: "Can't reach the server — please try again in a moment.", emailExists: "This email is already registered.", wrongPortal: "This account uses a different sign-in.", badCode: "Invalid or inactive access code.", accountSuspended: "This account is suspended." },
   },
   diamonds: {
     title: "Diamonds", sub: "IGI·GIA certified lab-grown diamonds — each one passes through our hands before it reaches yours.",
@@ -246,7 +246,7 @@ const ko = {
     codeLabel: "접근 코드", codeBtn: "입장",
     staffLink: "스태프 로그인", vendorLink: "공방 로그인", customerLink: "고객 로그인",
     dealerApplyHint: "딜러로 함께하고 싶으세요?", dealerApplyLink: "신청하기",
-    errors: { rateLimited: "시도가 너무 많습니다 — 1분 후 다시 시도해주세요.", badCredentials: "이메일 또는 비밀번호가 올바르지 않습니다. (데모 비밀번호: demo1234)", emailExists: "이미 가입된 이메일입니다.", wrongPortal: "이 계정은 다른 로그인 경로를 사용합니다.", badCode: "유효하지 않거나 비활성된 접근 코드입니다.", accountSuspended: "정지된 계정입니다." },
+    errors: { rateLimited: "시도가 너무 많습니다 — 1분 후 다시 시도해주세요.", badCredentials: "이메일 또는 비밀번호가 올바르지 않습니다.", serverUnavailable: "서버에 연결할 수 없습니다 — 잠시 후 다시 시도해주세요.", emailExists: "이미 가입된 이메일입니다.", wrongPortal: "이 계정은 다른 로그인 경로를 사용합니다.", badCode: "유효하지 않거나 비활성된 접근 코드입니다.", accountSuspended: "정지된 계정입니다." },
   },
   diamonds: {
     title: "다이아몬드", sub: "모든 스톤은 IGI·GIA 인증 랩그로운 다이아몬드. 저희 손으로 직접 검수한 모습 그대로 보여드립니다.",
@@ -464,7 +464,7 @@ const zh = {
     codeLabel: "访问码", codeBtn: "进入",
     staffLink: "员工登录", vendorLink: "工坊登录", customerLink: "顾客登录",
     dealerApplyHint: "想成为经销商？", dealerApplyLink: "在此申请",
-    errors: { badCredentials: "邮箱或密码不正确。（演示密码：demo1234）", emailExists: "该邮箱已注册。", wrongPortal: "该账户使用其他登录入口。", badCode: "访问码无效或已停用。", accountSuspended: "该账户已被停用。" },
+    errors: { badCredentials: "邮箱或密码不正确。", serverUnavailable: "无法连接服务器——请稍后再试。", emailExists: "该邮箱已注册。", wrongPortal: "该账户使用其他登录入口。", badCode: "访问码无效或已停用。", accountSuspended: "该账户已被停用。" },
   },
   diamonds: {
     title: "钻石", sub: "颗颗均为 IGI·GIA 认证培育钻石，经我们亲手检视，方与你相见。",
@@ -682,7 +682,7 @@ const es = {
     codeLabel: "Código de acceso", codeBtn: "Entrar",
     staffLink: "Acceso de personal", vendorLink: "Acceso del taller", customerLink: "Acceso de cliente",
     dealerApplyHint: "¿Quieres ser distribuidor?", dealerApplyLink: "Solicita aquí",
-    errors: { rateLimited: "Demasiados intentos — prueba en un minuto.", badCredentials: "Correo o contraseña incorrectos. (Contraseña demo: demo1234)", emailExists: "Este correo ya está registrado.", wrongPortal: "Esta cuenta usa otro acceso.", badCode: "Código de acceso inválido o inactivo.", accountSuspended: "Esta cuenta está suspendida." },
+    errors: { rateLimited: "Demasiados intentos — prueba en un minuto.", badCredentials: "Correo o contraseña incorrectos.", serverUnavailable: "No se puede conectar con el servidor — inténtalo de nuevo en un momento.", emailExists: "Este correo ya está registrado.", wrongPortal: "Esta cuenta usa otro acceso.", badCode: "Código de acceso inválido o inactivo.", accountSuspended: "Esta cuenta está suspendida." },
   },
   diamonds: {
     title: "Diamantes", sub: "Diamantes de laboratorio certificados IGI·GIA — cada uno pasa por nuestras manos antes de llegar a las tuyas.",
