@@ -4,11 +4,16 @@ import { Activity, CircleDollarSign, Coins, CreditCard, Gem, MessagesSquare, Sho
 import { syncAdminCatalogFromServer } from "../../lib/serverSync.js";
 import { apiFetch } from "../../lib/api.js";
 import { useLocale } from "../../i18n.jsx";
+import { useAuth } from "../../lib/auth.jsx";
 
 const CHAT_LABEL = { en: "Messages", ko: "메시지", zh: "消息", es: "Mensajes" };
 
+// 돈 관련 메뉴 — bot_admin 세션에는 숨긴다 (서버 requireFullAdmin이 최종 방어선)
+const FULL_ADMIN_MENU = new Set(["benchmark", "metals", "payments", "coupons"]);
+
 export default function Admin() {
   const { p, locale } = useLocale();
+  const { adminLevel } = useAuth();
   const location = useLocation();
   const isOrderDetail = /^\/bo-4q9z7m\/live\/[^/]+/.test(location.pathname);
   const [chatUnread, setChatUnread] = useState(0);
@@ -38,7 +43,7 @@ export default function Admin() {
     { to: "/bo-4q9z7m/reviews", key: "reviews", Icon: Star },
     { to: "/bo-4q9z7m/members", key: "members", Icon: Users },
     { to: "/bo-4q9z7m/analytics", key: "analytics", Icon: Activity },
-  ];
+  ].filter((item) => adminLevel !== "bot" || !FULL_ADMIN_MENU.has(item.key));
   return (
     <div className={`page admin-page ${isOrderDetail ? "admin-page-detail" : ""}`}>
       <h1 className="con-sr">{p.admin.title}</h1>

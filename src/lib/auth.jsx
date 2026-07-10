@@ -5,6 +5,7 @@ import { ApiUnavailableError, apiFetch } from "./api.js";
 
 const SESSION_KEY = "lumina-session";
 const EMAIL_KEY = "lumina-email"; // 서버 세션 복원용(고객 이메일 매핑)
+const ADMIN_LEVEL_KEY = "lumina-admin-level"; // 서버 어드민 권한 수준: "full" | "bot"
 const AuthContext = createContext(null);
 const DEMO_PASSWORD = "demo1234"; // mock: 이메일 로그인 데모 공통 비밀번호
 
@@ -16,7 +17,17 @@ export const LOGIN_FOR = { customer: "/sign-in", admin: "/gate-7f3k9x" };
 export function AuthProvider({ children }) {
   const [userId, setUserId] = useState(() => localStorage.getItem(SESSION_KEY));
   const [hydrating, setHydrating] = useState(true); // 서버 세션 정합 대기 중 여부
+  // bot_admin은 콘솔 UI에서 돈 관련 메뉴/버튼이 숨는다 — 서버 403이 최종 방어선, UI는 편의
+  const [adminLevel, setAdminLevel] = useState(() => localStorage.getItem(ADMIN_LEVEL_KEY));
   const user = userId ? getUser(userId) : null;
+
+  function rememberAdminLevel(level) {
+    try {
+      if (level) localStorage.setItem(ADMIN_LEVEL_KEY, level);
+      else localStorage.removeItem(ADMIN_LEVEL_KEY);
+    } catch { /* no-op */ }
+    setAdminLevel(level);
+  }
 
   function commit(found) {
     localStorage.setItem(SESSION_KEY, found.id);
@@ -27,11 +38,16 @@ export function AuthProvider({ children }) {
   // 서버 principal(customer/admin)을 데모 스토어 유저로 브리지 — 기존 UI(포털·어드민) 호환 유지
   function commitServerPrincipal(principal, email) {
     const remember = (e) => { try { localStorage.setItem(EMAIL_KEY, e); } catch { /* no-op */ } };
-    if (principal === "admin") {
+    if (principal === "admin" || principal === "bot_admin") {
       const admin = findUserByEmail("admin@demo.com");
-      if (admin) { remember("admin@demo.com"); return commit(admin); }
+      if (admin) {
+        remember("admin@demo.com");
+        rememberAdminLevel(principal === "bot_admin" ? "bot" : "full");
+        return commit(admin);
+      }
     }
     const normalized = String(email || "").trim().toLowerCase();
+    rememberAdminLevel(null);
     remember(normalized);
     const found = findUserByEmail(normalized);
     if (found) return commit(found);
@@ -49,10 +65,14 @@ export function AuthProvider({ children }) {
       const principal = data?.principal || null;
       if (!principal) {
         if (localStorage.getItem(SESSION_KEY)) { localStorage.removeItem(SESSION_KEY); setUserId(null); }
+        rememberAdminLevel(null);
         return;
       }
       if (userId) return; // 양쪽 다 세션 있음 → 유지
-      if (principal.type === "admin") { commitServerPrincipal("admin"); return; }
+      if (principal.type === "admin" || principal.type === "bot_admin") {
+        commitServerPrincipal(principal.type);
+        return;
+      }
       // 서버가 준 이메일 우선 — 로컬 스토리지가 비워진 기기에서도 유효 쿠키면 복원 가능.
       const email = principal.email || localStorage.getItem(EMAIL_KEY);
       if (email) commitServerPrincipal("customer", email);
@@ -82,7 +102,8 @@ export function AuthProvider({ children }) {
   async function loginServer(email, password, allow = null) {
     try {
       const data = await apiFetch("/auth/password", { method: "POST", body: { email, password } });
-      const role = data.principal === "admin" ? "admin" : "customer";
+      // bot_admin도 어드민 포털 게이트를 통과한다 (allow 검사용 역할은 admin)
+      const role = data.principal === "customer" ? "customer" : "admin";
       if (allow && !allow.includes(role)) throw new Error("wrongPortal");
       return commitServerPrincipal(data.principal, email);
     } catch (e) {
@@ -99,6 +120,7 @@ export function AuthProvider({ children }) {
     if (!found || password !== DEMO_PASSWORD) throw new Error("badCredentials");
     if (found.active === false) throw new Error("accountSuspended");
     if (allow && !allow.includes(found.role)) throw new Error("wrongPortal");
+    rememberAdminLevel(found.role === "admin" ? "full" : null); // 데모 어드민은 항상 full
     return commit(found);
   }
 
@@ -122,11 +144,12 @@ export function AuthProvider({ children }) {
     try { await apiFetch("/auth/logout", { method: "POST" }); } catch { /* best effort */ }
     localStorage.removeItem(SESSION_KEY);
     try { localStorage.removeItem(EMAIL_KEY); } catch { /* no-op */ }
+    rememberAdminLevel(null);
     setUserId(null);
   }
 
   return (
-    <AuthContext.Provider value={{ user, hydrating, login, loginWithCode, signup, logout, requestLoginCode, verifyLoginCode, loginServer }}>
+    <AuthContext.Provider value={{ user, hydrating, adminLevel, login, loginWithCode, signup, logout, requestLoginCode, verifyLoginCode, loginServer }}>
       {children}
     </AuthContext.Provider>
   );

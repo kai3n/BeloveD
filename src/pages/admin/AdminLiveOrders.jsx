@@ -9,10 +9,14 @@ import { estimateProposalQuote, METAL_LABELS } from "../../lib/proposalEstimate.
 import { formatCaratRange, formatGradeRange } from "../../lib/gradeScale.js";
 import { stepGate } from "../../lib/orderFlow.js";
 import { pickI18n, useLocale } from "../../i18n.jsx";
+import { useAuth } from "../../lib/auth.jsx";
 import { ConsoleHead, Pager, StatStrip } from "./console.jsx";
 
 // 견적 컴포저 셀렉트 옵션 (메탈 코드 → 라벨은 proposalEstimate.js가 단일 소스)
 const SHAPES = ["round", "oval", "cushion", "princess", "emerald", "pear", "marquise", "radiant", "asscher", "heart"];
+// 돈이 걸린 이벤트 — bot_admin 세션은 버튼 비활성 (서버도 동일 목록으로 403)
+const FULL_ADMIN_EVENTS = new Set(["proposal_sent", "deposit_confirmed", "balance_requested", "balance_confirmed", "order_cancelled"]);
+const FULL_ONLY_HINT = { en: "Full admin only", ko: "풀 어드민 전용", zh: "仅限完整管理员", es: "Solo administrador completo" };
 const COLORS = ["D", "E", "F", "G", "H", "I"];
 const CLARITIES = ["IF", "VVS1", "VVS2", "VS1", "VS2", "SI1", "SI2"];
 
@@ -353,6 +357,9 @@ function StepCard({ step, index, order, done, locked, awaitingCustomer, changeRe
   const [error, setError] = useState("");
   // 발송 확인 다이얼로그 — 버튼 오클릭 한 번이 고객 메일로 직행하는 걸 막는 마지막 관문
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const { adminLevel } = useAuth();
+  const { locale: uiLocale } = useLocale();
+  const botLocked = adminLevel === "bot" && FULL_ADMIN_EVENTS.has(step.type);
   // Total/Deposit 자동 견적 — 어드민이 직접 고친 필드는 건드리지 않는다(비우면 자동 갱신 재개)
   const [manual, setManual] = useState({ total: false, deposit: false });
   const estimate = useMemo(
@@ -578,11 +585,12 @@ function StepCard({ step, index, order, done, locked, awaitingCustomer, changeRe
           <button
             className={`button ${done && !unlocked ? "secondary" : "primary"}`}
             type="button"
-            disabled={busy || (done && !unlocked)}
+            disabled={busy || (done && !unlocked) || botLocked}
             onClick={() => setConfirmOpen(true)}
           >
             {unlocked ? t.resend : done ? t.sentLabel : t.fire}
           </button>
+          {botLocked && <p className="form-hint" style={{ margin: 0 }}>🔒 {FULL_ONLY_HINT[uiLocale] || FULL_ONLY_HINT.en}</p>}
           {confirmOpen && (
             <div className="con-confirm-backdrop" role="dialog" aria-modal="true" aria-label={t.confirmTitle} onClick={() => setConfirmOpen(false)}>
               <div className="con-confirm" onClick={(e) => e.stopPropagation()}>
@@ -604,6 +612,7 @@ function StepCard({ step, index, order, done, locked, awaitingCustomer, changeRe
 
 export function AdminLiveOrderDetail() {
   const t = useCopy();
+  const { adminLevel } = useAuth();
   const { orderCode } = useParams();
   const [state, setState] = useState({ status: "loading", data: null });
   const [notice, setNotice] = useState("");
@@ -672,7 +681,7 @@ export function AdminLiveOrderDetail() {
           <h2 style={{ margin: "2px 0 6px" }}>{order.orderCode} <span className="status-badge mst-inProgress">{order.stage}</span></h2>
           <p className="form-hint">{order.customer?.name} · {order.customer?.email} · {order.customer?.locale} · {t.waiting}: {t.waitingOn[order.waitingOn] || order.waitingOn}</p>
         </div>
-        {!["CANCELLED", "DELIVERED"].includes(order.stage) && (
+        {adminLevel !== "bot" && !["CANCELLED", "DELIVERED"].includes(order.stage) && (
           <div style={{ alignSelf: "center", minWidth: cancelOpen ? 320 : "auto" }}>
             {cancelOpen ? (
               <div className="form-stack">
