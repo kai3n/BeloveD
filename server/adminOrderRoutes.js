@@ -2,7 +2,7 @@
 // 상태 전이·발행은 customerRoutes의 POST /v1/admin/orders/:code/events가 담당.
 import { Router } from "express";
 import { rateLimit } from "./rateLimit.js";
-import { requireAdmin } from "./middleware.js";
+import { requireAdmin, requireFullAdmin } from "./middleware.js";
 import { query } from "./db.js";
 import { listAdminOrders, getAdminOrder, listAdminStyles, upsertAdminStyle, deleteAdminStyle } from "./adminRepository.js";
 import { getSettingsValues, putSettingsValues, PUBLIC_SETTINGS_KEYS } from "./settingsRepository.js";
@@ -149,7 +149,7 @@ export function adminOrderRouter() {
 
   r.put("/settings",
     rateLimit({ limit: 60, windowMs: MINUTE }),
-    requireAdmin,
+    requireFullAdmin, // 쿠폰·가격표·결제채널·배너가 사는 곳 — bot_admin 금지
     async (req, res, next) => {
       try {
         res.json({ ok: true, settings: await putSettingsValues(req.body || {}) });

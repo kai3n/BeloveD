@@ -55,8 +55,17 @@ export function requireCustomer(req, _res, next) {
   next(new ApiError("CUSTOMER_AUTH_REQUIRED", 401));
 }
 
+// 스태프 공통 — full admin(사람)과 bot_admin(자동화) 둘 다 통과.
+// 돈이 걸린 작업은 아래 requireFullAdmin(또는 이벤트 타입 검사)으로 별도 강제한다.
 export function requireAdmin(req, _res, next) {
+  if (req.principal?.type === "admin" || req.principal?.type === "bot_admin") return next();
+  next(new ApiError("ADMIN_AUTH_REQUIRED", 401));
+}
+
+// 돈 관련 작업(설정 저장·제안 발송·결제 확인·잔금 요청·주문 취소)은 사람 어드민만
+export function requireFullAdmin(req, _res, next) {
   if (req.principal?.type === "admin") return next();
+  if (req.principal?.type === "bot_admin") return next(new ApiError("FULL_ADMIN_REQUIRED", 403));
   next(new ApiError("ADMIN_AUTH_REQUIRED", 401));
 }
 

@@ -108,7 +108,8 @@ export function authRouter() {
         throw new ApiError("VALIDATION_ERROR", 400);
       }
       const { principalType, customerId, session } = await loginWithPassword(email, password);
-      setSessionCookie(res, principalType === "admin" ? COOKIE_ADMIN : COOKIE_CUSTOMER, session);
+      // bot_admin도 어드민 쿠키를 쓴다 — 권한 수준은 세션 행의 principal_type이 결정
+      setSessionCookie(res, principalType === "customer" ? COOKIE_CUSTOMER : COOKIE_ADMIN, session);
       if (principalType === "customer") await linkActivity(req, customerId);
       res.json({ ok: true, principal: principalType });
     } catch (e) { next(e); }
