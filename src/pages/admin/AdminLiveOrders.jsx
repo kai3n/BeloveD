@@ -39,7 +39,7 @@ const COPY = {
     stoneSpec: "Stone spec", metalSpec: "Metal spec",
     settingSummary: "Setting & design summary", estWeight: "Est. metal weight (g)", leadDays: "Production lead (business days)",
     designNote: "Design adjustment note", centerStone: "Center stone (one component of the piece)",
-    shape: "shape", caratMin: "carat (min)", caratMax: "carat (max)", color: "color", clarity: "clarity", growth: "growth", lab: "lab",
+    shape: "shape", caratMin: "carat (min)", caratMax: "carat (max)", color: "color", clarity: "clarity", growth: "growth", lab: "lab", treatment: "color treatment",
     subNote: "Stone substitution note (blank = default policy text)", deposit: "Deposit ($, blank = 30%)",
     estHint: "Auto estimate", estDiamond: "diamond", estMetal: "metal", estLabor: "labor", estOverride: "edit to override",
     media: "Media (published to the portal)",
@@ -80,7 +80,7 @@ const COPY = {
     stoneSpec: "스톤 스펙", metalSpec: "메탈 스펙",
     settingSummary: "세팅·디자인 요약", estWeight: "예상 메탈 중량 (g)", leadDays: "제작 기간 (영업일)",
     designNote: "디자인 조정 노트", centerStone: "센터 스톤 (제품 구성 요소)",
-    shape: "셰이프", caratMin: "캐럿 (min)", caratMax: "캐럿 (max)", color: "컬러", clarity: "클래리티", growth: "성장", lab: "감정기관",
+    shape: "셰이프", caratMin: "캐럿 (min)", caratMax: "캐럿 (max)", color: "컬러", clarity: "클래리티", growth: "성장", lab: "감정기관", treatment: "컬러 처리",
     subNote: "스톤 대체 안내 (비우면 기본 문구)", deposit: "디파짓 ($, 비우면 30%)",
     estHint: "자동 추정", estDiamond: "다이아", estMetal: "메탈", estLabor: "공임", estOverride: "직접 수정 가능",
     media: "미디어 (포털에 공개)",
@@ -121,7 +121,7 @@ const COPY = {
     stoneSpec: "钻石规格", metalSpec: "金属规格",
     settingSummary: "镶嵌·设计摘要", estWeight: "预估金属重量 (g)", leadDays: "制作周期（工作日）",
     designNote: "设计调整备注", centerStone: "中心钻石（作品部件之一）",
-    shape: "形状", caratMin: "克拉 (min)", caratMax: "克拉 (max)", color: "颜色", clarity: "净度", growth: "生长方式", lab: "鉴定机构",
+    shape: "形状", caratMin: "克拉 (min)", caratMax: "克拉 (max)", color: "颜色", clarity: "净度", growth: "生长方式", lab: "鉴定机构", treatment: "颜色处理",
     subNote: "替代说明（留空用默认文案）", deposit: "定金（$，留空按 30%）",
     estHint: "自动估算", estDiamond: "钻石", estMetal: "金属", estLabor: "工费", estOverride: "可手动修改",
     media: "媒体（发布到订单页面）",
@@ -162,7 +162,7 @@ const COPY = {
     stoneSpec: "Especif. de piedra", metalSpec: "Especif. de metal",
     settingSummary: "Resumen de engaste y diseño", estWeight: "Peso est. del metal (g)", leadDays: "Plazo de producción (días hábiles)",
     designNote: "Nota de ajuste de diseño", centerStone: "Piedra central (componente de la pieza)",
-    shape: "forma", caratMin: "quilates (min)", caratMax: "quilates (max)", color: "color", clarity: "claridad", growth: "crecimiento", lab: "laboratorio",
+    shape: "forma", caratMin: "quilates (min)", caratMax: "quilates (max)", color: "color", clarity: "claridad", growth: "crecimiento", lab: "laboratorio", treatment: "tratamiento de color",
     subNote: "Nota de sustitución (vacío = texto por defecto)", deposit: "Depósito ($, vacío = 30%)",
     estHint: "Estimación automática", estDiamond: "diamante", estMetal: "metal", estLabor: "mano de obra", estOverride: "editable",
     media: "Medios (publicados al portal)",
@@ -351,6 +351,8 @@ function StepCard({ step, index, order, done, locked, awaitingCustomer, changeRe
     caratMin: prefCaratMin ? String(prefCaratMin) : "",
     caratMax: prefCaratMax ? String(prefCaratMax) : "",
     color: prefColor || "D", clarity: prefClarity || "VS1", growth: sp.growth || "CVD",
+    // 컬러 처리 고지(매뉴얼 §6.2) — 인테이크 선호 프리필, 소싱 기본값은 disclosed
+    colorTreatment: sp.colorTreatment || "disclosed",
     lab: "IGI", igiNo: "", subNote: "", deposit: "",
   });
   const [busy, setBusy] = useState(false);
@@ -412,6 +414,7 @@ function StepCard({ step, index, order, done, locked, awaitingCustomer, changeRe
               ...(f.leadDays ? { leadDays: Number(f.leadDays) } : {}),
               stone: {
                 shape: f.shape, color: f.color, clarity: f.clarity, growth: f.growth, lab: f.lab,
+                colorTreatment: f.colorTreatment,
                 ...(f.caratMin ? { caratMin: Number(f.caratMin) } : {}),
                 ...(f.caratMax ? { caratMax: Number(f.caratMax) } : {}),
                 ...(f.igiNo.trim() ? { igiNo: f.igiNo.trim() } : {}),
@@ -533,6 +536,13 @@ function StepCard({ step, index, order, done, locked, awaitingCustomer, changeRe
                   </select></label>
                 <label className="field"><span>{t.igi}</span>
                   <input value={f.igiNo} onChange={(e) => setF({ ...f, igiNo: e.target.value })} /></label>
+              </div>
+              {/* 컬러 처리 고지(매뉴얼 §6.2) — disclosed면 고객 제안 카드에 고지 문구가 자동 표기된다 */}
+              <div className="filter-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
+                <label className="field"><span>{t.treatment}</span>
+                  <select value={f.colorTreatment} onChange={(e) => setF({ ...f, colorTreatment: e.target.value })}>
+                    <option value="disclosed">disclosed</option><option value="none">none</option>
+                  </select></label>
               </div>
               <label className="field"><span>{t.subNote}</span>
                 <textarea rows={2} value={f.subNote} onChange={(e) => setF({ ...f, subNote: e.target.value })} /></label>

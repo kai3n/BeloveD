@@ -166,6 +166,12 @@ function migrateDB(d) {
     changed = true;
   }
 
+  // 디파짓 30% 정합 — 구 시드(50%)로 심어진 로컬 DB를 공개 반품 정책·서버 기본값에 맞춘다
+  if (d?.settings?.opsDepositRate === 0.5) {
+    d.settings.opsDepositRate = 0.3;
+    changed = true;
+  }
+
   const shouldAuditStyleMedia = d?.settings?.styleMediaAuditVersion !== STYLE_MEDIA_AUDIT_VERSION;
   if (restoreOriginalStyleMedia(d, shouldAuditStyleMedia)) {
     changed = true;
@@ -1487,6 +1493,8 @@ export function sendQuote(quoteId) {
       shape: dia.shape, carat: dia.carat, caratMax: Math.round((Number(dia.carat) + 0.05) * 100) / 100,
       color: dia.color, clarity: dia.clarity,
       growth: dia.growth, lab: dia.lab, igiNo: dia.igiNo,
+      // 컬러 처리 고지 — 매뉴얼 §6.2: 고객에게 처음 소개할 때 반드시 명시
+      colorTreatment: dia.colorTreatment || null,
     };
   }
   if (!q.proposalMedia?.length) {

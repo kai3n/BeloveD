@@ -34,7 +34,7 @@ export function estimateQuoteRange(form) {
   const metalRefUsdPerG = s.metalRefUsdPerG?.[form.metal] ?? 85;
   const multiplier = s.opsMultiplier ?? 1.8;
   const lossRatePct = s.defaultLossRatePct ?? 8;
-  const depositRate = s.opsDepositRate ?? 0.5;
+  const depositRate = s.opsDepositRate ?? 0.3; // 공개 정책·서버 기본과 동일 (30%)
 
   // 세팅 중량/공임: 선택 스타일의 승인 스펙 우선, 없으면 카테고리 기본값
   const spec = form.styleId

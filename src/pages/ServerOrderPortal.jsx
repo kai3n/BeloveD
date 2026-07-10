@@ -330,6 +330,10 @@ function ServerProposalCard({ pay, media, fc, t, shapes }) {
               <div><dt>{fc.specStone}</dt><dd>{[shapes?.[stone.shape] || stone.shape, caratRange].filter(Boolean).join(" · ")}</dd></div>
             )}
             {grade && <div><dt>{fc.specGrade}</dt><dd>{grade}</dd></div>}
+            {/* 컬러 처리 고지 — 매뉴얼 §6.2: 스톤을 처음 소개할 때 명시적으로 고지 */}
+            {stone?.colorTreatment && stone.colorTreatment !== "none" && (
+              <div><dt>{fc.specTreatment}</dt><dd>{fc.treatDisclosed}</dd></div>
+            )}
             {stone?.igiNo && <div><dt>{fc.specCert}</dt><dd>{stone.lab || "IGI"} {stone.igiNo}</dd></div>}
             {pay.leadDays > 0 && <div><dt>{fc.specLead}</dt><dd>{t.leadFmt(pay.leadDays)}</dd></div>}
             {/* 구버전 payload(자유 텍스트 스펙) 폴백 */}

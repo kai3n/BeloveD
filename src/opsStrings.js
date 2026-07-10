@@ -194,8 +194,8 @@ const en = {
     goPortal: "Open my order page",
     termsBlocks: [
       "Minor CAD revisions are allowed after the first design.",
-      "Changing style or cancelling after CAD is issued incurs a design fee.",
-      "Cancellation after production starts deducts a minimum fee plus unrecoverable loss.",
+      "Your deposit is 30% of the total and is non-refundable at any stage — if you cancel, it covers the design, materials, and labor already committed.",
+      "All custom pieces are final sale after delivery — see our Returns policy.",
       "Production is ~10 business days after CAD approval, excluding revisions, holidays, freight, and customs.",
       "Metal weight is estimated and reconciled to the actual finished weight.",
     ],
@@ -610,8 +610,8 @@ const ko = {
     goPortal: "내 주문 페이지 열기",
     termsBlocks: [
       "첫 디자인 이후 마이너 CAD 수정은 무료로 허용됩니다.",
-      "CAD 발행 후 스타일 변경·취소 시 디자인 수수료가 발생합니다.",
-      "제작 시작 후 취소는 최소 수수료 + 회수 불가 손실이 공제됩니다.",
+      "디파짓은 총액의 30%이며 어느 단계에서도 환불되지 않습니다 — 취소 시 이미 진행된 디자인·자재·공임 비용을 충당합니다.",
+      "모든 주문 제작 피스는 배송 후 최종 판매입니다 — 반품 정책을 참고하세요.",
       "제작 기간은 CAD 승인 후 약 10영업일입니다 (수정·연휴·운송·통관 제외).",
       "메탈 중량은 추정치이며 실제 완성 중량으로 정산됩니다.",
     ],
@@ -1026,8 +1026,8 @@ const zh = {
     goPortal: "打开我的订单",
     termsBlocks: [
       "首版设计后允许免费小幅 CAD 修改。",
-      "CAD 出图后更换款式或取消将收取设计费。",
-      "开始制作后取消将扣除最低费用及不可回收损失。",
+      "订金为总额的 30%，任何阶段均不退还 —— 如取消，用于抵付已投入的设计、材料与工费。",
+      "所有定制作品交付后均为最终销售 —— 详见退货政策。",
       "制作周期约为 CAD 批准后 10 个工作日（不含修改、假期、运输与清关）。",
       "金属重量为估算值，按实际成品重量结算。",
     ],
@@ -1442,8 +1442,8 @@ const es = {
     goPortal: "Abrir mi pedido",
     termsBlocks: [
       "Se permiten revisiones menores del CAD tras el primer diseño.",
-      "Cambiar de estilo o cancelar tras emitirse el CAD genera una tarifa de diseño.",
-      "Cancelar tras iniciar producción descuenta una tarifa mínima más pérdidas no recuperables.",
+      "El depósito es el 30% del total y no es reembolsable en ninguna etapa — si cancelas, cubre el diseño, los materiales y la mano de obra ya comprometidos.",
+      "Todas las piezas a medida son venta final tras la entrega — consulta nuestra política de devoluciones.",
       "La producción toma ~10 días hábiles tras aprobar el CAD (sin contar revisiones, feriados, flete y aduana).",
       "El peso del metal es estimado y se concilia con el peso final real.",
     ],

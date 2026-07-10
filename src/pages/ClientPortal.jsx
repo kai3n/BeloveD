@@ -346,6 +346,10 @@ function ProposalCard({ quote, intake, style, fc, t, p, locale, shippingProps, o
                   {Number(spec.caratMax) > Number(spec.carat) ? `–${Number(spec.caratMax).toFixed(2)}` : ""}ct
                 </dd></div>
                 <div><dt>{fc.specGrade}</dt><dd>{[spec.color, spec.clarity, spec.growth].filter(Boolean).join(" · ")}</dd></div>
+                {/* 컬러 처리 고지 — 매뉴얼 §6.2: 스톤을 처음 소개할 때 명시적으로 고지 */}
+                {spec.colorTreatment && spec.colorTreatment !== "none" && (
+                  <div><dt>{fc.specTreatment}</dt><dd>{fc.treatDisclosed}</dd></div>
+                )}
                 {spec.igiNo && <div><dt>{fc.specCert}</dt><dd>{spec.lab || "IGI"} {spec.igiNo}</dd></div>}
               </>
             )}
