@@ -90,10 +90,10 @@ export const FAQ = [
     keywords: ["price", "pricing", "cost", "how much is", "how much does", "expensive", "cheap", "budget", "가격", "얼마예요", "얼마인가", "얼마죠", "얼마 정도", "비싸", "가격대", "예산", "价格", "多少钱", "费用", "预算", "precio", "cuesta", "cuánto vale", "presupuesto"],
     q: { en: "How much does it cost?", ko: "가격은 얼마인가요?", zh: "价格是多少？", es: "¿Cuánto cuesta?" },
     a: {
-      en: "A comparable lab-grown diamond runs about half the price of a mined one, and because we sell atelier-direct a spec is often well below Blue Nile or Brilliant Earth. Loose stones start around $320; every total includes setting, stone, labor, shipping and insurance — no hidden fees. Tell me shape, carat and budget for a tailored quote.",
-      ko: "동급 랩다이아는 채굴 대비 약 절반 가격이고, 아틀리에 직거래라 같은 사양이 Blue Nile·Brilliant Earth보다 훨씬 저렴한 경우가 많아요. 루스 스톤은 약 $320부터, 모든 총액에 세팅·스톤·공임·배송·보험이 포함돼 숨은 비용이 없어요. 셰입·캐럿·예산을 알려주시면 맞춤 견적을 드릴게요.",
-      zh: "同级培育钻约为开采钻的一半价格，且我们工作室直销，同规格常远低于 Blue Nile 或 Brilliant Earth。裸钻起价约 $320；每笔总价含镶嵌、钻石、工费、运费与保险，绝无隐藏费用。告诉我形状、克拉与预算即可报价。",
-      es: "Un diamante de laboratorio comparable cuesta cerca de la mitad que uno extraído, y al vender directo del taller una misma especificación suele quedar muy por debajo de Blue Nile o Brilliant Earth. Las piedras sueltas parten de unos $320; cada total incluye engaste, piedra, mano de obra, envío y seguro — sin cargos ocultos. Dime forma, quilates y presupuesto para cotizar.",
+      en: "A comparable lab-grown diamond runs about half the price of a mined one, and because we sell atelier-direct the same spec is often well below Blue Nile or Brilliant Earth — the live comparison on our home page shows current ranges. Every total includes setting, stone, labor, shipping and insurance — no hidden fees. Tell me shape, carat and budget for a tailored quote.",
+      ko: "동급 랩다이아는 채굴 대비 약 절반 가격이고, 아틀리에 직거래라 같은 사양이 Blue Nile·Brilliant Earth보다 훨씬 저렴한 경우가 많아요 — 홈 화면의 실시간 가격 비교에서 현재 범위를 보실 수 있어요. 모든 총액에 세팅·스톤·공임·배송·보험이 포함돼 숨은 비용이 없어요. 셰입·캐럿·예산을 알려주시면 맞춤 견적을 드릴게요.",
+      zh: "同级培育钻约为开采钻的一半价格，且我们工作室直销，同规格常远低于 Blue Nile 或 Brilliant Earth——首页的实时价格对比可查看当前区间。每笔总价含镶嵌、钻石、工费、运费与保险，绝无隐藏费用。告诉我形状、克拉与预算即可报价。",
+      es: "Un diamante de laboratorio comparable cuesta cerca de la mitad que uno extraído, y al vender directo del taller una misma especificación suele quedar muy por debajo de Blue Nile o Brilliant Earth — la comparación en vivo de nuestra página de inicio muestra los rangos actuales. Cada total incluye engaste, piedra, mano de obra, envío y seguro — sin cargos ocultos. Dime forma, quilates y presupuesto para cotizar.",
     },
   },
   {
