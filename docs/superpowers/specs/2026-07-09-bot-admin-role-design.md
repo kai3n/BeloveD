@@ -23,9 +23,8 @@
 
 | 작업 | 엔드포인트 |
 |---|---|
-| 운영 설정 저장 (쿠폰·벤치마크·멜리·메탈·결제채널·세일배너) | `PUT /admin/settings` |
-| 주문 이벤트: `proposal_sent`(가격 커밋), `deposit_confirmed`, `balance_requested`, `balance_confirmed` | `POST /admin/orders/:code/events` (이벤트 타입별 검사) |
-| 주문 취소 | `POST /admin/orders/:code/cancel` |
+| 운영 설정 저장 (쿠폰·벤치마크·멜리·메탈·결제채널·세일배너) | `PUT /admin/settings` (adminOrderRoutes) |
+| 주문 이벤트: `proposal_sent`(가격 커밋), `deposit_confirmed`, `balance_requested`, `balance_confirmed`, `order_cancelled`(환불 판단) | `POST /admin/orders/:code/events` (이벤트 타입별 검사) |
 
 **bot_admin 허용 (full admin과 동일)**
 
@@ -60,9 +59,8 @@ admin 행 매칭 시 `row.role === 'bot'`이면 세션을 `issueSession("bot_adm
 
 - `PUT /admin/settings` → `requireFullAdmin`
 - `POST /admin/orders/:code/events` → 핸들러 안에서
-  `FULL_ADMIN_EVENTS = ["proposal_sent", "deposit_confirmed", "balance_requested", "balance_confirmed"]`
-  에 해당하고 `principal.type !== "admin"`이면 403
-- `POST /admin/orders/:code/cancel` → `requireFullAdmin`
+  `FULL_ADMIN_EVENTS = ["proposal_sent", "deposit_confirmed", "balance_requested", "balance_confirmed", "order_cancelled"]`
+  에 해당하고 `principal.type !== "admin"`이면 403 (주문 취소는 이 이벤트로만 일어난다)
 - `/auth/session`·로그인 응답은 `bot_admin` 타입을 그대로 노출
 
 ### 시드 — `server/seedAdmin.js`
