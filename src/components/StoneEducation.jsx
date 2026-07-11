@@ -47,6 +47,20 @@ function DiamondGlyph({ fill, active, size = 22 }) {
 
 /* ---------- 필드별 비주얼 ---------- */
 
+// range([하한,상한]) 또는 레거시 단일값 → 눈금 하이라이트 판정.
+// edu 스케일은 폼 스케일과 눈금이 달라(D–J vs H–D 등) 인덱스 구간으로 비교하고,
+// edu 스케일에 없는 끝점(SI1 등)은 최하위 눈금으로 클램프한다. "IF-FL"은 IF로 매핑.
+function gradeActive(scale, range, single, grade) {
+  const idx = (g) => scale.indexOf(g === "IF-FL" ? "IF" : g);
+  if (Array.isArray(range) && range.length === 2) {
+    const a = idx(range[0]) < 0 ? scale.length - 1 : idx(range[0]);
+    const b = idx(range[1]) < 0 ? scale.length - 1 : idx(range[1]);
+    const i = scale.indexOf(grade);
+    return i >= Math.min(a, b) && i <= Math.max(a, b);
+  }
+  return grade === single;
+}
+
 function ShapeVisual({ prefs }) {
   const { p } = useLocale();
   const shape = SHAPE_NODES[prefs.shape] ? prefs.shape : "round";
@@ -64,18 +78,26 @@ function ShapeVisual({ prefs }) {
 }
 
 function CaratVisual({ prefs }) {
-  const active = nearestIndex(CARAT_REFS, prefs.carat);
+  // range 선택이면 구간 안 눈금을 모두 하이라이트, 레거시 단일값은 최근접 눈금 하나
+  const r = prefs.caratRange;
+  const inRange = Array.isArray(r) && r.length === 2
+    ? (ct) => ct >= Number(r[0]) && ct <= Number(r[1])
+    : null;
+  const nearest = inRange && CARAT_REFS.some(inRange)
+    ? -1
+    : nearestIndex(CARAT_REFS, inRange ? (Number(r[0]) + Number(r[1])) / 2 : prefs.carat);
+  const isActive = (ct, i) => (inRange && nearest < 0 ? inRange(ct) : i === nearest);
   // 크기 비교도 고객이 고른 셰입으로 — 원 고정이면 선택이 반영 안 된 것처럼 보인다
   const shape = SHAPE_NODES[prefs.shape] ? prefs.shape : "round";
   const px = (ct) => caratDiameterMm(ct) * 4.6; // mm → px (3ct ≈ 43px로 셀에 맞춤)
   return (
     <div className="edu-scale-row">
       {CARAT_REFS.map((ct, i) => (
-        <div key={ct} className={`edu-scale-item ${i === active ? "is-active" : ""}`}>
+        <div key={ct} className={`edu-scale-item ${isActive(ct, i) ? "is-active" : ""}`}>
           <span
             style={{
               width: 44, height: 48, display: "grid", placeItems: "center",
-              color: i === active ? "var(--accent)" : "var(--line-strong)",
+              color: isActive(ct, i) ? "var(--accent)" : "var(--line-strong)",
             }}
             aria-hidden
           >
@@ -89,11 +111,12 @@ function CaratVisual({ prefs }) {
 }
 
 function ColorVisual({ prefs }) {
+  const isActive = (g) => gradeActive(COLOR_SCALE, prefs.colorRange, prefs.color, g);
   return (
     <div className="edu-scale-row">
       {COLOR_SCALE.map((g) => (
-        <div key={g} className={`edu-scale-item ${g === prefs.color ? "is-active" : ""}`}>
-          <DiamondGlyph fill={COLOR_TINTS[g]} active={g === prefs.color} />
+        <div key={g} className={`edu-scale-item ${isActive(g) ? "is-active" : ""}`}>
+          <DiamondGlyph fill={COLOR_TINTS[g]} active={isActive(g)} />
           <span>{g}</span>
         </div>
       ))}
@@ -105,13 +128,14 @@ function ColorVisual({ prefs }) {
 const INCLUSION_POS = [[13, 9], [8, 14], [15, 14], [9, 8], [12, 12]];
 
 function ClarityVisual({ prefs }) {
+  const isActive = (g) => gradeActive(CLARITY_SCALE, prefs.clarityRange, prefs.clarity, g);
   return (
     <div className="edu-scale-row">
       {CLARITY_SCALE.map((g) => (
-        <div key={g} className={`edu-scale-item ${g === prefs.clarity ? "is-active" : ""}`}>
+        <div key={g} className={`edu-scale-item ${isActive(g) ? "is-active" : ""}`}>
           <svg viewBox="0 0 22 22" width="30" height="30" aria-hidden>
             <circle cx="11" cy="11" r="9.5" fill="none"
-              stroke={g === prefs.clarity ? "var(--accent)" : "var(--line-strong)"} strokeWidth="1.1" />
+              stroke={isActive(g) ? "var(--accent)" : "var(--line-strong)"} strokeWidth="1.1" />
             {INCLUSION_POS.slice(0, CLARITY_DOTS[g]).map(([x, y], i) => (
               <circle key={i} cx={x} cy={y} r="0.9" fill="var(--muted)" />
             ))}
@@ -207,18 +231,27 @@ const VISUALS = {
   growth: GrowthVisual, lab: LabVisual, fluorescence: FluorVisual, lwRatio: RatioVisual,
 };
 
-export default function StoneEduPanel({ field, prefs }) {
+// field 하나 또는 fields 배열 — 한 스텝에 슬라이더가 여러 개면(캐럿+컬러+클래러티)
+// 가이드도 같은 순서로 전부 보여준다. 키커는 한 번만.
+export default function StoneEduPanel({ field, fields, prefs }) {
   const { p } = useLocale();
-  const key = p.stoneEdu[field] && VISUALS[field] ? field : "shape";
-  const edu = p.stoneEdu[key];
-  const Visual = VISUALS[key];
+  const keys = (Array.isArray(fields) && fields.length ? fields : [field])
+    .map((f) => (p.stoneEdu[f] && VISUALS[f] ? f : "shape"));
   return (
     <div className="stone-edu-panel panel">
       <div className="stone-edu-kicker">{p.stoneEdu.kicker}</div>
-      <h4>{edu.title}</h4>
-      <div className="stone-edu-visual"><Visual prefs={prefs} /></div>
-      <p className="stone-edu-body">{edu.body}</p>
-      <p className="stone-edu-guide">{edu.guide}</p>
+      {keys.map((key) => {
+        const edu = p.stoneEdu[key];
+        const Visual = VISUALS[key];
+        return (
+          <div key={key} className="stone-edu-section">
+            <h4>{edu.title}</h4>
+            <div className="stone-edu-visual"><Visual prefs={prefs} /></div>
+            <p className="stone-edu-body">{edu.body}</p>
+            <p className="stone-edu-guide">{edu.guide}</p>
+          </div>
+        );
+      })}
     </div>
   );
 }

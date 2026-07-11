@@ -539,9 +539,10 @@ export default function IntakeForm() {
             </label>
           </div>
           <button className="button primary" type="button" onClick={goNext}>{t.next}</button>
+          {/* 스텝에 캐럿+컬러+클래러티 슬라이더가 다 있으니 가이드도 셋 다 */}
           <details className="gflow-edu-toggle">
             <summary>{g.whatsThis}</summary>
-            <div className="gflow-edu-body"><StoneEduPanel field="carat" prefs={form.stonePrefs} /></div>
+            <div className="gflow-edu-body"><StoneEduPanel fields={["carat", "color", "clarity"]} prefs={form.stonePrefs} /></div>
           </details>
         </>
       ))}
@@ -569,9 +570,18 @@ export default function IntakeForm() {
             </label>
           </div>
           <button className="button primary" type="button" onClick={goNext}>{t.next}</button>
+          {/* 멀티 스텝의 range는 multiSpec에 있다 — 총캐럿은 개별 스톤 크기가 아니므로 캐럿 하이라이트는 끔 */}
           <details className="gflow-edu-toggle">
             <summary>{g.whatsThis}</summary>
-            <div className="gflow-edu-body"><StoneEduPanel field="carat" prefs={form.stonePrefs} /></div>
+            <div className="gflow-edu-body">
+              <StoneEduPanel
+                fields={["carat", "color", "clarity"]}
+                prefs={{
+                  ...form.stonePrefs, carat: null, caratRange: null,
+                  colorRange: form.multiSpec.colorRange, clarityRange: form.multiSpec.clarityRange,
+                }}
+              />
+            </div>
           </details>
         </>
       ))}
