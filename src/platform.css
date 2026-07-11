@@ -5138,6 +5138,7 @@ button.text-link:hover {
 .gflow-grange-track input[type="range"] {
   position: absolute; inset: 0; width: 100%; height: 24px; margin: 0;
   -webkit-appearance: none; appearance: none; background: none; pointer-events: none;
+  touch-action: none; /* 드래그가 페이지 스크롤로 새지 않게 — 손가락이 살짝 세로로 움직여도 슬라이더가 잡힘 */
 }
 .gflow-grange-track input[type="range"]:focus-visible { outline: 1px solid var(--accent); outline-offset: 4px; }
 .gflow-grange-track input[type="range"]::-webkit-slider-thumb {
@@ -5150,6 +5151,14 @@ button.text-link:hover {
   pointer-events: auto; width: 18px; height: 18px; border-radius: 50%;
   background: var(--surface); border: 1px solid var(--accent);
   box-shadow: 0 1px 6px rgba(0, 0, 0, 0.28); cursor: grab;
+}
+/* 터치 기기: 썸(잡는 영역)만 포인터를 받으므로 18px는 손가락으로 집기 어렵다 →
+   터치 타깃을 키워 훨씬 쉽게 드래그되게 한다. 트랙 높이도 함께 키워 세로 여유 확보. */
+@media (pointer: coarse) {
+  .gflow-grange-track { height: 40px; }
+  .gflow-grange-track input[type="range"] { height: 40px; }
+  .gflow-grange-track input[type="range"]::-webkit-slider-thumb { width: 30px; height: 30px; }
+  .gflow-grange-track input[type="range"]::-moz-range-thumb { width: 30px; height: 30px; }
 }
 .gflow-grange-labels { display: flex; justify-content: space-between; font-size: 12px; letter-spacing: 0.04em; color: var(--quiet); }
 .gflow-grange-labels .is-active { color: var(--accent); font-weight: 600; }
