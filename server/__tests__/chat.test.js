@@ -69,7 +69,7 @@ describe("라이브챗", () => {
     expect((await request(app).get("/v1/admin/chat/threads")).status).toBe(401);
     expect((await request(app).get("/v1/admin/chat/threads").set("Cookie", vCookie)).status).toBe(401);
 
-    const open = await request(app).get(`/v1/admin/chat/threads/${code}`).set("Cookie", admin);
+    const open = await request(app).get(`/v1/admin/chat/threads/${code}?markRead=1`).set("Cookie", admin);
     expect(open.status).toBe(200);
     expect(open.body.messages.some((m) => m.body.includes("sizing"))).toBe(true);
 
@@ -130,16 +130,89 @@ describe("라이브챗", () => {
   });
 
   it("상담 요청은 대화 내용·첨부와 함께 support@belovediamond.com 로 전송", async () => {
-    const res = await request(app).post("/v1/chat/messages").send({
-      body: "Here is my inspiration photo",
-      attachments: [{ url: "https://cdn.example.com/ring.jpg", contentType: "image/jpeg", name: "ring.jpg" }],
-      locale: "en",
-    });
-    expect(res.status).toBe(201);
-    await flush();
-    const mails = drainMail().filter((m) => m.type === "chat_consultation");
-    expect(mails.length).toBeGreaterThanOrEqual(1);
-    expect(mails[0].to).toBe("support@belovediamond.com");
+    process.env.R2_PUBLIC_URL = "https://pub-test.r2.dev";
+    try {
+      const res = await request(app).post("/v1/chat/messages").send({
+        body: "Here is my inspiration photo",
+        attachments: [{ url: "https://pub-test.r2.dev/chat/2026-07-10/ring.jpg", contentType: "image/jpeg", name: "ring.jpg" }],
+        locale: "en",
+      });
+      expect(res.status).toBe(201);
+      await flush();
+      const mails = drainMail().filter((m) => m.type === "chat_consultation");
+      expect(mails.length).toBeGreaterThanOrEqual(1);
+      expect(mails[0].to).toBe("support@belovediamond.com");
+    } finally {
+      delete process.env.R2_PUBLIC_URL;
+    }
+  });
+
+  it("외부 추적 URL을 첨부로 위조할 수 없다", async () => {
+    process.env.R2_PUBLIC_URL = "https://pub-test.r2.dev/media";
+    try {
+      const forged = await request(app).post("/v1/chat/messages").send({
+        body: "open this",
+        attachments: [{ url: "https://tracker.example/pixel.gif", contentType: "image/gif", name: "pixel.gif" }],
+      });
+      expect(forged.status).toBe(400);
+      expect(forged.body.error.code).toBe("VALIDATION_ERROR");
+
+      const wrongScope = await request(app).post("/v1/chat/messages").send({
+        body: "wrong scope",
+        attachments: [{ url: "https://pub-test.r2.dev/media/review/2026-07-10/file.jpg", contentType: "image/jpeg", name: "file.jpg" }],
+      });
+      expect(wrongScope.status).toBe(400);
+      expect(wrongScope.body.error.code).toBe("VALIDATION_ERROR");
+
+      const visitor = await request(app).post("/v1/chat/messages").send({ body: "safe message" });
+      const threadRow = await query("select id from chat_threads where thread_code = $1", [visitor.body.thread.code]);
+      await query(
+        "update chat_messages set attachments = $2 where thread_id = $1",
+        [threadRow.rows[0].id, JSON.stringify([{ url: "https://tracker.example/legacy.gif", name: "legacy.gif" }])],
+      );
+      const poll = await request(app).get("/v1/chat/thread").set("Cookie", visitor.headers["set-cookie"]);
+      expect(poll.body.messages[0].attachments).toEqual([]);
+    } finally {
+      delete process.env.R2_PUBLIC_URL;
+    }
+  });
+
+  it("종료된 대화에 고객이 다시 쓰면 즉시 재오픈되어 진행중 인박스에 나타난다", async () => {
+    const admin = await adminCookie();
+    const first = await request(app).post("/v1/chat/messages").send({ body: "first question" });
+    const cookie = first.headers["set-cookie"];
+    const code = first.body.thread.code;
+
+    const closed = await request(app).post(`/v1/admin/chat/threads/${code}/status`).set("Cookie", admin)
+      .send({ status: "closed" });
+    expect(closed.body.thread.status).toBe("closed");
+
+    const resumed = await request(app).post("/v1/chat/messages").set("Cookie", cookie)
+      .send({ body: "I have one more question" });
+    expect(resumed.status).toBe(201);
+    expect(resumed.body.thread.status).toBe("open");
+
+    const inbox = await request(app).get("/v1/admin/chat/threads?status=open").set("Cookie", admin);
+    const reopened = inbox.body.threads.find((item) => item.code === code);
+    expect(reopened).toBeTruthy();
+    expect(reopened.status).toBe("open");
+    expect(reopened.staffUnread).toBeGreaterThanOrEqual(2);
+  });
+
+  it("관리자 상세 조회는 명시적으로 읽을 때만 미확인 수를 지운다", async () => {
+    const admin = await adminCookie();
+    const visitor = await request(app).post("/v1/chat/messages").send({ body: "please read this" });
+    const code = visitor.body.thread.code;
+
+    const backgroundPoll = await request(app).get(`/v1/admin/chat/threads/${code}`).set("Cookie", admin);
+    expect(backgroundPoll.status).toBe(200);
+    let inbox = await request(app).get("/v1/admin/chat/threads?status=open").set("Cookie", admin);
+    expect(inbox.body.threads.find((item) => item.code === code).staffUnread).toBeGreaterThan(0);
+
+    const visibleRead = await request(app).get(`/v1/admin/chat/threads/${code}?markRead=1`).set("Cookie", admin);
+    expect(visibleRead.status).toBe(200);
+    inbox = await request(app).get("/v1/admin/chat/threads?status=open").set("Cookie", admin);
+    expect(inbox.body.threads.find((item) => item.code === code).staffUnread).toBe(0);
   });
 
   it("스태프 답장 시 고객 오프라인+이메일 알려짐이면 이메일 폴백, 온라인이면 안 보냄", async () => {

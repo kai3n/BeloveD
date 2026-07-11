@@ -242,26 +242,31 @@ export default function ChatWidget() {
 
   async function doSend(text) {
     const body = String(text || "").trim();
-    if ((!body && pending.length === 0) || sending) return;
+    const attachments = pending;
+    if ((!body && attachments.length === 0) || sending) return false;
     setMenuOpen(false); // 보내면 대화 뷰로
     setSending(true); setError("");
     try {
-      const data = await sendChatMessage({ body, attachments: pending, locale, email: email.trim() || undefined });
-      setPending([]);
+      const data = await sendChatMessage({ body, attachments, locale, email: email.trim() || undefined });
+      setPending((current) => current === attachments ? [] : current);
       // 방문자 메시지 + (있으면) FAQ 자동응답을 즉시 반영 — 폴링에서도 dedup됨
       ingest({
         staffAgent: data.staffAgent, thread: data.thread,
         messages: [data.message, ...(data.autoReply ? [data.autoReply] : [])],
       });
-    } catch { setError("Could not send — please try again."); }
+      return true;
+    } catch {
+      setError("Could not send — please try again.");
+      return false;
+    }
     finally { setSending(false); }
   }
 
-  function handleSend() {
-    const body = input.trim();
-    if (!body && pending.length === 0) return;
-    setInput("");
-    doSend(body);
+  async function handleSend() {
+    const draft = input;
+    if (!draft.trim() && pending.length === 0) return;
+    const sent = await doSend(draft);
+    if (sent) setInput((current) => current === draft ? "" : current);
   }
 
   function onKeyDown(e) {
@@ -395,7 +400,7 @@ export default function ChatWidget() {
           ))}
           {emailSaved && <div className="chat-email-done"><Check size={13} strokeWidth={2.2} /> {t.emailSaved}</div>}
           <div className="chat-composer">
-            <button className="chat-attach" aria-label={t.attach} disabled={uploading}
+            <button className="chat-attach" aria-label={t.attach} disabled={uploading || sending}
               onClick={() => fileRef.current?.click()}>
               <ImagePlus size={18} strokeWidth={1.8} />
             </button>

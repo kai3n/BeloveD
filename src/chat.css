@@ -175,7 +175,7 @@
   background: none; color: var(--muted); cursor: pointer;
 }
 .achat-filter button.active { background: var(--accent); color: #fff; border-color: transparent; }
-.achat-item { padding: 12px 14px; border-bottom: 1px solid var(--hair); cursor: pointer; display: flex; gap: 10px; align-items: flex-start; }
+.achat-item { width: 100%; padding: 12px 14px; border: 0; border-bottom: 1px solid var(--hair); cursor: pointer; display: flex; gap: 10px; align-items: flex-start; text-align: left; font: inherit; color: inherit; background: transparent; }
 .achat-item:hover { background: var(--surface); }
 .achat-item.active { background: var(--surface); box-shadow: inset 3px 0 0 var(--accent); }
 .achat-item-main { min-width: 0; flex: 1; }
@@ -187,6 +187,9 @@
 
 .achat-conv { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 .achat-conv-head { padding: 12px 16px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.achat-conv-head strong { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.achat-conv-head .button { width: auto; min-height: 38px; flex: none; }
+.achat-mobile-back { display: none; width: 36px; height: 36px; flex: none; border: 0; background: transparent; color: var(--text); cursor: pointer; place-items: center; }
 .achat-thread { flex: 1; min-height: 0; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 8px; background: var(--bg-2); }
 .achat-msg { max-width: 74%; padding: 9px 12px; border-radius: 13px; font-size: 13.5px; line-height: 1.5; word-wrap: break-word; }
 .achat-msg.staff { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 4px; }
@@ -202,4 +205,14 @@
 .achat-ctx .row { display: flex; justify-content: space-between; gap: 8px; padding: 3px 0; border-bottom: 1px solid var(--hair); }
 .achat-ctx .muted { color: var(--muted); }
 .achat-empty { display: grid; place-items: center; color: var(--quiet); text-align: center; padding: 20px; }
-@media (max-width: 900px) { .achat { grid-template-columns: 1fr; } .achat-list, .achat-ctx { display: none; } }
+@media (max-width: 900px) {
+  .achat { grid-template-columns: 1fr; height: calc(100dvh - 330px); min-height: 420px; max-height: 620px; }
+  .achat-list { display: block; border-right: 0; }
+  .achat-conv { display: none; }
+  .achat.has-active .achat-list { display: none; }
+  .achat.has-active .achat-conv { display: flex; }
+  .achat-ctx { display: none; }
+  .achat-mobile-back { display: grid; }
+  .achat-conv-head { padding: 8px 10px 8px 6px; }
+  .achat-msg { max-width: 86%; }
+}

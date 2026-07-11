@@ -29,7 +29,7 @@ export function adminChatRouter() {
       } catch (e) { next(e); }
     });
 
-  // 스레드 상세 + 컨텍스트 (읽음 처리)
+  // 스레드 상세 + 컨텍스트. 실제로 화면에 보일 때만 markRead=1로 읽음 처리한다.
   r.get("/chat/threads/:code",
     rateLimit({ limit: 240, windowMs: MINUTE, keyFn: (req) => `admin-chat:${req.ip}` }),
     async (req, res, next) => {
@@ -37,9 +37,11 @@ export function adminChatRouter() {
         const t = await findThreadByCode(req.params.code);
         if (!t) throw new ApiError("NOT_FOUND", 404);
         const messages = await listMessages(t.id, req.query.since);
-        await markStaffRead(t.id);
+        const markRead = req.query.markRead === "1";
+        if (markRead) await markStaffRead(t.id);
         const context = await threadContext(t);
-        res.json({ ok: true, thread: threadView(t), messages, context, staffAgent: STAFF_AGENT });
+        const fresh = markRead ? await findThreadByCode(req.params.code) : t;
+        res.json({ ok: true, thread: threadView(fresh), messages, context, staffAgent: STAFF_AGENT });
       } catch (e) { next(e); }
     });
 

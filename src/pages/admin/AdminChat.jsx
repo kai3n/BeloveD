@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ImagePlus, Send } from "lucide-react";
+import { ChevronLeft, ImagePlus, Send } from "lucide-react";
 import { apiFetch, uploadMedia } from "../../lib/api.js";
 import { useLocale } from "../../i18n.jsx";
 import ChatThumb from "../../components/ChatThumb.jsx";
@@ -8,10 +8,10 @@ import "../../chat.css";
 
 // 라이브챗 인박스 — 스레드 목록 | 대화 | 컨텍스트. 실서버(/v1/admin/chat) 폴링.
 const COPY = {
-  en: { title: "Messages", sub: "Live chat from the site. Reply here — visitors see it instantly; offline ones get an email.", open: "Open", all: "All", guest: "Guest", empty: "Select a conversation.", none: "No conversations yet.", placeholder: "Type a reply…  (Enter to send)", close: "Close", reopen: "Reopen", customer: "Customer", orders: "Orders", activity: "Recent activity", since: "since", noEmail: "no email on file" },
-  ko: { title: "메시지", sub: "사이트 라이브챗. 여기서 답장하면 방문자에게 즉시 표시되고, 오프라인이면 이메일로도 갑니다.", open: "진행중", all: "전체", guest: "방문자", empty: "대화를 선택하세요.", none: "아직 대화가 없어요.", placeholder: "답장 입력…  (Enter 전송)", close: "종료", reopen: "다시 열기", customer: "고객", orders: "주문", activity: "최근 활동", since: "가입", noEmail: "이메일 없음" },
-  zh: { title: "消息", sub: "网站在线聊天。在此回复，访客即时可见；离线访客会收到邮件。", open: "进行中", all: "全部", guest: "访客", empty: "选择一个对话。", none: "还没有对话。", placeholder: "输入回复…（Enter 发送）", close: "关闭", reopen: "重新打开", customer: "客户", orders: "订单", activity: "近期活动", since: "注册", noEmail: "无邮箱" },
-  es: { title: "Mensajes", sub: "Chat en vivo del sitio. Responde aquí — los visitantes lo ven al instante; los desconectados reciben un correo.", open: "Abierto", all: "Todos", guest: "Visitante", empty: "Selecciona una conversación.", none: "Aún no hay conversaciones.", placeholder: "Escribe una respuesta…  (Enter para enviar)", close: "Cerrar", reopen: "Reabrir", customer: "Cliente", orders: "Pedidos", activity: "Actividad reciente", since: "desde", noEmail: "sin correo" },
+  en: { title: "Messages", sub: "Live chat from the site. Reply here — visitors see it instantly; offline ones get an email.", open: "Open", all: "All", guest: "Guest", empty: "Select a conversation.", none: "No conversations yet.", placeholder: "Type a reply…  (Enter to send)", close: "Close", reopen: "Reopen", back: "Back to conversations", customer: "Customer", orders: "Orders", activity: "Recent activity", since: "since", noEmail: "no email on file" },
+  ko: { title: "메시지", sub: "사이트 라이브챗. 여기서 답장하면 방문자에게 즉시 표시되고, 오프라인이면 이메일로도 갑니다.", open: "진행중", all: "전체", guest: "방문자", empty: "대화를 선택하세요.", none: "아직 대화가 없어요.", placeholder: "답장 입력…  (Enter 전송)", close: "종료", reopen: "다시 열기", back: "대화 목록으로", customer: "고객", orders: "주문", activity: "최근 활동", since: "가입", noEmail: "이메일 없음" },
+  zh: { title: "消息", sub: "网站在线聊天。在此回复，访客即时可见；离线访客会收到邮件。", open: "进行中", all: "全部", guest: "访客", empty: "选择一个对话。", none: "还没有对话。", placeholder: "输入回复…（Enter 发送）", close: "关闭", reopen: "重新打开", back: "返回会话列表", customer: "客户", orders: "订单", activity: "近期活动", since: "注册", noEmail: "无邮箱" },
+  es: { title: "Mensajes", sub: "Chat en vivo del sitio. Responde aquí — los visitantes lo ven al instante; los desconectados reciben un correo.", open: "Abierto", all: "Todos", guest: "Visitante", empty: "Selecciona una conversación.", none: "Aún no hay conversaciones.", placeholder: "Escribe una respuesta…  (Enter para enviar)", close: "Cerrar", reopen: "Reabrir", back: "Volver a conversaciones", customer: "Cliente", orders: "Pedidos", activity: "Actividad reciente", since: "desde", noEmail: "sin correo" },
 };
 
 const hhmm = (iso) => { try { return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); } catch { return ""; } };
@@ -69,9 +69,15 @@ export default function AdminChat() {
   const loadActive = useCallback(async () => {
     if (!activeCode) return;
     try {
-      const d = await apiFetch(`/admin/chat/threads/${activeCode}?since=${lastIdRef.current}`);
+      const visible = document.visibilityState === "visible";
+      const params = new URLSearchParams({ since: String(lastIdRef.current) });
+      if (visible) params.set("markRead", "1");
+      const d = await apiFetch(`/admin/chat/threads/${activeCode}?${params}`);
       setThread(d.thread);
       setContext(d.context || null);
+      if (visible) {
+        setThreads((items) => items.map((item) => item.code === activeCode ? { ...item, staffUnread: 0 } : item));
+      }
       if (d.messages?.length) {
         setMessages((prev) => {
           const seen = new Set(prev.map((m) => m.id));
@@ -92,6 +98,17 @@ export default function AdminChat() {
     const id = window.setInterval(loadActive, 4000);
     return () => window.clearInterval(id);
   }, [activeCode, loadActive]);
+
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") {
+        loadActive();
+        loadThreads();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [loadActive, loadThreads]);
 
   useEffect(() => {
     if (threadBodyRef.current) threadBodyRef.current.scrollTop = threadBodyRef.current.scrollHeight;
@@ -138,18 +155,21 @@ export default function AdminChat() {
       <ConsoleHead kicker="Live chat" title={c.title} sub={c.sub} />
       {error && <p className="form-error" style={{ marginBottom: 12 }}>{error}</p>}
 
-      <div className="achat" ref={achatRef}>
+      <div className={`achat ${activeCode ? "has-active" : ""}`} ref={achatRef}>
         <div className="achat-list">
           <div className="achat-filter">
             {["open", "all"].map((s) => (
-              <button key={s} className={status === s ? "active" : ""} onClick={() => setStatus(s)}>
+              <button key={s} className={status === s ? "active" : ""} onClick={() => {
+                setStatus(s); setActiveCode(null); setThread(null); setContext(null); setMessages([]);
+              }}>
                 {s === "open" ? c.open : c.all}
               </button>
             ))}
           </div>
           {threads.length === 0 && <p className="form-hint" style={{ padding: 14 }}>{c.none}</p>}
           {threads.map((t) => (
-            <div key={t.code} className={`achat-item ${t.code === activeCode ? "active" : ""}`} onClick={() => setActiveCode(t.code)}>
+            <button type="button" key={t.code} className={`achat-item ${t.code === activeCode ? "active" : ""}`}
+              aria-pressed={t.code === activeCode} onClick={() => setActiveCode(t.code)}>
               <div className="achat-item-main">
                 <div className="achat-item-top">
                   <span className="achat-item-name">{nameOf(t)}</span>
@@ -158,7 +178,7 @@ export default function AdminChat() {
                 <div className="achat-item-preview">{t.lastSender === "staff" ? "↩ " : ""}{t.preview || "—"}</div>
               </div>
               {t.staffUnread > 0 && <span className="achat-unread">{t.staffUnread}</span>}
-            </div>
+            </button>
           ))}
         </div>
 
@@ -168,6 +188,11 @@ export default function AdminChat() {
           ) : (
             <>
               <div className="achat-conv-head">
+                <button type="button" className="achat-mobile-back" aria-label={c.back} onClick={() => {
+                  setActiveCode(null); setThread(null); setContext(null); setMessages([]);
+                }}>
+                  <ChevronLeft size={20} strokeWidth={1.8} />
+                </button>
                 <strong>{context?.customer?.name || thread?.visitorEmail || `${c.guest} · ${activeCode.replace("CHAT-", "#")}`}</strong>
                 <button className="button secondary small" onClick={toggleStatus}>
                   {thread?.status === "open" ? c.close : c.reopen}

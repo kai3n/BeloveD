@@ -21,16 +21,35 @@ export function cleanBody(body) {
   return String(body ?? "").trim().slice(0, BODY_MAX);
 }
 
+function allowedAttachmentUrl(rawUrl) {
+  try {
+    const value = String(rawUrl || "").trim();
+    const publicBase = String(process.env.R2_PUBLIC_URL || "").trim();
+    if (!value || value.length > 600 || !publicBase) return false;
+
+    const url = new URL(value);
+    const base = new URL(publicBase);
+    const basePath = base.pathname.replace(/\/$/, "");
+    return url.protocol === "https:"
+      && base.protocol === "https:"
+      && url.origin === base.origin
+      && url.pathname.startsWith(`${basePath}/chat/`);
+  } catch {
+    return false;
+  }
+}
+
 export function sanitizeAttachments(list) {
   if (!Array.isArray(list)) return [];
-  return list
-    .filter((a) => a && typeof a.url === "string" && a.url)
-    .slice(0, ATTACH_MAX)
-    .map((a) => ({
-      url: String(a.url).slice(0, 600),
+  const attachments = list.filter((a) => a && typeof a.url === "string" && a.url).slice(0, ATTACH_MAX);
+  if (attachments.some((a) => !allowedAttachmentUrl(a.url))) {
+    throw new ApiError("VALIDATION_ERROR", 400, "untrusted attachment URL");
+  }
+  return attachments.map((a) => ({
+      url: String(a.url).trim(),
       contentType: String(a.contentType || "").slice(0, 120),
       name: String(a.name || "").slice(0, 200),
-    }));
+  }));
 }
 
 export function messageView(row) {
@@ -38,7 +57,10 @@ export function messageView(row) {
     id: Number(row.id),
     sender: row.sender,
     body: row.body,
-    attachments: row.attachments || [],
+    // 읽을 때도 허용목록을 적용해 과거에 저장된 외부 추적 URL이 렌더되지 않게 한다.
+    attachments: (Array.isArray(row.attachments) ? row.attachments : [])
+      .filter((attachment) => allowedAttachmentUrl(attachment?.url))
+      .slice(0, ATTACH_MAX),
     senderAdminId: row.sender_admin_id != null ? Number(row.sender_admin_id) : null,
     createdAt: row.created_at,
   };
@@ -119,6 +141,7 @@ export async function appendMessage(threadId, { sender, senderAdminId = null, bo
     await client.query(
       `update chat_threads set last_message_at = now()
         ${unreadCol ? `, ${unreadCol} = ${unreadCol} + 1` : ""}
+        ${sender === "visitor" ? ", status = 'open'" : ""}
        where id = $1`,
       [threadId],
     );
