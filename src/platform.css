@@ -4661,6 +4661,8 @@ button.text-link:hover {
 .intake-layout.has-edu > form { flex: 1 1 auto; min-width: 0; }
 .stone-edu-aside { flex: 0 0 300px; position: sticky; top: 96px; }
 .stone-edu-panel h4 { margin: 4px 0 12px; font-size: 15px; }
+/* 다중 토픽 가이드(캐럿+컬러+클래러티) — 섹션 사이 얇은 구분선 */
+.stone-edu-section + .stone-edu-section { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line, rgba(0, 0, 0, 0.08)); }
 .stone-edu-kicker { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); }
 .stone-edu-visual { margin: 2px 0 12px; color: var(--silver); }
 .stone-edu-body { color: var(--muted); font-size: 12.5px; line-height: 1.65; margin: 0 0 8px; }
@@ -5124,9 +5126,10 @@ button.text-link:hover {
   box-shadow: 0 1px 6px rgba(0, 0, 0, 0.28); cursor: grab;
 }
 
-/* 등급 range 슬라이더 — 듀얼 핸들 (겹친 두 range 인풋, 썸만 클릭) */
+/* 등급 range 슬라이더 — 듀얼 핸들. 포인터는 트랙 전체가 받아(JS) 아무 데나 탭/드래그하면 가까운
+   핸들이 잡힌다. 네이티브 인풋은 키보드·접근성·썸 시각용으로 남고 포인터는 통과시킨다. */
 .gflow-grange { width: min(100%, 520px); display: grid; gap: 10px; }
-.gflow-grange-track { position: relative; height: 24px; }
+.gflow-grange-track { position: relative; height: 24px; touch-action: none; cursor: pointer; }
 .gflow-grange-track::before {
   content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 3px;
   transform: translateY(-50%); background: var(--line); border-radius: 2px;
@@ -5142,15 +5145,15 @@ button.text-link:hover {
 }
 .gflow-grange-track input[type="range"]:focus-visible { outline: 1px solid var(--accent); outline-offset: 4px; }
 .gflow-grange-track input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none; appearance: none; pointer-events: auto;
+  -webkit-appearance: none; appearance: none; pointer-events: none;
   width: 18px; height: 18px; border-radius: 50%;
   background: var(--surface); border: 1px solid var(--accent);
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.28); cursor: grab;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.28);
 }
 .gflow-grange-track input[type="range"]::-moz-range-thumb {
-  pointer-events: auto; width: 18px; height: 18px; border-radius: 50%;
+  pointer-events: none; width: 18px; height: 18px; border-radius: 50%;
   background: var(--surface); border: 1px solid var(--accent);
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.28); cursor: grab;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.28);
 }
 /* 터치 기기: 썸(잡는 영역)만 포인터를 받으므로 18px는 손가락으로 집기 어렵다 →
    터치 타깃을 키워 훨씬 쉽게 드래그되게 한다. 트랙 높이도 함께 키워 세로 여유 확보. */

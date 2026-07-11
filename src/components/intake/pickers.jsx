@@ -1,6 +1,54 @@
 // Gallery Flow 인테이크의 이미지 선택 프리미티브 — 텍스트 대신 사진·실루엣·스와치로 답한다
+import { useRef } from "react";
 import { BENCHMARK_SHAPES, OPS_METALS } from "../../lib/ops.js";
 import { MediaThumb } from "../ui.jsx";
+
+// 듀얼핸들 range 트랙의 포인터 드래그 — 트랙 아무 곳이나 탭/드래그하면 가까운 핸들이 그 값으로 잡힌다.
+// 네이티브 인풋은 키보드·접근성·썸 시각용으로 남기고(포인터는 트랙이 처리), 값 도메인은 숫자 [min,max].
+function useRangeTrackDrag({ min, max, step, value, onChange }) {
+  const trackRef = useRef(null);
+  const dragging = useRef(null); // 'lo' | 'hi' | null
+  const decimals = (String(step).split(".")[1] || "").length;
+  const valueAt = (clientX) => {
+    const el = trackRef.current;
+    if (!el) return null;
+    const rect = el.getBoundingClientRect();
+    if (rect.width <= 0) return null;
+    const frac = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    const snapped = Math.round((min + frac * (max - min)) / step) * step;
+    return Number(Math.max(min, Math.min(max, snapped)).toFixed(decimals));
+  };
+  const applyTo = (which, v) => {
+    const [lo, hi] = value;
+    if (which === "lo") onChange([Math.min(v, hi), hi]);
+    else onChange([lo, Math.max(v, lo)]);
+  };
+  const nearest = (v) => {
+    const [lo, hi] = value;
+    if (v <= lo) return "lo";
+    if (v >= hi) return "hi";
+    return v - lo <= hi - v ? "lo" : "hi";
+  };
+  const onPointerDown = (e) => {
+    const v = valueAt(e.clientX);
+    if (v == null) return;
+    dragging.current = nearest(v);
+    applyTo(dragging.current, v);
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* no-op */ }
+    e.preventDefault();
+  };
+  const onPointerMove = (e) => {
+    if (!dragging.current) return;
+    const v = valueAt(e.clientX);
+    if (v != null) applyTo(dragging.current, v);
+  };
+  const stop = (e) => {
+    if (!dragging.current) return;
+    dragging.current = null;
+    try { e.currentTarget.releasePointerCapture(e.pointerId); } catch { /* no-op */ }
+  };
+  return { trackRef, handlers: { onPointerDown, onPointerMove, onPointerUp: stop, onPointerCancel: stop } };
+}
 
 // 9개 벤치마크 셰입 실루엣 (viewBox 0 0 48 48, currentColor stroke)
 const SHAPE_PATHS = {
@@ -99,8 +147,9 @@ function CaratRangeTrack({ value, onChange, min, max, step, ariaLabel = "carat" 
   const lo = Number.isFinite(Number(value?.[0])) ? Number(value[0]) : min;
   const hi = Number.isFinite(Number(value?.[1])) ? Number(value[1]) : max;
   const pct = (n) => Math.max(0, Math.min(100, ((n - min) / span) * 100));
+  const { trackRef, handlers } = useRangeTrackDrag({ min, max, step, value: [lo, hi], onChange });
   return (
-    <div className="gflow-grange-track">
+    <div className="gflow-grange-track" ref={trackRef} {...handlers}>
       <span className="gflow-grange-fill" style={{ left: `${pct(lo)}%`, width: `${pct(hi) - pct(lo)}%` }} aria-hidden="true" />
       <input
         type="range" min={min} max={max} step={step} value={lo}
@@ -157,9 +206,12 @@ export function GradeRangeSlider({ scale, value, onChange, ariaLabel = "" }) {
   const maxIdx = scale.length - 1;
   const pct = (i) => (maxIdx === 0 ? 0 : (i / maxIdx) * 100);
   const commit = (nextLo, nextHi) => onChange([scale[nextLo], scale[nextHi]]);
+  const { trackRef, handlers } = useRangeTrackDrag({
+    min: 0, max: maxIdx, step: 1, value: [lo, hi], onChange: ([nlo, nhi]) => commit(nlo, nhi),
+  });
   return (
     <div className="gflow-grange" role="group" aria-label={ariaLabel}>
-      <div className="gflow-grange-track">
+      <div className="gflow-grange-track" ref={trackRef} {...handlers}>
         <span className="gflow-grange-fill" style={{ left: `${pct(lo)}%`, width: `${pct(hi) - pct(lo)}%` }} aria-hidden="true" />
         <input
           type="range" min="0" max={maxIdx} step="1" value={lo}
