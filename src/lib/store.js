@@ -209,16 +209,11 @@ function migrateDB(d) {
     changed = true;
   }
 
-  // 결제 채널 설정 — 구버전 저장 DB에 시드 기본값 주입
+  // 결제 채널 설정 — 실계좌는 서버 settings(/v1/settings/public)가 유일한 소스이고
+  // serverSync가 store에 하이드레이트한다. 클라이언트 번들에는 실핸들을 넣지 않는다
+  // (공개 번들 노출 방지). 여기서는 오프라인/데모용 빈 구조만 보장한다.
   if (d?.settings && !d.settings.payment) {
-    d.settings.payment = { zelle: "alan20062006@vip.qq.com", venmo: "@Belove-Dia", note: "" };
-    changed = true;
-  }
-
-  // 실계좌 전환(2026-07): 데모 플레이스홀더 핸들을 실제 Zelle/Venmo 계정으로 1회 교체 (note는 유지)
-  if (d?.settings && d.settings.paymentChannelsVersion !== 1) {
-    d.settings.payment = { ...d.settings.payment, zelle: "alan20062006@vip.qq.com", venmo: "@Belove-Dia" };
-    d.settings.paymentChannelsVersion = 1;
+    d.settings.payment = { zelle: "", venmo: "", note: "" };
     changed = true;
   }
 

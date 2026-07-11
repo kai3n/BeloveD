@@ -136,6 +136,22 @@ describe("auth routes", () => {
     expect(res.body.error.code).toBe("VALIDATION_ERROR");
   });
 
+  // durable brute-force lockout — in-memory limiter는 서버리스에서 무력하므로 DB 잠금 검증
+  it("locks /password after 10 failed attempts for an email, even with the correct password", async () => {
+    await query("insert into admin_users (email,name,password_hash) values ($1,$2,$3)",
+      ["lock@b.com", "Admin", hashPassword("admin12345")]);
+    for (let i = 0; i < 10; i += 1) {
+      __resetRateLimit(); // in-memory 한도를 매번 비워 DB 잠금만 남긴다
+      await request(app).post("/v1/auth/password")
+        .send({ email: "lock@b.com", password: "wrong" }).expect(401);
+    }
+    __resetRateLimit();
+    const res = await request(app).post("/v1/auth/password")
+      .send({ email: "lock@b.com", password: "admin12345" });
+    expect(res.status).toBe(429);
+    expect(res.body.error.code).toBe("RATE_LIMITED");
+  });
+
   it("rejects /magic-link with a non-string email as 400 VALIDATION_ERROR", async () => {
     const res = await request(app).post("/v1/auth/magic-link").send({ email: { evil: true } });
     expect(res.status).toBe(400);

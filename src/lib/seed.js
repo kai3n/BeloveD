@@ -30,8 +30,8 @@ export function seed() {
     counter: 1100,
     users: [
       { id: "u-admin", email: "admin@demo.com", role: "admin", name: "Operations" },
-      { id: "u-supplier1", email: "supplier@demo.com", role: "supplier", name: "SUPPLIER-CN-01", active: true, accessCode: "CN01-7F3K" },
-      { id: "u-supplier2", email: "supplier2@demo.com", role: "supplier", name: "SUPPLIER-CN-02", active: true, accessCode: "CN02-2B9X" },
+      { id: "u-supplier1", email: "supplier@demo.com", role: "supplier", name: "SUPPLIER-CN-01", active: true, accessCode: "DEMO-A001" },
+      { id: "u-supplier2", email: "supplier2@demo.com", role: "supplier", name: "SUPPLIER-CN-02", active: true, accessCode: "DEMO-A002" },
       { id: "u-customer", email: "customer@demo.com", role: "customer", name: "Jiwon Kim" },
       { id: "u-dealer1", email: "dealer@demo.com", role: "dealer", name: "LA Diamond Atelier", active: true },
       { id: "u-dealer2", email: "dealer2@demo.com", role: "dealer", name: "Bay Area Gems", active: true },
@@ -52,16 +52,16 @@ export function seed() {
     ],
     poolDiamonds: [
       // 기본 벤더 u-supplier1 — round/1.5/E/VS1/CVD 인테이크가 자동 매칭되도록
-      { id: "POOL-000001", supplierId: "u-supplier1", igiNo: "IGI-LG-700001", shape: "round", carat: 1.5, color: "D", clarity: "VVS1", growth: "CVD", lab: "IGI", certOrg: "IGI", reportUrl: "", proportions: {}, colorTreatment: "disclosed", media: [{ kind: "image", src: TWEEZERS }], procurementCostUsd: 640, availability: "available", archived: false, createdAt: "2026-06-01T00:00:00.000Z", updatedAt: "2026-06-01T00:00:00.000Z" },
-      { id: "POOL-000002", supplierId: "u-supplier1", igiNo: "IGI-LG-700002", shape: "round", carat: 1.6, color: "E", clarity: "VS1", growth: "CVD", lab: "IGI", certOrg: "IGI", reportUrl: "", proportions: {}, colorTreatment: "disclosed", media: [{ kind: "image", src: TWEEZERS }, { kind: "video", src: NOIR_VIDEO }], procurementCostUsd: 680, availability: "available", archived: false, createdAt: "2026-06-01T00:00:00.000Z", updatedAt: "2026-06-01T00:00:00.000Z" },
-      { id: "POOL-000003", supplierId: "u-supplier1", igiNo: "IGI-LG-700003", shape: "round", carat: 1.5, color: "E", clarity: "IF", growth: "CVD", lab: "IGI", certOrg: "IGI", reportUrl: "", proportions: {}, colorTreatment: "disclosed", media: [{ kind: "image", src: TWEEZERS }], procurementCostUsd: 720, availability: "available", archived: false, createdAt: "2026-06-01T00:00:00.000Z", updatedAt: "2026-06-01T00:00:00.000Z" },
+      { id: "POOL-000001", supplierId: "u-supplier1", igiNo: "IGI-LG-700001", shape: "round", carat: 1.5, color: "D", clarity: "VVS1", growth: "CVD", lab: "IGI", certOrg: "IGI", reportUrl: "", proportions: {}, colorTreatment: "disclosed", media: [{ kind: "image", src: TWEEZERS }], procurementCostUsd: 500, availability: "available", archived: false, createdAt: "2026-06-01T00:00:00.000Z", updatedAt: "2026-06-01T00:00:00.000Z" },
+      { id: "POOL-000002", supplierId: "u-supplier1", igiNo: "IGI-LG-700002", shape: "round", carat: 1.6, color: "E", clarity: "VS1", growth: "CVD", lab: "IGI", certOrg: "IGI", reportUrl: "", proportions: {}, colorTreatment: "disclosed", media: [{ kind: "image", src: TWEEZERS }, { kind: "video", src: NOIR_VIDEO }], procurementCostUsd: 520, availability: "available", archived: false, createdAt: "2026-06-01T00:00:00.000Z", updatedAt: "2026-06-01T00:00:00.000Z" },
+      { id: "POOL-000003", supplierId: "u-supplier1", igiNo: "IGI-LG-700003", shape: "round", carat: 1.5, color: "E", clarity: "IF", growth: "CVD", lab: "IGI", certOrg: "IGI", reportUrl: "", proportions: {}, colorTreatment: "disclosed", media: [{ kind: "image", src: TWEEZERS }], procurementCostUsd: 540, availability: "available", archived: false, createdAt: "2026-06-01T00:00:00.000Z", updatedAt: "2026-06-01T00:00:00.000Z" },
       // 매칭 제외 데모: 컬러 낮음(G)
-      { id: "POOL-000004", supplierId: "u-supplier1", igiNo: "IGI-LG-700004", shape: "round", carat: 1.5, color: "G", clarity: "VS1", growth: "CVD", lab: "IGI", certOrg: "IGI", reportUrl: "", proportions: {}, colorTreatment: "disclosed", media: [{ kind: "image", src: TWEEZERS }], procurementCostUsd: 520, availability: "available", archived: false, createdAt: "2026-06-01T00:00:00.000Z", updatedAt: "2026-06-01T00:00:00.000Z" },
-      { id: "POOL-000005", supplierId: "u-supplier2", igiNo: "IGI-LG-700005", shape: "round", carat: 1.55, color: "E", clarity: "VVS2", growth: "CVD", lab: "IGI", certOrg: "IGI", reportUrl: "", proportions: {}, colorTreatment: "disclosed", media: [{ kind: "image", src: TWEEZERS }], procurementCostUsd: 700, availability: "available", archived: false, createdAt: "2026-06-01T00:00:00.000Z", updatedAt: "2026-06-01T00:00:00.000Z" },
+      { id: "POOL-000004", supplierId: "u-supplier1", igiNo: "IGI-LG-700004", shape: "round", carat: 1.5, color: "G", clarity: "VS1", growth: "CVD", lab: "IGI", certOrg: "IGI", reportUrl: "", proportions: {}, colorTreatment: "disclosed", media: [{ kind: "image", src: TWEEZERS }], procurementCostUsd: 460, availability: "available", archived: false, createdAt: "2026-06-01T00:00:00.000Z", updatedAt: "2026-06-01T00:00:00.000Z" },
+      { id: "POOL-000005", supplierId: "u-supplier2", igiNo: "IGI-LG-700005", shape: "round", carat: 1.55, color: "E", clarity: "VVS2", growth: "CVD", lab: "IGI", certOrg: "IGI", reportUrl: "", proportions: {}, colorTreatment: "disclosed", media: [{ kind: "image", src: TWEEZERS }], procurementCostUsd: 530, availability: "available", archived: false, createdAt: "2026-06-01T00:00:00.000Z", updatedAt: "2026-06-01T00:00:00.000Z" },
       // 다른 셰이프 — 오벌 주문용
-      { id: "POOL-000006", supplierId: "u-supplier2", igiNo: "IGI-LG-700006", shape: "oval", carat: 1.5, color: "E", clarity: "VS1", growth: "CVD", lab: "IGI", certOrg: "IGI", reportUrl: "", proportions: {}, colorTreatment: "disclosed", media: [{ kind: "image", src: TWEEZERS }], procurementCostUsd: 660, availability: "available", archived: false, createdAt: "2026-06-01T00:00:00.000Z", updatedAt: "2026-06-01T00:00:00.000Z" },
+      { id: "POOL-000006", supplierId: "u-supplier2", igiNo: "IGI-LG-700006", shape: "oval", carat: 1.5, color: "E", clarity: "VS1", growth: "CVD", lab: "IGI", certOrg: "IGI", reportUrl: "", proportions: {}, colorTreatment: "disclosed", media: [{ kind: "image", src: TWEEZERS }], procurementCostUsd: 510, availability: "available", archived: false, createdAt: "2026-06-01T00:00:00.000Z", updatedAt: "2026-06-01T00:00:00.000Z" },
       // 성장 HPHT + 캐럿 초과 데모
-      { id: "POOL-000007", supplierId: "u-supplier2", igiNo: "IGI-LG-700007", shape: "emerald", carat: 2.0, color: "F", clarity: "VS1", growth: "HPHT", lab: "IGI", certOrg: "IGI", reportUrl: "", proportions: {}, colorTreatment: "disclosed", media: [{ kind: "image", src: TWEEZERS }], procurementCostUsd: 1500, availability: "available", archived: false, createdAt: "2026-06-01T00:00:00.000Z", updatedAt: "2026-06-01T00:00:00.000Z" },
+      { id: "POOL-000007", supplierId: "u-supplier2", igiNo: "IGI-LG-700007", shape: "emerald", carat: 2.0, color: "F", clarity: "VS1", growth: "HPHT", lab: "IGI", certOrg: "IGI", reportUrl: "", proportions: {}, colorTreatment: "disclosed", media: [{ kind: "image", src: TWEEZERS }], procurementCostUsd: 900, availability: "available", archived: false, createdAt: "2026-06-01T00:00:00.000Z", updatedAt: "2026-06-01T00:00:00.000Z" },
     ],
     // ---------- Operations Manual 도메인 ----------
     // 시퀀스 카운터는 시드된 모든 6자리 seq id(DM/POOL 등)보다 커야 충돌 없음 — 풀 시드가 POOL-000007까지 쓰므로 ≥7.
@@ -123,19 +123,19 @@ export function seed() {
         color: "E", clarity: "VS1", growth: "CVD", lab: "IGI India",
         proportions: { table: 57, depth: 62.4, crown: 35, pavilion: 40.8, lw: 1.0, faceUp: "7.3mm" },
         reportUrl: "", image: TWEEZERS, video: NOIR_VIDEO, colorTreatment: "disclosed", availability: "available",
-        procurementCostUsd: 540, supplierId: "u-supplier1", internalReview: "recommended", internalNotes: "Excellent proportions",
+        procurementCostUsd: 500, supplierId: "u-supplier1", internalReview: "recommended", internalNotes: "Excellent proportions",
         published: true, customerPriceUsd: 1180, clientSelection: "none", locked: false, createdAt: "2026-06-10T11:00:00.000Z" },
       { id: "DIA-DM-000001-02", orderId: "DM-000001", prId: "PR-000001", igiNo: "LG591234002", shape: "round", carat: 1.52,
         color: "D", clarity: "VS1", growth: "CVD", lab: "IGI India",
         proportions: { table: 56, depth: 61.9, crown: 34.5, pavilion: 40.6, lw: 1.0, faceUp: "7.35mm" },
         reportUrl: "", image: TWEEZERS, video: "", colorTreatment: "disclosed", availability: "available",
-        procurementCostUsd: 580, supplierId: "u-supplier1", internalReview: "alternate", internalNotes: "",
+        procurementCostUsd: 520, supplierId: "u-supplier1", internalReview: "alternate", internalNotes: "",
         published: true, customerPriceUsd: 1260, clientSelection: "none", locked: false, createdAt: "2026-06-10T11:00:00.000Z" },
       { id: "DIA-DM-000001-03", orderId: "DM-000001", prId: "PR-000001", igiNo: "LG591234003", shape: "round", carat: 1.45,
         color: "F", clarity: "VS2", growth: "CVD", lab: "IGI India",
         proportions: { table: 58, depth: 62.8, crown: 35.5, pavilion: 41, lw: 1.0, faceUp: "7.2mm" },
         reportUrl: "", image: TWEEZERS, video: "", colorTreatment: "disclosed", availability: "available",
-        procurementCostUsd: 470, supplierId: "u-supplier1", internalReview: "excluded", internalNotes: "Depth too high — small face-up",
+        procurementCostUsd: 460, supplierId: "u-supplier1", internalReview: "excluded", internalNotes: "Depth too high — small face-up",
         published: false, customerPriceUsd: null, clientSelection: "none", locked: false, createdAt: "2026-06-10T11:00:00.000Z" },
     ],
     quotes: [
@@ -269,8 +269,9 @@ export function seed() {
       poolCaratUnder: 0.05, poolCaratOver: 0.4, poolMatchLimit: 12, // 풀 자동매칭 허용 캐럿범위·후보 캡
       showSampleLibrary: true, // 데모용 샘플 이미지 라이브러리 노출 (실서비스에선 false)
       shipToAddress: "BeloveD Receiving, 550 S Hill St #1100, Los Angeles, CA 90013",
-      // 디파짓/잔금 수동 확인 결제 채널 — 어드민 설정에서 편집 (실계좌: Zelle 수취인명 YICHENG)
-      payment: { zelle: "alan20062006@vip.qq.com", venmo: "@Belove-Dia", note: "" },
+      // 디파짓/잔금 수동 확인 결제 채널 — 실계좌는 서버 settings(/v1/settings/public)가 유일한 소스.
+      // 클라이언트 프로토타입 시드에는 실핸들을 넣지 않는다 (공개 번들 노출 방지).
+      payment: { zelle: "", venmo: "", note: "" },
       paymentChannelsVersion: 1,
       reviewsSeedVersion: 3,
       demoDeliveredSeedVersion: 1,

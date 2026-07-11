@@ -81,11 +81,20 @@ export async function verifyMagicLink(raw) {
 
 const CODE_TTL_MS = 1000 * 60 * 10; // 10 minutes
 const CODE_MAX_ATTEMPTS = 5;
+const CODE_MAX_PER_HOUR = 5; // 이메일당 시간당 발급 상한 (durable — 서버리스에서도 유효)
 
 // 이메일 6자리 인증번호 발급 — 코드 원문은 메일로만, DB에는 해시만 (M2와 동일 원칙)
 export async function createLoginCode(email, locale) {
   const normalized = normalizeEmail(email);
   if (!normalized) throw new ApiError("EMAIL_REQUIRED", 400);
+  // in-memory rate limit은 서버리스 인스턴스마다 리셋되고 IP 회전으로 우회되므로,
+  // 이메일당 발급 횟수를 DB로 durable하게 제한한다 — 코드 무제한 재발급을 통한
+  // OTP(10^6) 무차별 대입을 차단한다. 상한 도달 시 코드 원문(6자리)당 5회 시도까지만.
+  const recent = await query(
+    "select count(*)::int as n from login_codes where email=$1 and created_at > now() - interval '1 hour'",
+    [normalized],
+  );
+  if (recent.rows[0].n >= CODE_MAX_PER_HOUR) throw new ApiError("RATE_LIMITED", 429);
   const code = String(randomInt(0, 1000000)).padStart(6, "0");
   const expiresAt = new Date(Date.now() + CODE_TTL_MS);
   // 같은 이메일의 이전 미사용 코드는 폐기 — 항상 마지막 코드 하나만 유효
@@ -130,20 +139,49 @@ export async function verifyLoginCode(email, code, locale) {
   });
 }
 
+// 온라인 비밀번호 무차별 대입 방어 — in-memory limiter는 서버리스에서 무력하므로
+// 이메일당 실패 횟수를 DB(login_attempts)로 durable하게 잠근다 (rolling 15분 윈도우).
+const LOGIN_FAIL_MAX = 10; // 이메일당 15분 내 실패 상한
+
+async function recentLoginFailures(email) {
+  const { rows } = await query(
+    "select count(*)::int as n from login_attempts where email=$1 and created_at > now() - interval '15 minutes'",
+    [email],
+  );
+  return rows[0].n;
+}
+
+async function recordLoginFailure(email) {
+  await query("insert into login_attempts (email) values ($1)", [email]);
+  // 테이블 무한 증가 방지 — 윈도우를 크게 벗어난 행 정리 (실패 로그인은 드물다)
+  await query("delete from login_attempts where created_at < now() - interval '1 hour'");
+}
+
+async function clearLoginFailures(email) {
+  await query("delete from login_attempts where email=$1", [email]);
+}
+
 export async function loginWithPassword(email, password) {
   const normalized = normalizeEmail(email);
+  // durable per-email 잠금 — 429는 자격 유효성과 무관하므로 계정 존재 여부를 노출하지 않는다.
+  if (await recentLoginFailures(normalized) >= LOGIN_FAIL_MAX) {
+    throw new ApiError("RATE_LIMITED", 429);
+  }
   const admin = await query("select * from admin_users where email=$1 and active=true", [normalized]);
   if (admin.rows[0] && verifyPassword(password, admin.rows[0].password_hash)) {
+    await clearLoginFailures(normalized);
     return { principalType: "admin", session: await issueSession("admin", admin.rows[0].id, ADMIN_TTL_MS) };
   }
   const cust = await query("select * from customers where email=$1", [normalized]);
   if (cust.rows[0]?.password_hash && verifyPassword(password, cust.rows[0].password_hash)) {
     // customerId는 activity 세션 연결용 (authRoutes.linkActivity)
+    await clearLoginFailures(normalized);
     return { principalType: "customer", customerId: cust.rows[0].id, session: await issueSession("customer", cust.rows[0].id) };
   }
   // No matching row: still run one verify against a constant dummy hash so the
   // response time for an unknown email matches a wrong-password attempt (I3).
   verifyPassword(password, DUMMY_HASH);
+  await recordLoginFailure(normalized);
   throw new ApiError("INVALID_CREDENTIALS", 401);
 }
 

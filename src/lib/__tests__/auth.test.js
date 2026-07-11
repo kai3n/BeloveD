@@ -8,8 +8,8 @@ beforeEach(() => resetDB());
 
 describe("역할별 인증 — 벤더 접근 코드", () => {
   it("접근 코드로 벤더를 조회 (대소문자·공백 무시), 비벤더/오타는 null", () => {
-    expect(findUserByAccessCode("cn01-7f3k")?.id).toBe("u-supplier1");
-    expect(findUserByAccessCode("  CN01-7F3K  ")?.id).toBe("u-supplier1");
+    expect(findUserByAccessCode("demo-a001")?.id).toBe("u-supplier1");
+    expect(findUserByAccessCode("  DEMO-A001  ")?.id).toBe("u-supplier1");
     expect(findUserByAccessCode("WRONG-CODE")).toBeNull();
     expect(findUserByAccessCode("")).toBeNull();
   });

@@ -65,4 +65,16 @@ describe("이메일 6자리 인증번호 로그인", () => {
     const res = await request(app).post("/v1/auth/code").send({ email: "otp@test.com" });
     expect(res.status).toBe(429);
   });
+
+  it("durable 발급 상한: 같은 이메일 시간당 5회 초과 시 429 (IP 회전으로 in-memory 우회 가정)", async () => {
+    // __resetRateLimit로 in-memory 한도를 매번 비워도 DB 상한이 발급을 막는다
+    for (let i = 0; i < 5; i += 1) {
+      __resetRateLimit();
+      await request(app).post("/v1/auth/code").send({ email: "cap@test.com" }).expect(201);
+    }
+    __resetRateLimit();
+    const res = await request(app).post("/v1/auth/code").send({ email: "cap@test.com" });
+    expect(res.status).toBe(429);
+    expect(res.body.error.code).toBe("RATE_LIMITED");
+  });
 });

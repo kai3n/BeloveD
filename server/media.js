@@ -53,10 +53,15 @@ export async function createUploadUrl({ scope, contentType, size }) {
     throw new ApiError("MEDIA_TOO_LARGE", 400);
   }
   const key = `${scope}/${new Date().toISOString().slice(0, 10)}/${randomBytes(12).toString("hex")}.${ext}`;
+  // ContentLength를 서명에 포함 — presigned PUT이 정확히 이 바이트 수만 허용한다.
+  // 이게 없으면 클라이언트가 선언한 size와 무관하게 임의 크기(수 GB)를 올릴 수 있어
+  // MAX_BYTES 검사가 무의미해진다 (비인증 스토리지/대역폭 비용 DoS). 브라우저는
+  // 본문 PUT 시 Content-Length를 항상 보내므로 정상 업로드에는 영향이 없다.
   const command = new PutObjectCommand({
     Bucket: process.env.R2_BUCKET,
     Key: key,
     ContentType: contentType,
+    ContentLength: bytes,
   });
   const uploadUrl = await getSignedUrl(client(), command, { expiresIn: SIGN_TTL_SECONDS });
   const publicUrl = `${process.env.R2_PUBLIC_URL.replace(/\/$/, "")}/${key}`;
