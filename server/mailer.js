@@ -22,7 +22,9 @@ async function deliver(to, subject, html, meta) {
   const msg = { ...meta, to, at: new Date().toISOString() };
   sink.push(msg);
   const env = process.env.NODE_ENV;
-  if (env !== "production" && env !== "test") console.log(`[mailer] ${meta.type} → ${to}: ${meta.link || meta.code}`);
+  // The sink is useful in local automation, but console output is often copied
+  // into shared logs. Never print recipients, magic links, or OTP values.
+  if (env !== "production" && env !== "test") console.log(`[mailer] ${meta.type} captured by local sink`);
   return msg;
 }
 

@@ -15,12 +15,20 @@ export function assertSessionId(sessionId) {
   }
 }
 
-// 세션 upsert(last_seen 갱신) + 이벤트 일괄 기록. events[i] = { type, path?, entityType?, entityId?, meta? }
+function assertClientEventId(eventId) {
+  if (eventId !== undefined && eventId !== null && (typeof eventId !== "string" || !UUID_RE.test(eventId))) {
+    throw new ApiError("VALIDATION_ERROR", 400, "invalid event id");
+  }
+}
+
+// 세션 upsert(last_seen 갱신) + 이벤트 일괄 기록.
+// events[i] = { id?: UUID, type, path?, entityType?, entityId?, meta? }
 export async function recordEvents({ sessionId, userAgent = null, events }) {
   assertSessionId(sessionId);
   if (!Array.isArray(events) || events.length === 0) return { inserted: 0 };
   for (const ev of events) {
     if (!ev || !EVENT_TYPES.has(ev.type)) throw new ApiError("VALIDATION_ERROR", 400, "unknown event type");
+    assertClientEventId(ev.id);
   }
   return withTransaction(async (client) => {
     await client.query(
@@ -29,12 +37,14 @@ export async function recordEvents({ sessionId, userAgent = null, events }) {
       [sessionId, userAgent]);
     let inserted = 0;
     for (const ev of events) {
-      await client.query(
-        `insert into activity_events (session_id, event_type, path, entity_type, entity_id, meta)
-         values ($1, $2, $3, $4, $5, $6)`,
-        [sessionId, ev.type, ev.path ?? null, ev.entityType ?? null, ev.entityId ?? null,
+      const result = await client.query(
+        `insert into activity_events (session_id, client_event_id, event_type, path, entity_type, entity_id, meta)
+         values ($1, $2, $3, $4, $5, $6, $7)
+         on conflict (client_event_id) where client_event_id is not null do nothing
+         returning id`,
+        [sessionId, ev.id ?? null, ev.type, ev.path ?? null, ev.entityType ?? null, ev.entityId ?? null,
          ev.meta ? JSON.stringify(ev.meta) : null]);
-      inserted += 1;
+      inserted += result.rowCount;
     }
     return { inserted };
   });

@@ -6,7 +6,7 @@ import { getSettings, updateSettings } from "../../lib/store.js";
 import { useDBVersion } from "../../lib/useDB.js";
 import { useLocale } from "../../i18n.jsx";
 import { ConsoleHead } from "./console.jsx";
-import { pushSettingsToServer } from "../../lib/serverSync.js";
+import { apiFetch } from "../../lib/api.js";
 
 const COPY = {
   en: {
@@ -17,7 +17,8 @@ const COPY = {
     depositTitle: "Deposit rate",
     depositLbl: "Deposit (%)",
     depositHint: "Default deposit share of the total when a proposal doesn't set its own amount.",
-    saved: "Saved",
+    saved: "Saved", saving: "Saving…", saveFailed: "Could not save to the server. The previous settings are still active.",
+    noMethods: "Add at least one recipient account before asking customers to report a transfer.",
   },
   ko: {
     title: "결제 채널",
@@ -27,7 +28,8 @@ const COPY = {
     depositTitle: "디파짓 비율",
     depositLbl: "디파짓 (%)",
     depositHint: "제안에서 금액을 따로 정하지 않았을 때 적용되는 기본 디파짓 비율입니다.",
-    saved: "저장됨",
+    saved: "저장됨", saving: "저장 중…", saveFailed: "서버에 저장하지 못했습니다. 기존 설정이 그대로 유지됩니다.",
+    noMethods: "고객이 송금을 보고하기 전에 수취 계정을 하나 이상 등록해 주세요.",
   },
   zh: {
     title: "收款渠道",
@@ -37,7 +39,8 @@ const COPY = {
     depositTitle: "定金比例",
     depositLbl: "定金 (%)",
     depositHint: "方案未单独设置金额时适用的默认定金比例。",
-    saved: "已保存",
+    saved: "已保存", saving: "保存中…", saveFailed: "无法保存到服务器，之前的设置仍然有效。",
+    noMethods: "请至少添加一个收款账户，再让客户报告付款。",
   },
   es: {
     title: "Canales de Pago",
@@ -47,7 +50,8 @@ const COPY = {
     depositTitle: "Porcentaje de depósito",
     depositLbl: "Depósito (%)",
     depositHint: "Porcentaje por defecto cuando la propuesta no fija su propio monto.",
-    saved: "Guardado",
+    saved: "Guardado", saving: "Guardando…", saveFailed: "No se pudo guardar en el servidor. La configuración anterior sigue activa.",
+    noMethods: "Añade al menos una cuenta destinataria antes de pedir al cliente que reporte un pago.",
   },
 };
 
@@ -58,29 +62,56 @@ export default function AdminPayments() {
   const settings = getSettings();
   const payment = settings.payment || { zelle: "", venmo: "", note: "" };
   const [notice, setNotice] = useState("");
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  function savePayment(patch) {
-    const next = { ...payment, ...patch };
-    updateSettings({ payment: next });
-    pushSettingsToServer({ payment: next });
-    setNotice(c.saved);
+  async function persist(patch, onSuccess, message) {
+    if (saving) return false;
+    setSaving(true);
+    setNotice("");
+    setError("");
+    try {
+      await apiFetch("/admin/settings", { method: "PUT", body: patch });
+      onSuccess();
+      setNotice(message);
+      return true;
+    } catch {
+      setError(c.saveFailed);
+      return false;
+    } finally {
+      setSaving(false);
+    }
   }
 
-  function saveDepositRate(value) {
+  async function savePayment(patch) {
+    const next = { ...payment, ...patch };
+    return persist(
+      { payment: next },
+      () => updateSettings({ payment: next }),
+      c.saved,
+    );
+  }
+
+  async function saveDepositRate(value) {
     const v = Number(value);
     if (!Number.isFinite(v) || v < 10 || v > 90) return;
     const rate = v / 100;
     if (rate === settings.opsDepositRate) return;
-    updateSettings({ opsDepositRate: rate });
-    pushSettingsToServer({ opsDepositRate: rate });
-    setNotice(`${c.saved} — ${c.depositLbl}`);
+    return persist(
+      { opsDepositRate: rate },
+      () => updateSettings({ opsDepositRate: rate }),
+      `${c.saved} — ${c.depositLbl}`,
+    );
   }
 
   return (
     <>
       <ConsoleHead kicker={p.opsA.menu.payments} title={c.title} sub={c.sub}>
-        {notice && <span className="con-saved-flash" role="status">{notice}</span>}
+        {saving ? <span className="con-saved-flash" role="status">{c.saving}</span> : notice && <span className="con-saved-flash" role="status">{notice}</span>}
       </ConsoleHead>
+
+      {error && <p className="admin-save-notice is-error" role="alert">{error}</p>}
+      {!payment.zelle && !payment.venmo && <p className="admin-save-notice is-error" role="status">{c.noMethods}</p>}
 
       <div className="con-table-panel con-narrow" style={{ padding: "18px 18px 20px" }}>
         <div className="con-grid con-grid-2">
@@ -89,7 +120,13 @@ export default function AdminPayments() {
               defaultValue={payment.zelle}
               key={`zelle-${payment.zelle}`}
               placeholder="you@bank-email.com"
-              onBlur={(e) => { const v = e.target.value.trim(); if (v !== payment.zelle) savePayment({ zelle: v }); }}
+              disabled={saving}
+              autoComplete="off"
+              onBlur={async (e) => {
+                const input = e.currentTarget;
+                const v = input.value.trim();
+                if (v !== payment.zelle && !(await savePayment({ zelle: v }))) input.value = payment.zelle || "";
+              }}
             />
           </label>
           <label className="field"><span>{c.venmo}</span>
@@ -97,14 +134,25 @@ export default function AdminPayments() {
               defaultValue={payment.venmo}
               key={`venmo-${payment.venmo}`}
               placeholder="@Your-Handle"
-              onBlur={(e) => { const v = e.target.value.trim(); if (v !== payment.venmo) savePayment({ venmo: v }); }}
+              disabled={saving}
+              autoComplete="off"
+              onBlur={async (e) => {
+                const input = e.currentTarget;
+                const v = input.value.trim();
+                if (v !== payment.venmo && !(await savePayment({ venmo: v }))) input.value = payment.venmo || "";
+              }}
             />
           </label>
           <label className="field field-wide"><span>{c.note}</span>
             <input
               defaultValue={payment.note}
               key={`paynote-${payment.note}`}
-              onBlur={(e) => { const v = e.target.value.trim(); if (v !== payment.note) savePayment({ note: v }); }}
+              disabled={saving}
+              onBlur={async (e) => {
+                const input = e.currentTarget;
+                const v = input.value.trim();
+                if (v !== payment.note && !(await savePayment({ note: v }))) input.value = payment.note || "";
+              }}
             />
           </label>
         </div>
@@ -115,9 +163,13 @@ export default function AdminPayments() {
         <label className="field" style={{ maxWidth: 220 }}><span>{c.depositLbl}</span>
           <input
             type="number" min="10" max="90" step="5"
-            defaultValue={Math.round(settings.opsDepositRate * 100)}
+            defaultValue={Math.round((settings.opsDepositRate ?? 0.5) * 100)}
             key={settings.opsDepositRate}
-            onBlur={(e) => saveDepositRate(e.target.value)}
+            disabled={saving}
+            onBlur={async (e) => {
+              const input = e.currentTarget;
+              if (!(await saveDepositRate(input.value))) input.value = Math.round((settings.opsDepositRate ?? 0.5) * 100);
+            }}
           />
         </label>
         <p className="con-note">{c.depositHint}</p>

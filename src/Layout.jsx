@@ -94,24 +94,43 @@ export function Header() {
   // 모바일 메뉴: 패널·햄버거 바깥을 터치/클릭하면 닫기
   useEffect(() => {
     if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     const onDown = (e) => {
       if (
         panelRef.current && !panelRef.current.contains(e.target) &&
         menuButtonRef.current && !menuButtonRef.current.contains(e.target)
       ) {
-        closeMobilePanel();
+        closeMobilePanel({ restoreFocus: true });
       }
     };
     const onKey = (e) => {
-      if (e.key !== "Escape") return;
-      e.preventDefault();
-      e.stopPropagation();
-      closeMobilePanel({ restoreFocus: true });
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        closeMobilePanel({ restoreFocus: true });
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const focusable = [...(panelRef.current?.querySelectorAll(
+        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      ) || [])].filter((element) => element.getClientRects().length > 0);
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
     document.addEventListener("pointerdown", onDown);
     document.addEventListener("keydown", onKey, true);
     closeButtonRef.current?.focus();
     return () => {
+      document.body.style.overflow = previousOverflow;
       document.removeEventListener("pointerdown", onDown);
       document.removeEventListener("keydown", onKey, true);
     };
@@ -172,6 +191,9 @@ export function Header() {
         ref={panelRef}
         id="mobile-nav-panel"
         className={`mobile-panel ${open ? "is-open" : ""}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label={t.aria.primaryNav}
         aria-hidden={!open}
         hidden={!open}
       >

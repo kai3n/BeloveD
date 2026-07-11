@@ -13,6 +13,21 @@ export default defineConfig({
     // 로컬 개발: `npm run api`(8787)로 /v1 프록시 — 프로덕션(Vercel)과 같은 same-origin 형태
     proxy: { "/v1": "http://127.0.0.1:8787" },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // Framework code changes far less often than product code. Keeping it
+        // in a stable cacheable chunk also prevents the app entry from becoming
+        // a single 500kB+ payload as customer/admin routes grow.
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return undefined;
+          if (id.includes("lucide-react")) return "icons";
+          if (id.includes("react") || id.includes("react-router")) return "react-vendor";
+          return "vendor";
+        },
+      },
+    },
+  },
   test: {
     exclude: ["**/node_modules/**", "**/.claude/**", "**/dist/**", "**/server/**"],
   },

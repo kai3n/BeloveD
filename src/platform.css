@@ -4589,7 +4589,8 @@ button.text-link:hover {
   font-size: 21px;
   line-height: 1;
 }
-.client-stage-head h3 {
+.client-stage-head h3,
+.admin-step-title {
   margin: 0;
   font-family: var(--serif);
   font-size: clamp(26px, 2.5vw, 38px);
@@ -4611,7 +4612,8 @@ button.text-link:hover {
 .checkpoint.waiting .client-stage-head {
   margin-bottom: 18px;
 }
-.checkpoint.done .client-stage-head h3 { color: var(--accent, #d6c5a0); }
+.checkpoint.done .client-stage-head h3,
+.checkpoint.done .admin-step-title { color: var(--accent, #d6c5a0); }
 .client-empty-stage {
   display: grid;
   gap: 10px;
@@ -5386,4 +5388,265 @@ html[data-theme="day"] .picker-remove-button {
 html[data-theme="day"] .picker-remove-button:hover {
   border-color: #16130f;
   color: #16130f;
+}
+
+/* ── 주문 포털 안정성·접근성 보강 ───────────────────────────── */
+.client-portal-page .form-hint,
+.admin-page .form-hint {
+  color: var(--muted);
+}
+.client-action-notice.is-error {
+  border-color: rgba(224, 133, 133, 0.5);
+  color: #f0a3a3;
+}
+html[data-theme="day"] .client-action-notice.is-error,
+html[data-theme="day"] .admin-page .form-error {
+  color: #8f3535;
+}
+.payment-recipient {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 650;
+  text-align: center;
+}
+.payment-config-error {
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px solid rgba(224, 133, 133, 0.42);
+  background: rgba(224, 133, 133, 0.07);
+  text-align: center;
+  line-height: 1.55;
+}
+.qc-media-viewer {
+  width: min(100%, 840px);
+  margin-top: 12px;
+  border: 1px solid var(--line);
+}
+.qc-media-viewer .client-media-carousel > .media-thumb {
+  max-height: 68vh;
+  object-fit: contain;
+}
+.client-media-carousel.is-lightbox-open {
+  overflow: visible;
+}
+.client-media-zoom {
+  position: absolute;
+  z-index: 3;
+  top: 12px;
+  right: 12px;
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(240, 230, 207, 0.34);
+  background: rgba(0, 0, 0, 0.66);
+  color: #fff;
+  cursor: pointer;
+}
+.client-media-zoom:hover,
+.client-media-zoom:focus-visible,
+.client-media-lightbox-close:hover,
+.client-media-lightbox-close:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent-bright);
+  outline: none;
+}
+.client-media-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: clamp(14px, 3vw, 32px);
+}
+.client-media-lightbox-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: rgba(5, 4, 3, 0.88);
+  backdrop-filter: blur(10px);
+  cursor: zoom-out;
+}
+.client-media-lightbox-content {
+  position: relative;
+  z-index: 1;
+  width: min(1100px, 100%);
+  max-height: 92vh;
+  max-height: 92dvh;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line-strong);
+  background: #050607;
+  overflow: hidden;
+}
+.client-media-lightbox-content .media-thumb {
+  width: 100%;
+  max-height: 88vh;
+  max-height: 88dvh;
+  object-fit: contain;
+  background: #050607;
+}
+.client-media-lightbox-close {
+  position: absolute;
+  z-index: 2;
+  top: 12px;
+  right: 12px;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(240, 230, 207, 0.34);
+  background: rgba(0, 0, 0, 0.72);
+  color: #fff;
+  cursor: pointer;
+}
+
+/* ── 실주문 어드민: 키보드 스텝·안전한 폼·모바일 폭 ────────── */
+.admin-page .admin-step-toggle {
+  width: 100%;
+  margin: 0 0 16px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.admin-page .admin-step-toggle:focus-visible {
+  border-radius: 2px;
+  outline: 2px solid var(--admin-gold, var(--accent));
+  outline-offset: 6px;
+}
+.admin-page .admin-step-toggle:disabled {
+  opacity: 1;
+  cursor: default;
+}
+.admin-step-blocked {
+  margin: 0;
+  padding: 11px 13px;
+  border-left: 2px solid var(--accent);
+  background: rgba(214, 197, 160, 0.08);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.admin-proposal-top-grid {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+}
+.admin-proposal-stone-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.admin-event-fields {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.admin-live-order-head,
+.admin-live-order-meta,
+.admin-order-cancel,
+.admin-page .con-table-panel,
+.admin-page .admin-shell > div {
+  min-width: 0;
+  max-width: 100%;
+}
+.admin-live-order-meta {
+  overflow-wrap: anywhere;
+}
+.admin-page .panel {
+  overflow-wrap: anywhere;
+}
+.admin-order-cancel {
+  align-self: center;
+}
+.admin-order-cancel.is-open {
+  width: min(100%, 360px);
+}
+.admin-live-orders-table {
+  max-width: 100%;
+  overscroll-behavior-inline: contain;
+}
+.admin-live-orders-table .data-table {
+  min-width: 680px;
+}
+
+@media (max-width: 900px) {
+  .admin-page .admin-side {
+    min-width: 0;
+    max-width: 100%;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: thin;
+  }
+}
+@media (max-width: 760px) {
+  .admin-page {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: clip;
+  }
+  .admin-page .admin-shell,
+  .admin-page .panel,
+  .admin-page .form-stack,
+  .admin-page .form-stack > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .admin-page .admin-side a {
+    padding-inline: 11px;
+  }
+  .admin-proposal-top-grid,
+  .admin-proposal-stone-grid,
+  .admin-event-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .admin-proposal-top-grid .field:first-child {
+    grid-column: 1 / -1;
+  }
+  .admin-live-order-head {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .admin-order-cancel,
+  .admin-order-cancel .button,
+  .admin-order-cancel.is-open {
+    width: 100%;
+  }
+  .admin-order-cancel .row-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 560px) {
+  .shipping-address-grid,
+  .admin-proposal-top-grid,
+  .admin-proposal-stone-grid,
+  .admin-event-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .shipping-address-wide,
+  .admin-proposal-top-grid .field:first-child {
+    grid-column: auto;
+  }
+  .admin-page .admin-side-head {
+    display: none;
+  }
+  .admin-page .admin-side a {
+    min-height: 42px;
+    padding-inline: 10px;
+  }
+  .admin-page .admin-step-toggle {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 10px;
+  }
+  .admin-page .admin-step-toggle .status-badge {
+    grid-column: 2;
+    justify-self: start;
+  }
+  .client-media-lightbox {
+    padding: 10px;
+  }
 }

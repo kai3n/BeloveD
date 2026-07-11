@@ -11,18 +11,40 @@ function quiet(promise, label) {
   });
 }
 
-let publicSynced = false;
+let publicSyncPromise = null;
+let publicCatalogSynced = false;
+let publicSettingsSynced = false;
+
+export function hasSyncedPublicSettings() {
+  return publicSettingsSynced;
+}
+
 // 공개 카탈로그 + 공개 설정 — 모든 방문자의 부팅 경로 (published 스타일만)
 export async function syncCatalogFromServer() {
-  if (publicSynced) return;
-  publicSynced = true;
-  try {
-    const [designs, settings] = await Promise.all([
-      apiFetch("/designs"),
-      apiFetch("/settings/public"),
-    ]);
-    hydrateFromServer({ styles: designs.styles, settings: settings.settings });
-  } catch { /* 서버 부재(정적 데모)·일시 장애 — 시드 유지 */ }
+  if (publicCatalogSynced && publicSettingsSynced) return true;
+  if (publicSyncPromise) return publicSyncPromise;
+
+  publicSyncPromise = (async () => {
+    try {
+      const [designs, settings] = await Promise.allSettled([
+        apiFetch("/designs"),
+        apiFetch("/settings/public"),
+      ]);
+      const styles = designs.status === "fulfilled" ? designs.value.styles : undefined;
+      const publicSettings = settings.status === "fulfilled" ? settings.value.settings : undefined;
+      if (styles || publicSettings) hydrateFromServer({ styles, settings: publicSettings });
+      if (designs.status === "fulfilled") publicCatalogSynced = true;
+      if (settings.status === "fulfilled") publicSettingsSynced = true;
+      return publicSettingsSynced;
+    } catch {
+      return publicSettingsSynced;
+    } finally {
+      // 실패한 promise는 고정하지 않아 라이브 주문 포털이 안전하게 재시도한다.
+      publicSyncPromise = null;
+    }
+  })();
+
+  return publicSyncPromise;
 }
 
 // 어드민 콘솔 부팅 경로 — 비공개 초안까지 포함한 전체 스타일 목록으로 재하이드레이션

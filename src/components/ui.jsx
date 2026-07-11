@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Eye, X } from "lucide-react";
 import { useLocale } from "../i18n.jsx";
 import { getSettings } from "../lib/store.js";
@@ -11,6 +11,21 @@ import { track } from "../lib/track.js";
 // 가격은 미국 달러($)로만 표기한다 (2026-06-12 사용자 확정)
 export function usd(n) {
   return `$${Number(n || 0).toLocaleString("en-US")}`;
+}
+
+// Shared by custom listboxes and the intake option grids. Returning null for
+// unrelated keys lets callers preserve native button/input keyboard behavior.
+export function listboxNavigationIndex(key, currentIndex, itemCount, columns = 1) {
+  if (!itemCount) return null;
+  if (key === "Home") return 0;
+  if (key === "End") return itemCount - 1;
+  const step = key === "ArrowDown" ? columns
+    : key === "ArrowUp" ? -columns
+      : key === "ArrowRight" ? 1
+        : key === "ArrowLeft" ? -1
+          : 0;
+  if (!step) return null;
+  return (Math.max(0, currentIndex) + step + itemCount) % itemCount;
 }
 
 // GitHub Pages 등 하위 경로 배포 시 /assets/* 경로에 base를 붙인다 (dataURL은 그대로)
@@ -317,9 +332,46 @@ export function LuxurySelect({
   className = "",
 }) {
   const [open, setOpen] = useState(false);
+  const [focusedIndex, setFocusedIndex] = useState(-1);
   const ref = useRef(null);
+  const triggerRef = useRef(null);
+  const optionRefs = useRef([]);
+  const listboxId = useId();
   const selected = options.find((option) => String(option.value) === String(value));
   const label = selected?.label || placeholder;
+  const accessibleName = ariaLabel || placeholder || "Select an option";
+  const enabledIndices = options.reduce((indices, option, index) => {
+    if (!option.disabled) indices.push(index);
+    return indices;
+  }, []);
+
+  function focusTrigger() {
+    window.requestAnimationFrame(() => triggerRef.current?.focus());
+  }
+
+  function initialFocusIndex(direction = 1) {
+    const selectedIndex = options.findIndex((option) => (
+      !option.disabled && String(option.value) === String(value)
+    ));
+    if (selectedIndex >= 0) return selectedIndex;
+    return direction < 0 ? enabledIndices.at(-1) ?? -1 : enabledIndices[0] ?? -1;
+  }
+
+  function openListbox(direction = 1) {
+    if (disabled || enabledIndices.length === 0) return;
+    setFocusedIndex(initialFocusIndex(direction));
+    setOpen(true);
+  }
+
+  function closeListbox({ returnFocus = false } = {}) {
+    setOpen(false);
+    if (returnFocus) focusTrigger();
+  }
+
+  useEffect(() => {
+    if (!open || focusedIndex < 0) return;
+    optionRefs.current[focusedIndex]?.focus();
+  }, [focusedIndex, open]);
 
   useEffect(() => {
     if (!open) return;
@@ -329,7 +381,7 @@ export function LuxurySelect({
     const onKeyDown = (event) => {
       if (event.key === "Escape") {
         event.stopPropagation();
-        setOpen(false);
+        closeListbox({ returnFocus: true });
       }
     };
     document.addEventListener("pointerdown", onPointerDown);
@@ -343,56 +395,94 @@ export function LuxurySelect({
   function choose(option) {
     if (option.disabled) return;
     onChange(option.value);
-    setOpen(false);
+    closeListbox({ returnFocus: true });
   }
 
   function preview(option, event) {
     event.preventDefault();
     event.stopPropagation();
     option.onPreview?.();
-    setOpen(false);
+    closeListbox({ returnFocus: true });
   }
 
   function handleTriggerKeyDown(event) {
-    if (event.key === "ArrowDown" || event.key === "Enter" || event.key === " ") {
+    if (event.key === "ArrowDown" || event.key === "ArrowUp" || event.key === "Home" || event.key === "End") {
       event.preventDefault();
-      setOpen(true);
       onFocus?.();
+      openListbox(event.key === "ArrowUp" || event.key === "End" ? -1 : 1);
+      return;
     }
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onFocus?.();
+      if (open) closeListbox();
+      else openListbox();
+    }
+  }
+
+  function handleOptionKeyDown(event, optionIndex) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      closeListbox({ returnFocus: true });
+      return;
+    }
+    if (event.key === "Tab") {
+      closeListbox();
+      return;
+    }
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      choose(options[optionIndex]);
+      return;
+    }
+    const enabledPosition = Math.max(0, enabledIndices.indexOf(optionIndex));
+    const nextPosition = listboxNavigationIndex(event.key, enabledPosition, enabledIndices.length);
+    if (nextPosition == null) return;
+    event.preventDefault();
+    setFocusedIndex(enabledIndices[nextPosition]);
   }
 
   return (
     <div className={`lux-select ${open ? "is-open" : ""} ${className}`} ref={ref}>
       <button
         type="button"
+        ref={triggerRef}
         className="lux-select-trigger"
         aria-haspopup="listbox"
         aria-expanded={open}
-        aria-label={ariaLabel || placeholder}
+        aria-controls={listboxId}
+        aria-label={accessibleName}
         disabled={disabled}
         onFocus={onFocus}
         onClick={() => {
           if (disabled) return;
           onFocus?.();
-          setOpen((current) => !current);
+          if (open) closeListbox();
+          else openListbox();
         }}
         onKeyDown={handleTriggerKeyDown}
       >
         <span className={selected ? "lux-select-value" : "lux-select-value is-placeholder"}>{label}</span>
         <ChevronDown className="lux-select-caret" size={16} strokeWidth={2} aria-hidden="true" />
       </button>
-      <ul className="lux-select-list" role="listbox" aria-label={ariaLabel || placeholder}>
-        {options.map((option) => {
+      <ul id={listboxId} className="lux-select-list" role="listbox" aria-label={accessibleName} hidden={!open}>
+        {options.map((option, optionIndex) => {
           const active = String(option.value) === String(value);
           const hasRichContent = option.media || option.onPreview;
           return (
-            <li key={option.value || option.label} role="option" aria-selected={active}>
+            <li key={option.value || option.label} role="none">
               <div className={`lux-select-option-row ${hasRichContent ? "has-rich-content" : ""}`}>
                 <button
                   type="button"
+                  ref={(node) => { optionRefs.current[optionIndex] = node; }}
+                  role="option"
+                  aria-selected={active}
                   className={`lux-select-option-button ${active ? "is-active" : ""}`}
                   disabled={option.disabled}
+                  tabIndex={open && focusedIndex === optionIndex ? 0 : -1}
                   onClick={() => choose(option)}
+                  onKeyDown={(event) => handleOptionKeyDown(event, optionIndex)}
                 >
                   {option.media && (
                     <span className="lux-select-option-thumb" aria-hidden="true">
@@ -407,6 +497,7 @@ export function LuxurySelect({
                     className="lux-select-preview-button"
                     aria-label={`${option.previewLabel || "Preview"} ${option.label}`}
                     title={`${option.previewLabel || "Preview"} ${option.label}`}
+                    tabIndex={open ? 0 : -1}
                     onClick={(event) => preview(option, event)}
                   >
                     <Eye size={16} strokeWidth={2} aria-hidden="true" />
@@ -611,8 +702,9 @@ function loadImageFromFile(file) {
   }));
 }
 
-// 업로드 실패는 종류를 불문하고 로컬 프리뷰 폴백 — 기존(업로드 이전) 동작보다
-// 나빠지지 않게 하고, 데모(서버 부재)와 일시 장애를 같은 경로로 흡수한다.
+// Optional/local-demo media may fall back to a local preview. Server-backed
+// callers use MediaPicker.remoteRequired, which bypasses this helper so upload
+// failures can never masquerade as a persisted attachment.
 async function uploadOrNull(blob, scope, contentType) {
   try {
     return await uploadMedia(blob, { scope, contentType });
@@ -621,7 +713,11 @@ async function uploadOrNull(blob, scope, contentType) {
   }
 }
 
-async function optimizeImageFile(file, scope) {
+function isDurableMediaUrl(src) {
+  return /^https?:\/\//i.test(String(src || ""));
+}
+
+async function optimizeImageFile(file, scope, remoteRequired) {
   const image = await loadImageFromFile(file);
   const originalWidth = image.width;
   const originalHeight = image.height;
@@ -653,7 +749,17 @@ async function optimizeImageFile(file, scope) {
   }
   image.close();
   if (!blob) throw new Error("imageOptimizeFailed");
-  const src = (await uploadOrNull(blob, scope, "image/jpeg")) || (await readBlobAsDataURL(blob));
+  let src;
+  if (remoteRequired) {
+    try {
+      src = await uploadMedia(blob, { scope, contentType: "image/jpeg" });
+      if (!isDurableMediaUrl(src)) throw new Error("invalidUploadUrl");
+    } catch (cause) {
+      throw new Error("uploadFailed", { cause });
+    }
+  } else {
+    src = (await uploadOrNull(blob, scope, "image/jpeg")) || (await readBlobAsDataURL(blob));
+  }
   return {
     kind: "image",
     src,
@@ -704,7 +810,7 @@ function videoContentType(file) {
   return VIDEO_EXT_TYPES[ext] || null;
 }
 
-async function prepareVideoFile(file, scope) {
+async function prepareVideoFile(file, scope, remoteRequired) {
   const base = {
     kind: "video",
     name: file.name || "reference-video",
@@ -713,7 +819,19 @@ async function prepareVideoFile(file, scope) {
     optimized: true,
   };
   const contentType = videoContentType(file);
-  const uploaded = contentType ? await uploadOrNull(file, scope, contentType) : null;
+  let uploaded = null;
+  if (contentType && remoteRequired) {
+    try {
+      uploaded = await uploadMedia(file, { scope, contentType });
+      if (!isDurableMediaUrl(uploaded)) throw new Error("invalidUploadUrl");
+    } catch (cause) {
+      throw new Error("uploadFailed", { cause });
+    }
+  } else if (contentType) {
+    uploaded = await uploadOrNull(file, scope, contentType);
+  } else if (remoteRequired) {
+    throw new Error("unsupportedType");
+  }
   // 포스터 썸네일 — 그리드/목록은 이걸 먼저 그리고, 원본 영상은 재생될 때만 내려받는다
   const posterBlob = await captureVideoPoster(file);
   const poster = posterBlob ? await uploadOrNull(posterBlob, scope, "image/jpeg") : null;
@@ -722,24 +840,85 @@ async function prepareVideoFile(file, scope) {
   return { ...base, src: URL.createObjectURL(file), transient: true, ...withPoster };
 }
 
-export function MediaPicker({ value, onChange, maxItems = 5, showSamples = true, previewMode = "thumb", scope = "reference" }) {
-  const { p } = useLocale();
+const REQUIRED_UPLOAD_COPY = {
+  en: "The upload did not finish. Check your connection and retry the file before continuing.",
+  ko: "업로드가 완료되지 않았습니다. 연결 상태를 확인한 뒤 계속하기 전에 파일을 다시 올려주세요.",
+  zh: "文件上传未完成。请检查网络并重新上传后再继续。",
+  es: "La carga no se completó. Revisa tu conexión y vuelve a subir el archivo antes de continuar.",
+};
+
+// Parent contract:
+// - remoteRequired: only durable http(s) uploads are emitted through onChange.
+// - onBusyChange: lets a workflow disable navigation/submission while work runs.
+// - onErrorChange: mirrors the visible actionable error; an empty string clears it.
+// The defaults preserve intentional static-demo/local-preview behavior.
+export function MediaPicker({
+  value,
+  onChange,
+  maxItems = 5,
+  showSamples = true,
+  previewMode = "thumb",
+  scope = "reference",
+  remoteRequired = false,
+  onBusyChange,
+  onErrorChange,
+}) {
+  const { p, locale } = useLocale();
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef(null);
+  const busyCallbackRef = useRef(onBusyChange);
+  const errorCallbackRef = useRef(onErrorChange);
+  const mountedRef = useRef(false);
+  const operationRef = useRef(0);
   const items = Array.isArray(value) ? value : [];
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
   const hasLimit = Number.isFinite(maxItems);
   const remainingSlots = hasLimit ? Math.max(0, maxItems - items.length) : Infinity;
   const isFull = hasLimit && remainingSlots <= 0;
 
   useEffect(() => {
-    if (items.length > 0) return;
+    busyCallbackRef.current = onBusyChange;
+  }, [onBusyChange]);
+
+  useEffect(() => {
+    errorCallbackRef.current = onErrorChange;
+  }, [onErrorChange]);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      operationRef.current += 1;
+    };
+  }, []);
+
+  useEffect(() => {
+    busyCallbackRef.current?.(busy);
+  }, [busy]);
+
+  useEffect(() => {
+    errorCallbackRef.current?.(error);
+  }, [error]);
+
+  useEffect(() => () => busyCallbackRef.current?.(false), []);
+
+  useEffect(() => {
+    if (remoteRequired && items.some((item) => (
+      item?.transient || !isDurableMediaUrl(item?.src)
+    ))) {
+      setError(REQUIRED_UPLOAD_COPY[locale] || REQUIRED_UPLOAD_COPY.en);
+    }
+  }, [items, locale, remoteRequired]);
+
+  function changeItems(nextItems) {
     setError("");
     setNotice("");
-    setBusy(false);
-  }, [items.length]);
+    onChange(nextItems);
+  }
 
   function toggleSample(item) {
     if (!showSamples) return;
@@ -749,25 +928,31 @@ export function MediaPicker({ value, onChange, maxItems = 5, showSamples = true,
       setError(p.picker.maxError(maxItems));
       return;
     }
-    onChange(exists ? items.filter((m) => !(m.src === item.src && m.pos === item.pos)) : [...items, media]);
+    if (!exists && remoteRequired && !isDurableMediaUrl(item.src)) {
+      setError(REQUIRED_UPLOAD_COPY[locale] || REQUIRED_UPLOAD_COPY.en);
+      return;
+    }
+    changeItems(exists ? items.filter((m) => !(m.src === item.src && m.pos === item.pos)) : [...items, media]);
   }
   async function prepareFile(file) {
     const kind = mediaKindFromFile(file);
     if (!kind) throw new Error("unsupportedType");
     if (file.size > MAX_UPLOAD_MB * 1024 * 1024) throw new Error("fileTooLarge");
-    if (kind === "video") return prepareVideoFile(file, scope);
-    return optimizeImageFile(file, scope);
+    if (kind === "video") return prepareVideoFile(file, scope, remoteRequired);
+    return optimizeImageFile(file, scope, remoteRequired);
   }
 
   // 이미지·영상 모두 허용. 이미지는 작게 압축해 R2로, 영상은 원본을 R2로 올린다.
   async function addFiles(fileList) {
     const files = Array.from(fileList || []);
     if (files.length === 0) return;
+    if (busy) return;
     if (remainingSlots <= 0) {
       setError(p.picker.maxError(maxItems));
       return;
     }
     const selected = files.slice(0, remainingSlots);
+    const operation = ++operationRef.current;
     setBusy(true);
     setError("");
     setNotice(p.picker.optimizing || "");
@@ -776,16 +961,22 @@ export function MediaPicker({ value, onChange, maxItems = 5, showSamples = true,
       const added = results
         .filter((result) => result.status === "fulfilled")
         .map((result) => result.value);
+      if (!mountedRef.current || operation !== operationRef.current) return;
       const failed = results.find((result) => result.status === "rejected")?.reason;
       if (files.length > remainingSlots) setError(p.picker.maxError(maxItems));
       else if (failed?.message === "fileTooLarge") setError(p.picker.fileError(MAX_UPLOAD_MB));
       else if (failed?.message === "unsupportedType") setError(p.picker.typeError);
+      else if (failed?.message === "uploadFailed") setError(REQUIRED_UPLOAD_COPY[locale] || REQUIRED_UPLOAD_COPY.en);
       else if (failed) setError(p.picker.optimizeError || p.picker.typeError);
       if (added.length) {
-        onChange([...items, ...added]);
-        const compressed = added.filter((item) => item.kind === "image" && item.optimized).length;
+        const currentItems = itemsRef.current;
+        const currentSlots = hasLimit ? Math.max(0, maxItems - currentItems.length) : added.length;
+        const accepted = added.slice(0, currentSlots);
+        if (accepted.length < added.length) setError(p.picker.maxError(maxItems));
+        if (accepted.length) onChange([...currentItems, ...accepted]);
+        const compressed = accepted.filter((item) => item.kind === "image" && item.optimized).length;
         // videoNotice("가벼운 미리보기로 첨부")는 업로드 실패로 로컬 blob에 남은 영상에만 해당
-        const previewVideos = added.filter((item) => item.kind === "video" && item.transient).length;
+        const previewVideos = accepted.filter((item) => item.kind === "video" && item.transient).length;
         setNotice(
           compressed > 0
             ? p.picker.optimizedNotice(compressed)
@@ -795,13 +986,14 @@ export function MediaPicker({ value, onChange, maxItems = 5, showSamples = true,
         );
       }
     } finally {
-      setBusy(false);
+      if (mountedRef.current && operation === operationRef.current) setBusy(false);
     }
   }
   function handleFile(e) { addFiles(e.target.files); e.target.value = ""; }
   function handleDrop(e) {
     e.preventDefault();
     setDragOver(false);
+    if (busy) return;
     if (isFull) {
       setError(p.picker.maxError(maxItems));
       return;
@@ -818,13 +1010,14 @@ export function MediaPicker({ value, onChange, maxItems = 5, showSamples = true,
         type="file"
         accept="image/*,video/*"
         multiple
+        disabled={busy || isFull}
         onChange={handleFile}
       />
       <button
         type="button"
         className={`drop-zone ${dragOver ? "is-over" : ""} ${isFull ? "is-full" : ""}`}
         aria-busy={busy}
-        aria-disabled={isFull}
+        aria-disabled={busy || isFull}
         disabled={busy}
         onClick={() => {
           if (isFull) {
@@ -863,7 +1056,7 @@ export function MediaPicker({ value, onChange, maxItems = 5, showSamples = true,
                       </span>
                     )}
                   </div>
-                  <button type="button" className="picker-remove-button" onClick={() => onChange(items.filter((_, j) => j !== i))}>
+                  <button type="button" className="picker-remove-button" onClick={() => changeItems(items.filter((_, j) => j !== i))}>
                     {p.picker.removeLabel || "Remove"}
                   </button>
                 </div>
@@ -875,7 +1068,7 @@ export function MediaPicker({ value, onChange, maxItems = 5, showSamples = true,
             {items.map((m, i) => (
               <div key={i} className="picker-cell is-selected">
                 <MediaThumb media={m} alt="" />
-                <button type="button" className="chip remove-media" onClick={() => onChange(items.filter((_, j) => j !== i))}>✕</button>
+                <button type="button" className="chip remove-media" onClick={() => changeItems(items.filter((_, j) => j !== i))}>✕</button>
               </div>
             ))}
           </div>
@@ -899,7 +1092,7 @@ export function MediaPicker({ value, onChange, maxItems = 5, showSamples = true,
         </>
       )}
       {notice && !error && <p className="form-hint" role="status">{notice}</p>}
-      {error && <p className="form-error">{error}</p>}
+      {error && <p className="form-error" role="alert">{error}</p>}
     </div>
   );
 }

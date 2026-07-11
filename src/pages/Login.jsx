@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth.jsx";
 import { ApiUnavailableError } from "../lib/api.js";
-import { WITH_BACKOFFICE } from "../lib/flags.js";
+import { DEMO_AUTH_ENABLED, WITH_BACKOFFICE } from "../lib/flags.js";
 import { useLocale } from "../i18n.jsx";
 
 // 고객 로그인 — 이메일 6자리 인증번호(실서버). 서버가 없는 정적 데모에선 비밀번호 폴백.
@@ -12,7 +12,6 @@ const OTP_COPY = {
     email: "Email", sendCode: "Email me a code", codeLbl: "6-digit code",
     verify: "Sign in", resend: "Resend code", resendIn: (s) => `Resend in ${s}s`,
     sentTo: (e) => `Code sent to ${e}`, changeEmail: "Use a different email",
-    devHint: (c) => `Dev code: ${c}`,
     errors: { CODE_INVALID: "That code is invalid or expired.", RATE_LIMITED: "Too many attempts — try again in a minute.", VALIDATION_ERROR: "Please check your email address.", SERVER_DOWN: "We can't reach the server right now — please try again in a moment." },
   },
   ko: {
@@ -20,7 +19,6 @@ const OTP_COPY = {
     email: "이메일", sendCode: "인증번호 받기", codeLbl: "6자리 인증번호",
     verify: "로그인", resend: "재전송", resendIn: (s) => `${s}초 후 재전송`,
     sentTo: (e) => `${e}로 코드를 보냈어요`, changeEmail: "다른 이메일 사용",
-    devHint: (c) => `개발용 코드: ${c}`,
     errors: { CODE_INVALID: "인증번호가 틀렸거나 만료됐어요.", RATE_LIMITED: "시도가 너무 많아요 — 1분 후 다시 시도해주세요.", VALIDATION_ERROR: "이메일 주소를 확인해주세요.", SERVER_DOWN: "지금은 서버에 연결할 수 없어요 — 잠시 후 다시 시도해 주세요." },
   },
   zh: {
@@ -28,7 +26,6 @@ const OTP_COPY = {
     email: "邮箱", sendCode: "获取验证码", codeLbl: "6 位验证码",
     verify: "登录", resend: "重新发送", resendIn: (s) => `${s} 秒后可重发`,
     sentTo: (e) => `验证码已发送至 ${e}`, changeEmail: "更换邮箱",
-    devHint: (c) => `开发码：${c}`,
     errors: { CODE_INVALID: "验证码无效或已过期。", RATE_LIMITED: "尝试次数过多 — 请一分钟后再试。", VALIDATION_ERROR: "请检查邮箱地址。", SERVER_DOWN: "暂时无法连接服务器 — 请稍后再试。" },
   },
   es: {
@@ -36,7 +33,6 @@ const OTP_COPY = {
     email: "Correo", sendCode: "Enviarme un código", codeLbl: "Código de 6 dígitos",
     verify: "Entrar", resend: "Reenviar", resendIn: (s) => `Reenviar en ${s}s`,
     sentTo: (e) => `Código enviado a ${e}`, changeEmail: "Usar otro correo",
-    devHint: (c) => `Código dev: ${c}`,
     errors: { CODE_INVALID: "Código inválido o expirado.", RATE_LIMITED: "Demasiados intentos — prueba en un minuto.", VALIDATION_ERROR: "Revisa tu dirección de correo.", SERVER_DOWN: "No podemos conectar con el servidor — inténtalo de nuevo en un momento." },
   },
 };
@@ -81,7 +77,6 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
-  const [devCode, setDevCode] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [cooldown, setCooldown] = useState(0);
@@ -101,16 +96,15 @@ export default function Login() {
     e?.preventDefault();
     setError(""); setBusy(true);
     try {
-      const data = await requestLoginCode(email.trim());
-      setDevCode(data.devCode || "");
+      await requestLoginCode(email.trim());
       setStep("code");
       setCooldown(60);
     } catch (err) {
       if (err instanceof ApiUnavailableError) {
-        // 비밀번호 폴백(+demo1234 안내)은 서버 없는 정적 데모 빌드 전용 —
+        // 비밀번호 폴백은 명시적으로 켠 정적 로컬 데모 빌드 전용 —
         // 실서버에서 API 장애 시 데모 계정 안내가 노출되면 안 된다
-        if (WITH_BACKOFFICE) setError(c.errors.SERVER_DOWN);
-        else setStep("fallback");
+        if (!WITH_BACKOFFICE && DEMO_AUTH_ENABLED) setStep("fallback");
+        else setError(c.errors.SERVER_DOWN);
       } else setError(c.errors[err.code] || c.errors.VALIDATION_ERROR);
     } finally { setBusy(false); }
   }
@@ -147,7 +141,7 @@ export default function Login() {
           <label className="field"><span>{c.email}</span>
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" autoFocus required />
           </label>
-          {error && <p className="form-error">{error}</p>}
+          {error ? <p className="form-error" role="alert">{error}</p> : null}
           <button className="button primary" type="submit" disabled={busy}>{c.sendCode}</button>
         </form>
       )}
@@ -155,11 +149,10 @@ export default function Login() {
       {step === "code" && (
         <form className="panel form-stack" onSubmit={verify}>
           <p className="form-hint">{c.sentTo(email)}</p>
-          {devCode && <p className="form-hint" style={{ color: "var(--accent-bright)" }}>{c.devHint(devCode)}</p>}
           <label className="field"><span>{c.codeLbl}</span>
             <OtpBoxes value={code} onChange={setCode} />
           </label>
-          {error && <p className="form-error">{error}</p>}
+          {error ? <p className="form-error" role="alert">{error}</p> : null}
           <button className="button primary" type="submit" disabled={busy || code.length !== 6}>{c.verify}</button>
           <div className="row-actions" style={{ justifyContent: "space-between" }}>
             <button type="button" className="text-link" onClick={() => { setStep("email"); setCode(""); setError(""); }}>{c.changeEmail}</button>
@@ -170,7 +163,7 @@ export default function Login() {
         </form>
       )}
 
-      {step === "fallback" && (
+      {step === "fallback" && DEMO_AUTH_ENABLED ? (
         <form className="panel form-stack" onSubmit={fallbackLogin}>
           <p className="form-hint">{p.login.demoTitle}</p>
           <label className="field"><span>{p.login.email}</span>
@@ -179,10 +172,10 @@ export default function Login() {
           <label className="field"><span>{p.login.password}</span>
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           </label>
-          {error && <p className="form-error">{error}</p>}
+          {error ? <p className="form-error" role="alert">{error}</p> : null}
           <button className="button primary" type="submit">{p.login.loginBtn}</button>
         </form>
-      )}
+      ) : null}
 
       {/* 고객 사이트에는 스태프 진입점을 노출하지 않는다 — 스태프는 비공개 게이트 경로로 직접 접속 */}
     </div>

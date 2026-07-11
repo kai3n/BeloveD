@@ -7,6 +7,9 @@ import { hashPassword } from "../passwords.js";
 import { __resetRateLimit } from "../rateLimit.js";
 import { drainMail } from "../mailer.js";
 import { truncateAuth, truncateCustomerCore } from "./helpers.js";
+import {
+  recordOrderEvent, respondToAction, updateOrderShippingAddress, reportOrderPayment,
+} from "../customerRepository.js";
 
 const app = createApp();
 
@@ -32,16 +35,35 @@ async function customerCookie(email) {
   return verify.headers["set-cookie"];
 }
 
-async function deliveredOrder(admin, email, tracking = "1Z 999-123") {
+async function deliveredOrder(_admin, email, tracking = "1Z 999-123") {
   const res = await request(app).post("/v1/intakes").send({
     email, name: "Review Tester", locale: "en",
     category: "ring", productLine: "solitaire", termsAccepted: true, conditional: { ringSize: "6" },
   });
   const orderCode = res.body.orderCode;
-  await request(app).post(`/v1/admin/orders/${orderCode}/events`).set("Cookie", admin)
-    .send({ type: "shipped", data: { tracking } });
-  await request(app).post(`/v1/admin/orders/${orderCode}/events`).set("Cookie", admin)
-    .send({ type: "delivered", data: {} });
+  const proposal = await recordOrderEvent(orderCode, "proposal_sent", {}, {
+    artifact: { type: "QUOTE", payload: { totalUsd: 1_000, depositUsd: 300 } },
+    action: { kind: "QUOTE_ACCEPTANCE", title: "Review", allowedResponses: ["APPROVE"] },
+  });
+  await respondToAction(proposal.actionCode, email, { response: "APPROVE" });
+  await updateOrderShippingAddress(orderCode, email, {
+    recipientName: "Review Tester", phone: "+1 213 555 0199", addressLine1: "550 S Hill St",
+    addressLine2: "", city: "Los Angeles", region: "CA", postalCode: "90013", country: "US", notes: "",
+  });
+  await reportOrderPayment(orderCode, email, "deposit");
+  await recordOrderEvent(orderCode, "deposit_confirmed");
+  await recordOrderEvent(orderCode, "diamond_locked", { igi: "IGI-REV-1" });
+  await recordOrderEvent(orderCode, "production_started");
+  const qc = await recordOrderEvent(orderCode, "qc_ready", {}, {
+    artifact: { type: "QC", media: [{ kind: "image", src: "https://cdn.example.com/qc.jpg" }] },
+    action: { kind: "FINAL_QC_CONFIRMATION", title: "Confirm", allowedResponses: ["CONFIRM"] },
+  });
+  await respondToAction(qc.actionCode, email, { response: "CONFIRM" });
+  await recordOrderEvent(orderCode, "balance_requested");
+  await reportOrderPayment(orderCode, email, "balance");
+  await recordOrderEvent(orderCode, "balance_confirmed");
+  await recordOrderEvent(orderCode, "shipped", { tracking });
+  await recordOrderEvent(orderCode, "delivered");
   return orderCode;
 }
 

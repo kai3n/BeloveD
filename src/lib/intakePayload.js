@@ -10,6 +10,43 @@ export const DEFAULT_MULTI_STANDARD = "F-G / VS+";
 export const MAX_REFERENCE_MEDIA = 5;
 export const RING_SIZE_OPTIONS = Array.from({ length: 21 }, (_, i) => String(3 + i * 0.5).replace(/\.0$/, ""));
 
+// 주문 포털은 이메일 세션을 기준으로 주문을 연결한다. 전화번호나 느슨한
+// "무언가 입력됨" 검증을 통과시키면 접수 후 주문을 열 수 없으므로, 브라우저의
+// type=email 힌트와 별개로 제출 경계에서도 동일한 규칙을 적용한다.
+export function isValidEmail(value) {
+  const email = String(value || "").trim();
+  if (!email || email.length > 254 || /\s/.test(email)) return false;
+  const separator = email.lastIndexOf("@");
+  if (separator <= 0 || separator !== email.indexOf("@")) return false;
+
+  const local = email.slice(0, separator);
+  const domain = email.slice(separator + 1).toLowerCase();
+  if (
+    local.length > 64
+    || local.startsWith(".")
+    || local.endsWith(".")
+    || local.includes("..")
+    || !/^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+$/i.test(local)
+  ) return false;
+
+  const labels = domain.split(".");
+  if (labels.length < 2 || labels.some((label) => (
+    !label
+    || label.length > 63
+    || !/^[a-z0-9-]+$/i.test(label)
+    || label.startsWith("-")
+    || label.endsWith("-")
+  ))) return false;
+  return !/^\d+$/.test(labels.at(-1));
+}
+
+export function referenceMediaReady(items, { remoteRequired = true } = {}) {
+  if (!remoteRequired) return true;
+  return (items || []).every((media) => (
+    !media?.transient && /^https?:\/\//i.test(String(media?.src || ""))
+  ));
+}
+
 export function sanitizeReferenceMedia(items) {
   return (items || []).slice(0, MAX_REFERENCE_MEDIA).map((media) => ({
     kind: media.kind || "image",
@@ -34,15 +71,17 @@ export function accountDisplayName(user) {
 
 export function submissionContact(form, user) {
   const fallbackName = user?.email?.split("@")[0] || "";
+  const accountEmail = String(user?.email || "").trim();
   // 위저드에서 입력한 이름(form.name)이 이메일형 계정 이름보다 우선한다
   return {
     name: (accountDisplayName(user) || form.name || fallbackName).trim(),
-    contact: (user?.email || form.contact || "").trim(),
+    // 손상된/레거시 계정 이메일이면 수정 가능한 폼 값을 사용한다.
+    contact: (isValidEmail(accountEmail) ? accountEmail : form.contact || "").trim(),
   };
 }
 
 export function hasContactDetails(contact) {
-  return Boolean((contact.name || "").trim() && (contact.contact || "").trim());
+  return Boolean((contact.name || "").trim() && isValidEmail(contact.contact));
 }
 
 // 카테고리별 필수 사이즈/핏 검증 — 기존 위저드 step 0 규칙 유지
@@ -72,6 +111,9 @@ export function buildIntakePayload(form, refs, user) {
   return {
     ...form,
     ...contactDetails,
+    // 서버 customer_intakes는 styleCode를 정규 컬럼으로 읽는다. styleId는 로컬
+    // 스토어 호환을 위해 유지하고 서버 계약용 별칭을 함께 보낸다.
+    styleCode: form.styleId || null,
     engraving: (form.engraving || "").trim(),
     couponCode: normalizeCouponCode(form.couponCode),
     stonePrefs: solitaire ? { ...form.stonePrefs, carat: Number(form.stonePrefs?.carat) || null } : null,

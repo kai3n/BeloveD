@@ -2,10 +2,10 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { addUser, findUserByEmail, findUserByAccessCode, getUser } from "./store.js";
 import { ApiUnavailableError, apiFetch } from "./api.js";
+import { DEMO_AUTH_ENABLED, DEMO_AUTH_PASSWORD } from "./flags.js";
 
 const SESSION_KEY = "lumina-session";
 const AuthContext = createContext(null);
-const DEMO_PASSWORD = "demo1234"; // mock: 이메일 로그인 데모 공통 비밀번호
 
 // Customer Web scope with an admin-only back office. Vendor/dealer portals live elsewhere.
 // 어드민 게이트 경로는 비밀 유지 대상 — 미인증 /admin 접근을 여기로 리다이렉트하면 경로가
@@ -72,7 +72,7 @@ export function AuthProvider({ children }) {
       if (allow && !allow.includes(role)) throw new Error("wrongPortal");
       return commitServerPrincipal(data.principal, email);
     } catch (e) {
-      if (e instanceof ApiUnavailableError) return login(email, password, allow); // 정적 데모 폴백
+      if (e instanceof ApiUnavailableError && DEMO_AUTH_ENABLED) return login(email, password, allow);
       if (e.code === "INVALID_CREDENTIALS") throw new Error("badCredentials");
       if (e.code === "RATE_LIMITED") throw new Error("rateLimited");
       throw e;
@@ -81,8 +81,9 @@ export function AuthProvider({ children }) {
 
   // (데모 폴백) 이메일 + 비밀번호. allow=허용 역할 목록
   function login(email, password, allow = null) {
+    if (!DEMO_AUTH_ENABLED) throw new Error("badCredentials");
     const found = findUserByEmail(email);
-    if (!found || password !== DEMO_PASSWORD) throw new Error("badCredentials");
+    if (!found || !DEMO_AUTH_PASSWORD || password !== DEMO_AUTH_PASSWORD) throw new Error("badCredentials");
     if (found.active === false) throw new Error("accountSuspended");
     if (allow && !allow.includes(found.role)) throw new Error("wrongPortal");
     return commit(found);

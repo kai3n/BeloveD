@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   DEFAULT_MULTI_STANDARD, accountDisplayName, buildIntakePayload, conditionalComplete,
-  sanitizeReferenceMedia, submissionContact,
+  hasContactDetails, isValidEmail, referenceMediaReady, sanitizeReferenceMedia, submissionContact,
 } from "../intakePayload.js";
 import { createIntake, resetDB } from "../store.js";
 
@@ -28,6 +28,7 @@ describe("buildIntakePayload — createIntake 호환", () => {
     expect(payload.stonePrefs.carat).toBe(1.5);
     expect(payload.multiSpec).toBeNull();
     expect(payload.name).toBe("Jiwon");
+    expect(payload.styleCode).toBe("RING-001");
     expect(payload.referenceMedia).toEqual([{ kind: "image", src: "/ref.png" }]);
     // 실제 createIntake로 주문이 생성되는지 (구조 호환 스모크)
     const { order, intake } = createIntake(payload, null);
@@ -51,6 +52,7 @@ describe("buildIntakePayload — createIntake 호환", () => {
 
   it("스타일 미정(open brief)은 STYLE_SELECTION으로 접수된다", () => {
     const payload = buildIntakePayload(ringForm({ styleId: "", name: "G", contact: "g@x.com" }), [], null);
+    expect(payload.styleCode).toBeNull();
     const { order } = createIntake(payload, null);
     expect(order.status).toBe("STYLE_SELECTION");
   });
@@ -92,6 +94,29 @@ describe("sanitizeReferenceMedia", () => {
     const clean = sanitizeReferenceMedia(media);
     expect(clean).toHaveLength(5);
     expect(clean[0]).toEqual({ kind: "image", src: "/m0.png", width: 100 });
+  });
+});
+
+describe("server-backed intake validation", () => {
+  it("포털 연결이 가능한 이메일만 연락처로 인정하고 전화번호-only 입력은 거부한다", () => {
+    expect(isValidEmail("customer@example.com")).toBe(true);
+    expect(isValidEmail(" first.last+ring@sub.example.co ")).toBe(true);
+    expect(isValidEmail("555-123-4567")).toBe(false);
+    expect(isValidEmail("customer@example")).toBe(false);
+    expect(isValidEmail("a..b@example.com")).toBe(false);
+    expect(isValidEmail("a@-example.com")).toBe(false);
+    expect(hasContactDetails({ name: "Jiwon", contact: "555-123-4567" })).toBe(false);
+    expect(hasContactDetails({ name: "Jiwon", contact: "j@x.com" })).toBe(true);
+  });
+
+  it("라이브 제출은 영구 URL만 허용하고 정적 데모는 명시적으로 로컬 미디어를 허용한다", () => {
+    const remote = [{ kind: "image", src: "https://cdn.example.com/ref.jpg" }];
+    const transient = [{ kind: "video", src: "blob:preview", transient: true }];
+    const dataUrl = [{ kind: "image", src: "data:image/jpeg;base64,abc" }];
+    expect(referenceMediaReady(remote)).toBe(true);
+    expect(referenceMediaReady(transient)).toBe(false);
+    expect(referenceMediaReady(dataUrl)).toBe(false);
+    expect(referenceMediaReady(transient, { remoteRequired: false })).toBe(true);
   });
 });
 

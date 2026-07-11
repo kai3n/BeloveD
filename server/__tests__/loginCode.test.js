@@ -1,9 +1,10 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { createApp } from "../app.js";
 import { query } from "../db.js";
 import { __resetRateLimit } from "../rateLimit.js";
-import { drainMail } from "../mailer.js";
+import { drainMail, sendLoginCode } from "../mailer.js";
+import { exposeDevAuthSecrets } from "../authRoutes.js";
 
 const app = createApp();
 
@@ -21,6 +22,29 @@ async function requestCode(email = "otp@test.com") {
 }
 
 describe("이메일 6자리 인증번호 로그인", () => {
+  it("개발 인증 비밀값은 테스트 또는 명시적 로컬 opt-in에서만 노출", () => {
+    expect(exposeDevAuthSecrets({ NODE_ENV: "production", EXPOSE_DEV_AUTH_SECRETS: "true" })).toBe(false);
+    expect(exposeDevAuthSecrets({ NODE_ENV: "development" })).toBe(false);
+    expect(exposeDevAuthSecrets({ NODE_ENV: "development", EXPOSE_DEV_AUTH_SECRETS: "true" })).toBe(true);
+    expect(exposeDevAuthSecrets({ NODE_ENV: "test" })).toBe(true);
+  });
+
+  it("로컬 메일 sink는 OTP와 수신자를 콘솔 로그에 남기지 않는다", async () => {
+    const previousEnv = process.env.NODE_ENV;
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    process.env.NODE_ENV = "development";
+    try {
+      await sendLoginCode("private@example.test", "654321", "en");
+      const output = log.mock.calls.flat().join(" ");
+      expect(output).not.toContain("654321");
+      expect(output).not.toContain("private@example.test");
+    } finally {
+      process.env.NODE_ENV = previousEnv;
+      log.mockRestore();
+      drainMail();
+    }
+  });
+
   it("요청 → 검증 → 고객 세션 쿠키 발급", async () => {
     const code = await requestCode();
     expect(code).toMatch(/^\d{6}$/);

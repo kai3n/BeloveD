@@ -5,7 +5,7 @@ import { query } from "../db.js";
 describe("activity schema", () => {
   it.each([
     ["activity_sessions", ["session_id", "customer_id", "first_seen", "last_seen", "user_agent"]],
-    ["activity_events", ["id", "session_id", "event_type", "path", "entity_type", "entity_id", "meta", "created_at"]],
+    ["activity_events", ["id", "session_id", "client_event_id", "event_type", "path", "entity_type", "entity_id", "meta", "created_at"]],
     ["activity_daily", ["day", "event_type", "entity_id", "count"]],
   ])("%s has expected columns", async (table, cols) => {
     const { rows } = await query(

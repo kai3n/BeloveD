@@ -31,6 +31,20 @@ describe("POST /v1/activity", () => {
     expect(rows[0].n).toBe(1);
   });
 
+  it("동일 UUID sendBeacon 배치를 재전송해도 분석 이벤트가 중복되지 않는다", async () => {
+    const sid = randomUUID();
+    const eventId = randomUUID();
+    const payload = JSON.stringify({ events: [{ id: eventId, type: "page_view", path: "/leaving" }] });
+    const first = await request(app).post("/v1/activity")
+      .set("Cookie", [`bd_aid=${sid}`]).set("Content-Type", "text/plain").send(payload);
+    const replay = await request(app).post("/v1/activity")
+      .set("Cookie", [`bd_aid=${sid}`]).set("Content-Type", "text/plain").send(payload);
+    expect(first.status).toBe(204);
+    expect(replay.status).toBe(204);
+    const { rows } = await query("select count(*)::int as n from activity_events where client_event_id = $1", [eventId]);
+    expect(rows[0].n).toBe(1);
+  });
+
   it("400 on unknown type / oversized batch / missing cookie", async () => {
     const sid = randomUUID();
     const bad = await request(app).post("/v1/activity").set("Cookie", [`bd_aid=${sid}`])

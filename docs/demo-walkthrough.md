@@ -5,17 +5,68 @@
 
 마지막 검증: 2026-06-13, 브라우저에서 15단계 전 구간 완주 (DM-000004).
 
+> 이 문서는 과거 localStorage `DM-*` 시뮬레이션 기록이다. 현재 PostgreSQL `BD-*`
+> 고객·관리자 전 과정은 `scripts/demo-live-full-record.mjs`를 기준으로 검증한다.
+
+## PostgreSQL `BD-*` 전 과정 녹화 준비
+
+녹화기는 실제 서버 주문·실제 관리자 세션·서버 발급 미디어 URL을 사용한다. 아래 명령은
+API와 녹화기가 같은 `DATABASE_URL`을 사용한다는 전제다. 별도 Node API 프로세스는
+Vite처럼 `.env`를 자동으로 읽지 않으므로 환경 변수를 셸에서 전달한다.
+
+```bash
+export DATABASE_URL=postgres://localhost:5432/belovediamond
+export DEMO_ADMIN_PASSWORD='로컬에서만 사용할 10자 이상 비밀번호'
+
+npm run db:migrate
+node scripts/push-catalog-to-server.mjs
+SEED_ADMIN_PASSWORD="$DEMO_ADMIN_PASSWORD" npm run seed:admin
+```
+
+서버를 각각 실행한다. `PUBLIC_ORIGIN`은 녹화기의 `DEMO_BASE_URL`과 origin까지 정확히
+같아야 한다. 로컬 미디어 대체 저장소와 응답의 개발용 OTP를 쓰므로 API는 production
+모드로 실행하지 않는다.
+
+```bash
+# 터미널 1
+PUBLIC_ORIGIN=http://127.0.0.1:5173 EXPOSE_DEV_AUTH_SECRETS=true npm run api
+
+# 터미널 2
+npm run dev
+```
+
+`http://127.0.0.1:5173/gate-7f3k9x`로 로그인한 뒤
+`/bo-4q9z7m/payments`에서 Zelle 또는 Venmo 수취 계정을 하나 이상 저장한다.
+카탈로그 부트스트랩은 결제 계정을 의도적으로 빈 값으로 만들기 때문에 이 단계가 필요하다.
+실계정 대신 촬영 전용 계정을 쓸 때에도 비밀번호·수취 계정은 소스나 영상 설명에 기록하지 않는다.
+
+먼저 무영상 점검을 통과시킨 다음 녹화한다. 사전 점검은 API, 필수 스타일, 결제 설정,
+미디어 제공자, activity 마이그레이션을 확인하고 누락 항목을 한 번에 출력한다.
+
+```bash
+DRY=1 DEBUG_API=1 DEMO_ADMIN_PASSWORD="$DEMO_ADMIN_PASSWORD" node scripts/demo-live-full-record.mjs
+DEMO_ADMIN_PASSWORD="$DEMO_ADMIN_PASSWORD" node scripts/demo-live-full-record.mjs
+```
+
+가능하면 한 API 프로세스를 녹화 내내 유지한다. R2가 없는 개발 환경의 로컬 미디어는
+완료 파일을 디스크에서 다시 읽으므로 API 재시작 뒤에도 기본 24시간 동안 유지된다.
+다만 아직 완료하지 않은 업로드 토큰과 전송 중 요청은 재시작 시 사라진다. 반복 점검으로
+인테이크 5회/분, OTP 10회/분, 미디어 URL 20회/분 한도에 도달했다면 1분 뒤 다시
+실행한다. 실제 영상 생성에는 `ffmpeg`가 필요하다.
+
 ---
 
 ## 0. 준비
 
 ### 앱 띄우기
 ```bash
-npm run dev          # http://localhost:5173
+npm run dev          # http://127.0.0.1:5173
 ```
 
-### 데모 계정 (비밀번호 모두 `demo1234`)
-로그인 페이지(`/login`) 하단의 "둘러보기" 버튼으로 한 번에 전환할 수 있다.
+### 선택형 로컬 데모 계정
+데모 인증은 기본적으로 꺼져 있다. 격리된 로컬 환경에서만
+`VITE_ENABLE_DEMO_AUTH=true`와 별도 `VITE_DEMO_AUTH_PASSWORD`를 설정한다.
+비밀번호를 소스·문서·녹화 화면에 기록하지 않는다.
 
 | 역할 | 이메일 | 표시 이름 |
 |------|--------|-----------|

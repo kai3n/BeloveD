@@ -1,6 +1,7 @@
 // app_settings 키-값 저장소 — 카탈로그 카피·가격표·결제 채널 등 운영 설정.
 // 값은 클라이언트 스토어 형태의 jsonb 원본을 그대로 보관한다.
 import { query } from "./db.js";
+import { ApiError } from "./errors.js";
 
 // 공개(비로그인) 노출이 허용된 키 — 고객 견적 추정·결제 카드가 소비한다.
 export const PUBLIC_SETTINGS_KEYS = [
@@ -26,6 +27,13 @@ export async function getSettingsValues(keys) {
 
 export async function putSettingsValues(patch) {
   const entries = Object.entries(patch || {}).filter(([key]) => PUBLIC_SETTINGS_KEYS.includes(key));
+  const depositEntry = entries.find(([key]) => key === "opsDepositRate");
+  if (depositEntry) {
+    const rate = Number(depositEntry[1]);
+    if (!Number.isFinite(rate) || rate < 0.1 || rate > 0.9) {
+      throw new ApiError("VALIDATION_ERROR", 422, "opsDepositRate must be between 0.1 and 0.9");
+    }
+  }
   for (const [key, value] of entries) {
     await query(
       `insert into app_settings (key, value) values ($1, $2)

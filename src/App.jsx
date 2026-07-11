@@ -7,14 +7,15 @@ import { WITH_BACKOFFICE } from "./lib/flags.js";
 import { track } from "./lib/track.js";
 // 공개 스토어프론트 — 모든 방문자가 즉시 보는 화면은 eager 로드
 import Home from "./pages/Home.jsx";
-import Login from "./pages/Login.jsx";
-import StyleCatalog from "./pages/StyleCatalog.jsx";
-import StyleDetail from "./pages/StyleDetail.jsx";
-import IntakeForm from "./pages/IntakeForm.jsx";
-import ClientPortal, { TrackEntry } from "./pages/ClientPortal.jsx";
 
 // Customer Web plus an admin-only back office. Vendor and dealer surfaces stay out of this app.
 const named = (p, key) => lazy(() => p().then((m) => ({ default: m[key] })));
+const Login = lazy(() => import("./pages/Login.jsx"));
+const StyleCatalog = lazy(() => import("./pages/StyleCatalog.jsx"));
+const StyleDetail = lazy(() => import("./pages/StyleDetail.jsx"));
+const IntakeForm = lazy(() => import("./pages/IntakeForm.jsx"));
+const ClientPortal = lazy(() => import("./pages/ClientPortal.jsx"));
+const TrackEntry = named(() => import("./pages/ClientPortal.jsx"), "TrackEntry");
 const CustomerShell = lazy(() => import("./pages/Account.jsx"));
 const AccountOrders = named(() => import("./pages/Account.jsx"), "AccountOrders");
 const ReviewNew = lazy(() => import("./pages/ReviewNew.jsx"));
@@ -52,7 +53,7 @@ function PageViewTracker() {
 
 export default function App() {
   return (
-    <Suspense fallback={<div className="page"><p className="page-sub">…</p></div>}>
+    <Suspense fallback={<div className="page" role="status" aria-live="polite"><p className="page-sub">Loading…</p></div>}>
       <PageViewTracker />
       <Routes>
         <Route element={<Layout />}>

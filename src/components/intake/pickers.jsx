@@ -1,6 +1,17 @@
 // Gallery Flow 인테이크의 이미지 선택 프리미티브 — 텍스트 대신 사진·실루엣·스와치로 답한다
 import { BENCHMARK_SHAPES, OPS_METALS } from "../../lib/ops.js";
-import { MediaThumb } from "../ui.jsx";
+import { listboxNavigationIndex, MediaThumb } from "../ui.jsx";
+
+function moveOptionFocus(event, columns = 1) {
+  const options = Array.from(
+    event.currentTarget.closest('[role="listbox"]')?.querySelectorAll('[role="option"]:not(:disabled)') || [],
+  );
+  const currentIndex = options.indexOf(event.currentTarget);
+  const nextIndex = listboxNavigationIndex(event.key, currentIndex, options.length, columns);
+  if (nextIndex == null) return;
+  event.preventDefault();
+  options[nextIndex]?.focus();
+}
 
 // 9개 벤치마크 셰입 실루엣 (viewBox 0 0 48 48, currentColor stroke)
 const SHAPE_PATHS = {
@@ -23,17 +34,20 @@ export function ShapeSilhouette({ shape }) {
   );
 }
 
-export function ShapeTiles({ value, onSelect, labels = {} }) {
+export function ShapeTiles({ value, onSelect, labels = {}, ariaLabel = "Shape" }) {
+  const selectedIndex = BENCHMARK_SHAPES.indexOf(value);
   return (
-    <div className="gflow-shape-grid" role="listbox" aria-label="shape">
-      {BENCHMARK_SHAPES.map((shape) => (
+    <div className="gflow-shape-grid" role="listbox" aria-label={ariaLabel}>
+      {BENCHMARK_SHAPES.map((shape, index) => (
         <button
           key={shape}
           type="button"
           role="option"
           aria-selected={value === shape}
+          tabIndex={value === shape || (selectedIndex < 0 && index === 0) ? 0 : -1}
           className={`gflow-shape-tile ${value === shape ? "is-selected" : ""}`}
           onClick={() => onSelect(shape)}
+          onKeyDown={(event) => moveOptionFocus(event, 5)}
         >
           <ShapeSilhouette shape={shape} />
           <span>{labels[shape] || shape}</span>
@@ -44,17 +58,20 @@ export function ShapeTiles({ value, onSelect, labels = {} }) {
 }
 
 // 사진 타일 그리드 — options: [{ value, label, sub?, media: {kind,src} | null }]
-export function ImageOptionGrid({ options, value, onSelect, columns = 4 }) {
+export function ImageOptionGrid({ options, value, onSelect, columns = 4, ariaLabel = "Options" }) {
+  const selectedIndex = options.findIndex((option) => option.value === value);
   return (
-    <div className={`gflow-option-grid cols-${columns}`} role="listbox">
-      {options.map((option) => (
+    <div className={`gflow-option-grid cols-${columns}`} role="listbox" aria-label={ariaLabel}>
+      {options.map((option, index) => (
         <button
           key={option.value || "__none"}
           type="button"
           role="option"
           aria-selected={value === option.value}
+          tabIndex={value === option.value || (selectedIndex < 0 && index === 0) ? 0 : -1}
           className={`gflow-option-card ${value === option.value ? "is-selected" : ""} ${option.media ? "" : "is-text"}`}
           onClick={() => onSelect(option.value)}
+          onKeyDown={(event) => moveOptionFocus(event, columns)}
         >
           {option.media && (
             <span className="gflow-option-media">
@@ -73,17 +90,20 @@ const METAL_DOT_CLASS = {
   "14ky": "m-14ky", "18ky": "m-18ky", "14kr": "m-14kr", "18kr": "m-18kr", "18kw": "m-18kw", pt: "m-pt",
 };
 
-export function MetalSwatches({ value, onSelect, labels = {} }) {
+export function MetalSwatches({ value, onSelect, labels = {}, ariaLabel = "Metal" }) {
+  const selectedIndex = OPS_METALS.indexOf(value);
   return (
-    <div className="gflow-metal-row" role="listbox" aria-label="metal">
-      {OPS_METALS.map((metal) => (
+    <div className="gflow-metal-row" role="listbox" aria-label={ariaLabel}>
+      {OPS_METALS.map((metal, index) => (
         <button
           key={metal}
           type="button"
           role="option"
           aria-selected={value === metal}
+          tabIndex={value === metal || (selectedIndex < 0 && index === 0) ? 0 : -1}
           className={`gflow-metal-chip ${value === metal ? "is-selected" : ""}`}
           onClick={() => onSelect(metal)}
+          onKeyDown={(event) => moveOptionFocus(event)}
         >
           <span className={`gflow-metal-dot ${METAL_DOT_CLASS[metal] || ""}`} aria-hidden="true" />
           <span>{labels[metal] || metal}</span>
@@ -122,16 +142,19 @@ export function CaratSlider({ value, onChange, min = 0.5, max = 4, step = 0.1, s
 
 // 등급 스케일 (컬러/클래리티) — options: [{ value, label?, sub? }]
 export function ScalePicker({ options, value, onSelect, ariaLabel = "" }) {
+  const selectedIndex = options.findIndex((option) => option.value === value);
   return (
-    <div className="gflow-scale" role="listbox" aria-label={ariaLabel}>
-      {options.map((option) => (
+    <div className="gflow-scale" role="listbox" aria-label={ariaLabel || "Options"}>
+      {options.map((option, index) => (
         <button
           key={option.value}
           type="button"
           role="option"
           aria-selected={value === option.value}
+          tabIndex={value === option.value || (selectedIndex < 0 && index === 0) ? 0 : -1}
           className={`gflow-scale-step ${value === option.value ? "is-selected" : ""}`}
           onClick={() => onSelect(option.value)}
+          onKeyDown={(event) => moveOptionFocus(event)}
         >
           <strong>{option.label || option.value}</strong>
           {option.sub && <span>{option.sub}</span>}

@@ -88,35 +88,24 @@ describe("POST /v1/admin/orders/:orderCode/events", () => {
     expect(res.status).toBe(401);
   });
 
-  it("이벤트 기록 + stage 전이 + 상태 메일", async () => {
+  it("단계 건너뛰기 이벤트는 409이고 상태·메일을 변경하지 않는다", async () => {
     const intake = await request(app).post("/v1/intakes").send(intakeBody);
     drainMail(); // 접수 메일 비우기
     const agent = await adminAgent();
     const res = await agent.post(`/v1/admin/orders/${intake.body.orderCode}/events`)
       .send({ type: "shipped", data: { tracking: "1Z999" } });
-    expect(res.status).toBe(201);
-    expect(res.body.ok).toBe(true);
-    expect(res.body.stage).toBe("SHIPPING");
-    expect(res.body.eventId).toMatch(/^TL-\d{6}$/);
-    const mails = drainMail();
-    expect(mails).toHaveLength(1);
-    expect(mails[0].type).toBe("order_shipped");
-    expect(mails[0].subject).toContain("발송"); // intakeBody locale=ko
-
-    // 같은 type 재호출도 허용 — 재발송 = 어드민 의도 (스펙 §2)
-    const res2 = await agent.post(`/v1/admin/orders/${intake.body.orderCode}/events`)
-      .send({ type: "shipped", data: { tracking: "1Z999" } });
-    expect(res2.status).toBe(201);
-    const mails2 = drainMail();
-    expect(mails2).toHaveLength(1);
-    expect(mails2[0].type).toBe("order_shipped");
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe("INVALID_ORDER_TRANSITION");
+    expect(drainMail()).toHaveLength(0);
+    const row = (await query("select stage from customer_orders where order_code = $1", [intake.body.orderCode])).rows[0];
+    expect(row.stage).toBe("OPS_REVIEW");
   });
 
-  it("received·미지원 type·프로토타입 속성명은 400 VALIDATION_ERROR", async () => {
+  it("received·미지원 type·프로토타입 속성명은 422 VALIDATION_ERROR", async () => {
     const agent = await adminAgent();
     for (const type of ["received", "bogus", "toString", "__proto__"]) {
       const res = await agent.post("/v1/admin/orders/BD-000001/events").send({ type });
-      expect(res.status).toBe(400);
+      expect(res.status).toBe(422);
       expect(res.body.error.code).toBe("VALIDATION_ERROR");
     }
   });

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight, Maximize2, X } from "lucide-react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "../lib/auth.jsx";
 import {
@@ -370,18 +370,85 @@ function ProposalCard({ quote, intake, style, fc, t, p, locale, shippingProps, o
 
 // Zelle/Venmo 결제 내용 — 디파짓·잔금 공용. 스테이지 안 콘텐츠 전용 (reported면 안내문, 아니면 셀프리포트 버튼)
 // memoText: 송금 앱 메모에 그대로 붙여넣는 완성 메시지 (예: "BeloveD DM-000009 · Deposit")
-// 실서버 포털(ServerOrderPortal)도 재사용 — 결제 핸들·QR은 시드 settings에서
-export function PaymentCard({ amountUsd, amountLabel = "", amountContext = "", memoText, reported, fc, sentCta, reportedNote, onReport, reportDisabled = false, reportHint = "" }) {
+// 실서버 포털(ServerOrderPortal)도 재사용 — 결제 수취 계정은 settings가 단일 소스다.
+const PAYMENT_CARD_COPY = {
+  en: {
+    sendInstruction: "Copy the recipient below and send from your payment app.",
+    loading: "Loading the current payment instructions…",
+    unavailable: "Payment instructions are not configured yet. Please contact support before sending a transfer.",
+    reportFailed: "We couldn't report this transfer. Your payment details are unchanged — please try again.",
+    reporting: "Reporting transfer…",
+    copyAccount: (name, handle) => `Copy ${name} recipient ${handle}`,
+  },
+  ko: {
+    sendInstruction: "아래 수취 계정을 복사해 결제 앱에서 보내주세요.",
+    loading: "현재 결제 안내를 불러오는 중입니다…",
+    unavailable: "결제 수취 계정이 아직 설정되지 않았습니다. 송금 전에 고객지원팀에 문의해 주세요.",
+    reportFailed: "송금 보고를 접수하지 못했습니다. 입력 내용은 그대로 유지됩니다 — 다시 시도해 주세요.",
+    reporting: "송금 보고 중…",
+    copyAccount: (name, handle) => `${name} 수취 계정 ${handle} 복사`,
+  },
+  zh: {
+    sendInstruction: "复制下方收款账户，并从您的付款应用转账。",
+    loading: "正在加载当前付款说明…",
+    unavailable: "收款账户尚未配置。转账前请先联系客户支持。",
+    reportFailed: "未能提交付款报告。您的付款信息未被更改，请重试。",
+    reporting: "正在报告转账…",
+    copyAccount: (name, handle) => `复制 ${name} 收款账户 ${handle}`,
+  },
+  es: {
+    sendInstruction: "Copia el destinatario y envía el pago desde tu aplicación.",
+    loading: "Cargando las instrucciones de pago actuales…",
+    unavailable: "Las cuentas de pago aún no están configuradas. Contacta con soporte antes de transferir.",
+    reportFailed: "No pudimos reportar la transferencia. Tus datos no cambiaron; inténtalo de nuevo.",
+    reporting: "Reportando transferencia…",
+    copyAccount: (name, handle) => `Copiar destinatario de ${name}: ${handle}`,
+  },
+};
+
+export function PaymentCard({
+  amountUsd,
+  amountLabel = "",
+  amountContext = "",
+  memoText,
+  reported,
+  fc,
+  sentCta,
+  reportedNote,
+  onReport,
+  reportDisabled = false,
+  reportHint = "",
+  settingsStatus = "ready",
+}) {
+  const { locale } = useLocale();
+  const copy = PAYMENT_CARD_COPY[locale] || PAYMENT_CARD_COPY.en;
   const payment = getSettings().payment || {};
   const [copiedKey, setCopiedKey] = useState("");
+  const [reportBusy, setReportBusy] = useState(false);
+  const [reportError, setReportError] = useState("");
   const methods = [
-    { key: "zelle", name: "Zelle", handle: payment.zelle, hint: fc.zelleHint, qr: "/assets/payment/zelle-qr.jpeg" },
-    { key: "venmo", name: "Venmo", handle: payment.venmo, hint: fc.venmoHint, qr: "/assets/payment/venmo-qr.jpeg" },
-  ].filter((m) => m.handle);
+    { key: "zelle", name: "Zelle", handle: payment.zelle, hint: fc.zelleHint },
+    { key: "venmo", name: "Venmo", handle: payment.venmo, hint: fc.venmoHint },
+  ].filter((m) => String(m.handle || "").trim());
+  const settingsReady = settingsStatus === "ready";
+  const paymentConfigured = settingsReady && methods.length > 0;
+  const effectiveReportDisabled = reportDisabled || !paymentConfigured || !(Number(amountUsd) > 0);
   function copyHandle(key, value) {
     try { navigator.clipboard?.writeText(value); } catch { /* 클립보드 미지원 브라우저 */ }
     setCopiedKey(key);
     window.setTimeout(() => setCopiedKey(""), 1600);
+  }
+  async function reportTransfer() {
+    if (reportBusy || effectiveReportDisabled) return;
+    setReportBusy(true);
+    setReportError("");
+    try {
+      await onReport?.();
+    } catch {
+      setReportError(copy.reportFailed);
+    } finally {
+      setReportBusy(false);
+    }
   }
   return (
     <div className="payment-card">
@@ -391,29 +458,35 @@ export function PaymentCard({ amountUsd, amountLabel = "", amountContext = "", m
         {amountContext && <p className="payment-amount-context">{amountContext}</p>}
       </div>
 
-      {/* 1 · 보내기 — QR 스캔 또는 받는 계정 복사 (핸들 원문은 노출하지 않는다) */}
-      <div className="payment-step"><span className="payment-step-no">1</span><p>{fc.payStep1}</p></div>
-      <div className="payment-methods">
-        {methods.map((m) => (
-          <div className="payment-method" key={m.key}>
-            <div className="payment-method-head">
-              <h4>{m.name}</h4>
-              <small>{m.hint}</small>
+      {/* 1 · 보내기 — 현재 설정값을 그대로 노출·복사한다. 정적 QR은 다른 수취인을 가리킬 수 있어 사용하지 않는다. */}
+      <div className="payment-step"><span className="payment-step-no">1</span><p>{copy.sendInstruction}</p></div>
+      {!settingsReady ? (
+        <p className={settingsStatus === "loading" ? "form-hint payment-config-error" : "form-error payment-config-error"} role={settingsStatus === "loading" ? "status" : "alert"}>
+          {settingsStatus === "loading" ? copy.loading : copy.unavailable}
+        </p>
+      ) : paymentConfigured ? (
+        <div className="payment-methods">
+          {methods.map((m) => (
+            <div className="payment-method" key={m.key}>
+              <div className="payment-method-head">
+                <h4>{m.name}</h4>
+                <small>{m.hint}</small>
+              </div>
+              <code className="payment-recipient">{m.handle}</code>
+              <button
+                className={`payment-handle ${copiedKey === m.key ? "is-copied" : ""}`}
+                type="button"
+                aria-label={copy.copyAccount(m.name, m.handle)}
+                onClick={() => copyHandle(m.key, m.handle)}
+              >
+                {copiedKey === m.key ? fc.copiedBtn : fc.copyRecipient}
+              </button>
             </div>
-            {/* QR은 스캔 대비를 위해 다크 모드에서도 흰 바탕 유지 */}
-            <img className="payment-qr" src={m.qr} alt={`${m.name} QR`} loading="lazy" />
-            <button
-              className={`payment-handle ${copiedKey === m.key ? "is-copied" : ""}`}
-              type="button"
-              onClick={() => copyHandle(m.key, m.handle)}
-            >
-              {copiedKey === m.key ? fc.copiedBtn : fc.copyRecipient}
-            </button>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      ) : <p className="form-error payment-config-error" role="alert">{copy.unavailable}</p>}
       {/* 파일럿 안내 — 지금은 Zelle/Venmo, 카드 결제는 곧 추가 */}
-      {fc.pilotNote && <p className="payment-pilot-note">{fc.pilotNote}</p>}
+      {paymentConfigured && fc.pilotNote && <p className="payment-pilot-note">{fc.pilotNote}</p>}
 
       {/* 2 · 메모 — 주문번호가 있어야만 입금 매칭이 가능하다는 걸 강조 */}
       <div className="payment-step"><span className="payment-step-no">2</span><p>{fc.payStep2}</p></div>
@@ -431,13 +504,22 @@ export function PaymentCard({ amountUsd, amountLabel = "", amountContext = "", m
 
       {/* 3 · 보고 — 셀프 리포트 버튼 */}
       <div className="payment-step"><span className="payment-step-no">3</span><p>{fc.payStep3}</p></div>
-      {payment.note && <p className="form-hint">{payment.note}</p>}
+      {settingsReady && payment.note && <p className="form-hint">{payment.note}</p>}
       {reported
         ? <p className="payment-reported" role="status">{reportedNote}</p>
         : (
           <>
             {reportDisabled && reportHint && <p className="form-error" style={{ textAlign: "center" }}>{reportHint}</p>}
-            <button className="button primary payment-sent" type="button" disabled={reportDisabled} onClick={onReport}>{sentCta}</button>
+            {reportError && <p className="form-error" role="alert" style={{ textAlign: "center" }}>{reportError}</p>}
+            <button
+              className="button primary payment-sent"
+              type="button"
+              disabled={effectiveReportDisabled || reportBusy}
+              aria-busy={reportBusy}
+              onClick={reportTransfer}
+            >
+              {reportBusy ? copy.reporting : sentCta}
+            </button>
           </>
         )}
       <p className="payment-sent-help">{fc.sentHelp}</p>
@@ -455,9 +537,62 @@ function mediaList(media, fallbackSrc = "") {
   return items.length ? items : [mediaFrom(fallbackSrc)].filter(Boolean);
 }
 
-function ClientMediaCarousel({ media, alt = "", ratio = "1 / 1", fit = "cover" }) {
+export function ClientMediaCarousel({
+  media,
+  alt = "",
+  ratio = "1 / 1",
+  fit = "cover",
+  enableLightbox = false,
+  zoomLabel = "Open media full screen",
+  closeLabel = "Close full-screen media",
+}) {
   const items = (Array.isArray(media) ? media : []).filter((item) => item?.src);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const zoomButtonRef = useRef(null);
+  const dialogRef = useRef(null);
+  const closeButtonRef = useRef(null);
+  useEffect(() => {
+    if (!lightboxOpen) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    const returnFocus = zoomButtonRef.current;
+    document.body.style.overflow = "hidden";
+    const focusFrame = window.requestAnimationFrame(() => closeButtonRef.current?.focus());
+    const keepFocusInDialog = (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setLightboxOpen(false);
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const focusable = Array.from(dialogRef.current?.querySelectorAll(
+        'a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])',
+      ) || []).filter((element) => element.tabIndex >= 0 && !element.hidden);
+      if (focusable.length === 0) {
+        event.preventDefault();
+        dialogRef.current?.focus();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", keepFocusInDialog, true);
+    return () => {
+      window.cancelAnimationFrame(focusFrame);
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", keepFocusInDialog, true);
+      window.requestAnimationFrame(() => {
+        if (returnFocus?.isConnected) returnFocus.focus();
+      });
+    };
+  }, [lightboxOpen]);
   if (!items.length) return null;
   const safeIndex = activeIndex % items.length;
   const active = items[safeIndex];
@@ -468,8 +603,13 @@ function ClientMediaCarousel({ media, alt = "", ratio = "1 / 1", fit = "cover" }
     setActiveIndex((current) => (current + delta + items.length) % items.length);
   }
   return (
-    <div className="client-media-carousel">
+    <div className={`client-media-carousel${lightboxOpen ? " is-lightbox-open" : ""}`}>
       <MediaThumb media={active} alt={alt} ratio={ratio} fit={fit} />
+      {enableLightbox && (
+        <button ref={zoomButtonRef} className="client-media-zoom" type="button" aria-label={zoomLabel} onClick={() => setLightboxOpen(true)}>
+          <Maximize2 size={19} strokeWidth={1.8} aria-hidden="true" />
+        </button>
+      )}
       {canNavigate && (
         <>
           <button className="client-media-arrow is-left" type="button" aria-label="Previous media" onClick={(event) => move(-1, event)}>
@@ -480,6 +620,17 @@ function ClientMediaCarousel({ media, alt = "", ratio = "1 / 1", fit = "cover" }
           </button>
           <span className="client-media-counter">{safeIndex + 1} / {items.length}</span>
         </>
+      )}
+      {enableLightbox && lightboxOpen && (
+        <div ref={dialogRef} className="client-media-lightbox" role="dialog" aria-modal="true" aria-label={alt || zoomLabel} tabIndex={-1}>
+          <button className="client-media-lightbox-backdrop" type="button" tabIndex={-1} aria-label={closeLabel} onClick={() => setLightboxOpen(false)} />
+          <div className="client-media-lightbox-content">
+            <MediaThumb media={active} alt={alt} ratio="16 / 10" fit="contain" eager />
+            <button ref={closeButtonRef} className="client-media-lightbox-close" type="button" aria-label={closeLabel} onClick={() => setLightboxOpen(false)}>
+              <X size={22} aria-hidden="true" />
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -543,7 +694,17 @@ function initialShippingAddress(order, intake) {
   };
 }
 
-export function ShippingAddressPanel({ value, onChange, t, locked = false, onSave = null, canSave = false }) {
+export function ShippingAddressPanel({
+  value,
+  onChange,
+  t,
+  locked = false,
+  saved = locked,
+  saving = false,
+  error = "",
+  onSave = null,
+  canSave = false,
+}) {
   const complete = isShippingAddressComplete(value);
   function setField(key, nextValue) {
     onChange((current) => ({ ...value, ...(current || {}), [key]: nextValue }));
@@ -556,32 +717,32 @@ export function ShippingAddressPanel({ value, onChange, t, locked = false, onSav
           <h4>{t.shippingTitle}</h4>
           <p className="form-hint">{t.shippingHelp}</p>
         </div>
-        {locked && complete && <span className="status-badge cst-REPLACED">{t.shippingConfirmed}</span>}
+        {saved && complete && <span className="status-badge cst-REPLACED">{t.shippingConfirmed}</span>}
       </div>
       <div className="filter-grid shipping-address-grid">
         <label className="field"><span>{t.shippingRecipient}</span>
-          <input value={value.recipientName} onChange={(e) => setField("recipientName", e.target.value)} disabled={locked} required />
+          <input value={value.recipientName} onChange={(e) => setField("recipientName", e.target.value)} disabled={locked} autoComplete="name" required />
         </label>
         <label className="field"><span>{t.shippingPhone}</span>
-          <input value={value.phone} onChange={(e) => setField("phone", e.target.value)} disabled={locked} required />
+          <input type="tel" value={value.phone} onChange={(e) => setField("phone", e.target.value)} disabled={locked} autoComplete="tel" required />
         </label>
         <label className="field shipping-address-wide"><span>{t.shippingLine1}</span>
-          <input value={value.addressLine1} onChange={(e) => setField("addressLine1", e.target.value)} disabled={locked} required />
+          <input value={value.addressLine1} onChange={(e) => setField("addressLine1", e.target.value)} disabled={locked} autoComplete="address-line1" required />
         </label>
         <label className="field shipping-address-wide"><span>{t.shippingLine2}</span>
-          <input value={value.addressLine2} onChange={(e) => setField("addressLine2", e.target.value)} disabled={locked} />
+          <input value={value.addressLine2} onChange={(e) => setField("addressLine2", e.target.value)} disabled={locked} autoComplete="address-line2" />
         </label>
         <label className="field"><span>{t.shippingCity}</span>
-          <input value={value.city} onChange={(e) => setField("city", e.target.value)} disabled={locked} required />
+          <input value={value.city} onChange={(e) => setField("city", e.target.value)} disabled={locked} autoComplete="address-level2" required />
         </label>
         <label className="field"><span>{t.shippingRegion}</span>
-          <input value={value.region} onChange={(e) => setField("region", e.target.value)} disabled={locked} required />
+          <input value={value.region} onChange={(e) => setField("region", e.target.value)} disabled={locked} autoComplete="address-level1" required />
         </label>
         <label className="field"><span>{t.shippingPostal}</span>
-          <input value={value.postalCode} onChange={(e) => setField("postalCode", e.target.value)} disabled={locked} required />
+          <input value={value.postalCode} onChange={(e) => setField("postalCode", e.target.value)} disabled={locked} autoComplete="postal-code" required />
         </label>
         <label className="field"><span>{t.shippingCountry}</span>
-          <input value={value.country} onChange={(e) => setField("country", e.target.value)} disabled={locked} required />
+          <input value={value.country} onChange={(e) => setField("country", e.target.value)} disabled={locked} autoComplete="country-name" required />
         </label>
         <label className="field shipping-address-wide"><span>{t.shippingNotes}</span>
           <input value={value.notes} onChange={(e) => setField("notes", e.target.value)} disabled={locked} />
@@ -589,9 +750,14 @@ export function ShippingAddressPanel({ value, onChange, t, locked = false, onSav
       </div>
       {!locked && (
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginTop: 6 }}>
-          <p className="form-hint" style={{ margin: 0 }}>{complete ? "" : t.shippingRequired}</p>
+          <div>
+            {!complete && <p className="form-hint" style={{ margin: 0 }}>{t.shippingRequired}</p>}
+            {error && <p className="form-error" role="alert" style={{ margin: 0 }}>{error}</p>}
+          </div>
           {canSave && onSave && (
-            <button className="button primary small" type="button" disabled={!complete} onClick={onSave}>{t.shippingSave}</button>
+            <button className="button primary small" type="button" disabled={!complete || saving} aria-busy={saving} onClick={onSave}>
+              {saving ? `${t.shippingSave}…` : t.shippingSave}
+            </button>
           )}
         </div>
       )}
@@ -667,7 +833,10 @@ function CustomerDecisionPanel({
 // 훅 순서가 orderId에 따라 달라지지 않도록 분기는 래퍼에서 한다.
 export default function ClientPortalRoute() {
   const { orderId } = useParams();
-  if (/^BD-/i.test(orderId || "")) return <ServerOrderPortal orderCode={orderId.toUpperCase()} />;
+  if (/^BD-/i.test(orderId || "")) {
+    const orderCode = orderId.toUpperCase();
+    return <ServerOrderPortal key={orderCode} orderCode={orderCode} />;
+  }
   return <ClientPortal />;
 }
 
@@ -683,6 +852,7 @@ function ClientPortal() {
   const [chatDraft, setChatDraft] = useState("");
   const [notice, setNotice] = useState("");
   const [shippingAddress, setShippingAddress] = useState(null);
+  const [shippingAddressDirty, setShippingAddressDirty] = useState(false);
   const [codeDraft, setCodeDraft] = useState("");
   const navigate = useNavigate();
 
@@ -710,6 +880,10 @@ function ClientPortal() {
   const shippingAddressDraft = shippingAddress || initialShippingAddress(order, intake);
   const shippingAddressComplete = isShippingAddressComplete(shippingAddressDraft);
   const shippingAddressSaved = isShippingAddressComplete(order.shippingAddress);
+  const shippingAddressReady = shippingAddressSaved && !shippingAddressDirty;
+  const shippingAddressLocked = ["SHIPPING", "DELIVERED", "ARCHIVED"].includes(order.status);
+  const showEditableShippingAddress = quote?.status === "accepted"
+    && ["CAD", "PRODUCTION", "QC", "BALANCE"].includes(order.status);
   const workspaceCopy = customerWorkspaceCopy(locale);
   const fc = proposalFlowCopy(locale);
   // 디파짓 확인 여부: 마일스톤 done 또는 이미 제작 단계 진입
@@ -730,6 +904,7 @@ function ClientPortal() {
       return;
     }
     updateShippingAddress(orderId, shippingAddressDraft, actor);
+    setShippingAddressDirty(false);
     acceptQuote(quote.id, actor);
     const ca = listCustomerActions(orderId, true).find((a) => a.type === "quoteAcceptance");
     if (ca) respondCustomerAction(ca.id, quote.id, actor);
@@ -741,7 +916,12 @@ function ClientPortal() {
       return;
     }
     updateShippingAddress(orderId, shippingAddressDraft, actor);
+    setShippingAddressDirty(false);
     notify(t.noticeShippingAddressSaved);
+  }
+  function changeShippingAddress(next) {
+    setShippingAddress(next);
+    setShippingAddressDirty(true);
   }
   function sendChat() {
     const body = chatDraft.trim();
@@ -867,10 +1047,11 @@ function ClientPortal() {
             locale={locale}
             shippingProps={{
               value: shippingAddressDraft,
-              onChange: setShippingAddress,
+              onChange: changeShippingAddress,
               t,
-              locked: quote.status === "accepted" && shippingAddressSaved,
-              canSave: quote.status === "accepted" && !shippingAddressSaved,
+              locked: shippingAddressLocked,
+              saved: shippingAddressReady,
+              canSave: quote.status === "accepted" && !shippingAddressLocked,
               onSave: saveShippingAddress,
             }}
             onConfirm={accept}
@@ -894,9 +1075,25 @@ function ClientPortal() {
             sentCta={fc.depositSentCta}
             reportedNote={fc.reportedNote}
             onReport={reportDeposit}
+            reportDisabled={!shippingAddressReady}
+            reportHint={t.noticeShippingAddressRequired || t.shippingRequired}
           />
         )}
       </Checkpoint>
+
+      {showEditableShippingAddress && (
+        <section className="panel form-stack">
+          <ShippingAddressPanel
+            value={shippingAddressDraft}
+            onChange={changeShippingAddress}
+            t={t}
+            locked={false}
+            saved={shippingAddressReady}
+            canSave
+            onSave={saveShippingAddress}
+          />
+        </section>
+      )}
 
       {/* 디자인 승인 스테이지 없음 — 제품 초안(확정 제안) 수락이 디자인 승인을 겸한다.
           고객 여정: 폼 → 제품 초안 → 디파짓 → 완성품 컨펌 → 잔금 → 배송 */}
@@ -934,6 +1131,8 @@ function ClientPortal() {
             sentCta={fc.balanceSentCta}
             reportedNote={fc.balanceReportedNote}
             onReport={reportBalance}
+            reportDisabled={!shippingAddressReady}
+            reportHint={t.noticeShippingAddressRequired || t.shippingRequired}
           />
         )}
       </Checkpoint>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth.jsx";
+import { DEMO_AUTH_ENABLED, DEMO_AUTH_PASSWORD } from "../lib/flags.js";
 import { useLocale } from "../i18n.jsx";
 
 // 스태프 로그인 — 현재 앱에서는 admin만 허용한다. Vendor/dealer 포털은 별도 앱에서 다룬다.
@@ -47,7 +48,7 @@ export default function StaffLogin() {
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></label>
         <label className="field"><span>{p.login.password}</span>
           <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required /></label>
-        {error && <p className="form-error">{error}</p>}
+        {error ? <p className="form-error" role="alert">{error}</p> : null}
         <button className="button primary" type="submit">{p.login.loginBtn}</button>
       </form>
 
@@ -55,12 +56,12 @@ export default function StaffLogin() {
         <Link className="text-link" to="/login">{p.login.customerLink}</Link>
       </p>
 
-      {import.meta.env.DEV && (
+      {DEMO_AUTH_ENABLED ? (
         <div className="panel demo-panel">
           <p className="section-label">{p.login.demoTitle}</p>
-          <button className="button secondary" onClick={() => { try { afterLogin(login("admin@demo.com", "demo1234", ["admin"])); } catch (err) { setError(p.login.errors[err.message] || err.message); } }}>{p.login.demoAdmin}</button>
+          <button className="button secondary" disabled={!DEMO_AUTH_PASSWORD} onClick={() => { try { afterLogin(login("admin@demo.com", DEMO_AUTH_PASSWORD, ["admin"])); } catch (err) { setError(p.login.errors[err.message] || err.message); } }}>{p.login.demoAdmin}</button>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

@@ -23,6 +23,13 @@ function originOf() {
   return o;
 }
 
+// 인증 비밀값은 단순히 NODE_ENV가 development라는 이유만으로 응답하지 않는다.
+// 테스트는 기존 계약을 유지하고, 로컬 녹화처럼 꼭 필요한 경우에만 명시적으로 켠다.
+export function exposeDevAuthSecrets(env = process.env) {
+  if (env.NODE_ENV === "production") return false;
+  return env.NODE_ENV === "test" || env.EXPOSE_DEV_AUTH_SECRETS === "true";
+}
+
 export function authRouter() {
   const r = Router();
 
@@ -51,7 +58,7 @@ export function authRouter() {
       if (orderCode != null && typeof orderCode !== "string") throw new ApiError("VALIDATION_ERROR", 400);
       const { link } = await createMagicLink(email, { origin: originOf(), orderCode: orderCode || null, locale });
       const body = { ok: true };
-      if (process.env.NODE_ENV !== "production") body.devLink = link; // dev surfaces the link
+      if (exposeDevAuthSecrets()) body.devLink = link;
       res.status(201).json(body);
     } catch (e) { next(e); }
   });
@@ -79,7 +86,7 @@ export function authRouter() {
       if (typeof email !== "string") throw new ApiError("VALIDATION_ERROR", 400);
       const { code } = await createLoginCode(email, locale);
       const body = { ok: true };
-      if (process.env.NODE_ENV !== "production") body.devCode = code; // dev만 노출
+      if (exposeDevAuthSecrets()) body.devCode = code;
       res.status(201).json(body);
     } catch (e) { next(e); }
   });

@@ -35,6 +35,68 @@ function moneyToMinorUnits(value) {
   return Number.isFinite(n) ? Math.round(n * 100) : null;
 }
 
+const DEPOSIT_RATE_MIN = 0.1;
+const DEPOSIT_RATE_MAX = 0.9;
+const DEFAULT_DEPOSIT_RATE = 0.5;
+
+function validationError(message) {
+  return new ApiError("VALIDATION_ERROR", 422, message);
+}
+
+function stateConflict(message, code = "INVALID_ORDER_TRANSITION") {
+  return new ApiError(code, 409, message);
+}
+
+function isPlainObject(value) {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function cleanRequiredText(value, field, maxLength = 200) {
+  if (typeof value !== "string" || !value.trim()) throw validationError(`${field} is required`);
+  const clean = value.trim();
+  if (clean.length > maxLength) throw validationError(`${field} is too long`);
+  return clean;
+}
+
+function positiveMoney(value, field) {
+  const amount = Number(value);
+  const minorUnits = Math.round(amount * 100);
+  if (!Number.isFinite(amount) || amount <= 0 || amount > 100_000_000) {
+    throw validationError(`${field} must be a positive amount`);
+  }
+  // Quotes and receipts are USD amounts. Persisting fractions of a cent makes
+  // later balance comparisons depend on floating-point tolerances and can let a
+  // zero-rounded deposit advance the order without a receipt.
+  if (Math.abs(amount * 100 - minorUnits) > 1e-7) {
+    throw validationError(`${field} must use whole cents`);
+  }
+  return minorUnits / 100;
+}
+
+function computedDeposit(total, rate) {
+  const totalMinor = moneyToMinorUnits(total);
+  if (!Number.isInteger(totalMinor) || totalMinor <= 1) {
+    throw validationError("artifact.payload.totalUsd must leave a positive deposit and balance");
+  }
+  const depositMinor = Math.max(1, Math.round(totalMinor * normalizedDepositRate(rate)));
+  if (depositMinor >= totalMinor) {
+    throw validationError("artifact.payload.depositUsd must be less than totalUsd");
+  }
+  return depositMinor / 100;
+}
+
+function normalizedDepositRate(value) {
+  const rate = Number(value);
+  return Number.isFinite(rate) && rate >= DEPOSIT_RATE_MIN && rate <= DEPOSIT_RATE_MAX
+    ? rate
+    : DEFAULT_DEPOSIT_RATE;
+}
+
+async function configuredDepositRate(client) {
+  const { rows } = await client.query("select value from app_settings where key = 'opsDepositRate'");
+  return normalizedDepositRate(rows[0]?.value);
+}
+
 function styleView(row) {
   // payload = 클라이언트 스토어 스타일 원본 — 공개 카탈로그는 이 형태를 그대로 소비한다
   if (row.payload && Object.keys(row.payload).length > 0) {
@@ -113,7 +175,11 @@ function phaseViews(stage) {
   return keys.map(([key, title], index) => ({
     key,
     title,
-    state: stage === "CANCELLED" ? "blocked" : index < activeIndex ? "complete" : index === activeIndex ? "active" : "upcoming",
+    state: stage === "CANCELLED"
+      ? "blocked"
+      : stage === "DELIVERED" || index < activeIndex
+        ? "complete"
+        : index === activeIndex ? "active" : "upcoming",
   }));
 }
 
@@ -171,8 +237,26 @@ export async function getPublishedStyle(styleCode) {
   return styleView(rows[0]);
 }
 
+async function resolveStarterStyleCode(client, value) {
+  const requested = typeof value === "string" ? value.trim() : "";
+  if (!requested) return null;
+  const { rows } = await client.query(
+    "select style_code from starter_designs where style_code = $1",
+    [requested],
+  );
+  return rows[0]?.style_code || null;
+}
+
 export async function createDraftIntake(payload = {}) {
   return withTransaction(async (client) => {
+    // 클라이언트 카탈로그는 styleId, API/DB는 style_code를 사용한다. 두 계약을
+    // 경계에서 정규화해 선택한 디자인이 상담 주문으로 유실되지 않게 한다.
+    const requestedStyleCode = payload.styleCode || payload.styleId || null;
+    // The browser ships a static starter catalog and can be newer than a fresh
+    // or partially seeded database. Keep the requested code in form_payload,
+    // but only put an existing code in the FK column so a valid intake never
+    // degrades into a Postgres 500 solely because catalog seeding lags deploy.
+    const styleCode = await resolveStarterStyleCode(client, requestedStyleCode);
     const contactEmail = normalizeEmail(payload.contactEmail || payload.email);
     const customer = contactEmail
       ? await upsertCustomer(client, {
@@ -199,10 +283,10 @@ export async function createDraftIntake(payload = {}) {
       [
         intakeCode,
         customer?.id || null,
-        payload.entryMode || (payload.styleCode ? "design" : "help_me_choose"),
+        payload.entryMode || (requestedStyleCode ? "design" : "help_me_choose"),
         payload.category || null,
         payload.productLine || null,
-        payload.styleCode || null,
+        styleCode,
         payload.locale || "en",
         payload.name || payload.customerName || null,
         contactEmail || null,
@@ -231,43 +315,50 @@ function intakeView(row) {
 }
 
 export async function updateDraftIntake(intakeCode, payload = {}) {
-  const { rows } = await query(
-    `
-      update customer_intakes
-      set
-        category = coalesce($2, category),
-        product_line = coalesce($3, product_line),
-        style_code = coalesce($4, style_code),
-        customer_name = coalesce($5, customer_name),
-        contact_email = coalesce($6, contact_email),
-        contact_phone = coalesce($7, contact_phone),
-        budget_minor_units = coalesce($8, budget_minor_units),
-        required_date = coalesce($9, required_date),
-        delivery_country = coalesce($10, delivery_country),
-        form_payload = form_payload || $11::jsonb,
-        reference_media = coalesce($12::jsonb, reference_media),
-        version = version + 1,
-        updated_at = now()
-      where intake_code = $1 and status = 'draft'
-      returning *
-    `,
-    [
-      intakeCode,
-      payload.category || null,
-      payload.productLine || null,
-      payload.styleCode || null,
-      payload.name || payload.customerName || null,
-      normalizeEmail(payload.contactEmail || payload.email) || null,
-      payload.contactPhone || payload.phone || null,
-      moneyToMinorUnits(payload.budget),
-      payload.requiredDate || null,
-      payload.deliveryCountry || payload.country || null,
-      JSON.stringify(payload),
-      payload.referenceMedia ? JSON.stringify(payload.referenceMedia) : null,
-    ],
-  );
-  if (!rows[0]) throw new ApiError("INTAKE_NOT_FOUND", 404);
-  return intakeView(rows[0]);
+  return withTransaction(async (client) => {
+    const hasStyleUpdate = Object.hasOwn(payload, "styleCode") || Object.hasOwn(payload, "styleId");
+    const linkedStyleCode = hasStyleUpdate
+      ? await resolveStarterStyleCode(client, payload.styleCode || payload.styleId || null)
+      : null;
+    const { rows } = await client.query(
+      `
+        update customer_intakes
+        set
+          category = coalesce($2, category),
+          product_line = coalesce($3, product_line),
+          style_code = case when $4::boolean then $5 else style_code end,
+          customer_name = coalesce($6, customer_name),
+          contact_email = coalesce($7, contact_email),
+          contact_phone = coalesce($8, contact_phone),
+          budget_minor_units = coalesce($9, budget_minor_units),
+          required_date = coalesce($10, required_date),
+          delivery_country = coalesce($11, delivery_country),
+          form_payload = form_payload || $12::jsonb,
+          reference_media = coalesce($13::jsonb, reference_media),
+          version = version + 1,
+          updated_at = now()
+        where intake_code = $1 and status = 'draft'
+        returning *
+      `,
+      [
+        intakeCode,
+        payload.category || null,
+        payload.productLine || null,
+        hasStyleUpdate,
+        linkedStyleCode,
+        payload.name || payload.customerName || null,
+        normalizeEmail(payload.contactEmail || payload.email) || null,
+        payload.contactPhone || payload.phone || null,
+        moneyToMinorUnits(payload.budget),
+        payload.requiredDate || null,
+        payload.deliveryCountry || payload.country || null,
+        JSON.stringify(payload),
+        payload.referenceMedia ? JSON.stringify(payload.referenceMedia) : null,
+      ],
+    );
+    if (!rows[0]) throw new ApiError("INTAKE_NOT_FOUND", 404);
+    return intakeView(rows[0]);
+  });
 }
 
 export async function submitIntake(intakeCode) {
@@ -304,7 +395,7 @@ export async function submitIntake(intakeCode) {
     const timelineCode = await nextCode(client, "TL");
     const summary = {
       category: intake.category,
-      styleCode: intake.style_code,
+      styleCode: intake.form_payload?.styleCode || intake.form_payload?.styleId || intake.style_code,
       metal: intake.form_payload?.metal,
       heroMedia: intake.form_payload?.heroMedia,
       measurements: intake.form_payload?.conditional || {},
@@ -389,11 +480,20 @@ export async function getCustomerOrder(orderCode, email) {
     const order = orderResult.rows[0];
     if (!order) throw new ApiError("ORDER_ACCESS_DENIED", 403);
 
-    const [actions, artifacts, timeline] = await Promise.all([
-      client.query("select * from customer_actions where order_id = $1 order by created_at desc", [order.id]),
-      client.query("select * from published_artifacts where order_id = $1 order by published_at desc", [order.id]),
-      client.query("select * from customer_timeline_events where order_id = $1 and visibility = 'customer' order by created_at desc", [order.id]),
-    ]);
+    // node-postgres는 한 client에서 쿼리를 병렬 실행하지 않는다. pg@9에서 제거될
+    // concurrent client.query 호출을 피하고, 짧은 읽기 트랜잭션 안에서 순서대로 읽는다.
+    const actions = await client.query(
+      "select * from customer_actions where order_id = $1 order by created_at desc",
+      [order.id],
+    );
+    const artifacts = await client.query(
+      "select * from published_artifacts where order_id = $1 order by published_at desc",
+      [order.id],
+    );
+    const timeline = await client.query(
+      "select * from customer_timeline_events where order_id = $1 and visibility = 'customer' order by created_at desc",
+      [order.id],
+    );
     const nextAction = actions.rows.find((row) => row.id === order.next_action_id) || actions.rows.find((row) => row.status === "OPEN");
 
     return {
@@ -415,17 +515,55 @@ export async function getCustomerOrder(orderCode, email) {
 
 // 고객 배송지 저장 — customer_orders.summary.shippingAddress (어드민 상세에도 그대로 노출)
 const SHIPPING_FIELDS = ["recipientName", "phone", "addressLine1", "addressLine2", "city", "region", "postalCode", "country", "notes"];
+const REQUIRED_SHIPPING_FIELDS = ["recipientName", "phone", "addressLine1", "city", "region", "postalCode", "country"];
+const SHIPPING_FIELD_LIMITS = {
+  recipientName: 120,
+  phone: 40,
+  addressLine1: 200,
+  addressLine2: 200,
+  city: 120,
+  region: 120,
+  postalCode: 40,
+  country: 120,
+  notes: 500,
+};
+
+function normalizeShippingAddress(address) {
+  if (!isPlainObject(address)) throw validationError("shipping address must be an object");
+  const clean = {};
+  for (const key of SHIPPING_FIELDS) {
+    const raw = address[key];
+    if (raw !== undefined && raw !== null && typeof raw !== "string") {
+      throw validationError(`${key} must be a string`);
+    }
+    const value = String(raw || "").trim();
+    if (value.length > SHIPPING_FIELD_LIMITS[key]) throw validationError(`${key} is too long`);
+    clean[key] = value;
+  }
+  for (const key of REQUIRED_SHIPPING_FIELDS) {
+    if (!clean[key]) throw validationError(`${key} is required`);
+  }
+  if (clean.phone.replace(/\D/g, "").length < 7) throw validationError("phone is invalid");
+  return clean;
+}
+
+function hasCompleteShippingAddress(address) {
+  return isPlainObject(address) && REQUIRED_SHIPPING_FIELDS.every((key) => typeof address[key] === "string" && address[key].trim());
+}
+
 export async function updateOrderShippingAddress(orderCode, email, address = {}) {
+  const clean = normalizeShippingAddress(address);
   return withTransaction(async (client) => {
     const customer = await requireCustomerByEmail(client, email);
     const { rows } = await client.query(
-      "select id, summary from customer_orders where order_code = $1 and customer_id = $2 for update",
+      "select id, stage, summary from customer_orders where order_code = $1 and customer_id = $2 for update",
       [orderCode, customer.id],
     );
     const order = rows[0];
     if (!order) throw new ApiError("ORDER_ACCESS_DENIED", 403);
-    const clean = {};
-    for (const key of SHIPPING_FIELDS) clean[key] = String(address[key] || "").slice(0, 200);
+    if (["SHIPPING", "DELIVERED", "CANCELLED"].includes(order.stage)) {
+      throw stateConflict("shipping address cannot be changed after shipping starts", "SHIPPING_ADDRESS_LOCKED");
+    }
     await client.query(
       "update customer_orders set summary = coalesce(summary, '{}'::jsonb) || $2::jsonb, updated_at = now() where id = $1",
       [order.id, JSON.stringify({ shippingAddress: clean })],
@@ -462,9 +600,18 @@ export async function cancelOrder(orderCode, email, reason = "") {
     if (!order) throw new ApiError("ORDER_ACCESS_DENIED", 403);
     if (order.stage === "CANCELLED") return { ok: true, cancelled: true };
     const cleanReason = String(reason || "").slice(0, 500);
-    if (CANCEL_DIRECT_STAGES.includes(order.stage)) {
+    // DEPOSIT still names the stage after a customer reports a transfer. Treat
+    // that state as money-in-flight and route it to an operator instead of
+    // immediately closing an order that may already have been paid.
+    const depositReported = order.stage === "DEPOSIT"
+      && await timelineEventExists(client, order.id, "payment_reported", "deposit");
+    if (CANCEL_DIRECT_STAGES.includes(order.stage) && !depositReported) {
       await client.query(
         "update customer_orders set stage = 'CANCELLED', phase = 'CLOSED', waiting_on = 'NONE', next_action_id = null, updated_at = now() where id = $1",
+        [order.id],
+      );
+      await client.query(
+        "update customer_actions set status = 'CANCELLED', updated_at = now() where order_id = $1 and status = 'OPEN'",
         [order.id],
       );
       await client.query(
@@ -474,9 +621,16 @@ export async function cancelOrder(orderCode, email, reason = "") {
       );
       return { ok: true, cancelled: true, customerEmail: customer.email, locale: customer.locale };
     }
-    if (CANCEL_REQUEST_STAGES.includes(order.stage)) {
+    if (depositReported || CANCEL_REQUEST_STAGES.includes(order.stage)) {
+      if (await timelineEventExists(client, order.id, "cancel_requested")) {
+        return { ok: true, requested: true, customerEmail: customer.email, locale: customer.locale };
+      }
       await client.query(
-        "update customer_orders set waiting_on = 'BELOVEDIAMOND', updated_at = now() where id = $1",
+        "update customer_orders set waiting_on = 'BELOVEDIAMOND', next_action_id = null, updated_at = now() where id = $1",
+        [order.id],
+      );
+      await client.query(
+        "update customer_actions set status = 'CANCELLED', updated_at = now() where order_id = $1 and status = 'OPEN'",
         [order.id],
       );
       await client.query(
@@ -490,17 +644,84 @@ export async function cancelOrder(orderCode, email, reason = "") {
   });
 }
 
+async function latestArtifact(client, orderId, type) {
+  const { rows } = await client.query(
+    `select * from published_artifacts
+     where order_id = $1 and type = $2
+     order by published_at desc, id desc limit 1`,
+    [orderId, type],
+  );
+  return rows[0] || null;
+}
+
+async function latestActionOfKind(client, orderId, kind) {
+  const { rows } = await client.query(
+    `select * from customer_actions
+     where order_id = $1 and kind = $2
+     order by created_at desc, id desc limit 1`,
+    [orderId, kind],
+  );
+  return rows[0] || null;
+}
+
+async function timelineEventExists(client, orderId, type, paymentKind = null) {
+  const params = [orderId, type];
+  let kindClause = "";
+  if (paymentKind) {
+    params.push(paymentKind);
+    kindClause = "and payload #>> '{data,kind}' = $3";
+  }
+  const { rows } = await client.query(
+    `select 1 from customer_timeline_events
+     where order_id = $1 and payload->>'type' = $2 ${kindClause}
+     limit 1`,
+    params,
+  );
+  return Boolean(rows[0]);
+}
+
+function actionResponse(action) {
+  return action?.status === "RESPONDED" ? action.response_payload?.response : null;
+}
+
 // 고객 송금 셀프 리포트 (deposit|balance) — 타임라인 기록 + 공은 BeloveD로
 export async function reportOrderPayment(orderCode, email, kind) {
-  const paymentKind = kind === "balance" ? "balance" : "deposit";
+  if (kind !== "deposit" && kind !== "balance") {
+    throw validationError("kind must be deposit or balance");
+  }
+  const paymentKind = kind;
   return withTransaction(async (client) => {
     const customer = await requireCustomerByEmail(client, email);
     const { rows } = await client.query(
-      "select id, stage from customer_orders where order_code = $1 and customer_id = $2 for update",
+      "select id, stage, summary from customer_orders where order_code = $1 and customer_id = $2 for update",
       [orderCode, customer.id],
     );
     const order = rows[0];
     if (!order) throw new ApiError("ORDER_ACCESS_DENIED", 403);
+    // 주문 행 잠금 뒤 중복을 확인하므로 동시 더블클릭도 한 건만 기록된다.
+    if (await timelineEventExists(client, order.id, "payment_reported", paymentKind)) {
+      throw stateConflict(`${paymentKind} payment has already been reported`, "PAYMENT_ALREADY_REPORTED");
+    }
+
+    const expectedStage = paymentKind === "deposit" ? "DEPOSIT" : "BALANCE";
+    if (order.stage !== expectedStage) {
+      throw stateConflict(`${paymentKind} payment cannot be reported from ${order.stage}`);
+    }
+    if (paymentKind === "deposit") {
+      const quote = await latestArtifact(client, order.id, "QUOTE");
+      const quoteAction = await latestActionOfKind(client, order.id, "QUOTE_ACCEPTANCE");
+      if (!quote || !(Number(quote.payload?.totalUsd) > 0) || actionResponse(quoteAction) !== "APPROVE") {
+        throw stateConflict("an approved quote with a total is required", "ORDER_PREREQUISITE_MISSING");
+      }
+      if (!hasCompleteShippingAddress(order.summary?.shippingAddress)) {
+        throw stateConflict("a complete shipping address is required before reporting the deposit", "ORDER_PREREQUISITE_MISSING");
+      }
+    } else {
+      const qcAction = await latestActionOfKind(client, order.id, "FINAL_QC_CONFIRMATION");
+      if (actionResponse(qcAction) !== "CONFIRM" || !(await timelineEventExists(client, order.id, "balance_requested"))) {
+        throw stateConflict("confirmed QC and a balance request are required", "ORDER_PREREQUISITE_MISSING");
+      }
+    }
     await client.query(
       `insert into customer_timeline_events (event_code, order_id, title, body, payload)
        values ($1, $2, $3, $4, $5)`,
@@ -527,24 +748,53 @@ export async function respondToAction(actionCode, email, payload = {}) {
     const customer = await requireCustomerByEmail(client, email);
     const { rows } = await client.query(
       `
-        select a.*, o.customer_id, o.order_code
+        select a.*, o.customer_id, o.order_code, o.stage as order_stage,
+               o.next_action_id as order_next_action_id
         from customer_actions a
         join customer_orders o on o.id = a.order_id
         where a.action_code = $1
-        for update
+        for update of a, o
       `,
       [actionCode],
     );
     const action = rows[0];
     if (!action || action.customer_id !== customer.id) throw new ApiError("ORDER_ACCESS_DENIED", 403);
     if (action.status !== "OPEN") throw new ApiError("ACTION_STALE", 409);
+    if (action.order_next_action_id !== action.id) throw new ApiError("ACTION_STALE", 409);
     if (payload.expectedSubjectVersionId && payload.expectedSubjectVersionId !== action.subject_version_id) {
       throw new ApiError("ACTION_STALE", 409);
     }
 
     const response = payload.response;
-    if (response && action.allowed_responses.length > 0 && !action.allowed_responses.includes(response)) {
-      throw new ApiError("INVALID_ACTION_RESPONSE", 400);
+    if (typeof response !== "string" || !response) throw validationError("response is required");
+    if (!Array.isArray(action.allowed_responses) || !action.allowed_responses.includes(response)) {
+      throw validationError("response is not allowed");
+    }
+    if (response === "REQUEST_CHANGES" && (typeof payload.message !== "string" || !payload.message.trim())) {
+      throw validationError("message is required when requesting changes");
+    }
+
+    if (action.kind === "QUOTE_ACCEPTANCE") {
+      if (action.order_stage !== "QUOTE") throw new ApiError("ACTION_STALE", 409);
+      const quote = await latestArtifact(client, action.order_id, "QUOTE");
+      const total = Number(quote?.payload?.totalUsd);
+      if (!quote || !(total > 0) || !Number.isFinite(total) || action.subject_version_id !== quote.artifact_code) {
+        throw stateConflict("the current quote must include a valid total", "ORDER_PREREQUISITE_MISSING");
+      }
+    }
+    if (action.kind === "CAD_REVIEW") {
+      if (action.order_stage !== "CAD") throw new ApiError("ACTION_STALE", 409);
+      const cad = await latestArtifact(client, action.order_id, "CAD");
+      if (!cad || !Array.isArray(cad.media) || cad.media.length === 0 || action.subject_version_id !== cad.artifact_code) {
+        throw stateConflict("the current CAD media is required", "ORDER_PREREQUISITE_MISSING");
+      }
+    }
+    if (action.kind === "FINAL_QC_CONFIRMATION") {
+      if (action.order_stage !== "FINAL_QC") throw new ApiError("ACTION_STALE", 409);
+      const qc = await latestArtifact(client, action.order_id, "QC");
+      if (!qc || !Array.isArray(qc.media) || qc.media.length === 0 || action.subject_version_id !== qc.artifact_code) {
+        throw stateConflict("the current QC media is required", "ORDER_PREREQUISITE_MISSING");
+      }
     }
 
     await client.query(
@@ -671,18 +921,125 @@ const ACTION_KINDS = new Set([
   "FINAL_QC_CONFIRMATION", "DELIVERY_ADDRESS",
 ]);
 
+const EVENT_ALLOWED_STAGES = {
+  proposal_sent: ["OPS_REVIEW", "STONE_SELECTION", "QUOTE"],
+  deposit_confirmed: ["DEPOSIT"],
+  diamond_locked: ["CAD"],
+  cad_ready: ["CAD"],
+  production_started: ["CAD"],
+  qc_ready: ["PRODUCTION", "FINAL_QC"],
+  balance_requested: ["FINAL_QC"],
+  balance_confirmed: ["BALANCE"],
+  order_cancelled: ["OPS_REVIEW", "STONE_SELECTION", "QUOTE", "DEPOSIT", "CAD", "PRODUCTION", "FINAL_QC", "BALANCE"],
+  shipped: ["BALANCE"],
+  delivered: ["SHIPPING"],
+};
+
+function normalizeArtifact(artifact) {
+  if (!isPlainObject(artifact)) throw validationError("artifact must be an object");
+  if (!ARTIFACT_TYPES.has(artifact.type)) throw validationError("unknown artifact type");
+  if (artifact.payload !== undefined && !isPlainObject(artifact.payload)) throw validationError("artifact.payload must be an object");
+  if (artifact.media !== undefined && !Array.isArray(artifact.media)) throw validationError("artifact.media must be an array");
+  const media = (artifact.media || []).map((item, index) => {
+    if (!isPlainObject(item)) throw validationError(`artifact.media[${index}] must be an object`);
+    const src = cleanRequiredText(item.src, `artifact.media[${index}].src`, 2_000);
+    try {
+      const parsed = new URL(src);
+      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") throw new Error("bad protocol");
+    } catch {
+      throw validationError(`artifact.media[${index}].src must be an http(s) URL`);
+    }
+    return { ...item, src };
+  });
+  if (media.length > 5) throw validationError("artifact.media supports at most 5 items");
+  return { ...artifact, payload: { ...(artifact.payload || {}) }, media };
+}
+
+function normalizeAction(action) {
+  if (!isPlainObject(action)) throw validationError("action must be an object");
+  if (!ACTION_KINDS.has(action.kind)) throw validationError("unknown action kind");
+  if (!Array.isArray(action.allowedResponses) || action.allowedResponses.length === 0) {
+    throw validationError("action.allowedResponses must be a non-empty array");
+  }
+  const allowedResponses = action.allowedResponses.map((response, index) => (
+    cleanRequiredText(response, `action.allowedResponses[${index}]`, 80)
+  ));
+  if (new Set(allowedResponses).size !== allowedResponses.length) {
+    throw validationError("action.allowedResponses must not contain duplicates");
+  }
+  return { ...action, allowedResponses };
+}
+
+function requireActionResponses(action, required, allowed, eventType) {
+  const responses = action?.allowedResponses || [];
+  if (!required.every((response) => responses.includes(response))
+      || responses.some((response) => !allowed.includes(response))) {
+    throw validationError(`${eventType} has invalid allowed responses`);
+  }
+}
+
+function validateOrderEventInput(type, data, extras) {
+  if (!isPlainObject(data)) throw validationError("data must be an object");
+  if (!isPlainObject(extras)) throw validationError("event extras must be an object");
+  const cleanData = { ...data };
+  const cleanExtras = {
+    artifact: extras.artifact === undefined ? null : normalizeArtifact(extras.artifact),
+    action: extras.action === undefined ? null : normalizeAction(extras.action),
+  };
+  const artifactEvents = new Set(["proposal_sent", "cad_ready", "qc_ready"]);
+  const actionEvents = new Set(["proposal_sent", "cad_ready", "qc_ready"]);
+  if (cleanExtras.artifact && !artifactEvents.has(type)) throw validationError(`${type} does not accept an artifact`);
+  if (cleanExtras.action && !actionEvents.has(type)) throw validationError(`${type} does not accept an action`);
+
+  if (type === "proposal_sent") {
+    if (cleanExtras.artifact?.type !== "QUOTE") throw validationError("proposal_sent requires a QUOTE artifact");
+    const total = positiveMoney(cleanExtras.artifact.payload.totalUsd, "artifact.payload.totalUsd");
+    cleanExtras.artifact.payload.totalUsd = total;
+    if (cleanExtras.artifact.payload.depositUsd !== undefined && cleanExtras.artifact.payload.depositUsd !== null && cleanExtras.artifact.payload.depositUsd !== "") {
+      const deposit = positiveMoney(cleanExtras.artifact.payload.depositUsd, "artifact.payload.depositUsd");
+      if (deposit >= total) throw validationError("artifact.payload.depositUsd must be less than totalUsd");
+      cleanExtras.artifact.payload.depositUsd = deposit;
+    }
+    if (cleanExtras.action?.kind !== "QUOTE_ACCEPTANCE") throw validationError("proposal_sent requires a QUOTE_ACCEPTANCE action");
+    requireActionResponses(cleanExtras.action, ["APPROVE"], ["APPROVE", "REQUEST_CHANGES"], "proposal_sent");
+  }
+  if (type === "diamond_locked") cleanData.igi = cleanRequiredText(cleanData.igi, "data.igi", 120);
+  if (type === "cad_ready") {
+    if (cleanExtras.artifact?.type !== "CAD" || cleanExtras.artifact.media.length === 0) {
+      throw validationError("cad_ready requires CAD media");
+    }
+    if (cleanExtras.action?.kind !== "CAD_REVIEW") throw validationError("cad_ready requires a CAD_REVIEW action");
+    requireActionResponses(cleanExtras.action, ["APPROVE"], ["APPROVE", "REQUEST_CHANGES"], "cad_ready");
+  }
+  if (type === "qc_ready") {
+    if (cleanExtras.artifact?.type !== "QC" || cleanExtras.artifact.media.length === 0) {
+      throw validationError("qc_ready requires QC media");
+    }
+    if (cleanExtras.action?.kind !== "FINAL_QC_CONFIRMATION") throw validationError("qc_ready requires a FINAL_QC_CONFIRMATION action");
+    requireActionResponses(cleanExtras.action, ["CONFIRM"], ["CONFIRM", "REQUEST_CHANGES"], "qc_ready");
+  }
+  if (type === "shipped") cleanData.tracking = cleanRequiredText(cleanData.tracking, "data.tracking", 160);
+  if ((type === "deposit_confirmed" || type === "balance_confirmed") && cleanData.amountUsd !== undefined) {
+    cleanData.amountUsd = positiveMoney(cleanData.amountUsd, "data.amountUsd");
+  }
+  if (type === "order_cancelled" && cleanData.refundNote !== undefined) {
+    if (typeof cleanData.refundNote !== "string" || cleanData.refundNote.length > 500) {
+      throw validationError("data.refundNote must be a string of at most 500 characters");
+    }
+    cleanData.refundNote = cleanData.refundNote.trim();
+  }
+  return { data: cleanData, extras: cleanExtras };
+}
+
 // extras.artifact: 고객 포털에 공개할 미디어/페이로드, extras.action: 열릴 고객 컨펌.
 // 같은 트랜잭션에서 stage 전이와 함께 원자적으로 발행된다 — 절반만 적용되는 상태 없음.
 export async function recordOrderEvent(orderCode, type, data = {}, extras = {}) {
   // 왜: EVENT_TRANSITIONS[type]는 상속된 Object.prototype 속성명("toString" 등)도 truthy로 통과시킨다 — own-property로만 검사
   const transition = Object.hasOwn(EVENT_TRANSITIONS, type) ? EVENT_TRANSITIONS[type] : null;
-  if (!transition) throw new ApiError("VALIDATION_ERROR", 400, `unknown event type: ${type}`);
-  if (extras.artifact && !ARTIFACT_TYPES.has(extras.artifact.type)) {
-    throw new ApiError("VALIDATION_ERROR", 400, "unknown artifact type");
-  }
-  if (extras.action && !ACTION_KINDS.has(extras.action.kind)) {
-    throw new ApiError("VALIDATION_ERROR", 400, "unknown action kind");
-  }
+  if (!transition) throw validationError(`unknown event type: ${type}`);
+  const normalized = validateOrderEventInput(type, data, extras);
+  const eventData = normalized.data;
+  const eventExtras = normalized.extras;
   return withTransaction(async (client) => {
     const { rows } = await client.query(
       `select o.*, c.email, c.locale from customer_orders o
@@ -692,57 +1049,211 @@ export async function recordOrderEvent(orderCode, type, data = {}, extras = {}) 
     );
     const order = rows[0];
     if (!order) throw new ApiError("NOT_FOUND", 404);
+
+    const cancellationPending = await timelineEventExists(client, order.id, "cancel_requested");
+    if (cancellationPending && type !== "order_cancelled") {
+      throw stateConflict("the cancellation request must be resolved before advancing the order", "CANCELLATION_PENDING");
+    }
+
+    if (!EVENT_ALLOWED_STAGES[type]?.includes(order.stage)) {
+      throw stateConflict(`${type} cannot be applied from ${order.stage}`);
+    }
+
+    // 재발행은 고객이 최신 버전의 변경을 요청한 제안/QC/CAD에만 허용한다.
+    // 그 밖의 이벤트는 주문 행 잠금 아래 단 한 번만 기록된다.
+    const repeatableKind = type === "proposal_sent"
+      ? "QUOTE_ACCEPTANCE"
+      : type === "qc_ready"
+        ? "FINAL_QC_CONFIRMATION"
+        : type === "cad_ready" ? "CAD_REVIEW" : null;
+    if (repeatableKind && ["QUOTE", "FINAL_QC", "CAD"].includes(order.stage)) {
+      const previousAction = await latestActionOfKind(client, order.id, repeatableKind);
+      if (previousAction && actionResponse(previousAction) !== "REQUEST_CHANGES") {
+        throw stateConflict(`${type} is already awaiting a customer response`, "EVENT_ALREADY_RECORDED");
+      }
+    } else if (await timelineEventExists(client, order.id, type)) {
+      throw stateConflict(`${type} has already been recorded`, "EVENT_ALREADY_RECORDED");
+    }
+
+    if (type === "deposit_confirmed") {
+      const quote = await latestArtifact(client, order.id, "QUOTE");
+      const quoteAction = await latestActionOfKind(client, order.id, "QUOTE_ACCEPTANCE");
+      if (!quote || !(Number(quote.payload?.totalUsd) > 0) || actionResponse(quoteAction) !== "APPROVE") {
+        throw stateConflict("an approved quote with a total is required", "ORDER_PREREQUISITE_MISSING");
+      }
+      if (!(await timelineEventExists(client, order.id, "payment_reported", "deposit"))) {
+        throw stateConflict("the customer must report the deposit first", "PAYMENT_REPORT_REQUIRED");
+      }
+    }
+    if (type === "diamond_locked" && !(await timelineEventExists(client, order.id, "deposit_confirmed"))) {
+      throw stateConflict("the deposit must be confirmed first", "ORDER_PREREQUISITE_MISSING");
+    }
+    if (type === "cad_ready" && !(await timelineEventExists(client, order.id, "diamond_locked"))) {
+      throw stateConflict("the diamond must be locked first", "ORDER_PREREQUISITE_MISSING");
+    }
+    if (type === "production_started") {
+      if (!(await timelineEventExists(client, order.id, "deposit_confirmed")) || !(await timelineEventExists(client, order.id, "diamond_locked"))) {
+        throw stateConflict("confirmed deposit and locked diamond are required", "ORDER_PREREQUISITE_MISSING");
+      }
+      if (await timelineEventExists(client, order.id, "cad_ready")) {
+        const cadAction = await latestActionOfKind(client, order.id, "CAD_REVIEW");
+        if (actionResponse(cadAction) !== "APPROVE") {
+          throw stateConflict("the latest CAD must be approved first", "ORDER_PREREQUISITE_MISSING");
+        }
+      }
+    }
+    if (type === "qc_ready" && !(await timelineEventExists(client, order.id, "production_started"))) {
+      throw stateConflict("production must start before QC", "ORDER_PREREQUISITE_MISSING");
+    }
+    if (type === "balance_requested") {
+      const qc = await latestArtifact(client, order.id, "QC");
+      const qcAction = await latestActionOfKind(client, order.id, "FINAL_QC_CONFIRMATION");
+      if (!qc || !Array.isArray(qc.media) || qc.media.length === 0 || actionResponse(qcAction) !== "CONFIRM") {
+        throw stateConflict("QC media and customer confirmation are required", "ORDER_PREREQUISITE_MISSING");
+      }
+    }
+    if (type === "balance_confirmed") {
+      if (!(await timelineEventExists(client, order.id, "balance_requested"))) {
+        throw stateConflict("the balance must be requested first", "ORDER_PREREQUISITE_MISSING");
+      }
+      if (!(await timelineEventExists(client, order.id, "payment_reported", "balance"))) {
+        throw stateConflict("the customer must report the balance first", "PAYMENT_REPORT_REQUIRED");
+      }
+    }
+    let refundRecord = null;
+    if (type === "order_cancelled") {
+      const payments = Array.isArray(order.summary?.payments) ? order.summary.payments : [];
+      const paidMinor = payments.reduce((sum, payment) => {
+        const value = moneyToMinorUnits(payment.amountUsd);
+        return sum + (Number.isInteger(value) && value > 0 ? value : 0);
+      }, 0);
+      const transferReported = await timelineEventExists(client, order.id, "payment_reported", "deposit")
+        || await timelineEventExists(client, order.id, "payment_reported", "balance");
+      if (await timelineEventExists(client, order.id, "balance_confirmed")) {
+        throw stateConflict("a fully paid order cannot be cancelled without a dedicated refund workflow");
+      }
+      if ((paidMinor > 0 || transferReported) && !eventData.refundNote) {
+        throw validationError("data.refundNote is required after a transfer is reported or confirmed");
+      }
+      if (paidMinor > 0) {
+        eventData.refundAmountUsd = paidMinor / 100;
+        refundRecord = {
+          amountUsd: paidMinor / 100,
+          note: eventData.refundNote,
+          at: new Date().toISOString(),
+        };
+      }
+    }
+    if (type === "shipped") {
+      if (!(await timelineEventExists(client, order.id, "balance_confirmed"))) {
+        throw stateConflict("the balance must be confirmed first", "ORDER_PREREQUISITE_MISSING");
+      }
+      if (!hasCompleteShippingAddress(order.summary?.shippingAddress)) {
+        throw stateConflict("a complete shipping address is required", "ORDER_PREREQUISITE_MISSING");
+      }
+    }
+    if (type === "delivered") {
+      if (!(await timelineEventExists(client, order.id, "shipped")) || !String(order.summary?.tracking || "").trim()) {
+        throw stateConflict("the order must be shipped with tracking first", "ORDER_PREREQUISITE_MISSING");
+      }
+    }
+
+    // 제안에 별도 디파짓 금액이 없으면 서버 운영 설정을 스냅샷으로 저장한다.
+    // 이후 포털·영수증 모두 같은 QUOTE payload를 보므로 설정 변경에도 기존 주문은 안정적이다.
+    if (type === "proposal_sent" && eventExtras.artifact.payload.depositUsd === undefined) {
+      const rate = await configuredDepositRate(client);
+      eventExtras.artifact.payload.depositRate = rate;
+      eventExtras.artifact.payload.depositUsd = computedDeposit(eventExtras.artifact.payload.totalUsd, rate);
+    }
     const eventCode = await nextCode(client, "TL");
     await client.query(
       `insert into customer_timeline_events (event_code, order_id, title, body, payload)
        values ($1, $2, $3, $4, $5)`,
-      [eventCode, order.id, type, null, { type, data }],
+      [eventCode, order.id, type, null, { type, data: eventData }],
     );
     await client.query(
       `update customer_orders set stage = $2, phase = $3, waiting_on = $4, updated_at = now()
        where id = $1`,
       [order.id, transition.stage, transition.phase, transition.waitingOn],
     );
+    if (type === "order_cancelled") {
+      await client.query(
+        "update customer_actions set status = 'CANCELLED', updated_at = now() where order_id = $1 and status = 'OPEN'",
+        [order.id],
+      );
+      await client.query("update customer_orders set next_action_id = null where id = $1", [order.id]);
+      if (refundRecord) {
+        const refunds = [...(Array.isArray(order.summary?.refunds) ? order.summary.refunds : []), refundRecord];
+        await client.query(
+          `update customer_orders
+           set summary = coalesce(summary, '{}'::jsonb) || jsonb_build_object('refunds', $2::jsonb)
+           where id = $1`,
+          [order.id, JSON.stringify(refunds)],
+        );
+      }
+    }
     // 운송장은 타임라인 payload에만 두면 조회가 어렵다 — 리뷰 인증(주문번호+운송장)이 summary에서 읽는다
-    if (type === "shipped" && data.tracking) {
+    if (type === "shipped") {
       await client.query(
         `update customer_orders set summary = coalesce(summary, '{}'::jsonb) || jsonb_build_object('tracking', $2::text)
          where id = $1`,
-        [order.id, String(data.tracking).trim()],
+        [order.id, eventData.tracking],
       );
     }
 
     // 결제 확인(디파짓/잔금) — 최신 견적(QUOTE)에서 금액을 확정해 summary.payments에 영수증으로 남긴다.
     // 메일 영수증 블록과 포털 결제 내역이 같은 숫자를 보는 단일 소스. data.amountUsd로 어드민 수동 override 가능.
-    // 같은 타입 재발사(재발송 의도)는 항목을 교체해 중복 영수증을 만들지 않는다.
     let receipt = null;
     if (type === "deposit_confirmed" || type === "balance_confirmed") {
-      const { rows: quoteRows } = await client.query(
-        `select payload from published_artifacts
-         where order_id = $1 and type = 'QUOTE' order by published_at desc limit 1`,
-        [order.id],
-      );
-      const qp = quoteRows[0]?.payload || {};
-      const total = Number(qp.totalUsd) > 0 ? Number(qp.totalUsd) : null;
-      const deposit = total ? Math.min(total, Number(qp.depositUsd) > 0 ? Number(qp.depositUsd) : Math.round(total * 0.3)) : null;
-      const fallback = type === "deposit_confirmed" ? deposit : (total && deposit ? total - deposit : null);
-      const amount = Number(data.amountUsd) > 0 ? Number(data.amountUsd) : fallback;
-      if (amount) {
-        const prior = (Array.isArray(order.summary?.payments) ? order.summary.payments : []).filter((p) => p.kind !== type);
-        const payments = [...prior, { kind: type, amountUsd: amount, at: new Date().toISOString() }];
-        const paidUsd = payments.reduce((s, p) => s + (Number(p.amountUsd) || 0), 0);
-        receipt = { kind: type, amountUsd: amount, totalUsd: total, paidUsd, remainingUsd: total ? Math.max(0, total - paidUsd) : null };
-        await client.query(
-          `update customer_orders set summary = coalesce(summary, '{}'::jsonb) || jsonb_build_object('payments', $2::jsonb)
-           where id = $1`,
-          [order.id, JSON.stringify(payments)],
-        );
+      const quote = await latestArtifact(client, order.id, "QUOTE");
+      const qp = quote?.payload || {};
+      const total = positiveMoney(qp.totalUsd, "quote totalUsd");
+      const totalMinor = moneyToMinorUnits(total);
+      const depositRate = normalizedDepositRate(qp.depositRate ?? await configuredDepositRate(client));
+      const deposit = Number(qp.depositUsd) > 0
+        ? positiveMoney(qp.depositUsd, "quote depositUsd")
+        : computedDeposit(total, depositRate);
+      const depositMinor = moneyToMinorUnits(deposit);
+      if (depositMinor >= totalMinor) throw validationError("quote depositUsd must be less than totalUsd");
+
+      const prior = (Array.isArray(order.summary?.payments) ? order.summary.payments : []).filter((p) => p.kind !== type);
+      const alreadyPaidMinor = prior.reduce((sum, payment) => {
+        const value = moneyToMinorUnits(payment.amountUsd);
+        return sum + (Number.isInteger(value) && value > 0 ? value : 0);
+      }, 0);
+      const remainingMinor = Math.max(0, totalMinor - alreadyPaidMinor);
+      const fallbackMinor = type === "deposit_confirmed" ? depositMinor : remainingMinor;
+      const amountMinor = eventData.amountUsd !== undefined
+        ? moneyToMinorUnits(eventData.amountUsd)
+        : fallbackMinor;
+      if (!Number.isInteger(amountMinor) || amountMinor <= 0) {
+        throw validationError(`${type} requires a positive receipt amount`);
       }
+      if (amountMinor > remainingMinor) throw validationError("data.amountUsd exceeds the remaining order total");
+      if (type === "balance_confirmed" && amountMinor !== remainingMinor) {
+        throw validationError("data.amountUsd must equal the remaining order total");
+      }
+
+      const amount = amountMinor / 100;
+      const payments = [...prior, { kind: type, amountUsd: amount, at: new Date().toISOString() }];
+      const paidMinor = alreadyPaidMinor + amountMinor;
+      receipt = {
+        kind: type,
+        amountUsd: amount,
+        totalUsd: total,
+        paidUsd: paidMinor / 100,
+        remainingUsd: Math.max(0, totalMinor - paidMinor) / 100,
+      };
+      await client.query(
+        `update customer_orders set summary = coalesce(summary, '{}'::jsonb) || jsonb_build_object('payments', $2::jsonb)
+         where id = $1`,
+        [order.id, JSON.stringify(payments)],
+      );
     }
 
     let artifactCode = null;
-    if (extras.artifact) {
-      const a = extras.artifact;
+    if (eventExtras.artifact) {
+      const a = eventExtras.artifact;
       artifactCode = await nextCode(client, "ART");
       // 버전 자동 증가 — 수정 제안 재발송이 V1으로 남으면 고객·어드민 모두 몇 번째 안인지 알 수 없다
       const { rows: verRows } = await client.query(
@@ -759,8 +1270,8 @@ export async function recordOrderEvent(orderCode, type, data = {}, extras = {}) 
     }
 
     let actionCode = null;
-    if (extras.action) {
-      const act = extras.action;
+    if (eventExtras.action) {
+      const act = eventExtras.action;
       // 한 번에 열린 컨펌은 하나 — 이전 열린 액션은 취소하고 새 액션을 다음 액션으로 지정
       await client.query(
         "update customer_actions set status = 'CANCELLED', updated_at = now() where order_id = $1 and status = 'OPEN'",
@@ -772,8 +1283,8 @@ export async function recordOrderEvent(orderCode, type, data = {}, extras = {}) 
          values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
          returning id`,
         [actionCode, order.id, act.kind, act.title || type, act.description || null,
-          act.subjectType || extras.artifact?.type || "ORDER",
-          act.subjectVersionId || artifactCode || orderCode,
+          act.subjectType || eventExtras.artifact?.type || "ORDER",
+          artifactCode || act.subjectVersionId || orderCode,
           act.dueAt || null, act.allowedResponses || []],
       );
       await client.query(
@@ -785,7 +1296,7 @@ export async function recordOrderEvent(orderCode, type, data = {}, extras = {}) 
     await client.query(
       `insert into audit_log (actor_type, actor_ref, entity_type, entity_ref, action, before_json, after_json)
        values ('admin', null, 'order', $1, $2, $3, $4)`,
-      [orderCode, `event:${type}`, { stage: order.stage }, { stage: transition.stage, data, artifactCode, actionCode }],
+      [orderCode, `event:${type}`, { stage: order.stage }, { stage: transition.stage, data: eventData, artifactCode, actionCode }],
     );
     return {
       orderCode, stage: transition.stage, eventId: eventCode, artifactCode, actionCode, receipt,
@@ -801,10 +1312,13 @@ export async function listServerOrders({ limit = 100 } = {}) {
     `select o.order_code, o.stage, o.phase, o.waiting_on, o.created_at, o.updated_at, o.summary,
             c.name as customer_name, c.email as customer_email, c.locale,
             (
-              select (pa.payload->>'totalUsd')::numeric
+              select case
+                when pa.payload->>'totalUsd' ~ '^[0-9]+([.][0-9]+)?$' then (pa.payload->>'totalUsd')::numeric
+                else null
+              end
               from published_artifacts pa
               where pa.order_id = o.id and pa.type = 'QUOTE' and pa.payload ? 'totalUsd'
-              order by pa.published_at desc
+              order by pa.published_at desc, pa.id desc
               limit 1
             ) as total_usd
      from customer_orders o

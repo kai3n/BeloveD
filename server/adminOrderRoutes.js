@@ -45,10 +45,13 @@ export function adminOrderRouter() {
             from customers c
             left join customer_orders o on o.customer_id = c.id
             left join lateral (
-              select (pa.payload->>'totalUsd')::numeric as total_usd
+              select case
+                when pa.payload->>'totalUsd' ~ '^[0-9]+([.][0-9]+)?$' then (pa.payload->>'totalUsd')::numeric
+                else null
+              end as total_usd
               from published_artifacts pa
               where pa.order_id = o.id and pa.type = 'QUOTE' and pa.payload ? 'totalUsd'
-              order by pa.published_at desc
+              order by pa.published_at desc, pa.id desc
               limit 1
             ) q on true
             group by c.id

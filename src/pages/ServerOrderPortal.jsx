@@ -1,13 +1,15 @@
 // 실서버 주문 포털 (BD- 주문번호) — 접수 메일의 /track/BD-… 링크가 여기로 열린다.
 // 데모 스토어(DM-)와 달리 Postgres의 stage/타임라인/액션을 그대로 보여주는 얇은 뷰.
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { apiFetch, ApiUnavailableError } from "../lib/api.js";
 import { useAuth, LOGIN_FOR } from "../lib/auth.jsx";
 import { MediaPicker, MediaThumb, usd } from "../components/ui.jsx";
 import { PROPOSAL_FLOW_COPY } from "../lib/proposalFlowCopy.js";
-import { Checkpoint, PaymentCard, ShippingAddressPanel } from "./ClientPortal.jsx";
-import { isShippingAddressComplete } from "../lib/store.js";
+import { Checkpoint, ClientMediaCarousel, PaymentCard, ShippingAddressPanel } from "./ClientPortal.jsx";
+import { getSettings, isShippingAddressComplete } from "../lib/store.js";
+import { useDBVersion } from "../lib/useDB.js";
+import { hasSyncedPublicSettings, syncCatalogFromServer } from "../lib/serverSync.js";
 import { useLocale } from "../i18n.jsx";
 
 const EMPTY_ADDRESS = {
@@ -282,6 +284,45 @@ const COPY = {
   },
 };
 
+const MUTATION_COPY = {
+  en: {
+    saveFailed: "We couldn't save this address. Your changes are still here — please try again.",
+    actionFailed: "We couldn't send that response. Your message and attachments are still here — please try again.",
+    cancelFailed: "We couldn't submit the cancellation. Your reason is still here — please try again.",
+    saving: "Saving…", responding: "Sending…", cancelling: "Submitting…",
+    zoom: "Open finished-piece media full screen", closeZoom: "Close full-screen media",
+  },
+  ko: {
+    saveFailed: "배송지를 저장하지 못했습니다. 입력한 내용은 그대로 있으니 다시 시도해 주세요.",
+    actionFailed: "응답을 보내지 못했습니다. 메시지와 첨부는 그대로 있으니 다시 시도해 주세요.",
+    cancelFailed: "취소 요청을 접수하지 못했습니다. 사유는 그대로 있으니 다시 시도해 주세요.",
+    saving: "저장 중…", responding: "보내는 중…", cancelling: "접수 중…",
+    zoom: "완성품 미디어 크게 보기", closeZoom: "전체 화면 미디어 닫기",
+  },
+  zh: {
+    saveFailed: "无法保存收货地址。您的更改仍保留，请重试。",
+    actionFailed: "无法发送回复。您的消息和附件仍保留，请重试。",
+    cancelFailed: "无法提交取消申请。您的原因仍保留，请重试。",
+    saving: "保存中…", responding: "发送中…", cancelling: "提交中…",
+    zoom: "全屏查看成品媒体", closeZoom: "关闭全屏媒体",
+  },
+  es: {
+    saveFailed: "No pudimos guardar la dirección. Tus cambios siguen aquí; inténtalo de nuevo.",
+    actionFailed: "No pudimos enviar la respuesta. Tu mensaje y archivos siguen aquí; inténtalo de nuevo.",
+    cancelFailed: "No pudimos enviar la cancelación. Tu motivo sigue aquí; inténtalo de nuevo.",
+    saving: "Guardando…", responding: "Enviando…", cancelling: "Enviando…",
+    zoom: "Ver el acabado a pantalla completa", closeZoom: "Cerrar contenido a pantalla completa",
+  },
+};
+
+function configuredDeposit(total, explicit) {
+  if (!(Number(total) > 0)) return null;
+  const configuredRate = Number(getSettings().opsDepositRate);
+  const rate = configuredRate > 0 && configuredRate < 1 ? configuredRate : 0.5;
+  const requested = Number(explicit) > 0 ? Number(explicit) : Math.round(Number(total) * rate);
+  return Math.min(Number(total), requested);
+}
+
 // Account(My Page) 서버 주문 카드가 같은 라벨을 쓰도록 export
 export function serverStageLabel(stage, locale) {
   const t = COPY[locale] || COPY.en;
@@ -298,7 +339,7 @@ function ServerProposalCard({ pay, media, fc, t, shapes }) {
   const stone = pay.stone || null;
   const total = pay.totalUsd > 0 ? pay.totalUsd : null;
   // 디파짓은 총액을 넘지 못한다 — 초과 입력 시 잔금이 음수로 보이는 것 방지
-  const deposit = total ? Math.min(total, pay.depositUsd > 0 ? pay.depositUsd : Math.round(total * 0.3)) : null;
+  const deposit = configuredDeposit(total, pay.depositUsd);
   const metalSummary = [
     pay.metalSpec,
     pay.estWeightG ? fc.weightApprox(pay.estWeightG) : "",
@@ -365,19 +406,103 @@ function fmtDate(iso, locale) {
 }
 
 export default function ServerOrderPortal({ orderCode }) {
+  useDBVersion();
   const { locale, p } = useLocale();
   const fc = PROPOSAL_FLOW_COPY[locale] || PROPOSAL_FLOW_COPY.en;
   const { user } = useAuth();
   const location = useLocation();
   const t = COPY[locale] || COPY.en;
+  const mc = MUTATION_COPY[locale] || MUTATION_COPY.en;
   const [state, setState] = useState({ status: "loading", order: null });
   const [respondedId, setRespondedId] = useState("");
   // 수정 요청은 무엇을 바꿀지 적을 수 있어야 어드민이 반영한다 — 클릭 시 텍스트 입력 단계로
   const [changeMode, setChangeMode] = useState(false);
   const [changeMsg, setChangeMsg] = useState("");
   const [changeMedia, setChangeMedia] = useState([]); // 참고 사진·영상 — R2 업로드 후 URL만 전송
+  const [changeUploadBusy, setChangeUploadBusy] = useState(false);
+  const [changeUploadError, setChangeUploadError] = useState("");
+  const [pendingAction, setPendingAction] = useState("");
+  const [mutationError, setMutationError] = useState("");
   const [address, setAddress] = useState(null); // null = 주문 로드 전 (로드 시 서버 저장값으로 초기화)
   const [addressSaved, setAddressSaved] = useState(false);
+  const [addressDirty, setAddressDirty] = useState(false);
+  const [addressSaving, setAddressSaving] = useState(false);
+  const [addressError, setAddressError] = useState("");
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelMsg, setCancelMsg] = useState("");
+  const [cancelBusy, setCancelBusy] = useState(false);
+  const [copiedTracking, setCopiedTracking] = useState(false);
+  const [paymentSettingsStatus, setPaymentSettingsStatus] = useState(() => (
+    hasSyncedPublicSettings() ? "ready" : "loading"
+  ));
+  const loadSequence = useRef(0);
+
+  const loadOrder = useCallback(async ({ initial = false } = {}) => {
+    const sequence = ++loadSequence.current;
+    if (initial) {
+      setState((current) => (current.order?.orderCode === orderCode ? current : { status: "loading", order: null }));
+    }
+    try {
+      const data = await apiFetch(`/orders/${orderCode}`);
+      if (sequence === loadSequence.current) setState({ status: "ok", order: data.order });
+      return data.order;
+    } catch (error) {
+      if (sequence !== loadSequence.current) return null;
+      if (initial || error?.status === 401 || error?.status === 403) {
+        if (error instanceof ApiUnavailableError) setState({ status: "unavailable", order: null });
+        else if (error.status === 401) setState({ status: "signin", order: null });
+        else setState({ status: "denied", order: null });
+      }
+      return null;
+    }
+  }, [orderCode, user?.id]);
+
+  useEffect(() => {
+    setRespondedId("");
+    setChangeMode(false);
+    setChangeMsg("");
+    setChangeMedia([]);
+    setChangeUploadBusy(false);
+    setChangeUploadError("");
+    setPendingAction("");
+    setMutationError("");
+    setAddress(null);
+    setAddressSaved(false);
+    setAddressDirty(false);
+    setAddressError("");
+    setAddressSaving(false);
+    setCancelOpen(false);
+    setCancelMsg("");
+    setCancelBusy(false);
+    setCopiedTracking(false);
+    loadOrder({ initial: true });
+    return () => { loadSequence.current += 1; };
+  }, [loadOrder]);
+
+  useEffect(() => {
+    let active = true;
+    if (!hasSyncedPublicSettings()) setPaymentSettingsStatus("loading");
+    syncCatalogFromServer().then((synced) => {
+      if (active) setPaymentSettingsStatus(synced ? "ready" : "unavailable");
+    });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    const terminal = ["DELIVERED", "CANCELLED"].includes(state.order?.stage);
+    if (state.status !== "ok" || terminal) return undefined;
+    const refreshVisibleOrder = () => {
+      if (document.visibilityState === "visible") loadOrder();
+    };
+    const interval = window.setInterval(refreshVisibleOrder, 15000);
+    window.addEventListener("focus", refreshVisibleOrder);
+    document.addEventListener("visibilitychange", refreshVisibleOrder);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", refreshVisibleOrder);
+      document.removeEventListener("visibilitychange", refreshVisibleOrder);
+    };
+  }, [loadOrder, state.order?.stage, state.status]);
 
   useEffect(() => {
     if (state.status !== "ok" || address !== null) return;
@@ -388,15 +513,26 @@ export default function ServerOrderPortal({ orderCode }) {
   }, [state, address]);
 
   async function saveAddress() {
+    if (addressSaving) return;
+    setAddressSaving(true);
+    setAddressError("");
     try {
       await apiFetch(`/orders/${orderCode}/shipping-address`, { method: "POST", body: address });
       setAddressSaved(true);
-    } catch { /* 실패 시 편집 상태 유지 — 재시도 가능 */ }
+      setAddressDirty(false);
+      await loadOrder();
+    } catch {
+      setAddressError(mc.saveFailed);
+    } finally {
+      setAddressSaving(false);
+    }
   }
 
-  const [cancelOpen, setCancelOpen] = useState(false);
-  const [cancelMsg, setCancelMsg] = useState("");
-  const [copiedTracking, setCopiedTracking] = useState(false);
+  function changeAddress(next) {
+    setAddress(next);
+    setAddressDirty(true);
+    setAddressError("");
+  }
 
   function copyTracking(value) {
     try { navigator.clipboard?.writeText(value); } catch { /* 클립보드 미지원 */ }
@@ -405,47 +541,47 @@ export default function ServerOrderPortal({ orderCode }) {
   }
 
   async function doCancel(reason) {
+    if (cancelBusy) return;
+    setCancelBusy(true);
+    setMutationError("");
     try {
       await apiFetch(`/orders/${orderCode}/cancel`, { method: "POST", body: { reason } });
-    } catch { /* refetch가 진실 */ }
-    setCancelOpen(false);
-    setCancelMsg("");
-    setRespondedId(`cancel-${Date.now()}`); // refetch
+      setCancelOpen(false);
+      setCancelMsg("");
+      await loadOrder();
+    } catch {
+      setMutationError(mc.cancelFailed);
+    } finally {
+      setCancelBusy(false);
+    }
   }
 
   async function reportPayment(kind) {
-    try {
-      await apiFetch(`/orders/${orderCode}/payment-reported`, { method: "POST", body: { kind } });
-    } catch { /* refetch가 진실을 보여준다 */ }
-    setRespondedId(`paid-${kind}-${Date.now()}`); // refetch 트리거
+    await apiFetch(`/orders/${orderCode}/payment-reported`, { method: "POST", body: { kind } });
+    await loadOrder();
   }
 
-  useEffect(() => {
-    let cancelled = false;
-    // 같은 주문의 재조회(컨펌·송금 보고 후)는 화면을 비우지 않는다 — 빈 "Loading" 플래시 방지
-    setState((s) => (s.order?.orderCode === orderCode ? s : { status: "loading", order: null }));
-    apiFetch(`/orders/${orderCode}`)
-      .then((data) => { if (!cancelled) setState({ status: "ok", order: data.order }); })
-      .catch((e) => {
-        if (cancelled) return;
-        if (e instanceof ApiUnavailableError) setState({ status: "unavailable", order: null });
-        else if (e.status === 401) setState({ status: "signin", order: null });
-        else setState({ status: "denied", order: null });
-      });
-    return () => { cancelled = true; };
-  }, [orderCode, user?.id, respondedId]);
-
   async function respond(action, response, extra = {}) {
+    if (pendingAction) return;
+    setPendingAction(`${action.id}:${response}`);
+    setMutationError("");
     try {
       await apiFetch(`/actions/${action.id}/respond`, {
         method: "POST",
         body: { response, expectedSubjectVersionId: action.subjectVersionId, ...extra },
       });
-      setRespondedId(action.id); // refetch로 최신 상태 반영
-    } catch { /* 이미 응답됨(409) 등 — refetch가 진실을 보여준다 */ setRespondedId(action.id); }
-    setChangeMode(false);
-    setChangeMsg("");
-    setChangeMedia([]);
+      setRespondedId(action.id);
+      setChangeMode(false);
+      setChangeMsg("");
+      setChangeMedia([]);
+      setChangeUploadError("");
+      await loadOrder();
+    } catch {
+      setMutationError(mc.actionFailed);
+      await loadOrder();
+    } finally {
+      setPendingAction("");
+    }
   }
 
   if (state.status === "loading") {
@@ -480,8 +616,10 @@ export default function ServerOrderPortal({ orderCode }) {
     .sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt))[0] || null;
   const qp = quoteArt?.payload || {};
   const payTotal = qp.totalUsd > 0 ? qp.totalUsd : null;
-  const payDeposit = payTotal ? Math.min(payTotal, qp.depositUsd > 0 ? qp.depositUsd : Math.round(payTotal * 0.3)) : null;
-  const latestQuoteAction = (order.actions || []).find((a) => a.kind === "QUOTE_ACCEPTANCE");
+  const payDeposit = configuredDeposit(payTotal, qp.depositUsd);
+  const latestQuoteAction = (order.actions || [])
+    .filter((item) => item.kind === "QUOTE_ACCEPTANCE")
+    .sort((a, b) => new Date(b.respondedAt || b.createdAt || 0) - new Date(a.respondedAt || a.createdAt || 0))[0] || null;
   const quoteApproved = latestQuoteAction?.status === "RESPONDED" && latestQuoteAction.response === "APPROVE";
   const reportedKinds = new Set(
     order.timeline.filter((e) => e.payload?.type === "payment_reported").map((e) => e.payload?.data?.kind || "deposit"),
@@ -512,6 +650,8 @@ export default function ServerOrderPortal({ orderCode }) {
   const balanceState = balanceConfirmed || stageIdx > STAGE_SEQ.indexOf("BALANCE")
     ? "done"
     : balanceReported ? "waiting" : "active";
+  const shippingLocked = ["SHIPPING", "DELIVERED", "CANCELLED"].includes(order.stage);
+  const addressReady = addressSaved && !addressDirty;
   // 컨펌 버튼 ↔ 수정요청 폼 (메시지+첨부) — 제안·완성품 QC 공용
   const renderDecision = (act) => (changeMode ? (
     <div className="form-stack" style={{ marginTop: 12 }}>
@@ -525,35 +665,47 @@ export default function ServerOrderPortal({ orderCode }) {
         />
       </label>
       <div className="field"><span>{t.changesAttach}</span>
-        <MediaPicker value={changeMedia} onChange={setChangeMedia} maxItems={5} showSamples={false} previewMode="list" />
+        <MediaPicker
+          value={changeMedia}
+          onChange={setChangeMedia}
+          onBusyChange={setChangeUploadBusy}
+          onErrorChange={setChangeUploadError}
+          maxItems={5}
+          showSamples={false}
+          previewMode="list"
+          remoteRequired
+        />
       </div>
       <div className="customer-decision-actions">
         <button
           className="button primary"
           type="button"
-          disabled={!changeMsg.trim()}
+          disabled={!changeMsg.trim() || changeUploadBusy || Boolean(changeUploadError) || Boolean(pendingAction)}
+          aria-busy={Boolean(pendingAction)}
           onClick={() => respond(act, "REQUEST_CHANGES", {
             message: changeMsg.trim(),
             media: changeMedia.filter((m) => /^https?:\/\//.test(m.src || "")).slice(0, 5),
           })}
         >
-          {t.changesSend}
+          {pendingAction ? mc.responding : t.changesSend}
         </button>
-        <button className="button secondary" type="button" onClick={() => { setChangeMode(false); setChangeMsg(""); setChangeMedia([]); }}>
+        <button className="button secondary" type="button" disabled={Boolean(pendingAction) || changeUploadBusy} onClick={() => { setChangeMode(false); setChangeMsg(""); setChangeMedia([]); setChangeUploadError(""); setMutationError(""); }}>
           {t.changesCancel}
         </button>
       </div>
     </div>
   ) : (
     <div className="customer-decision-actions" style={{ marginTop: 14 }}>
-      {(act.allowedResponses.length ? act.allowedResponses : ["CONFIRM"]).map((response, i) => (
+      {(act.allowedResponses?.length ? act.allowedResponses : ["CONFIRM"]).map((response, i) => (
         <button
           key={response}
           className={`button ${i === 0 ? "primary" : "secondary"}`}
           type="button"
+          disabled={Boolean(pendingAction)}
+          aria-busy={pendingAction === `${act.id}:${response}`}
           onClick={() => (response === "REQUEST_CHANGES" ? setChangeMode(true) : respond(act, response))}
         >
-          {t.respond[response] || response}
+          {pendingAction === `${act.id}:${response}` ? mc.responding : (t.respond[response] || response)}
         </button>
       ))}
     </div>
@@ -576,18 +728,23 @@ export default function ServerOrderPortal({ orderCode }) {
         </div>
         <div className="client-actionbar-meta">
           <span>{order.orderCode}</span>
-          <span className="status-badge mst-inProgress">{t.stages[order.stage] || order.stage}</span>
+          <span className={`status-badge ${["DELIVERED", "CANCELLED"].includes(order.stage) ? "mst-done" : "mst-inProgress"}`}>{t.stages[order.stage] || order.stage}</span>
         </div>
       </section>
 
+      {mutationError && <p className="client-action-notice is-error" role="alert">{mutationError}</p>}
+
       {/* 여정 4단계 레일 */}
       <section className="client-confirm-rail" aria-label={t.kicker}>
-        {order.phases.map((phase, index) => (
-          <article className={`client-confirm-step ${phase.state === "complete" ? "done" : phase.state}`} key={phase.key}>
-            <span className="client-confirm-index">{phase.state === "complete" ? "✓" : String(index + 1).padStart(2, "0")}</span>
-            <div><strong>{t.phases[phase.key] || phase.title}</strong></div>
-          </article>
-        ))}
+        {(order.phases || []).map((phase, index) => {
+          const phaseDone = order.stage === "DELIVERED" || phase.state === "complete";
+          return (
+            <article className={`client-confirm-step ${phaseDone ? "done" : phase.state}`} key={phase.key}>
+              <span className="client-confirm-index">{phaseDone ? "✓" : String(index + 1).padStart(2, "0")}</span>
+              <div><strong>{t.phases[phase.key] || phase.title}</strong></div>
+            </article>
+          );
+        })}
       </section>
 
       {!cancelled && (<>
@@ -615,10 +772,13 @@ export default function ServerOrderPortal({ orderCode }) {
           {address && (
             <ShippingAddressPanel
               value={address}
-              onChange={setAddress}
+              onChange={changeAddress}
               t={p.portal}
-              locked={addressSaved}
-              canSave={!addressSaved}
+              locked={shippingLocked}
+              saved={addressReady}
+              saving={addressSaving}
+              error={addressError}
+              canSave={!shippingLocked && (!addressReady || addressDirty)}
               onSave={saveAddress}
             />
           )}
@@ -632,8 +792,9 @@ export default function ServerOrderPortal({ orderCode }) {
             sentCta={fc.depositSentCta}
             reportedNote={fc.reportedNote}
             onReport={() => reportPayment("deposit")}
-            reportDisabled={!addressSaved}
+            reportDisabled={!addressReady}
             reportHint={t.addressGate}
+            settingsStatus={paymentSettingsStatus}
           />
         </Checkpoint>
       )}
@@ -651,21 +812,25 @@ export default function ServerOrderPortal({ orderCode }) {
             sentCta={fc.balanceSentCta}
             reportedNote={fc.balanceReportedNote}
             onReport={() => reportPayment("balance")}
-            reportDisabled={!addressSaved}
+            reportDisabled={!addressReady}
             reportHint={t.addressGate}
+            settingsStatus={paymentSettingsStatus}
           />
         </Checkpoint>
       )}
 
-      {/* 주소 미저장 사후 회수 — 디파짓 단계가 지나도 배송 전까지는 입력 가능해야 한다 */}
-      {!addressSaved && address && ["CAD", "PRODUCTION", "FINAL_QC", "BALANCE"].includes(order.stage) && (
+      {/* 디파짓 이후에도 발송 전까지 저장된 배송지를 수정·재저장할 수 있다. */}
+      {address && ["CAD", "PRODUCTION", "FINAL_QC", "BALANCE"].includes(order.stage) && (
         <section className="panel form-stack">
           <ShippingAddressPanel
             value={address}
-            onChange={setAddress}
+            onChange={changeAddress}
             t={p.portal}
             locked={false}
-            canSave
+            saved={addressReady}
+            saving={addressSaving}
+            error={addressError}
+            canSave={!addressReady || addressDirty}
             onSave={saveAddress}
           />
         </section>
@@ -677,7 +842,8 @@ export default function ServerOrderPortal({ orderCode }) {
           id="bd-shipment"
           index="3-2"
           title={t.shipmentTitle}
-          state="active"
+          state={order.stage === "DELIVERED" ? "done" : "active"}
+          summary={order.stage === "DELIVERED" ? (trackingNo || t.stages.DELIVERED) : undefined}
           badgeOverride={t.stages[order.stage] || order.stage}
         >
           {trackingNo && (
@@ -715,8 +881,16 @@ export default function ServerOrderPortal({ orderCode }) {
             badgeOverride={t.nextTitle}
           >
             {subject?.media?.length > 0 && (
-              <div className="card-grid cols-3" style={{ marginTop: 12 }}>
-                {subject.media.map((m, i) => <MediaThumb key={i} media={m} alt={subject.versionLabel} ratio="1 / 1" />)}
+              <div className="qc-media-viewer">
+                <ClientMediaCarousel
+                  media={subject.media}
+                  alt={subject.versionLabel || t.kinds[otherAction.kind]}
+                  ratio="16 / 10"
+                  fit="contain"
+                  enableLightbox
+                  zoomLabel={mc.zoom}
+                  closeLabel={mc.closeZoom}
+                />
               </div>
             )}
             {subject?.payload?.note && <p className="form-hint" style={{ margin: "10px 0 0" }}>{subject.payload.note}</p>}
@@ -741,9 +915,23 @@ export default function ServerOrderPortal({ orderCode }) {
           <section className="panel form-stack" key={a.id}>
             <p className="section-label">{t.artifactsTitle}</p>
             {a.media?.length > 0 && (
-              <div className="card-grid cols-3">
-                {a.media.map((m, i) => <MediaThumb key={i} media={m} alt={a.versionLabel} ratio="1 / 1" />)}
-              </div>
+              a.type === "QC" ? (
+                <div className="qc-media-viewer">
+                  <ClientMediaCarousel
+                    media={a.media}
+                    alt={a.versionLabel || t.artifactsTitle}
+                    ratio="16 / 10"
+                    fit="contain"
+                    enableLightbox
+                    zoomLabel={mc.zoom}
+                    closeLabel={mc.closeZoom}
+                  />
+                </div>
+              ) : (
+                <div className="card-grid cols-3">
+                  {a.media.map((m, i) => <MediaThumb key={i} media={m} alt={a.versionLabel} ratio="1 / 1" />)}
+                </div>
+              )
             )}
             {pay.note && <p className="form-hint" style={{ margin: 0 }}>{pay.note}</p>}
           </section>
@@ -764,8 +952,10 @@ export default function ServerOrderPortal({ orderCode }) {
                 <textarea rows={2} value={cancelMsg} onChange={(e) => setCancelMsg(e.target.value)} autoFocus />
               </label>
               <div className="customer-decision-actions">
-                <button className="button primary" type="button" onClick={() => setCancelOpen(false)}>{t.cancelKeep}</button>
-                <button className="button secondary" type="button" onClick={() => doCancel(cancelMsg.trim())}>{t.cancelConfirm}</button>
+                <button className="button primary" type="button" disabled={cancelBusy} onClick={() => { setCancelOpen(false); setMutationError(""); }}>{t.cancelKeep}</button>
+                <button className="button secondary" type="button" disabled={cancelBusy} aria-busy={cancelBusy} onClick={() => doCancel(cancelMsg.trim())}>
+                  {cancelBusy ? mc.cancelling : t.cancelConfirm}
+                </button>
               </div>
             </>
           ) : (
@@ -773,7 +963,7 @@ export default function ServerOrderPortal({ orderCode }) {
               className="text-link"
               type="button"
               style={{ justifySelf: "center", margin: "0 auto", color: "var(--quiet)", fontSize: 12.5 }}
-              onClick={() => setCancelOpen(true)}
+              onClick={() => { setCancelOpen(true); setMutationError(""); }}
             >
               {cancelMode === "direct" ? t.cancelLink : t.cancelRequestLink}
             </button>

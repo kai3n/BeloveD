@@ -114,7 +114,8 @@ export function chatRouter() {
         const { contentType, size, locale } = req.body || {};
         if (typeof contentType !== "string") throw new ApiError("VALIDATION_ERROR", 400);
         await resolveOrCreateThread(req, res, locale);
-        const signed = await createUploadUrl({ scope: "chat", contentType, size });
+        const origin = process.env.PUBLIC_ORIGIN || `${req.protocol}://${req.get("host")}`;
+        const signed = await createUploadUrl({ scope: "chat", contentType, size, origin });
         res.status(201).json({ ok: true, ...signed });
       } catch (e) { next(e); }
     });

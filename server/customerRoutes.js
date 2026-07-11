@@ -70,7 +70,7 @@ export function customerRouter() {
       } catch (e) { next(e); }
     });
 
-  // 주문 상태 이벤트 — 어드민 전용. 같은 타입 재호출 허용(재발송 = 어드민 의도, 스펙 §2).
+  // 주문 상태 이벤트 — 어드민 전용. 서버 상태 머신이 단계·필수조건·중복을 검증한다.
   r.post("/admin/orders/:orderCode/events",
     rateLimit({ limit: 30, windowMs: MINUTE, keyFn: (req) => `order-events:${req.ip}` }),
     requireAdmin,
@@ -79,7 +79,7 @@ export function customerRouter() {
         const { type, data, artifact, action } = req.body || {};
         // 왜: EVENT_TRANSITIONS[type]는 상속된 Object.prototype 속성명("toString" 등)도 truthy로 통과시킨다 — own-property로만 검사
         if (!Object.hasOwn(EVENT_TRANSITIONS, type) || type === "received") {
-          throw new ApiError("VALIDATION_ERROR", 400, "unknown event type");
+          throw new ApiError("VALIDATION_ERROR", 422, "unknown event type");
         }
         // artifact(포털 공개 미디어/페이로드)·action(열릴 고객 컨펌)은 stage 전이와 같은 트랜잭션에서 발행
         const result = await recordOrderEvent(req.params.orderCode, type, data || {}, { artifact, action });

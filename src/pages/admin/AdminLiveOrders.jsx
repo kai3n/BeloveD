@@ -1,10 +1,10 @@
 // 실주문(BD-) 콘솔 — Postgres 주문을 목록/상세로 운영한다.
 // 이벤트 버튼 하나 = stage 전이 + (선택) 아티팩트/고객 컨펌 발행 + 상태 메일(고객 언어) 발송.
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { apiFetch, ApiUnavailableError } from "../../lib/api.js";
 import { MediaPicker, MediaThumb, usd } from "../../components/ui.jsx";
-import { getOpsStyle } from "../../lib/store.js";
+import { getOpsStyle, isShippingAddressComplete } from "../../lib/store.js";
 import { pickI18n, useLocale } from "../../i18n.jsx";
 import { ConsoleHead, Pager, StatStrip } from "./console.jsx";
 
@@ -38,7 +38,7 @@ const COPY = {
     settingSummary: "Setting & design summary", estWeight: "Est. metal weight (g)", leadDays: "Production lead (business days)",
     designNote: "Design adjustment note", centerStone: "Center stone (one component of the piece)",
     shape: "shape", caratMin: "carat (min)", caratMax: "carat (max)", color: "color", clarity: "clarity", growth: "growth", lab: "lab",
-    subNote: "Stone substitution note (blank = default policy text)", deposit: "Deposit ($, blank = 30%)",
+    subNote: "Stone substitution note (blank = default policy text)", deposit: "Deposit ($, blank = configured rate)",
     media: "Media (published to the portal)",
     fire: "Send", done: "Done", current: "Current", sentLabel: "Sent ✓",
     resend: "Send revised proposal", changesRequested: "Customer requested changes",
@@ -51,7 +51,7 @@ const COPY = {
       shipped: "Shipped", delivered: "Delivered",
     },
     sent: "Event sent — the customer has been emailed.",
-    cancelOrderBtn: "Cancel order", refundNoteLbl: "Refund note to customer (optional — included in the email)",
+    cancelOrderBtn: "Cancel order", refundNoteLbl: "Refund/payment resolution note", refundNoteRequired: "Document how the reported or confirmed transfer was resolved before cancelling.",
     cancelConfirmBtn: "Confirm cancellation", cancelKeepBtn: "Back",
     cancelRequestedBanner: "Customer requested cancellation",
   },
@@ -74,7 +74,7 @@ const COPY = {
     settingSummary: "세팅·디자인 요약", estWeight: "예상 메탈 중량 (g)", leadDays: "제작 기간 (영업일)",
     designNote: "디자인 조정 노트", centerStone: "센터 스톤 (제품 구성 요소)",
     shape: "셰이프", caratMin: "캐럿 (min)", caratMax: "캐럿 (max)", color: "컬러", clarity: "클래리티", growth: "성장", lab: "감정기관",
-    subNote: "스톤 대체 안내 (비우면 기본 문구)", deposit: "디파짓 ($, 비우면 30%)",
+    subNote: "스톤 대체 안내 (비우면 기본 문구)", deposit: "디파짓 ($, 비우면 설정 비율)",
     media: "미디어 (포털에 공개)",
     fire: "보내기", done: "완료", current: "현재", sentLabel: "보냄 ✓",
     resend: "수정 제안 보내기", changesRequested: "고객이 수정을 요청했습니다",
@@ -87,7 +87,7 @@ const COPY = {
       shipped: "발송됨", delivered: "수령 완료",
     },
     sent: "이벤트가 반영됐습니다 — 고객에게 메일이 발송됩니다.",
-    cancelOrderBtn: "주문 취소", refundNoteLbl: "환불 안내 문구 (선택 — 고객 메일에 포함)",
+    cancelOrderBtn: "주문 취소", refundNoteLbl: "환불·송금 처리 기록", refundNoteRequired: "취소 전에 보고되거나 확인된 송금을 어떻게 처리했는지 기록해 주세요.",
     cancelConfirmBtn: "취소 확정", cancelKeepBtn: "뒤로",
     cancelRequestedBanner: "고객이 취소를 요청했습니다",
   },
@@ -110,7 +110,7 @@ const COPY = {
     settingSummary: "镶嵌·设计摘要", estWeight: "预估金属重量 (g)", leadDays: "制作周期（工作日）",
     designNote: "设计调整备注", centerStone: "中心钻石（作品部件之一）",
     shape: "形状", caratMin: "克拉 (min)", caratMax: "克拉 (max)", color: "颜色", clarity: "净度", growth: "生长方式", lab: "鉴定机构",
-    subNote: "替代说明（留空用默认文案）", deposit: "定金（$，留空按 30%）",
+    subNote: "替代说明（留空用默认文案）", deposit: "定金（$，留空按已配置比例）",
     media: "媒体（发布到订单页面）",
     fire: "发送", done: "完成", current: "当前", sentLabel: "已发送 ✓",
     resend: "发送修改后的方案", changesRequested: "客户请求修改",
@@ -123,7 +123,7 @@ const COPY = {
       shipped: "已发货", delivered: "已送达",
     },
     sent: "事件已生效 — 已向客户发送邮件。",
-    cancelOrderBtn: "取消订单", refundNoteLbl: "退款说明（可选 — 写入客户邮件）",
+    cancelOrderBtn: "取消订单", refundNoteLbl: "退款／转账处理记录", refundNoteRequired: "取消前请记录已报告或已确认转账的处理结果。",
     cancelConfirmBtn: "确认取消", cancelKeepBtn: "返回",
     cancelRequestedBanner: "客户已申请取消",
   },
@@ -146,7 +146,7 @@ const COPY = {
     settingSummary: "Resumen de engaste y diseño", estWeight: "Peso est. del metal (g)", leadDays: "Plazo de producción (días hábiles)",
     designNote: "Nota de ajuste de diseño", centerStone: "Piedra central (componente de la pieza)",
     shape: "forma", caratMin: "quilates (min)", caratMax: "quilates (max)", color: "color", clarity: "claridad", growth: "crecimiento", lab: "laboratorio",
-    subNote: "Nota de sustitución (vacío = texto por defecto)", deposit: "Depósito ($, vacío = 30%)",
+    subNote: "Nota de sustitución (vacío = texto por defecto)", deposit: "Depósito ($, vacío = porcentaje configurado)",
     media: "Medios (publicados al portal)",
     fire: "Enviar", done: "Hecho", current: "Actual", sentLabel: "Enviado ✓",
     resend: "Enviar propuesta revisada", changesRequested: "El cliente pidió cambios",
@@ -159,9 +159,93 @@ const COPY = {
       shipped: "Enviado", delivered: "Entregado",
     },
     sent: "Evento aplicado — se envió el correo al cliente.",
-    cancelOrderBtn: "Cancelar pedido", refundNoteLbl: "Nota de reembolso (opcional — va en el correo)",
+    cancelOrderBtn: "Cancelar pedido", refundNoteLbl: "Registro de resolución del reembolso o transferencia", refundNoteRequired: "Documenta cómo se resolvió la transferencia reportada o confirmada antes de cancelar.",
     cancelConfirmBtn: "Confirmar cancelación", cancelKeepBtn: "Atrás",
     cancelRequestedBanner: "El cliente solicitó la cancelación",
+  },
+};
+
+const FLOW_GUARD_COPY = {
+  en: {
+    blockedPrevious: "Complete the preceding step first.",
+    waitQuoteApproval: "Waiting for the customer to approve the latest proposal.",
+    waitDepositReport: "Waiting for the customer to report the deposit transfer.",
+    waitQcApproval: "Waiting for the customer to confirm the finished piece.",
+    waitBalanceReport: "Waiting for the customer to report the balance transfer.",
+    addressRequired: "A complete saved shipping address is required before shipping.",
+    totalRequired: "Enter a proposal total greater than $0.",
+    depositInvalid: "Deposit must be greater than $0 and no more than the proposal total.",
+    igiRequired: "Enter the certificate number before securing the diamond.",
+    qcRequired: "Upload at least one finished-piece photo or video before sending QC.",
+    uploadBusy: "Wait for every upload to finish before sending.",
+    trackingRequired: "Enter a tracking number before marking the order shipped.",
+    confirmFire: (action) => `${action}? This updates the order and emails the customer.`,
+    working: "Updating…", cancelFailed: "Cancellation failed. The note is still here — please try again.",
+    refreshFailed: "The event was accepted, but this page could not refresh. Reload before taking another action.",
+    cta: {
+      proposal_sent: "Send proposal to customer", deposit_confirmed: "Confirm deposit received",
+      diamond_locked: "Confirm diamond secured", production_started: "Start production",
+      qc_ready: "Send finished-piece QC", balance_requested: "Request balance payment",
+      balance_confirmed: "Confirm balance received", shipped: "Confirm shipment and email tracking",
+      delivered: "Mark order delivered",
+    },
+  },
+  ko: {
+    blockedPrevious: "먼저 이전 단계를 완료해 주세요.",
+    waitQuoteApproval: "고객의 최신 제안 승인을 기다리고 있습니다.",
+    waitDepositReport: "고객의 디파짓 송금 보고를 기다리고 있습니다.",
+    waitQcApproval: "고객의 완성품 컨펌을 기다리고 있습니다.",
+    waitBalanceReport: "고객의 잔금 송금 보고를 기다리고 있습니다.",
+    addressRequired: "발송 전에 저장된 전체 배송지가 필요합니다.",
+    totalRequired: "$0보다 큰 제안 총액을 입력해 주세요.",
+    depositInvalid: "디파짓은 $0보다 크고 제안 총액 이하여야 합니다.",
+    igiRequired: "다이아 확보 전에 감정서 번호를 입력해 주세요.",
+    qcRequired: "QC를 보내기 전에 완성품 사진이나 영상을 하나 이상 업로드해 주세요.",
+    uploadBusy: "모든 업로드가 끝난 뒤 보내주세요.",
+    trackingRequired: "발송 처리 전에 운송장 번호를 입력해 주세요.",
+    confirmFire: (action) => `${action}할까요? 주문이 변경되고 고객에게 이메일이 발송됩니다.`,
+    working: "반영 중…", cancelFailed: "주문 취소에 실패했습니다. 안내 문구는 그대로 있으니 다시 시도해 주세요.",
+    refreshFailed: "이벤트는 반영됐지만 화면을 새로 불러오지 못했습니다. 다른 작업 전에 페이지를 새로고침해 주세요.",
+    cta: {
+      proposal_sent: "고객에게 제안 발송", deposit_confirmed: "디파짓 수령 확정",
+      diamond_locked: "다이아 확보 확정", production_started: "제작 시작",
+      qc_ready: "완성품 QC 발송", balance_requested: "잔금 결제 요청",
+      balance_confirmed: "잔금 수령 확정", shipped: "발송 확정 및 운송장 안내",
+      delivered: "배송 완료 처리",
+    },
+  },
+  zh: {
+    blockedPrevious: "请先完成上一步。", waitQuoteApproval: "正在等待客户批准最新方案。",
+    waitDepositReport: "正在等待客户报告定金转账。", waitQcApproval: "正在等待客户确认成品。",
+    waitBalanceReport: "正在等待客户报告尾款转账。", addressRequired: "发货前需要完整且已保存的收货地址。",
+    totalRequired: "请输入大于 $0 的方案总价。", depositInvalid: "定金必须大于 $0 且不超过方案总价。",
+    igiRequired: "锁定钻石前请输入证书编号。", qcRequired: "发送质检前请至少上传一张成品照片或视频。",
+    uploadBusy: "请等待所有上传完成后再发送。", trackingRequired: "标记发货前请输入运单号。",
+    confirmFire: (action) => `确认${action}？订单将更新并向客户发送邮件。`,
+    working: "更新中…", cancelFailed: "取消失败。说明仍保留，请重试。",
+    refreshFailed: "事件已提交，但页面无法刷新。请先重新加载页面再继续操作。",
+    cta: {
+      proposal_sent: "向客户发送方案", deposit_confirmed: "确认已收定金", diamond_locked: "确认钻石已锁定",
+      production_started: "开始制作", qc_ready: "发送成品质检", balance_requested: "请求支付尾款",
+      balance_confirmed: "确认已收尾款", shipped: "确认发货并发送运单", delivered: "标记为已送达",
+    },
+  },
+  es: {
+    blockedPrevious: "Completa primero el paso anterior.", waitQuoteApproval: "Esperando la aprobación de la última propuesta.",
+    waitDepositReport: "Esperando que el cliente reporte el depósito.", waitQcApproval: "Esperando que el cliente confirme la pieza terminada.",
+    waitBalanceReport: "Esperando que el cliente reporte el saldo.", addressRequired: "Se requiere una dirección completa y guardada antes del envío.",
+    totalRequired: "Introduce un total de propuesta mayor que $0.", depositInvalid: "El depósito debe ser mayor que $0 y no superar el total.",
+    igiRequired: "Introduce el certificado antes de asegurar el diamante.", qcRequired: "Sube al menos una foto o video de la pieza antes de enviar el control.",
+    uploadBusy: "Espera a que terminen todas las cargas.", trackingRequired: "Introduce el número de guía antes de marcar el envío.",
+    confirmFire: (action) => `¿${action}? Esto actualizará el pedido y enviará un correo al cliente.`,
+    working: "Actualizando…", cancelFailed: "No se pudo cancelar. La nota sigue aquí; inténtalo de nuevo.",
+    refreshFailed: "El evento se aceptó, pero la página no pudo actualizarse. Recarga antes de continuar.",
+    cta: {
+      proposal_sent: "Enviar propuesta al cliente", deposit_confirmed: "Confirmar depósito recibido",
+      diamond_locked: "Confirmar diamante asegurado", production_started: "Iniciar producción",
+      qc_ready: "Enviar control de pieza terminada", balance_requested: "Solicitar pago del saldo",
+      balance_confirmed: "Confirmar saldo recibido", shipped: "Confirmar envío y enviar guía", delivered: "Marcar como entregado",
+    },
   },
 };
 
@@ -181,15 +265,51 @@ const STAGE_ORDER = ["OPS_REVIEW", "STONE_SELECTION", "QUOTE", "DEPOSIT", "CAD",
 
 function useCopy() {
   const { locale } = useLocale();
-  return COPY[locale] || COPY.en;
+  return { ...(COPY[locale] || COPY.en), ...(FLOW_GUARD_COPY[locale] || FLOW_GUARD_COPY.en) };
+}
+
+function eventType(event) {
+  return event?.payload?.type || event?.title || "";
+}
+
+function latestActionResponse(actions, kind) {
+  const latest = (actions || [])
+    .filter((action) => action.kind === kind && action.status === "RESPONDED")
+    .sort((a, b) => new Date(b.respondedAt || 0) - new Date(a.respondedAt || 0))[0];
+  return latest?.responsePayload?.response || latest?.response || "";
+}
+
+function hasPaymentReport(timeline, kind) {
+  return (timeline || []).some((event) => eventType(event) === "payment_reported"
+    && (event.payload?.data?.kind || "deposit") === kind);
+}
+
+export function adminStepGuard({ step, index, order, timeline, actions, changeRequest, t }) {
+  if (changeRequest) return { available: true, reason: "" };
+  const fired = new Set((timeline || []).map(eventType));
+  if (FLOW.slice(0, index).some((previous) => !fired.has(previous.type))) {
+    return { available: false, reason: t.blockedPrevious };
+  }
+  if (step.type === "deposit_confirmed") {
+    if (latestActionResponse(actions, "QUOTE_ACCEPTANCE") !== "APPROVE") {
+      return { available: false, reason: t.waitQuoteApproval };
+    }
+    if (!hasPaymentReport(timeline, "deposit")) return { available: false, reason: t.waitDepositReport };
+  }
+  if (step.type === "balance_requested" && latestActionResponse(actions, "FINAL_QC_CONFIRMATION") !== "CONFIRM") {
+    return { available: false, reason: t.waitQcApproval };
+  }
+  if (step.type === "balance_confirmed" && !hasPaymentReport(timeline, "balance")) {
+    return { available: false, reason: t.waitBalanceReport };
+  }
+  if (step.type === "shipped" && !isShippingAddressComplete(order.summary?.shippingAddress)) {
+    return { available: false, reason: t.addressRequired };
+  }
+  return { available: true, reason: "" };
 }
 
 function ErrorPanel({ error, t }) {
   return <div className="panel"><p className="form-hint">{error === "auth" ? t.needAuth : t.unavailable}</p></div>;
-}
-
-function fetchState(setter) {
-  return (e) => setter({ status: e instanceof ApiUnavailableError ? "unavailable" : "auth", data: null });
 }
 
 // 완료 상태 — Past Orders 섹션으로 분류되는 stage
@@ -198,7 +318,7 @@ const PAGE_SIZE = 10;
 
 function OrdersTable({ orders, t, navigate, withTotal = false }) {
   return (
-    <div className="con-table-panel">
+    <div className="con-table-panel admin-live-orders-table">
       <table className="data-table">
         <thead>
           <tr>
@@ -242,13 +362,44 @@ export default function AdminLiveOrders() {
   const [state, setState] = useState({ status: "loading", data: null });
   const [livePage, setLivePage] = useState(1);
   const [pastPage, setPastPage] = useState(1);
+  const loadSequence = useRef(0);
+
+  const load = useCallback(async () => {
+    const sequence = ++loadSequence.current;
+    try {
+      const data = await apiFetch("/admin/orders?limit=500");
+      if (sequence !== loadSequence.current) return false;
+      setState({ status: "ok", data: data.orders });
+      return true;
+    } catch (error) {
+      if (sequence !== loadSequence.current) return false;
+      setState((current) => (
+        error?.status === 401 || error?.status === 403
+          ? { status: "auth", data: null }
+          : current.status === "ok"
+            ? current
+            : { status: error instanceof ApiUnavailableError ? "unavailable" : "auth", data: null }
+      ));
+      return false;
+    }
+  }, []);
 
   useEffect(() => {
     // 매출/파이프라인 스탯이 이 목록으로 계산되므로 서버 캡(500)까지 다 받아온다 — 표시는 10개씩 페이징
-    apiFetch("/admin/orders?limit=500")
-      .then((d) => setState({ status: "ok", data: d.orders }))
-      .catch(fetchState(setState));
-  }, []);
+    load();
+    const refreshVisible = () => {
+      if (document.visibilityState === "visible") load();
+    };
+    const interval = window.setInterval(refreshVisible, 15000);
+    window.addEventListener("focus", refreshVisible);
+    document.addEventListener("visibilitychange", refreshVisible);
+    return () => {
+      loadSequence.current += 1;
+      window.clearInterval(interval);
+      window.removeEventListener("focus", refreshVisible);
+      document.removeEventListener("visibilitychange", refreshVisible);
+    };
+  }, [load]);
 
   if (state.status === "loading") return <div className="panel"><p className="form-hint">…</p></div>;
   if (state.status !== "ok") return <ErrorPanel error={state.status} t={t} />;
@@ -301,7 +452,7 @@ export default function AdminLiveOrders() {
 }
 
 // 이벤트 스텝 카드 — 필요한 입력(미디어/노트/금액/IGI/운송장)만 노출
-function StepCard({ step, index, order, done, changeRequest, expanded, onToggle, t, onSent }) {
+function StepCard({ step, index, order, done, changeRequest, expanded, onToggle, t, onSent, available, blockedReason }) {
   const [media, setMedia] = useState([]);
   // 견적 컴포저는 인테이크에서 프리필 — 어드민은 확인·수정만 하고 보낸다
   const fp = order.intake?.formPayload || {};
@@ -323,14 +474,31 @@ function StepCard({ step, index, order, done, changeRequest, expanded, onToggle,
     lab: "IGI", igiNo: "", subNote: "", deposit: "",
   });
   const [busy, setBusy] = useState(false);
+  const [uploadBusy, setUploadBusy] = useState(false);
+  const [uploadError, setUploadError] = useState("");
   const [error, setError] = useState("");
   // 한 번 보낸 스텝은 잠근다 — 중복 발송(중복 메일·중복 컨펌)이 재발송 필요보다 훨씬 흔한 사고다.
   // done은 stage가 아니라 "이 이벤트가 실제 발사됐는가"(타임라인) 기준 — 같은 stage에 도달하는
   // 스텝들(디파짓/다이아 둘 다 CAD)이 한꺼번에 체크되는 오판 방지.
   // 고객이 수정을 요청한 상태(changeRequest)면 다시 열어 수정본을 보낼 수 있다.
   const unlocked = done && Boolean(changeRequest);
+  const remoteMedia = media.filter((item) => /^https?:\/\//.test(item.src || "")).slice(0, 5);
+  const totalValue = Number(f.total);
+  const depositValue = f.deposit === "" ? null : Number(f.deposit);
+  const validationMessage = !available ? blockedReason
+    : uploadError ? uploadError
+    : step.composer === "proposal" && !(totalValue > 0) ? t.totalRequired
+      : step.composer === "proposal" && depositValue !== null && (!(depositValue > 0) || depositValue > totalValue) ? t.depositInvalid
+        : step.fields?.includes("igi") && !f.igi.trim() ? t.igiRequired
+          : step.type === "qc_ready" && uploadBusy ? t.uploadBusy
+            : step.type === "qc_ready" && remoteMedia.length === 0 ? t.qcRequired
+              : step.fields?.includes("tracking") && !f.tracking.trim() ? t.trackingRequired
+                : "";
+  const cta = unlocked ? t.resend : (t.cta[step.type] || t.steps[step.type]);
 
   async function fire() {
+    if (busy || validationMessage) return;
+    if (!window.confirm(t.confirmFire(cta))) return;
     setBusy(true);
     setError("");
     try {
@@ -340,7 +508,7 @@ function StepCard({ step, index, order, done, changeRequest, expanded, onToggle,
       if (step.artifactType) {
         body.artifact = {
           type: step.artifactType,
-          media: media.filter((m) => /^https?:\/\//.test(m.src || "")).slice(0, 5),
+          media: remoteMedia,
           payload: step.composer === "proposal"
             ? {
               ...(f.setting.trim() ? { settingSummary: f.setting.trim() } : {}),
@@ -356,8 +524,8 @@ function StepCard({ step, index, order, done, changeRequest, expanded, onToggle,
               },
               ...(f.subNote.trim() ? { substitutionNote: f.subNote.trim() } : {}),
               ...(f.note.trim() ? { note: f.note.trim() } : {}),
-              ...(f.total ? { totalUsd: Number(f.total) } : {}),
-              ...(f.deposit ? { depositUsd: Number(f.deposit) } : {}),
+              totalUsd: totalValue,
+              ...(depositValue !== null ? { depositUsd: depositValue } : {}),
             }
             : {
               ...(f.note.trim() ? { note: f.note.trim() } : {}),
@@ -369,9 +537,12 @@ function StepCard({ step, index, order, done, changeRequest, expanded, onToggle,
         body.action = { ...step.action, title: t.steps[step.type] };
       }
       await apiFetch(`/admin/orders/${order.orderCode}/events`, { method: "POST", body });
-      onSent();
-      // 성공 시 busy 유지 — 부모 refetch가 스텝을 잠글 때까지의 틈에 재클릭하면
-      // 같은 이벤트(와 고객 메일)가 중복 발행된다
+      const refreshed = await onSent();
+      if (!refreshed) {
+        setError(t.refreshFailed);
+        return;
+      }
+      setBusy(false);
     } catch (e) {
       setError(e.code || e.message);
       setBusy(false);
@@ -380,15 +551,19 @@ function StepCard({ step, index, order, done, changeRequest, expanded, onToggle,
 
   const open = Boolean(expanded) || unlocked;
   const sectionState = done && !unlocked ? "done" : open ? "active" : "upcoming";
+  const bodyId = `admin-step-${step.type}`;
   return (
     <section className={`panel checkpoint client-stage-section ${sectionState}`}>
-      <div
-        className="client-stage-head"
-        onClick={!open && !done ? onToggle : undefined}
-        style={!open && !done ? { cursor: "pointer" } : undefined}
+      <button
+        className="client-stage-head admin-step-toggle"
+        type="button"
+        onClick={done && !unlocked ? undefined : onToggle}
+        disabled={done && !unlocked}
+        aria-expanded={open}
+        aria-controls={bodyId}
       >
         <span className="client-stage-number">{done && !unlocked ? "✓" : step.num}</span>
-        <div><h3>{t.steps[step.type]}</h3></div>
+        <span className="admin-step-title">{t.steps[step.type]}</span>
         {unlocked
           ? <span className="status-badge mst-waitingClient">{t.changesRequested}</span>
           : done
@@ -396,9 +571,10 @@ function StepCard({ step, index, order, done, changeRequest, expanded, onToggle,
             : open
               ? <span className="status-badge mst-inProgress">{t.current}</span>
               : <span className="status-badge mst-pending">{step.reaches}</span>}
-      </div>
+      </button>
       {open && (
-        <div className="form-stack" style={{ marginTop: 14 }}>
+        <div className="form-stack" style={{ marginTop: 14 }} id={bodyId}>
+          {!available && blockedReason && <p className="admin-step-blocked" role="status">{blockedReason}</p>}
           {changeRequest && (
             <div className="feedback-note" style={{ borderLeft: "2px solid var(--accent)", paddingLeft: 12 }}>
               <strong>{t.changesRequested}</strong>
@@ -417,12 +593,22 @@ function StepCard({ step, index, order, done, changeRequest, expanded, onToggle,
           )}
           {step.media && (
             <div className="field"><span>{t.media}</span>
-              <MediaPicker value={media} onChange={setMedia} maxItems={5} showSamples={false} previewMode="list" scope={step.media} />
+              <MediaPicker
+                value={media}
+                onChange={setMedia}
+                onBusyChange={setUploadBusy}
+                onErrorChange={setUploadError}
+                maxItems={5}
+                showSamples={false}
+                previewMode="list"
+                scope={step.media}
+                remoteRequired
+              />
             </div>
           )}
           {step.composer === "proposal" && (
             <>
-              <div className="filter-grid" style={{ gridTemplateColumns: "2fr 1fr 1fr" }}>
+              <div className="filter-grid admin-proposal-top-grid">
                 <label className="field"><span>{t.settingSummary}</span>
                   <input value={f.setting} onChange={(e) => setF({ ...f, setting: e.target.value })} /></label>
                 <label className="field"><span>{t.estWeight}</span>
@@ -440,21 +626,21 @@ function StepCard({ step, index, order, done, changeRequest, expanded, onToggle,
                   {Object.values(METAL_LABELS).map((v) => <option key={v} value={v}>{v}</option>)}
                 </select></label>
               <p className="form-hint" style={{ margin: 0 }}>{t.centerStone}</p>
-              <div className="filter-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
+              <div className="filter-grid admin-proposal-stone-grid">
                 <label className="field"><span>{t.shape}</span>
                   <select value={f.shape} onChange={(e) => setF({ ...f, shape: e.target.value })}>
                     {SHAPES.map((v) => <option key={v} value={v}>{v}</option>)}
                   </select></label>
                 <label className="field"><span>{t.caratMin}</span>
-                  <input type="number" step="0.01" value={f.caratMin} onChange={(e) => setF({ ...f, caratMin: e.target.value })} /></label>
+                  <input type="number" min="0.01" step="0.01" value={f.caratMin} onChange={(e) => setF({ ...f, caratMin: e.target.value })} /></label>
                 <label className="field"><span>{t.caratMax}</span>
-                  <input type="number" step="0.01" value={f.caratMax} onChange={(e) => setF({ ...f, caratMax: e.target.value })} /></label>
+                  <input type="number" min="0.01" step="0.01" value={f.caratMax} onChange={(e) => setF({ ...f, caratMax: e.target.value })} /></label>
                 <label className="field"><span>{t.color}</span>
                   <select value={f.color} onChange={(e) => setF({ ...f, color: e.target.value })}>
                     {COLORS.map((v) => <option key={v} value={v}>{v}</option>)}
                   </select></label>
               </div>
-              <div className="filter-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
+              <div className="filter-grid admin-proposal-stone-grid">
                 <label className="field"><span>{t.clarity}</span>
                   <select value={f.clarity} onChange={(e) => setF({ ...f, clarity: e.target.value })}>
                     {CLARITIES.map((v) => <option key={v} value={v}>{v}</option>)}
@@ -468,7 +654,7 @@ function StepCard({ step, index, order, done, changeRequest, expanded, onToggle,
                     <option value="IGI">IGI</option><option value="GIA">GIA</option>
                   </select></label>
                 <label className="field"><span>{t.igi}</span>
-                  <input value={f.igiNo} onChange={(e) => setF({ ...f, igiNo: e.target.value })} /></label>
+                  <input value={f.igiNo} onChange={(e) => setF({ ...f, igiNo: e.target.value })} autoComplete="off" /></label>
               </div>
               <label className="field"><span>{t.subNote}</span>
                 <textarea rows={2} value={f.subNote} onChange={(e) => setF({ ...f, subNote: e.target.value })} /></label>
@@ -478,32 +664,34 @@ function StepCard({ step, index, order, done, changeRequest, expanded, onToggle,
             <label className="field"><span>{t.note}</span>
               <input value={f.note} onChange={(e) => setF({ ...f, note: e.target.value })} /></label>
           )}
-          <div className="filter-grid" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
+          <div className="filter-grid admin-event-fields">
             {step.fields?.includes("total") && (
               <label className="field"><span>{t.total}</span>
-                <input type="number" value={f.total} onChange={(e) => setF({ ...f, total: e.target.value })} /></label>
+                <input type="number" min="0.01" step="0.01" value={f.total} onChange={(e) => setF({ ...f, total: e.target.value })} required aria-invalid={step.composer === "proposal" && !(totalValue > 0)} /></label>
             )}
             {step.composer === "proposal" && (
               <label className="field"><span>{t.deposit}</span>
-                <input type="number" value={f.deposit} onChange={(e) => setF({ ...f, deposit: e.target.value })} /></label>
+                <input type="number" min="0.01" step="0.01" max={totalValue > 0 ? totalValue : undefined} value={f.deposit} onChange={(e) => setF({ ...f, deposit: e.target.value })} aria-invalid={Boolean(f.deposit) && (!(depositValue > 0) || depositValue > totalValue)} /></label>
             )}
             {step.fields?.includes("igi") && (
               <label className="field"><span>{t.igi}</span>
-                <input value={f.igi} onChange={(e) => setF({ ...f, igi: e.target.value })} /></label>
+                <input value={f.igi} onChange={(e) => setF({ ...f, igi: e.target.value })} required aria-invalid={!f.igi.trim()} autoComplete="off" /></label>
             )}
             {step.fields?.includes("tracking") && (
               <label className="field"><span>{t.tracking}</span>
-                <input value={f.tracking} onChange={(e) => setF({ ...f, tracking: e.target.value })} /></label>
+                <input value={f.tracking} onChange={(e) => setF({ ...f, tracking: e.target.value })} required aria-invalid={!f.tracking.trim()} autoComplete="off" /></label>
             )}
           </div>
-          {error && <p className="form-error">{error}</p>}
+          {validationMessage && <p className="form-error" role="status">{validationMessage}</p>}
+          {error && <p className="form-error" role="alert">{error}</p>}
           <button
             className={`button ${done && !unlocked ? "secondary" : "primary"}`}
             type="button"
-            disabled={busy || (done && !unlocked)}
+            disabled={busy || uploadBusy || Boolean(validationMessage) || (done && !unlocked)}
+            aria-busy={busy}
             onClick={fire}
           >
-            {unlocked ? t.resend : done ? t.sentLabel : t.fire}
+            {busy ? t.working : done && !unlocked ? t.sentLabel : cta}
           </button>
         </div>
       )}
@@ -512,15 +700,52 @@ function StepCard({ step, index, order, done, changeRequest, expanded, onToggle,
 }
 
 export function AdminLiveOrderDetail() {
-  const t = useCopy();
   const { orderCode } = useParams();
+  return <AdminLiveOrderDetailContent key={orderCode} orderCode={orderCode} />;
+}
+
+function AdminLiveOrderDetailContent({ orderCode }) {
+  const t = useCopy();
   const [state, setState] = useState({ status: "loading", data: null });
   const [notice, setNotice] = useState("");
   const [expandedStep, setExpandedStep] = useState(null); // 기본은 첫 미완료 스텝만 펼침
   const [cancelOpen, setCancelOpen] = useState(false);
   const [refundNote, setRefundNote] = useState("");
+  const [cancelBusy, setCancelBusy] = useState(false);
+  const [cancelError, setCancelError] = useState("");
+  const loadSequence = useRef(0);
+
+  const load = useCallback(async () => {
+    const sequence = ++loadSequence.current;
+    try {
+      const data = await apiFetch(`/admin/orders/${orderCode}`);
+      if (sequence !== loadSequence.current) return false;
+      setState({ status: "ok", data });
+      return true;
+    } catch (error) {
+      if (sequence !== loadSequence.current) return false;
+      setState((current) => (
+        error?.status === 401 || error?.status === 403
+          ? { status: "auth", data: null }
+          : current.status === "ok"
+            ? current
+            : { status: error instanceof ApiUnavailableError ? "unavailable" : "auth", data: null }
+      ));
+      return false;
+    }
+  }, [orderCode]);
 
   async function fireCancel() {
+    if (cancelBusy) return;
+    const current = state.data;
+    const hasTransferExposure = Boolean(current?.timeline?.some((event) => event.payload?.type === "payment_reported"))
+      || Boolean(current?.order?.summary?.payments?.some((payment) => Number(payment.amountUsd) > 0));
+    if (hasTransferExposure && !refundNote.trim()) {
+      setCancelError(t.refundNoteRequired);
+      return;
+    }
+    setCancelBusy(true);
+    setCancelError("");
     try {
       await apiFetch(`/admin/orders/${orderCode}/events`, {
         method: "POST",
@@ -529,17 +754,30 @@ export function AdminLiveOrderDetail() {
       setCancelOpen(false);
       setRefundNote("");
       setNotice(t.sent);
-      load();
-    } catch { /* 배너/새로고침이 진실 */ }
+      if (!(await load())) setNotice(t.refreshFailed);
+    } catch {
+      setCancelError(t.cancelFailed);
+    } finally {
+      setCancelBusy(false);
+    }
   }
 
-  function load() {
-    apiFetch(`/admin/orders/${orderCode}`)
-      .then((d) => setState({ status: "ok", data: d }))
-      .catch(fetchState(setState));
-  }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(load, [orderCode]);
+  useEffect(() => {
+    setState((current) => (current.data?.order?.orderCode === orderCode ? current : { status: "loading", data: null }));
+    load();
+    const refreshVisible = () => {
+      if (document.visibilityState === "visible") load();
+    };
+    const interval = window.setInterval(refreshVisible, 12000);
+    window.addEventListener("focus", refreshVisible);
+    document.addEventListener("visibilitychange", refreshVisible);
+    return () => {
+      loadSequence.current += 1;
+      window.clearInterval(interval);
+      window.removeEventListener("focus", refreshVisible);
+      document.removeEventListener("visibilitychange", refreshVisible);
+    };
+  }, [load, orderCode]);
 
   const intakeRows = useMemo(() => {
     if (state.status !== "ok") return [];
@@ -567,29 +805,34 @@ export function AdminLiveOrderDetail() {
 
   const { order, timeline, artifacts, actions } = state.data;
   const refMedia = order.intake?.referenceMedia || [];
+  const cancelNeedsResolution = timeline.some((event) => event.payload?.type === "payment_reported")
+    || Boolean(order.summary?.payments?.some((payment) => Number(payment.amountUsd) > 0));
 
   return (
     <div className="form-stack">
       <p><Link className="text-link" to="/bo-4q9z7m/live">{t.back}</Link></p>
-      <div className="panel" style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-        <div>
+      <div className="panel admin-live-order-head" style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+        <div className="admin-live-order-meta">
           <p className="admin-kicker">{t.kicker}</p>
           <h2 style={{ margin: "2px 0 6px" }}>{order.orderCode} <span className="status-badge mst-inProgress">{order.stage}</span></h2>
           <p className="form-hint">{order.customer?.name} · {order.customer?.email} · {order.customer?.locale} · {t.waiting}: {t.waitingOn[order.waitingOn] || order.waitingOn}</p>
         </div>
         {!["CANCELLED", "DELIVERED"].includes(order.stage) && (
-          <div style={{ alignSelf: "center", minWidth: cancelOpen ? 320 : "auto" }}>
+          <div className={`admin-order-cancel${cancelOpen ? " is-open" : ""}`}>
             {cancelOpen ? (
               <div className="form-stack">
                 <label className="field"><span>{t.refundNoteLbl}</span>
-                  <input value={refundNote} onChange={(e) => setRefundNote(e.target.value)} autoFocus /></label>
+                  <input value={refundNote} onChange={(e) => setRefundNote(e.target.value)} autoFocus required={cancelNeedsResolution} aria-required={cancelNeedsResolution} /></label>
                 <div className="row-actions">
-                  <button className="button secondary small" type="button" onClick={() => setCancelOpen(false)}>{t.cancelKeepBtn}</button>
-                  <button className="button primary small" type="button" onClick={fireCancel}>{t.cancelConfirmBtn}</button>
+                  <button className="button secondary small" type="button" disabled={cancelBusy} onClick={() => { setCancelOpen(false); setCancelError(""); }}>{t.cancelKeepBtn}</button>
+                  <button className="button primary small" type="button" disabled={cancelBusy || (cancelNeedsResolution && !refundNote.trim())} aria-busy={cancelBusy} onClick={fireCancel}>
+                    {cancelBusy ? t.working : t.cancelConfirmBtn}
+                  </button>
                 </div>
+                {cancelError && <p className="form-error" role="alert">{cancelError}</p>}
               </div>
             ) : (
-              <button className="button secondary small" type="button" onClick={() => setCancelOpen(true)}>{t.cancelOrderBtn}</button>
+              <button className="button secondary small" type="button" onClick={() => { setCancelOpen(true); setCancelError(""); }}>{t.cancelOrderBtn}</button>
             )}
           </div>
         )}
@@ -658,11 +901,13 @@ export function AdminLiveOrderDetail() {
           const changeRequest = lastResponded?.responsePayload?.response === "REQUEST_CHANGES" ? lastResponded : null;
           const done = firedTypes.has(step.type);
           const expanded = !done && (expandedStep ? expandedStep === step.type : step.type === firstOpenType);
+          const guard = adminStepGuard({ step, index: i, order, timeline, actions, changeRequest, t });
           return (
-            <StepCard key={step.type} step={step} index={i + 1} order={order} t={t} done={done}
+            <StepCard key={`${order.orderCode}-${step.type}`} step={step} index={i + 1} order={order} t={t} done={done}
               changeRequest={changeRequest} expanded={expanded}
-              onToggle={() => setExpandedStep(step.type)}
-              onSent={() => { setNotice(t.sent); setExpandedStep(null); load(); }} />
+              available={guard.available} blockedReason={guard.reason}
+              onToggle={() => setExpandedStep((current) => (current === step.type ? null : step.type))}
+              onSent={async () => { setNotice(t.sent); setExpandedStep(null); return load(); }} />
           );
         });
       })()}

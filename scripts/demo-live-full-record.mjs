@@ -5,25 +5,31 @@
 // Two panes (customer left, admin right), slow pacing for a watchable walkthrough.
 //
 // Usage: with the local stack running (vite :5173 + API :8787 against the dev DB):
-//   node scripts/demo-live-full-record.mjs          # records demo-video/live-order-flow-en.mp4
+//   DEMO_ADMIN_PASSWORD=... node scripts/demo-live-full-record.mjs # records demo-video/live-order-flow-en.mp4
 //   DRY=1 node scripts/demo-live-full-record.mjs    # fast headless dry-run, no video
+//   DEMO_SPEED=0.25 node scripts/demo-live-full-record.mjs # faster capture for constrained runners
 //
-// 실서버 플로우 녹화 — dev API가 devCode(OTP)와 dev 메일 sink를 제공해야 한다.
+// 실서버 플로우 녹화 — API를 EXPOSE_DEV_AUTH_SECRETS=true로 실행해 녹화기가
+// 응답의 devCode(OTP)를 읽을 수 있어야 한다. 화면에는 코드를 노출하지 않는다.
 
 import { chromium } from "playwright";
-import { mkdir } from "node:fs/promises";
+import { mkdir, rm, unlink } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 
 const DRY = process.env.DRY === "1";
-const BASE = process.env.DEMO_BASE_URL || "http://localhost:5173";
+const BASE = process.env.DEMO_BASE_URL || "http://127.0.0.1:5173";
 const OUT_DIR = "demo-video";
 const OUT_FILE = `${OUT_DIR}/live-order-flow-en.mp4`;
 const PANE = { width: 900, height: 820 };
-const SLOW = DRY ? 0 : 1.3; // 천천히 — 시청용 페이싱
-const ADMIN = { email: process.env.DEMO_ADMIN_EMAIL || "admin@belovediamond.test", password: process.env.DEMO_ADMIN_PASSWORD || "demo-rec-2026x" };
+const requestedSpeed = Number(process.env.DEMO_SPEED ?? 1.3);
+const SLOW = DRY ? 0 : (Number.isFinite(requestedSpeed) && requestedSpeed >= 0 ? requestedSpeed : 1.3);
+const requestedCrf = Number(process.env.DEMO_VIDEO_CRF ?? 18);
+const VIDEO_CRF = Number.isFinite(requestedCrf) && requestedCrf >= 0 && requestedCrf <= 51 ? requestedCrf : 18;
+const ADMIN = { email: process.env.DEMO_ADMIN_EMAIL || "admin@belovediamond.test", password: process.env.DEMO_ADMIN_PASSWORD || "" };
 const CUSTOMER = { name: "Jiwon Kim", email: `jiwon.demo+${Date.now()}@belovediamond.test` };
 const ADMIN_BASE = "/bo-4q9z7m";
 const ASSET = (name) => new URL(`../public/assets/${name}`, import.meta.url).pathname;
+const REQUIRED_STYLE_NAME = "Four-Prong Solitaire Ring";
 
 const ROLE_STYLE = {
   customer: { bg: "#1f6f43", label: "CUSTOMER · Jiwon Kim" },
@@ -159,17 +165,112 @@ async function fillField(role, locator, value) {
 const activeStep = () => adminPage.locator(".client-stage-section.active").first();
 
 // Send 후 반드시 다음 스텝이 열릴 때까지 대기 — 리프레시 지연 중 재클릭하면 이벤트가 중복 발행된다
-async function adminSend(name = /^Send$/, nextTitle = null) {
-  await tap("admin", activeStep().getByRole("button", { name }));
-  await adminPage.getByText(/Event sent/i).first().waitFor({ timeout: 15000 }).catch(() => {});
+async function adminSend(name, nextTitle = null) {
+  // The success notice persists between sends, so it cannot prove that the
+  // current click reached the server. Observe this exact event POST instead.
+  const eventResponse = adminPage.waitForResponse((response) => {
+    const url = new URL(response.url());
+    return response.request().method() === "POST"
+      && /^\/v1\/admin\/orders\/[^/]+\/events$/.test(url.pathname);
+  }, { timeout: 20000 });
+  const [response] = await Promise.all([
+    eventResponse,
+    tap("admin", activeStep().getByRole("button", { name })),
+  ]);
+  const result = await response.json().catch(() => null);
+  if (!response.ok() || result?.ok !== true) {
+    throw new Error(`admin event failed (${response.status()} ${result?.error?.code || "INVALID_RESPONSE"})`);
+  }
   if (nextTitle) {
     await adminPage.locator(".client-stage-section.active", { hasText: nextTitle }).first().waitFor({ timeout: 20000 });
   }
   await wait(1500);
 }
 
+async function apiPreflight(path, label) {
+  const url = new URL(path, `${BASE.replace(/\/$/, "")}/`);
+  let response;
+  try {
+    response = await fetch(url);
+  } catch {
+    throw new Error(`${label} is unreachable at ${url.origin}`);
+  }
+  if (!response.ok) throw new Error(`${label} returned HTTP ${response.status}`);
+  try {
+    return await response.json();
+  } catch {
+    throw new Error(`${label} did not return JSON`);
+  }
+}
+
+async function preflight() {
+  const problems = [];
+  const endpoints = [
+    ["health", "/v1/health", "API health"],
+    ["designs", "/v1/designs", "published catalog"],
+    ["settings", "/v1/settings/public", "public settings"],
+    ["media", "/v1/media/status", "media provider"],
+  ];
+  const results = await Promise.allSettled(endpoints.map(([, path, label]) => apiPreflight(path, label)));
+  const data = {};
+  results.forEach((result, index) => {
+    const [key, , label] = endpoints[index];
+    if (result.status === "fulfilled") data[key] = result.value;
+    else problems.push(`${label}: ${result.reason.message}`);
+  });
+
+  if (data.health && data.health.ok !== true) problems.push("API health: response was not healthy");
+  if (data.designs) {
+    const styles = Array.isArray(data.designs.styles) ? data.designs.styles : [];
+    const hasRequiredStyle = styles.some((style) => (
+      style?.name?.en === REQUIRED_STYLE_NAME || style?.name === REQUIRED_STYLE_NAME
+    ));
+    if (!hasRequiredStyle) {
+      problems.push(`published catalog: ${REQUIRED_STYLE_NAME} is missing; run \`node scripts/push-catalog-to-server.mjs\``);
+    }
+  }
+  if (data.settings) {
+    const payment = data.settings.settings?.payment || {};
+    if (![payment.zelle, payment.venmo].some((value) => String(value || "").trim())) {
+      problems.push(`public settings: configure at least one Zelle/Venmo recipient at ${BASE}${ADMIN_BASE}/payments`);
+    }
+  }
+  if (data.media && (!data.media.configured || !["local", "r2"].includes(data.media.provider))) {
+    problems.push("media provider: configure R2 or run the API in non-production mode for local media uploads");
+  }
+
+  // The activity endpoint depends on migration 0013. This query is read-only;
+  // DATABASE_URL must be the same value used by the API process.
+  try {
+    const { query, closePool } = await import("../server/db.js");
+    try {
+      const { rows } = await query(
+        `select exists (
+           select 1 from information_schema.columns
+           where table_schema = current_schema()
+             and table_name = 'activity_events'
+             and column_name = 'client_event_id'
+         ) as ready`,
+      );
+      if (!rows[0]?.ready) problems.push("database: migration 0013 is missing; run `npm run db:migrate`");
+    } finally {
+      await closePool();
+    }
+  } catch (error) {
+    problems.push(`database: could not verify migrations (${error.code || error.message}); use the API's DATABASE_URL`);
+  }
+
+  if (problems.length > 0) {
+    throw new Error(["Live demo preflight failed:", ...problems.map((problem) => `- ${problem}`)].join("\n"));
+  }
+  log(`preflight passed — catalog, payment settings, ${data.media.provider} media, database`);
+}
+
 async function main() {
+  if (!ADMIN.password) throw new Error("DEMO_ADMIN_PASSWORD is required for live recording");
+  await preflight();
   await mkdir(OUT_DIR, { recursive: true });
+  if (!DRY) await rm(OUT_FILE, { force: true });
   const browser = await chromium.launch();
   // 고객·어드민은 반드시 컨텍스트 분리 — 서버 세션 쿠키가 섞이면 고객 팬이 어드민으로 로그인된다
   const makeContext = async () => {
@@ -189,6 +290,9 @@ async function main() {
 
   customerPage = await customerContext.newPage();
   adminPage = await adminContext.newPage();
+  // 운영 콘솔은 상태 변경 전에 확인 대화상자를 띄운다. 녹화도 실제 사용자와
+  // 같은 확인 단계를 통과해야 하므로 어드민 컨텍스트의 확인창만 승인한다.
+  adminPage.on("dialog", (dialog) => dialog.accept());
 
   if (process.env.DEBUG_API === "1") {
     for (const pg of [customerPage, adminPage]) {
@@ -203,6 +307,7 @@ async function main() {
     }
   }
 
+  let completed = false;
   try {
     // 고객 팬은 완전 게스트로 시작 — 데모 스토어 세션 제거
     await customerPage.goto(`${BASE}/`, { waitUntil: "domcontentloaded" });
@@ -269,10 +374,13 @@ async function main() {
     await wait(1200);
     await tap("customer", customerPage.locator("main").getByRole("link", { name: /sign in/i }).first());
     await fillField("customer", customerPage.locator('main input[type="email"], main .field input').first(), CUSTOMER.email);
+    const codeResponse = customerPage.waitForResponse((res) =>
+      res.url().includes("/v1/auth/code") && res.request().method() === "POST" && res.status() < 400,
+      { timeout: 15000 },
+    );
     await tap("customer", customerPage.locator("main").getByRole("button", { name: /email me a code/i }));
-    await customerPage.getByText(/Dev code:/i).waitFor({ timeout: 15000 });
-    const devCode = (await customerPage.getByText(/Dev code:/i).textContent()).match(/(\d{6})/)?.[1];
-    if (!devCode) throw new Error("dev OTP code not surfaced");
+    const devCode = (await (await codeResponse).json())?.devCode;
+    if (!/^\d{6}$/.test(devCode || "")) throw new Error("dev OTP code not returned to recorder");
     await banner(customerPage, "customer", "Enter the 6-digit code from the email");
     await fillField("customer", customerPage.locator(".otp-input"), devCode);
     await tap("customer", customerPage.locator("main").getByRole("button", { name: /^Sign in$/i }));
@@ -290,7 +398,7 @@ async function main() {
     await fillField("admin", activeStep().locator('label:has-text("Design adjustment note") input'), "Basket lowered slightly per your inspiration photo.");
     await fillField("admin", activeStep().locator('label:has-text("Total ($)") input'), "4800");
     await banner(adminPage, "admin", "Send the proposal — the customer is emailed in their language");
-    await adminSend(/^Send$/, "Deposit received");
+    await adminSend(/^Send proposal to customer$/, "Deposit received");
 
     // ───── ACT 4 · 고객: 제안 검토 → 수정 요청 ─────
     await go("customer", `/orders/${orderCode}`, "The proposal is in — review every detail", { waitFor: ".client-portal-page" });
@@ -337,12 +445,12 @@ async function main() {
 
     // ───── ACT 7 · 어드민: 디파짓 확인 → 다이아 확보 → 제작 시작 ─────
     await go("admin", `${ADMIN_BASE}/live/${orderCode}`, "Touchpoint — confirm the deposit", { waitFor: ".client-stage-section" });
-    await adminSend(/^Send$/, "Diamond secured");
+    await adminSend(/^Confirm deposit received$/, "Diamond secured");
     await banner(adminPage, "admin", "Diamond secured — IGI number on file");
     await fillField("admin", activeStep().locator('label:has-text("IGI No.") input'), "IGI 625437890");
-    await adminSend(/^Send$/, "Production started");
+    await adminSend(/^Confirm diamond secured$/, "Production started");
     await banner(adminPage, "admin", "Production started at the atelier");
-    await adminSend(/^Send$/, "Send finished-piece QC");
+    await adminSend(/^Start production$/, "Send finished-piece QC");
 
     // ───── ACT 8 · 어드민: 완성품 QC 발송 ─────
     await banner(adminPage, "admin", "The piece is finished — send QC for confirmation");
@@ -352,7 +460,7 @@ async function main() {
     await wait(3200);
     await fillField("admin", activeStep().locator('label:has-text("Customer note") input'),
       "Final QC passed — photos, IGI certificate, and measured weight attached.");
-    await adminSend(/^Send$/, "Request the balance");
+    await adminSend(/^Send finished-piece QC$/, "Request the balance");
 
     // ───── ACT 9 · 고객: 완성품 컨펌 ─────
     await go("customer", `/orders/${orderCode}`, "Your finished piece — confirm it", { waitFor: ".client-portal-page" });
@@ -363,23 +471,23 @@ async function main() {
 
     // ───── ACT 10 · 잔금: 요청 → 송금 보고 → 확인 ─────
     await go("admin", `${ADMIN_BASE}/live/${orderCode}`, "Request the balance", { waitFor: ".client-stage-section" });
-    await adminSend(/^Send$/, "Balance received");
+    await adminSend(/^Request balance payment$/, "Balance received");
     await go("customer", `/orders/${orderCode}`, "Send the balance & report it", { waitFor: ".client-portal-page" });
     await point("customer", customerPage.locator("#bd-balance").first());
     await tap("customer", customerPage.locator("#bd-balance .payment-sent"));
     await wait(1500);
     await go("admin", `${ADMIN_BASE}/live/${orderCode}`, "Touchpoint — confirm the balance", { waitFor: ".client-stage-section" });
-    await adminSend(/^Send$/, "Shipped");
+    await adminSend(/^Confirm balance received$/, "Shipped");
 
     // ───── ACT 11 · 배송 → 수령 ─────
     await banner(adminPage, "admin", "Shipped — insured, tracking number attached");
     await fillField("admin", activeStep().locator('label:has-text("Tracking no.") input'), "1Z-BELOVED-88234901");
-    await adminSend(/^Send$/, "Delivered");
+    await adminSend(/^Confirm shipment and email tracking$/, "Delivered");
     await go("customer", `/orders/${orderCode}`, "On its way — tracking number in your portal", { waitFor: ".client-portal-page" });
     await point("customer", customerPage.locator("#bd-shipment .payment-memo-pill").first());
     await wait(2600);
     await go("admin", `${ADMIN_BASE}/live/${orderCode}`, "Package received — mark delivered", { waitFor: ".client-stage-section" });
-    await adminSend(/^Send$/);
+    await adminSend(/^Mark order delivered$/);
 
     // ───── 피날레 ─────
     await go("customer", `/orders/${orderCode}`, "Delivered ✓ — the piece is home", { waitFor: ".client-portal-page" });
@@ -387,6 +495,7 @@ async function main() {
     await go("admin", `${ADMIN_BASE}/live/${orderCode}`, "Order delivered ✓ — full journey complete", { waitFor: ".client-stage-section" });
     await wait(3200);
 
+    completed = true;
     console.log(`Live order flow recorded for ${orderCode}`);
   } catch (error) {
     console.error("Demo recording failed:", error.message.split("\n")[0]);
@@ -399,27 +508,32 @@ async function main() {
     } else {
       const customerVideo = await customerPage.video();
       const adminVideo = await adminPage.video();
-      await customerPage.context().close();
-      await adminPage.context().close();
-      const customerPath = await customerVideo.path();
-      const adminPath = await adminVideo.path();
-      await browser.close();
-      execFileSync("ffmpeg", [
-        "-y",
-        "-i", customerPath,
-        "-i", adminPath,
-        "-filter_complex", "[0:v][1:v]hstack=inputs=2,format=yuv420p[v]",
-        "-map", "[v]",
-        "-r", "25",
-        "-c:v", "libx264",
-        "-preset", "medium",
-        "-crf", "22",
-        "-movflags", "+faststart",
-        OUT_FILE,
-      ], { stdio: "ignore" });
-      const { unlink } = await import("node:fs/promises");
-      await Promise.allSettled([unlink(customerPath), unlink(adminPath)]);
-      console.log(`Video written: ${OUT_FILE}`);
+      await Promise.allSettled([customerPage.context().close(), adminPage.context().close()]);
+      const [customerPath, adminPath] = await Promise.all([
+        customerVideo ? customerVideo.path().catch(() => null) : Promise.resolve(null),
+        adminVideo ? adminVideo.path().catch(() => null) : Promise.resolve(null),
+      ]);
+      await browser.close().catch(() => {});
+      if (completed) {
+        if (!customerPath || !adminPath) throw new Error("recording completed without both video streams");
+        execFileSync("ffmpeg", [
+          "-y",
+          "-i", customerPath,
+          "-i", adminPath,
+          "-filter_complex", "[0:v]trim=start=0.6,setpts=PTS-STARTPTS[v0];[1:v]trim=start=0.6,setpts=PTS-STARTPTS[v1];[v0][v1]hstack=inputs=2,format=yuv420p[v]",
+          "-map", "[v]",
+          "-r", "25",
+          "-c:v", "libx264",
+          "-preset", "medium",
+          "-crf", String(VIDEO_CRF),
+          "-movflags", "+faststart",
+          OUT_FILE,
+        ], { stdio: "ignore" });
+        console.log(`Video written: ${OUT_FILE}`);
+      } else {
+        await rm(OUT_FILE, { force: true });
+      }
+      await Promise.allSettled([customerPath && unlink(customerPath), adminPath && unlink(adminPath)].filter(Boolean));
     }
   }
 }

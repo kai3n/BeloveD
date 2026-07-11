@@ -3,8 +3,16 @@ import {
   resetDB, addUser, findUserByEmail, findUserByAccessCode, genAccessCode,
   listOpsOrders, portalView,
 } from "../store.js";
+import { DEMO_AUTH_ENABLED, DEMO_AUTH_PASSWORD } from "../flags.js";
 
 beforeEach(() => resetDB());
+
+describe("인증 개발 기능 기본값", () => {
+  it("명시적인 Vite 플래그 없이는 데모 비밀번호와 화면 OTP가 비활성이다", () => {
+    expect(DEMO_AUTH_ENABLED).toBe(false);
+    expect(DEMO_AUTH_PASSWORD).toBe("");
+  });
+});
 
 describe("역할별 인증 — 벤더 접근 코드", () => {
   it("접근 코드로 벤더를 조회 (대소문자·공백 무시), 비벤더/오타는 null", () => {

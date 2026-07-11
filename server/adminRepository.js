@@ -72,6 +72,8 @@ function orderView(row) {
       referenceMedia: row.reference_media || [],
       formPayload: row.form_payload || {},
     },
+    // 최신 제안 총액을 목록의 평면 필드로 노출 — 라이브 파이프라인/완료 매출 집계가 소비한다.
+    totalUsd: row.total_usd === null || row.total_usd === undefined ? null : Number(row.total_usd),
     updatedAt: row.updated_at,
     createdAt: row.created_at,
   };
@@ -161,10 +163,21 @@ export async function listAdminOrders() {
         i.currency,
         i.required_date,
         i.reference_media,
-        i.form_payload
+        i.form_payload,
+        q.total_usd
       from customer_orders o
       join customers c on c.id = o.customer_id
       join customer_intakes i on i.id = o.intake_id
+      left join lateral (
+        select case
+          when pa.payload->>'totalUsd' ~ '^[0-9]+([.][0-9]+)?$' then (pa.payload->>'totalUsd')::numeric
+          else null
+        end as total_usd
+        from published_artifacts pa
+        where pa.order_id = o.id and pa.type = 'QUOTE'
+        order by pa.published_at desc, pa.id desc
+        limit 1
+      ) q on true
       order by o.updated_at desc
     `,
   );
@@ -188,10 +201,21 @@ export async function getAdminOrder(orderCode) {
         i.currency,
         i.required_date,
         i.reference_media,
-        i.form_payload
+        i.form_payload,
+        q.total_usd
       from customer_orders o
       join customers c on c.id = o.customer_id
       join customer_intakes i on i.id = o.intake_id
+      left join lateral (
+        select case
+          when pa.payload->>'totalUsd' ~ '^[0-9]+([.][0-9]+)?$' then (pa.payload->>'totalUsd')::numeric
+          else null
+        end as total_usd
+        from published_artifacts pa
+        where pa.order_id = o.id and pa.type = 'QUOTE'
+        order by pa.published_at desc, pa.id desc
+        limit 1
+      ) q on true
       where o.order_code = $1
     `,
     [orderCode],
@@ -201,15 +225,15 @@ export async function getAdminOrder(orderCode) {
 }
 
 export async function updateAdminOrder(orderCode, payload = {}) {
+  if (payload.stage || payload.phase || payload.waitingOn) {
+    throw new ApiError("ORDER_TRANSITION_REQUIRES_EVENT", 409, "order state can only change through a validated event");
+  }
   const updates = [];
   const params = [orderCode];
   const add = (sql, value) => {
     params.push(value);
     updates.push(`${sql} = $${params.length}`);
   };
-  if (payload.stage) add("stage", payload.stage);
-  if (payload.phase) add("phase", payload.phase);
-  if (payload.waitingOn) add("waiting_on", payload.waitingOn);
   if (payload.expectedCompletionAt !== undefined) add("expected_completion_at", payload.expectedCompletionAt || null);
   if (payload.summary) add("summary", JSON.stringify(payload.summary));
   if (updates.length === 0) return getAdminOrder(orderCode);
