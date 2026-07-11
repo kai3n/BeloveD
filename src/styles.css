@@ -165,9 +165,41 @@ img {
   max-width: 100%;
 }
 
-.site-header {
+/* 세일 배너 — 헤더 위 풀폭 다크 바 (NOIR/데이 양 테마 공통 고정 다크) */
+.sale-banner {
   position: fixed;
   top: 0;
+  left: 0;
+  z-index: 21;
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  padding: 9px clamp(16px, 4vw, 56px);
+  background: #0a0b0d;
+  color: #f5f7fb;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  text-align: center;
+  text-decoration: none;
+}
+.sale-banner:hover { color: #ffffff; }
+/* 버튼 렌더(코드 복사 모드) — 링크와 동일하게 보이도록 리셋 */
+button.sale-banner { border: 0; font: inherit; cursor: pointer; }
+.sale-banner-code {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.sale-banner-code.is-copied { text-decoration: none; color: #d6c5a0; }
+main { margin-top: var(--sale-banner-h, 0px); }
+
+.site-header {
+  position: fixed;
+  top: var(--sale-banner-h, 0px);
   left: 0;
   z-index: 20;
   width: 100%;
@@ -1899,7 +1931,7 @@ html[data-theme="day"] .quality {
 
   .mobile-panel {
     position: fixed;
-    top: 14px;
+    top: calc(var(--sale-banner-h, 0px) + 14px); /* 세일 배너만큼 내려앉는다 */
     right: 14px;
     display: grid;
     gap: 4px;

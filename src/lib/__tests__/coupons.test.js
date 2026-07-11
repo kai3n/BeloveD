@@ -100,7 +100,19 @@ describe("쿠폰 → 예상 견적/로컬 견적 반영", () => {
     const q = createQuote(order.id, { estWeightG: 4, metalRefUsdPerG: 100, lossRatePct: 0, nonMetalUsd: 600 });
     expect(q.totalUsd).toBe(950);
     expect(q.coupon).toEqual({ code: "WELCOME5", discountUsd: 50 });
-    expect(q.depositUsd).toBe(475); // opsDepositRate 0.5
-    expect(q.balanceUsd).toBe(475);
+    expect(q.depositUsd).toBe(285); // opsDepositRate 0.3 — 공개 정책 30%와 동일
+    expect(q.balanceUsd).toBe(665);
+  });
+});
+
+describe("LAUNCH25 런칭 쿠폰", () => {
+  it("시드에 25% percent로 존재한다", () => {
+    const coupon = findCoupon("launch25");
+    expect(coupon).toMatchObject({ code: "LAUNCH25", kind: "percent", value: 25 });
+  });
+  it("applyCoupon이 총액 25%를 깎는다", () => {
+    const out = applyCoupon({ totalUsd: 4000, diamondAmountUsd: 2000, multiplier: 1.8 }, { kind: "percent", value: 25 });
+    expect(out.totalUsd).toBe(3000);
+    expect(out.discountUsd).toBe(1000);
   });
 });

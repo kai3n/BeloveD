@@ -59,7 +59,7 @@ describe("visual store — 구조화 피드백과 수정 한도", () => {
   });
 
   it("무료 한도 초과 시 accepted 견적 잔금에 designChangeFeeUsd 가산", () => {
-    // DM-000002는 시드에 accepted 견적(잔금 577) 보유
+    // DM-000002는 시드에 accepted 견적(잔금 808 — 디파짓 30%) 보유
     const fee = getSettings().designChangeFeeUsd;
     const r1 = addCadVersion("DM-000002", { fileUrl: "/v1.png", supplierId: "u-supplier1" });
     decideCad(r1.id, { decision: "minorRevision", annotations: [] }, "customer");
@@ -68,7 +68,7 @@ describe("visual store — 구조화 피드백과 수정 한도", () => {
     decideCad(r2.id, { decision: "minorRevision", annotations: [] }, "customer");
     expect(r2.feeAppliedUsd).toBe(fee);
     const v = portalView("DM-000002", { queryCode: "H3WT-8RVK" });
-    expect(v.quote.balanceUsd).toBe(577 + fee);
+    expect(v.quote.balanceUsd).toBe(808 + fee);
     expect(v.freeRevisionsLeft).toBe(0);
   });
 });

@@ -5,6 +5,11 @@ import {
   EARRING_PAIRING_OPTIONS,
 } from "./ops.js";
 import { normalizeCouponCode } from "./coupons.js";
+import {
+  CLARITY_SCALE, COLOR_SCALE, MULTI_CLARITY_DEFAULT, MULTI_COLOR_DEFAULT,
+  SOLITAIRE_CARAT, SOLITAIRE_CLARITY_DEFAULT, SOLITAIRE_COLOR_DEFAULT,
+  caratRangeMid, clampCaratRange, clampGradeRange, clampTotalCaratRange, formatGradeRange,
+} from "./gradeScale.js";
 
 export const DEFAULT_MULTI_STANDARD = "F-G / VS+";
 export const MAX_REFERENCE_MEDIA = 5;
@@ -98,15 +103,24 @@ export function conditionalComplete(category, conditional = {}) {
 }
 
 // createIntake에 넘길 최종 페이로드 — solitaire는 stonePrefs, multi는 multiSpec만 채운다.
-// multi의 meleeSpec/overallDims 자유입력은 폐지: 상담·확정 제안 단계에서 어드민이 확정한다.
+// 캐럿·등급 모두 [하한,상한] range로 정규화. 단일값 필드(carat/totalCarat)는 range 중간값으로
+// 채워 레거시 소비처(서버 요약·이메일·풀매칭 폴백)와의 호환을 유지한다.
 export function buildIntakePayload(form, refs, user) {
   const contactDetails = submissionContact(form, user);
   const solitaire = form.productLine === "solitaire";
+  const multiColor = clampGradeRange(COLOR_SCALE, form.multiSpec?.colorRange, MULTI_COLOR_DEFAULT);
+  const multiClarity = clampGradeRange(CLARITY_SCALE, form.multiSpec?.clarityRange, MULTI_CLARITY_DEFAULT);
+  const totalCaratRange = clampTotalCaratRange(form.category, form.multiSpec?.totalCaratRange ?? form.multiSpec?.totalCarat);
+  const caratRange = clampCaratRange(SOLITAIRE_CARAT, form.stonePrefs?.caratRange ?? form.stonePrefs?.carat);
   const multiSpec = solitaire ? null : {
+    totalCaratRange,
+    totalCarat: caratRangeMid(totalCaratRange),
+    colorRange: multiColor,
+    clarityRange: multiClarity,
     meleeSpec: form.multiSpec?.meleeSpec || "",
     overallDims: form.multiSpec?.overallDims || "",
     arrangement: form.multiSpec?.arrangement || "",
-    standard: (form.multiSpec?.standard || "").trim() || DEFAULT_MULTI_STANDARD,
+    standard: `${formatGradeRange(multiColor)} / ${formatGradeRange(multiClarity)}`,
   };
   return {
     ...form,
@@ -116,7 +130,14 @@ export function buildIntakePayload(form, refs, user) {
     styleCode: form.styleId || null,
     engraving: (form.engraving || "").trim(),
     couponCode: normalizeCouponCode(form.couponCode),
-    stonePrefs: solitaire ? { ...form.stonePrefs, carat: Number(form.stonePrefs?.carat) || null } : null,
+    stonePrefs: solitaire ? {
+      ...form.stonePrefs,
+      caratRange,
+      carat: caratRangeMid(caratRange),
+      // 구 드래프트의 단일값(color/clarity)은 [v,v] range로 승격
+      colorRange: clampGradeRange(COLOR_SCALE, form.stonePrefs?.colorRange ?? form.stonePrefs?.color, SOLITAIRE_COLOR_DEFAULT),
+      clarityRange: clampGradeRange(CLARITY_SCALE, form.stonePrefs?.clarityRange ?? form.stonePrefs?.clarity, SOLITAIRE_CLARITY_DEFAULT),
+    } : null,
     multiSpec,
     referenceMedia: sanitizeReferenceMedia(refs),
   };

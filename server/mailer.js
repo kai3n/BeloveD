@@ -7,17 +7,25 @@ const REPLY_TO = process.env.MAIL_REPLY_TO || "support@belovediamond.com";
 async function deliver(to, subject, html, meta) {
   const key = process.env.RESEND_API_KEY;
   if (key) {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: FROM, to: [to], reply_to: [REPLY_TO], subject, html }),
-    });
-    if (!res.ok) {
-      const detail = await res.text().catch(() => "");
-      console.error(`[mailer] resend ${res.status}: ${detail.slice(0, 200)}`);
-      throw new Error("MAIL_SEND_FAILED");
+    // 8초 상한 — 메일 발송을 응답 전에 await하므로, Resend 지연이 HTTP 응답을 무한정 붙잡지 않게.
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 8000);
+    try {
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ from: FROM, to: [to], reply_to: [REPLY_TO], subject, html }),
+        signal: ctrl.signal,
+      });
+      if (!res.ok) {
+        const detail = await res.text().catch(() => "");
+        console.error(`[mailer] resend ${res.status}: ${detail.slice(0, 200)}`);
+        throw new Error("MAIL_SEND_FAILED");
+      }
+      return { delivered: true };
+    } finally {
+      clearTimeout(timer);
     }
-    return { delivered: true };
   }
   const msg = { ...meta, to, at: new Date().toISOString() };
   sink.push(msg);

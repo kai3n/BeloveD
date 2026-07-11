@@ -14,6 +14,11 @@ import { requireAdmin, requireCustomer } from "./middleware.js";
 const MINUTE = 60 * 1000;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// 돈이 걸린 주문 이벤트 — 가격 커밋(제안)·결제 확인·잔금 요청·취소(환불 판단)는 사람 어드민만
+const FULL_ADMIN_EVENTS = new Set([
+  "proposal_sent", "deposit_confirmed", "balance_requested", "balance_confirmed", "order_cancelled",
+]);
+
 // 메일은 응답 이후 fire-and-forget — 발송 실패가 제출/이벤트를 실패시키지 않는다 (스펙 §5)
 function fireMail(promise, label) {
   promise.catch((e) => console.error(`[orderMail] ${label}: ${e.message}`));
@@ -80,6 +85,9 @@ export function customerRouter() {
         // 왜: EVENT_TRANSITIONS[type]는 상속된 Object.prototype 속성명("toString" 등)도 truthy로 통과시킨다 — own-property로만 검사
         if (!Object.hasOwn(EVENT_TRANSITIONS, type) || type === "received") {
           throw new ApiError("VALIDATION_ERROR", 422, "unknown event type");
+        }
+        if (FULL_ADMIN_EVENTS.has(type) && req.principal?.type !== "admin") {
+          throw new ApiError("FULL_ADMIN_REQUIRED", 403);
         }
         // artifact(포털 공개 미디어/페이로드)·action(열릴 고객 컨펌)은 stage 전이와 같은 트랜잭션에서 발행
         const result = await recordOrderEvent(req.params.orderCode, type, data || {}, { artifact, action });

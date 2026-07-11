@@ -56,6 +56,14 @@ describe("고객 포털 읽기 API", () => {
     expect(detail.body.order.timeline[0].title).toBe("Request received");
   });
 
+  it("배송 완료(DELIVERED)면 여정 레일 3단계가 모두 complete", async () => {
+    const orderCode = await submitOrder("done@test.com");
+    await query("update customer_orders set stage='DELIVERED' where order_code=$1", [orderCode]);
+    const cookie = await loginCookie("done@test.com");
+    const detail = await request(app).get(`/v1/orders/${orderCode}`).set("Cookie", cookie);
+    expect(detail.body.order.phases.map((p) => p.state)).toEqual(["complete", "complete", "complete"]);
+  });
+
   it("남의 주문 상세는 403", async () => {
     const orderCode = await submitOrder("owner@test.com");
     const cookie = await loginCookie("stranger@test.com");

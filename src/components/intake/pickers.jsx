@@ -1,4 +1,5 @@
 // Gallery Flow 인테이크의 이미지 선택 프리미티브 — 텍스트 대신 사진·실루엣·스와치로 답한다
+import { useRef } from "react";
 import { BENCHMARK_SHAPES, OPS_METALS } from "../../lib/ops.js";
 import { listboxNavigationIndex, MediaThumb } from "../ui.jsx";
 
@@ -11,6 +12,53 @@ function moveOptionFocus(event, columns = 1) {
   if (nextIndex == null) return;
   event.preventDefault();
   options[nextIndex]?.focus();
+}
+
+// 듀얼핸들 range 트랙의 포인터 드래그 — 트랙 아무 곳이나 탭/드래그하면 가까운 핸들이 그 값으로 잡힌다.
+// 네이티브 인풋은 키보드·접근성·썸 시각용으로 남기고(포인터는 트랙이 처리), 값 도메인은 숫자 [min,max].
+function useRangeTrackDrag({ min, max, step, value, onChange }) {
+  const trackRef = useRef(null);
+  const dragging = useRef(null); // 'lo' | 'hi' | null
+  const decimals = (String(step).split(".")[1] || "").length;
+  const valueAt = (clientX) => {
+    const el = trackRef.current;
+    if (!el) return null;
+    const rect = el.getBoundingClientRect();
+    if (rect.width <= 0) return null;
+    const frac = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    const snapped = Math.round((min + frac * (max - min)) / step) * step;
+    return Number(Math.max(min, Math.min(max, snapped)).toFixed(decimals));
+  };
+  const applyTo = (which, v) => {
+    const [lo, hi] = value;
+    if (which === "lo") onChange([Math.min(v, hi), hi]);
+    else onChange([lo, Math.max(v, lo)]);
+  };
+  const nearest = (v) => {
+    const [lo, hi] = value;
+    if (v <= lo) return "lo";
+    if (v >= hi) return "hi";
+    return v - lo <= hi - v ? "lo" : "hi";
+  };
+  const onPointerDown = (e) => {
+    const v = valueAt(e.clientX);
+    if (v == null) return;
+    dragging.current = nearest(v);
+    applyTo(dragging.current, v);
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* no-op */ }
+    e.preventDefault();
+  };
+  const onPointerMove = (e) => {
+    if (!dragging.current) return;
+    const v = valueAt(e.clientX);
+    if (v != null) applyTo(dragging.current, v);
+  };
+  const stop = (e) => {
+    if (!dragging.current) return;
+    dragging.current = null;
+    try { e.currentTarget.releasePointerCapture(e.pointerId); } catch { /* no-op */ }
+  };
+  return { trackRef, handlers: { onPointerDown, onPointerMove, onPointerUp: stop, onPointerCancel: stop } };
 }
 
 // 9개 벤치마크 셰입 실루엣 (viewBox 0 0 48 48, currentColor stroke)
@@ -113,10 +161,43 @@ export function MetalSwatches({ value, onSelect, labels = {}, ariaLabel = "Metal
   );
 }
 
-// 캐럿 슬라이더 — 실물 비율 스톤 프리뷰
+// 캐럿 range 슬라이더 코어 — grange와 동일 문법의 듀얼 핸들, 연속 숫자값 [하한, 상한]
+function CaratRangeTrack({ value, onChange, min, max, step, ariaLabel = "carat" }) {
+  const span = max - min || 1;
+  const lo = Number.isFinite(Number(value?.[0])) ? Number(value[0]) : min;
+  const hi = Number.isFinite(Number(value?.[1])) ? Number(value[1]) : max;
+  const pct = (n) => Math.max(0, Math.min(100, ((n - min) / span) * 100));
+  const { trackRef, handlers } = useRangeTrackDrag({ min, max, step, value: [lo, hi], onChange });
+  return (
+    <div className="gflow-grange-track" ref={trackRef} {...handlers}>
+      <span className="gflow-grange-fill" style={{ left: `${pct(lo)}%`, width: `${pct(hi) - pct(lo)}%` }} aria-hidden="true" />
+      <input
+        type="range" min={min} max={max} step={step} value={lo}
+        aria-label={`${ariaLabel} min`}
+        onChange={(e) => onChange([Math.min(Number(e.target.value), hi), hi])}
+      />
+      <input
+        type="range" min={min} max={max} step={step} value={hi}
+        aria-label={`${ariaLabel} max`}
+        onChange={(e) => onChange([lo, Math.max(Number(e.target.value), lo)])}
+      />
+    </div>
+  );
+}
+
+// 캐럿 range 라벨 — "1.50–2.00", 하한=상한이면 "1.50"
+function caratReadout(value) {
+  const lo = Number(value?.[0]);
+  const hi = Number(value?.[1] ?? value?.[0]);
+  if (!Number.isFinite(lo)) return "";
+  return lo === hi ? lo.toFixed(2) : `${lo.toFixed(2)}–${hi.toFixed(2)}`;
+}
+
+// 센터 캐럿 슬라이더 — 실물 비율 스톤 프리뷰(범위 중간값 기준) + 듀얼 핸들 range
 export function CaratSlider({ value, onChange, min = 0.5, max = 4, step = 0.1, shape = "round" }) {
-  const ct = Number(value) || min;
-  const px = Math.round(34 + Math.sqrt(ct) * 22);
+  const lo = Number(value?.[0]) || min;
+  const hi = Number(value?.[1]) || lo;
+  const px = Math.round(34 + Math.sqrt((lo + hi) / 2) * 22);
   return (
     <div className="gflow-carat">
       <div className="gflow-carat-visual">
@@ -124,18 +205,87 @@ export function CaratSlider({ value, onChange, min = 0.5, max = 4, step = 0.1, s
         <span className="gflow-carat-stone" style={{ width: px, height: px }} aria-hidden="true">
           <ShapeSilhouette shape={shape} />
         </span>
-        <span className="gflow-carat-readout"><strong>{ct.toFixed(2)}</strong><small>carat</small></span>
+        <span className="gflow-carat-readout"><strong>{caratReadout([lo, hi])}</strong><small>carat</small></span>
       </div>
-      <input
-        className="gflow-carat-range"
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={ct}
-        aria-label="carat"
-        onChange={(e) => onChange(e.target.value)}
-      />
+      <CaratRangeTrack value={[lo, hi]} onChange={onChange} min={min} max={max} step={step} ariaLabel="carat" />
+      <div className="gflow-grange-labels" aria-hidden="true">
+        <span>{min} ct</span>
+        <span>{max} ct</span>
+      </div>
+    </div>
+  );
+}
+
+// 등급 range 슬라이더 — 브릴리언스식 듀얼 핸들. 겹친 두 개의 네이티브 range 인풋으로
+// 키보드 접근성을 공짜로 얻고, 썸만 포인터를 받는다. 값은 [하한, 상한] 등급 문자열.
+export function GradeRangeSlider({ scale, value, onChange, ariaLabel = "" }) {
+  const loRaw = scale.indexOf(value?.[0]);
+  const hiRaw = scale.indexOf(value?.[1]);
+  const lo = loRaw < 0 ? 0 : loRaw;
+  const hi = hiRaw < 0 ? scale.length - 1 : hiRaw;
+  const maxIdx = scale.length - 1;
+  const pct = (i) => (maxIdx === 0 ? 0 : (i / maxIdx) * 100);
+  const commit = (nextLo, nextHi) => onChange([scale[nextLo], scale[nextHi]]);
+  const { trackRef, handlers } = useRangeTrackDrag({
+    min: 0, max: maxIdx, step: 1, value: [lo, hi], onChange: ([nlo, nhi]) => commit(nlo, nhi),
+  });
+  return (
+    <div className="gflow-grange" role="group" aria-label={ariaLabel}>
+      <div className="gflow-grange-track" ref={trackRef} {...handlers}>
+        <span className="gflow-grange-fill" style={{ left: `${pct(lo)}%`, width: `${pct(hi) - pct(lo)}%` }} aria-hidden="true" />
+        <input
+          type="range" min="0" max={maxIdx} step="1" value={lo}
+          aria-label={`${ariaLabel} min`}
+          onChange={(e) => commit(Math.min(Number(e.target.value), hi), hi)}
+        />
+        <input
+          type="range" min="0" max={maxIdx} step="1" value={hi}
+          aria-label={`${ariaLabel} max`}
+          onChange={(e) => commit(lo, Math.max(Number(e.target.value), lo))}
+        />
+      </div>
+      <div className="gflow-grange-labels" aria-hidden="true">
+        {scale.map((grade, i) => (
+          <span key={grade} className={i >= lo && i <= hi ? "is-active" : ""}>{grade}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// 총 캐럿 range 슬라이더 — 듀얼 핸들, 현재값 리드아웃은 필드 라벨 줄(gflow-tcarat-field)이 담당
+export function TotalCaratSlider({ value, onChange, min, max, step }) {
+  return (
+    <div className="gflow-tcarat">
+      <CaratRangeTrack value={value} onChange={onChange} min={min} max={max} step={step} ariaLabel="total carat" />
+      <div className="gflow-grange-labels" aria-hidden="true">
+        <span>{min} ct</span>
+        <span>{max} ct</span>
+      </div>
+    </div>
+  );
+}
+
+// 읽기전용 등급 range 바 — 주문 포털에서 고객이 고른 허용 범위를 보여준다 (인터랙션 없음)
+export function GradeRangeBar({ scale, value }) {
+  const loRaw = scale.indexOf(value?.[0]);
+  const hiRaw = scale.indexOf(value?.[1]);
+  const lo = loRaw < 0 ? 0 : loRaw;
+  const hi = hiRaw < 0 ? scale.length - 1 : hiRaw;
+  const maxIdx = scale.length - 1;
+  const pct = (i) => (maxIdx === 0 ? 0 : (i / maxIdx) * 100);
+  return (
+    <div className="gflow-grange">
+      <div className="gflow-grange-track">
+        <span className="gflow-grange-fill" style={{ left: `${pct(lo)}%`, width: `${pct(hi) - pct(lo)}%` }} aria-hidden="true" />
+        <span className="gflow-grange-dot" style={{ left: `${pct(lo)}%` }} aria-hidden="true" />
+        <span className="gflow-grange-dot" style={{ left: `${pct(hi)}%` }} aria-hidden="true" />
+      </div>
+      <div className="gflow-grange-labels" aria-hidden="true">
+        {scale.map((grade, i) => (
+          <span key={grade} className={i >= lo && i <= hi ? "is-active" : ""}>{grade}</span>
+        ))}
+      </div>
     </div>
   );
 }

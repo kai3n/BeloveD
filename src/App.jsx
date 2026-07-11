@@ -11,6 +11,7 @@ import Home from "./pages/Home.jsx";
 // Customer Web plus an admin-only back office. Vendor and dealer surfaces stay out of this app.
 const named = (p, key) => lazy(() => p().then((m) => ({ default: m[key] })));
 const Login = lazy(() => import("./pages/Login.jsx"));
+const MagicCallback = lazy(() => import("./pages/MagicCallback.jsx"));
 const StyleCatalog = lazy(() => import("./pages/StyleCatalog.jsx"));
 const StyleDetail = lazy(() => import("./pages/StyleDetail.jsx"));
 const IntakeForm = lazy(() => import("./pages/IntakeForm.jsx"));
@@ -60,6 +61,7 @@ export default function App() {
           <Route index element={<Home />} />
           <Route path="login" element={<Login />} />
           <Route path="sign-in" element={<Login />} />
+          <Route path="auth/callback" element={<MagicCallback />} />
           {/* 어드민 게이트 — 추측 불가 경로. 어디에도 링크하지 않는다(직접 접속/북마크 전용). */}
           {WITH_BACKOFFICE && <Route path="gate-7f3k9x" element={<StaffLogin />} />}
           <Route path="designs" element={<StyleCatalog />} />

@@ -41,7 +41,7 @@ export const FAQ = [
   },
   {
     id: "earrings",
-    keywords: ["earring", "stud", "hoop", "huggie", "drop earring", "pierced", "clip on", "귀걸이", "이어링", "스터드", "후프", "귀 안 뚫", "耳环", "耳钉", "耳圈", "arete", "pendiente", "aro"],
+    keywords: ["earring", "stud", "hoop", "huggie", "drop earring", "pierced", "clip on", "귀걸이", "이어링", "스터드", "후프", "귀 안 뚫", "耳环", "耳钉", "耳圈", "arete", "pendiente"],
     q: { en: "What earring styles?", ko: "이어링 종류가 어떻게 되나요?", zh: "有哪些耳饰款式？", es: "¿Qué estilos de aretes?" },
     a: {
       en: "We make studs (sit on the lobe), huggies/hoops, and drops/dangles (up to ~15mm and beyond). Pierced or clip-on both work — just tell us, and whether the pair must match. Popular picks: round studs, inside-out hoops, and halo drops.",
@@ -55,15 +55,15 @@ export const FAQ = [
     keywords: ["ring size", "my size", "finger size", "resize", "resizing", "반지 사이즈", "반지 호수", "손가락", "사이즈 조절", "戒指尺寸", "戒指大小", "手寸", "改圈", "talla de anillo", "medida del dedo"],
     q: { en: "How do I find my ring size?", ko: "반지 사이즈는 어떻게 아나요?", zh: "如何知道戒指尺寸？", es: "¿Cómo sé mi talla de anillo?" },
     a: {
-      en: "Measure the inner diameter of a ring that already fits, or wrap a string around your finger and match the length to our chart (US 4–11). We'll double-check with you during the order, and your first resize within 60 days is complimentary.",
-      ko: "지금 잘 맞는 반지의 안지름을 재거나, 실을 손가락에 감아 길이를 우리 표(US 4–11)에 맞춰보세요. 주문 중 함께 재확인하고, 수령 60일 내 첫 사이즈 조절은 무료예요.",
-      zh: "量一枚合适戒指的内直径，或用绳绕手指对照我们的尺码表（US 4–11）。下单时会再次核对，收货 60 天内首次改圈免费。",
-      es: "Mide el diámetro interior de un anillo que te quede bien, o rodea el dedo con un hilo y coteja el largo con nuestra tabla (US 4–11). Lo verificamos contigo durante el pedido, y tu primer ajuste dentro de 60 días es gratis.",
+      en: "Measure the inner diameter of a ring that already fits, or wrap a string around your finger and match the length to our chart (US 4–11). We'll double-check with you during the order. Resizing later is available on request — we quote before any work begins.",
+      ko: "지금 잘 맞는 반지의 안지름을 재거나, 실을 손가락에 감아 길이를 우리 표(US 4–11)에 맞춰보세요. 주문 중 함께 재확인해요. 이후 리사이즈는 요청 시 진행되며, 작업 전에 먼저 견적을 안내드려요.",
+      zh: "量一枚合适戒指的内直径，或用绳绕手指对照我们的尺码表（US 4–11）。下单时会再次核对。之后如需改圈可按需申请，动工前先行报价。",
+      es: "Mide el diámetro interior de un anillo que te quede bien, o rodea el dedo con un hilo y coteja el largo con nuestra tabla (US 4–11). Lo verificamos contigo durante el pedido. El ajuste posterior está disponible bajo pedido — cotizamos antes de empezar.",
     },
   },
   {
     id: "lab",
-    keywords: ["lab grown", "lab-grown", "labgrown", "grown diamond", "real diamond", "natural vs", "mined", "cvd", "hpht", "fake", "랩그로운", "랩다이아", "랩 다이아", "천연", "진짜 다이아", "가짜", "실험실", "培育", "实验室", "人造", "真钻", "cultivado", "laboratorio", "real"],
+    keywords: ["lab grown", "lab-grown", "labgrown", "lab diamond", "lab created", "lab-created", "grown diamond", "real diamond", "synthetic", "natural vs", "mined", "cvd", "hpht", "fake", "랩그로운", "랩다이아", "랩 다이아", "천연", "진짜 다이아", "가짜", "실험실", "培育", "实验室", "人造", "真钻", "cultivado", "laboratorio"],
     q: { en: "Are lab diamonds real?", ko: "랩다이아몬드는 진짜인가요?", zh: "培育钻石是真的吗？", es: "¿Son reales los diamantes de laboratorio?" },
     a: {
       en: "Yes — a lab-grown diamond is a real diamond, physically and chemically identical to a mined one (Mohs 10 hardness, same fire) and it tests as a diamond because it is one. It's grown in weeks by CVD or HPHT instead of over a billion years. Every BeloveD stone is IGI or GIA certified.",
@@ -90,10 +90,10 @@ export const FAQ = [
     keywords: ["price", "pricing", "cost", "how much is", "how much does", "expensive", "cheap", "budget", "가격", "얼마예요", "얼마인가", "얼마죠", "얼마 정도", "비싸", "가격대", "예산", "价格", "多少钱", "费用", "预算", "precio", "cuesta", "cuánto vale", "presupuesto"],
     q: { en: "How much does it cost?", ko: "가격은 얼마인가요?", zh: "价格是多少？", es: "¿Cuánto cuesta?" },
     a: {
-      en: "A comparable lab-grown diamond runs about half the price of a mined one, and because we sell atelier-direct a spec is often well below Blue Nile or Brilliant Earth. Loose stones start around $320; every total includes setting, stone, labor, shipping and insurance — no hidden fees. Tell me shape, carat and budget for a tailored quote.",
-      ko: "동급 랩다이아는 채굴 대비 약 절반 가격이고, 아틀리에 직거래라 같은 사양이 Blue Nile·Brilliant Earth보다 훨씬 저렴한 경우가 많아요. 루스 스톤은 약 $320부터, 모든 총액에 세팅·스톤·공임·배송·보험이 포함돼 숨은 비용이 없어요. 셰입·캐럿·예산을 알려주시면 맞춤 견적을 드릴게요.",
-      zh: "同级培育钻约为开采钻的一半价格，且我们工作室直销，同规格常远低于 Blue Nile 或 Brilliant Earth。裸钻起价约 $320；每笔总价含镶嵌、钻石、工费、运费与保险，绝无隐藏费用。告诉我形状、克拉与预算即可报价。",
-      es: "Un diamante de laboratorio comparable cuesta cerca de la mitad que uno extraído, y al vender directo del taller una misma especificación suele quedar muy por debajo de Blue Nile o Brilliant Earth. Las piedras sueltas parten de unos $320; cada total incluye engaste, piedra, mano de obra, envío y seguro — sin cargos ocultos. Dime forma, quilates y presupuesto para cotizar.",
+      en: "A comparable lab-grown diamond runs about half the price of a mined one, and because we sell atelier-direct the same spec is often well below Blue Nile or Brilliant Earth — the live comparison on our home page shows current ranges. Every total includes setting, stone, labor, shipping and insurance — no hidden fees. Tell me shape, carat and budget for a tailored quote.",
+      ko: "동급 랩다이아는 채굴 대비 약 절반 가격이고, 아틀리에 직거래라 같은 사양이 Blue Nile·Brilliant Earth보다 훨씬 저렴한 경우가 많아요 — 홈 화면의 실시간 가격 비교에서 현재 범위를 보실 수 있어요. 모든 총액에 세팅·스톤·공임·배송·보험이 포함돼 숨은 비용이 없어요. 셰입·캐럿·예산을 알려주시면 맞춤 견적을 드릴게요.",
+      zh: "同级培育钻约为开采钻的一半价格，且我们工作室直销，同规格常远低于 Blue Nile 或 Brilliant Earth——首页的实时价格对比可查看当前区间。每笔总价含镶嵌、钻石、工费、运费与保险，绝无隐藏费用。告诉我形状、克拉与预算即可报价。",
+      es: "Un diamante de laboratorio comparable cuesta cerca de la mitad que uno extraído, y al vender directo del taller una misma especificación suele quedar muy por debajo de Blue Nile o Brilliant Earth — la comparación en vivo de nuestra página de inicio muestra los rangos actuales. Cada total incluye engaste, piedra, mano de obra, envío y seguro — sin cargos ocultos. Dime forma, quilates y presupuesto para cotizar.",
     },
   },
   {
@@ -175,13 +175,13 @@ export const FAQ = [
   },
   {
     id: "process",
-    keywords: ["how does it work", "process", "custom", "bespoke", "order", "make a ring", "get started", "steps", "과정", "어떻게 진행", "주문 제작", "맞춤", "의뢰", "시작", "단계", "流程", "定制", "怎么下单", "如何开始", "步骤", "proceso", "cómo funciona", "personalizado", "empezar"],
+    keywords: ["how does it work", "process", "custom ring", "custom design", "customize", "custom order", "custom made", "bespoke", "how do i order", "place an order", "ordering", "make a ring", "get started", "steps", "과정", "어떻게 진행", "주문 제작", "맞춤", "의뢰", "시작", "단계", "流程", "定制", "怎么下单", "如何开始", "步骤", "proceso", "cómo funciona", "personalizado", "empezar"],
     q: { en: "How does a custom order work?", ko: "주문 제작은 어떻게 진행되나요?", zh: "定制流程是怎样的？", es: "¿Cómo funciona un pedido personalizado?" },
     a: {
-      en: "1) Tell us the piece, stone and design (attach up to 5 reference photos/videos). 2) We send one proposal — certified stone, setting, all-inclusive price, timeline — usually within 24–48h; nothing is charged until you accept. 3) 50% deposit locks the stone. 4) You approve the CAD. 5) We craft it, send finished-piece photos + certificate for your OK. 6) Balance, then insured shipping. Start from 'Start a custom request'.",
-      ko: "1) 원하는 피스·스톤·디자인을 알려주세요(레퍼런스 사진·영상 최대 5개). 2) 인증 스톤·세팅·올인클루시브 가격·일정을 담은 제안을 보통 24–48시간 내 한 번 보내드려요(수락 전까진 청구 없음). 3) 50% 디파짓으로 스톤 확보. 4) CAD 승인. 5) 제작 후 완성품 사진·감정서로 확인. 6) 잔금 후 보험 배송. '주문제작 시작'에서 시작하세요.",
-      zh: "1) 告诉我们款式、钻石与设计（可附最多 5 张参考图/视频）。2) 我们通常 24–48 小时内发送一份方案——认证钻石、镶嵌、全含价格、周期；接受前不收费。3) 50% 订金锁定钻石。4) 您确认 CAD。5) 制作后发送成品照片与证书供确认。6) 付尾款后含保险配送。从「开始定制」下单。",
-      es: "1) Cuéntanos la pieza, piedra y diseño (adjunta hasta 5 fotos/videos). 2) Enviamos una propuesta — piedra certificada, engaste, precio todo incluido, plazo — normalmente en 24–48h; no se cobra hasta que aceptes. 3) El depósito del 50% asegura la piedra. 4) Apruebas el CAD. 5) La elaboramos y enviamos fotos + certificado para tu visto bueno. 6) El saldo y envío asegurado. Empieza en 'Iniciar pedido personalizado'.",
+      en: "1) Tell us the piece, stone and design (attach up to 5 reference photos/videos). 2) We send one proposal — certified stone, setting, all-inclusive price, timeline — usually within 24–48h; nothing is charged until you accept. 3) A 30% deposit locks the stone. 4) You approve the CAD. 5) We craft it, send finished-piece photos + certificate for your OK. 6) Balance, then insured shipping. Start from 'Start a custom request'.",
+      ko: "1) 원하는 피스·스톤·디자인을 알려주세요(레퍼런스 사진·영상 최대 5개). 2) 인증 스톤·세팅·올인클루시브 가격·일정을 담은 제안을 보통 24–48시간 내 한 번 보내드려요(수락 전까진 청구 없음). 3) 30% 디파짓으로 스톤 확보. 4) CAD 승인. 5) 제작 후 완성품 사진·감정서로 확인. 6) 잔금 후 보험 배송. '주문제작 시작'에서 시작하세요.",
+      zh: "1) 告诉我们款式、钻石与设计（可附最多 5 张参考图/视频）。2) 我们通常 24–48 小时内发送一份方案——认证钻石、镶嵌、全含价格、周期；接受前不收费。3) 30% 订金锁定钻石。4) 您确认 CAD。5) 制作后发送成品照片与证书供确认。6) 付尾款后含保险配送。从「开始定制」下单。",
+      es: "1) Cuéntanos la pieza, piedra y diseño (adjunta hasta 5 fotos/videos). 2) Enviamos una propuesta — piedra certificada, engaste, precio todo incluido, plazo — normalmente en 24–48h; no se cobra hasta que aceptes. 3) El depósito del 30% asegura la piedra. 4) Apruebas el CAD. 5) La elaboramos y enviamos fotos + certificado para tu visto bueno. 6) El saldo y envío asegurado. Empieza en 'Iniciar pedido personalizado'.",
     },
   },
   {
@@ -211,10 +211,10 @@ export const FAQ = [
     keywords: ["return", "refund", "exchange", "money back", "cancel", "반품", "환불", "교환", "취소", "退货", "退款", "换货", "取消", "devolución", "reembolso", "cambio", "cancelar"],
     q: { en: "What's the return policy?", ko: "반품 정책은 어떻게 되나요?", zh: "退货政策如何？", es: "¿Cuál es la política de devolución?" },
     a: {
-      en: "Ready-to-ship loose diamonds and non-engraved designs can be returned within 30 days of delivery for a full refund, in original condition with the certificate. Bespoke pieces are final once production begins — but before that, during quote review and CAD approval, you can cancel for a full deposit refund. We arrange free insured return shipping and confirm refunds within 5 business days of inspection.",
-      ko: "즉시 배송 루스 다이아몬드와 각인 없는 디자인은 수령 후 30일 내 원상태·감정서 동반 시 전액 환불돼요. 맞춤 제품은 제작 시작 후 확정이지만, 그전(견적 검토·CAD 승인 단계)엔 디파짓 전액 환불로 취소 가능해요. 무료 보험 반송을 준비해 드리고 검수 후 5영업일 내 환불을 확정해요.",
-      zh: "现货裸钻与未刻字设计可在收货 30 天内、原状并附证书全额退款。定制作品自开始制作即为最终——但在此前（报价审核与 CAD 确认阶段）可取消并全额退还订金。我们安排免费保险退运，验收后 5 个工作日内确认退款。",
-      es: "Los diamantes sueltos listos para enviar y los diseños sin grabado se devuelven dentro de 30 días de la entrega con reembolso total, en estado original y con el certificado. Las piezas a medida son definitivas al iniciar producción — pero antes, en la revisión de cotización y aprobación del CAD, puedes cancelar con reembolso total del depósito. Gestionamos el envío de devolución asegurado y confirmamos el reembolso en 5 días hábiles tras la inspección.",
+      en: "Because every piece is made to your specification, custom orders are final sale after delivery, and the 30% deposit is non-refundable at every stage. You can cancel before production begins — the deposit covers the design work already done. Ready-to-ship items and loose diamonds are also final sale. If a piece arrives defective or doesn't match your approved spec, contact us and we'll repair or replace it under warranty.",
+      ko: "모든 피스가 고객님 사양대로 제작되기 때문에 주문 제작 피스는 배송 후 최종 판매이며, 디파짓(30%)은 어느 단계에서도 환불되지 않아요. 제작 시작 전에는 취소할 수 있고, 디파짓은 이미 진행된 디자인 작업을 충당해요. 즉시 출고 상품·루스 다이아몬드도 최종 판매예요. 결함이 있거나 승인한 사양과 다르게 도착하면 연락 주세요 — 보증에 따라 수리·교체해 드려요.",
+      zh: "每件作品都按你的规格制作，因此定制订单交付后为最终销售，订金（30%）在任何阶段均不退还。投产前可以取消 —— 订金用于抵付已完成的设计工作。现货商品与裸钻同为最终销售。若作品有缺陷或与确认规格不符，请联系我们，我们将按保修修复或更换。",
+      es: "Como cada pieza se hace según tu especificación, los pedidos a medida son venta final tras la entrega, y el depósito (30%) no es reembolsable en ninguna etapa. Puedes cancelar antes de que empiece la producción — el depósito cubre el diseño ya realizado. Los artículos en stock y diamantes sueltos también son venta final. Si una pieza llega defectuosa o no coincide con tu especificación aprobada, contáctanos y la repararemos o reemplazaremos bajo garantía.",
     },
   },
   {
@@ -222,21 +222,21 @@ export const FAQ = [
     keywords: ["warranty", "guarantee", "lifetime", "repair", "insurance", "appraisal", "보증", "품질보증", "평생", "수리", "보험", "감정가", "保修", "保证", "终身", "维修", "保险", "评估", "garantía", "reparación", "seguro", "tasación"],
     q: { en: "Is there a warranty?", ko: "보증이 있나요?", zh: "有保修吗？", es: "¿Hay garantía?" },
     a: {
-      en: "Yes — a lifetime manufacturing warranty covers defects like a loose setting or broken prong at no charge, plus free annual cleaning, polishing and prong checks (first resize within 60 days is free too). Everyday wear, loss, theft or accidental damage aren't covered, so we recommend insuring the piece — we provide appraisal documentation for that.",
-      ko: "네 — 평생 제조 보증으로 세팅 헐거움·프롱 파손 같은 하자를 무상 처리하고, 연간 세척·광택·프롱 점검도 무료예요(수령 60일 내 첫 사이즈 조절도 무료). 일상 마모·분실·도난·사고 파손은 보증 대상이 아니라 보험 가입을 권해드리며, 이를 위한 감정 서류를 제공해요.",
-      zh: "有——终身制造保修免费涵盖镶口松动、断爪等缺陷，另含免费年度清洗、抛光与检爪（收货 60 天内首次改圈也免费）。日常磨损、遗失、被盗或意外损坏不在保修内，故建议投保，我们提供评估文件以供投保。",
-      es: "Sí — una garantía de fabricación de por vida cubre sin costo defectos como un engaste flojo o una garra rota, además de limpieza, pulido y revisión de garras anuales gratis (el primer ajuste dentro de 60 días también es gratis). El desgaste, pérdida, robo o daño accidental no están cubiertos, así que recomendamos asegurar la pieza — entregamos documentación de tasación para ello.",
+      en: "Yes — a lifetime manufacturing warranty covers defects like a loose setting or broken prong at no charge, plus free annual cleaning, polishing and prong checks (resizing is available on request, quoted before work begins). Everyday wear, loss, theft or accidental damage aren't covered, so we recommend insuring the piece — we provide appraisal documentation for that.",
+      ko: "네 — 평생 제조 보증으로 세팅 헐거움·프롱 파손 같은 하자를 무상 처리하고, 연간 세척·광택·프롱 점검도 무료예요(리사이즈는 요청 시 견적 후 진행돼요). 일상 마모·분실·도난·사고 파손은 보증 대상이 아니라 보험 가입을 권해드리며, 이를 위한 감정 서류를 제공해요.",
+      zh: "有——终身制造保修免费涵盖镶口松动、断爪等缺陷，另含免费年度清洗、抛光与检爪（改圈可按需申请，动工前先报价）。日常磨损、遗失、被盗或意外损坏不在保修内，故建议投保，我们提供评估文件以供投保。",
+      es: "Sí — una garantía de fabricación de por vida cubre sin costo defectos como un engaste flojo o una garra rota, además de limpieza, pulido y revisión de garras anuales gratis (el ajuste de talla se cotiza antes de empezar). El desgaste, pérdida, robo o daño accidental no están cubiertos, así que recomendamos asegurar la pieza — entregamos documentación de tasación para ello.",
     },
   },
   {
     id: "payment",
-    keywords: ["payment", "pay", "installment", "deposit", "zelle", "venmo", "credit card", "how do i pay", "결제", "지불", "할부", "디파짓", "계약금", "송금", "카드", "付款", "支付", "分期", "定金", "信用卡", "pago", "pagar", "plazos", "depósito", "tarjeta"],
+    keywords: ["payment", "pay", "installment", "financ", "affirm", "klarna", "payment plan", "monthly payment", "deposit", "zelle", "venmo", "credit card", "how do i pay", "결제", "지불", "할부", "디파짓", "계약금", "송금", "카드", "分期付款", "付款", "支付", "分期", "定金", "信用卡", "pago", "pagar", "plazos", "depósito", "financiación", "tarjeta"],
     q: { en: "How do I pay?", ko: "결제는 어떻게 하나요?", zh: "如何付款？", es: "¿Cómo pago?" },
     a: {
-      en: "A 50% deposit begins the order and the balance is due before shipping. We currently accept Zelle and Venmo (scan the QR or copy the recipient) — your payment memo must include the order number so we can confirm it — and secure card payment is coming soon. We never collect or store card numbers.",
-      ko: "50% 디파짓으로 주문을 시작하고 잔금은 배송 전에 결제해요. 현재 Zelle와 Venmo를 받아요(QR 스캔 또는 수취인 복사) — 결제 메모에 주문번호가 있어야 확인이 돼요 — 안전한 카드 결제도 곧 지원돼요. 카드 번호는 절대 수집·저장하지 않아요.",
-      zh: "50% 订金启动订单，尾款于发货前支付。目前接受 Zelle 与 Venmo（扫码或复制收款人）——付款备注须含订单号以便确认——安全银行卡支付即将上线。我们绝不收集或存储卡号。",
-      es: "Un depósito del 50% inicia el pedido y el saldo se paga antes del envío. Aceptamos Zelle y Venmo (escanea el QR o copia el destinatario) — tu memo de pago debe incluir el número de pedido para confirmarlo — y el pago con tarjeta seguro llegará pronto. Nunca recopilamos ni almacenamos números de tarjeta.",
+      en: "A 30% deposit begins the order (non-refundable once paid) and the balance is due before shipping. We currently accept Zelle and Venmo (scan the QR or copy the recipient) — your payment memo must include the order number so we can confirm it — and secure card payment is coming soon. We never collect or store card numbers.",
+      ko: "30% 디파짓으로 주문을 시작하고(결제 후 환불 불가) 잔금은 배송 전에 결제해요. 현재 Zelle와 Venmo를 받아요(QR 스캔 또는 수취인 복사) — 결제 메모에 주문번호가 있어야 확인이 돼요 — 안전한 카드 결제도 곧 지원돼요. 카드 번호는 절대 수집·저장하지 않아요.",
+      zh: "30% 订金启动订单（支付后不退），尾款于发货前支付。目前接受 Zelle 与 Venmo（扫码或复制收款人）——付款备注须含订单号以便确认——安全银行卡支付即将上线。我们绝不收集或存储卡号。",
+      es: "Un depósito del 30% inicia el pedido (no reembolsable una vez pagado) y el saldo se paga antes del envío. Aceptamos Zelle y Venmo (escanea el QR o copia el destinatario) — tu memo de pago debe incluir el número de pedido para confirmarlo — y el pago con tarjeta seguro llegará pronto. Nunca recopilamos ni almacenamos números de tarjeta.",
     },
   },
   {
@@ -276,12 +276,24 @@ export const FAQ = [
 
 const norm = (s) => String(s || "").toLowerCase().trim();
 
+// 키워드 매칭 — 라틴 문자로 시작하는 키워드는 '단어 시작' 경계에서만 매칭한다.
+// 짧은 키워드의 중간-단어 부분일치 오탐을 막는다: origin→igi, display→pay, Georgia→gia,
+// flibbertigibbet→igi 등. 스템 접두(payment←pay, engraving←engrav)는 그대로 매칭.
+// CJK 등 비라틴 키워드(각인·耳环 등)는 단어 경계가 없으므로 부분일치를 유지한다.
+function keywordHit(t, k) {
+  if (/^[a-z]/.test(k)) {
+    const esc = k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(`(?:^|[^a-z])${esc}`).test(t);
+  }
+  return t.includes(k);
+}
+
 // 방문자 메시지를 지식베이스와 매칭 — 첫 일치 항목의 답변을 반환(없으면 null → 사람이 응대)
 export function matchFaq(text, locale = "en") {
   const t = norm(text);
   if (!t) return null;
   for (const entry of FAQ) {
-    if (entry.keywords.some((k) => t.includes(k))) {
+    if (entry.keywords.some((k) => keywordHit(t, k))) {
       return { id: entry.id, answer: entry.a[locale] || entry.a.en };
     }
   }

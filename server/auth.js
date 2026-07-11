@@ -170,7 +170,9 @@ export async function loginWithPassword(email, password) {
   const admin = await query("select * from admin_users where email=$1 and active=true", [normalized]);
   if (admin.rows[0] && verifyPassword(password, admin.rows[0].password_hash)) {
     await clearLoginFailures(normalized);
-    return { principalType: "admin", session: await issueSession("admin", admin.rows[0].id, ADMIN_TTL_MS) };
+    // role='bot'은 제한 세션(bot_admin) — 돈 관련 라우트에서 403 (requireFullAdmin)
+    const type = admin.rows[0].role === "bot" ? "bot_admin" : "admin";
+    return { principalType: type, session: await issueSession(type, admin.rows[0].id, ADMIN_TTL_MS) };
   }
   const cust = await query("select * from customers where email=$1", [normalized]);
   if (cust.rows[0]?.password_hash && verifyPassword(password, cust.rows[0].password_hash)) {

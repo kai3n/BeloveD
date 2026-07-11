@@ -9,8 +9,7 @@ import { createIntake, findCoupon, getDiamond, listOpsStyles } from "../lib/stor
 import { apiFetch } from "../lib/api.js";
 import {
   MAX_REFERENCE_MEDIA, RING_SIZE_OPTIONS, buildIntakePayload, conditionalComplete,
-  accountDisplayName, hasContactDetails, isValidEmail, referenceMediaReady,
-  sanitizeReferenceMedia, submissionContact,
+  accountDisplayName, hasContactDetails, sanitizeReferenceMedia, submissionContact,
 } from "../lib/intakePayload.js";
 import { useDBVersion } from "../lib/useDB.js";
 import { pickI18n, useLocale } from "../i18n.jsx";
@@ -19,48 +18,16 @@ import StoneEduPanel from "../components/StoneEducation.jsx";
 import { track } from "../lib/track.js";
 import QuoteCompare from "../components/QuoteCompare.jsx";
 import GalleryStep from "../components/intake/GalleryStep.jsx";
-import { CaratSlider, ImageOptionGrid, MetalSwatches, ScalePicker, ShapeSilhouette, ShapeTiles } from "../components/intake/pickers.jsx";
+import { CaratSlider, GradeRangeSlider, ImageOptionGrid, MetalSwatches, ShapeSilhouette, ShapeTiles, TotalCaratSlider } from "../components/intake/pickers.jsx";
+import {
+  CLARITY_SCALE, COLOR_SCALE, MULTI_CLARITY_DEFAULT, MULTI_COLOR_DEFAULT,
+  SOLITAIRE_CARAT, SOLITAIRE_CLARITY_DEFAULT, SOLITAIRE_COLOR_DEFAULT, TOTAL_CARAT_RANGES,
+  clampCaratRange, clampGradeRange, clampTotalCaratRange, formatCaratRange, formatGradeRange,
+} from "../lib/gradeScale.js";
 import { defaultSubcategoryFor, styleSubcategoryKey, subcategoryKeysFor } from "../lib/designSlots.js";
 import { normalizeCouponCode } from "../lib/coupons.js";
-import { WITH_BACKOFFICE } from "../lib/flags.js";
 
 const DRAFT_KEY = "lumina-intake-draft";
-const LIVE_SERVER_INTAKE = WITH_BACKOFFICE;
-
-const INTAKE_FLOW_COPY = {
-  en: {
-    emailHint: "A valid email is required to receive and open your private order portal. Phone-only contact is not supported.",
-    emailError: "Enter a valid email address so we can create your order portal.",
-    mediaError: "Finish or retry the reference upload before continuing. You can also remove the attachment.",
-    submitting: "Submitting…",
-    submitError: "We couldn't create your order. Your answers are still here — check your connection and retry.",
-    rateError: "Too many submission attempts. Your answers are saved — wait a minute, then retry.",
-  },
-  ko: {
-    emailHint: "비공개 주문 포털을 받고 열려면 유효한 이메일이 필요합니다. 전화번호만으로는 접수할 수 없습니다.",
-    emailError: "주문 포털을 만들 수 있도록 유효한 이메일 주소를 입력해 주세요.",
-    mediaError: "계속하기 전에 레퍼런스 업로드를 완료하거나 다시 시도해 주세요. 첨부를 삭제해도 됩니다.",
-    submitting: "접수 중…",
-    submitError: "주문을 만들지 못했습니다. 입력 내용은 그대로 있으니 연결 상태를 확인한 뒤 다시 시도해 주세요.",
-    rateError: "접수 시도가 너무 많습니다. 입력 내용은 저장되어 있으니 1분 후 다시 시도해 주세요.",
-  },
-  zh: {
-    emailHint: "需要有效邮箱才能接收并打开私人订单页面。目前不支持仅填写电话号码。",
-    emailError: "请输入有效邮箱，以便我们创建订单页面。",
-    mediaError: "请先完成或重试参考文件上传，或删除该附件，再继续。",
-    submitting: "正在提交…",
-    submitError: "订单创建失败。你的填写内容仍在，请检查网络后重试。",
-    rateError: "提交次数过多。内容已保存，请一分钟后重试。",
-  },
-  es: {
-    emailHint: "Se requiere un correo válido para recibir y abrir tu portal privado. No se admite solo un teléfono.",
-    emailError: "Introduce un correo válido para que podamos crear tu portal del pedido.",
-    mediaError: "Completa o reintenta la carga de referencias antes de continuar, o elimina el archivo.",
-    submitting: "Enviando…",
-    submitError: "No pudimos crear el pedido. Tus respuestas siguen aquí; revisa la conexión y reintenta.",
-    rateError: "Demasiados intentos. Tus respuestas están guardadas; espera un minuto y reintenta.",
-  },
-};
 
 // 카테고리 대표 이미지 — 해당 카테고리 첫 스타일 미디어, 없으면 라인업 사진
 const CATEGORY_FALLBACK_MEDIA = {
@@ -76,6 +43,15 @@ function categoryDefaults(category) {
   if (category === "bangle") return { wristSize: "" };
   if (category === "earrings") return { earringDetails: "" };
   return {};
+}
+
+// 완료 화면 스크롤 복귀 — reduced-motion 사용자는 애니메이션 없이 즉시("auto"), 그 외 부드럽게("smooth")
+export function confirmationScrollBehavior(matchMedia) {
+  try {
+    return matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ? "auto" : "smooth";
+  } catch {
+    return "auto";
+  }
 }
 
 function styleMedia(style) {
@@ -133,22 +109,34 @@ function readDraft() {
   }
 }
 
-export function confirmationScrollBehavior(matchMedia) {
-  try {
-    return matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ? "auto" : "smooth";
-  } catch {
-    return "auto";
-  }
-}
-
-// 질문 순서 — 멀티스톤 디자인이면 셰입/캐럿을 건너뛰고, 비회원은 리뷰 직전에 연락처를 받는다
+// 질문 순서 — 멀티스톤 디자인은 셰입/캐럿 대신 총캐럿·퀄리티 '스톤' 스텝, 비회원은 리뷰 직전에 연락처
 function screenList(productLine, isGuest) {
   const list = ["category", "design", "metal"];
   if (productLine === "solitaire") list.push("shape", "carat");
+  else list.push("stones");
   list.push("inspiration");
   if (isGuest) list.push("contact");
   list.push("review");
   return list;
+}
+
+// 구 드래프트(단일 color/clarity·range 없음)·카테고리 불일치 총캐럿을 기본값으로 정규화
+function normalizeStoneSelections(form) {
+  return {
+    ...form,
+    stonePrefs: {
+      ...form.stonePrefs,
+      caratRange: clampCaratRange(SOLITAIRE_CARAT, form.stonePrefs?.caratRange ?? form.stonePrefs?.carat),
+      colorRange: clampGradeRange(COLOR_SCALE, form.stonePrefs?.colorRange ?? form.stonePrefs?.color, SOLITAIRE_COLOR_DEFAULT),
+      clarityRange: clampGradeRange(CLARITY_SCALE, form.stonePrefs?.clarityRange ?? form.stonePrefs?.clarity, SOLITAIRE_CLARITY_DEFAULT),
+    },
+    multiSpec: {
+      ...form.multiSpec,
+      totalCaratRange: clampTotalCaratRange(form.category, form.multiSpec?.totalCaratRange ?? form.multiSpec?.totalCarat),
+      colorRange: clampGradeRange(COLOR_SCALE, form.multiSpec?.colorRange, MULTI_COLOR_DEFAULT),
+      clarityRange: clampGradeRange(CLARITY_SCALE, form.multiSpec?.clarityRange, MULTI_CLARITY_DEFAULT),
+    },
+  };
 }
 
 export default function IntakeForm() {
@@ -178,11 +166,18 @@ export default function IntakeForm() {
     styleId: styleFromParam ? styleParam : "", metal: "18kw",
     conditional: categoryDefaults(initialCategory),
     stonePrefs: {
-      shape: refDiamond?.shape || "round", carat: String(refDiamond?.carat || "1.5"),
-      color: refDiamond?.color || "E", clarity: refDiamond?.clarity || "VS1",
+      shape: refDiamond?.shape || "round",
+      // 쇼케이스 다이아 프리필은 단일값 → [v,v] range로 승격
+      caratRange: refDiamond?.carat ? clampCaratRange(SOLITAIRE_CARAT, refDiamond.carat) : [...SOLITAIRE_CARAT.defaultRange],
+      colorRange: clampGradeRange(COLOR_SCALE, refDiamond?.color, SOLITAIRE_COLOR_DEFAULT),
+      clarityRange: clampGradeRange(CLARITY_SCALE, refDiamond?.clarity, SOLITAIRE_CLARITY_DEFAULT),
       growth: "CVD", lab: "IGI India", colorTreatment: "disclosed", fluorescence: "none", lwRatio: "",
     },
-    multiSpec: { meleeSpec: "", overallDims: "", arrangement: "", standard: "" },
+    multiSpec: {
+      totalCaratRange: [...(TOTAL_CARAT_RANGES[initialCategory] || TOTAL_CARAT_RANGES.ring).defaultRange],
+      colorRange: [...MULTI_COLOR_DEFAULT], clarityRange: [...MULTI_CLARITY_DEFAULT],
+      meleeSpec: "", overallDims: "", arrangement: "", standard: "",
+    },
     inspirationNotes: "",
     engraving: "",
     couponCode: "",
@@ -201,7 +196,7 @@ export default function IntakeForm() {
       nextCategory,
       styleFromParam ? styleSubcategoryKey(styleFromParam) : draft.form.subcategory,
     );
-    return {
+    return normalizeStoneSelections({
       ...baseForm,
       ...draft.form,
       category: nextCategory,
@@ -211,7 +206,7 @@ export default function IntakeForm() {
       stonePrefs: { ...baseForm.stonePrefs, ...draft.form.stonePrefs },
       multiSpec: { ...baseForm.multiSpec, ...draft.form.multiSpec },
       termsAccepted: false,
-    };
+    });
   });
   // 딥링크 진입 — 스타일이 정해져 있으면(상세 페이지 "Start custom order") 피스·디자인 질문은
   // 이미 답이 있으므로 메탈부터, 카테고리만 알면(카탈로그 CTA) 디자인부터 시작한다.
@@ -231,36 +226,24 @@ export default function IntakeForm() {
   const [done, setDone] = useState(null);
   const [refs, setRefs] = useState(() => sanitizeReferenceMedia(draft?.refs));
   const [stepError, setStepError] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [mediaBusy, setMediaBusy] = useState(false);
-  const [mediaError, setMediaError] = useState("");
   const [termsError, setTermsError] = useState(false); // 제출 시 약관 미동의 — 체크박스 줄 빨간 강조
-  const [adjustQuality, setAdjustQuality] = useState(false);
-  const draftTimerRef = useRef(null);
-  const advanceTimerRef = useRef(null);
-  const draftFinalizedRef = useRef(false);
-  const idempotencyKeyRef = useRef("");
-  const errorRef = useRef(null);
-  const doneHeadingRef = useRef(null);
 
   const setF = (patch) => setForm((f) => ({ ...f, ...patch }));
   const setC = (patch) => setForm((f) => ({ ...f, conditional: { ...f.conditional, ...patch } }));
   const setS = (patch) => setForm((f) => ({ ...f, stonePrefs: { ...f.stonePrefs, ...patch } }));
+  const setM = (patch) => setForm((f) => ({ ...f, multiSpec: { ...f.multiSpec, ...patch } }));
 
   const solitaire = form.productLine === "solitaire";
   const isGuest = !user;
-  const flowCopy = INTAKE_FLOW_COPY[locale] || INTAKE_FLOW_COPY.en;
-  const accountEmailLocked = !isGuest && isValidEmail(user?.email);
-  // 이름이 없거나 레거시 계정 이메일이 유효하지 않으면 수정 가능한 연락처 스텝을 보여준다.
-  const needsContact = isGuest || !accountDisplayName(user) || !accountEmailLocked;
+  // 로그인 상태라도 계정에 제대로 된 이름이 없으면(이메일형) 이름만 받는 스텝을 보여준다
+  const needsContact = isGuest || !accountDisplayName(user);
   const screens = screenList(form.productLine, needsContact);
   // 로그인 등으로 질문 목록이 바뀌어 현재 화면이 사라지면 리뷰로 폴백
   const activeScreen = screens.includes(screen) ? screen : "review";
   const screenIdx = Math.max(0, screens.indexOf(activeScreen));
-  const contactDetails = submissionContact(form, user);
-  const contactReady = hasContactDetails(contactDetails);
-  const mediaReady = referenceMediaReady(refs, { remoteRequired: LIVE_SERVER_INTAKE });
-  const mediaBlocked = mediaBusy || Boolean(mediaError) || !mediaReady;
+  const guestContactReady = isGuest
+    ? hasContactDetails(submissionContact(form, user))
+    : Boolean(form.name.trim());
   const selectedStyle = styles.find((st) => st.id === form.styleId) || null;
   const activeCoupon = findCoupon(form.couponCode);
   const selectedStyleName = selectedStyle ? pickI18n(selectedStyle.name, locale) : g.consultPiece;
@@ -270,78 +253,33 @@ export default function IntakeForm() {
   const optionLabels = t.optionLabels || {};
   const optionDescriptions = t.optionDescriptions || {};
 
-  function cancelDraftTimer() {
-    if (draftTimerRef.current != null) {
-      window.clearTimeout(draftTimerRef.current);
-      draftTimerRef.current = null;
-    }
-  }
-
-  function cancelAdvanceTimer() {
-    if (advanceTimerRef.current != null) {
-      window.clearTimeout(advanceTimerRef.current);
-      advanceTimerRef.current = null;
-    }
-  }
-
-  function scheduleAdvance(callback) {
-    cancelAdvanceTimer();
-    advanceTimerRef.current = window.setTimeout(() => {
-      advanceTimerRef.current = null;
-      callback();
-    }, 170);
-  }
-
-  function finalizeDraft() {
-    draftFinalizedRef.current = true;
-    cancelDraftTimer();
-    window.localStorage.removeItem(DRAFT_KEY);
-  }
-
   useEffect(() => {
-    cancelDraftTimer();
-    if (draftFinalizedRef.current || done || isSubmitting) return undefined;
-    draftTimerRef.current = window.setTimeout(() => {
+    const timer = window.setTimeout(() => {
       window.localStorage.setItem(DRAFT_KEY, JSON.stringify({
         form: { ...form, termsAccepted: false },
         refs,
         screen,
         savedAt: new Date().toISOString(),
       }));
-      draftTimerRef.current = null;
     }, 450);
-    return cancelDraftTimer;
-  }, [done, form, isSubmitting, refs, screen]);
-
-  useEffect(() => cancelAdvanceTimer, []);
+    return () => window.clearTimeout(timer);
+  }, [form, refs, screen]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
+    setStepError("");
   }, [screen]);
 
+  // 접수 완료 화면 — 제출 버튼이 리뷰 맨 아래라 스크롤을 되돌리지 않으면
+  // 짧아진 페이지가 하단으로 클램프되어 주문번호·조회코드가 헤더 위로 잘려 안 보인다
   useEffect(() => {
-    if (!stepError) return undefined;
-    const frame = window.requestAnimationFrame(() => errorRef.current?.focus({ preventScroll: true }));
-    return () => window.cancelAnimationFrame(frame);
-  }, [activeScreen, stepError]);
-
-  // 접수 완료 화면 — 리뷰 하단의 이전 스크롤 위치가 짧아진 완료 페이지에
-  // 클램프되지 않도록 제목을 포커스한 뒤 명시적으로 맨 위를 복원한다.
-  useEffect(() => {
-    if (!done) return undefined;
-    cancelDraftTimer();
-    const frame = window.requestAnimationFrame(() => {
-      doneHeadingRef.current?.focus({ preventScroll: true });
-      window.scrollTo({ top: 0, behavior: confirmationScrollBehavior(window.matchMedia?.bind(window)) });
-    });
-    return () => window.cancelAnimationFrame(frame);
+    if (done) window.scrollTo({ top: 0, behavior: confirmationScrollBehavior(window.matchMedia?.bind(window)) });
   }, [done]);
 
   // 같은 라우트 재진입(nav의 START CUSTOM 재클릭 등)은 리마운트가 없어 화면이 유지된다 → 진입 화면으로 리셋
   const locationKeyRef = useRef(location.key);
   useEffect(() => {
     if (locationKeyRef.current === location.key) return;
-    cancelAdvanceTimer();
     locationKeyRef.current = location.key;
     setScreen(entryScreen);
     setResumeTarget("");
@@ -350,23 +288,16 @@ export default function IntakeForm() {
 
   // 드래프트 이어하기 / 새로 시작
   function resumeDraft() {
-    cancelAdvanceTimer();
-    setStepError("");
     setScreen(screens.includes(resumeTarget) ? resumeTarget : "review");
     setResumeTarget("");
     setCategoryPicked(true); // 이어하기 = 드래프트 답변을 명시적으로 승인 → 뒤로 와도 선택 표시
   }
   function startFresh() {
-    draftFinalizedRef.current = false;
-    cancelDraftTimer();
-    cancelAdvanceTimer();
     window.localStorage.removeItem(DRAFT_KEY);
     setForm(baseForm);
     setRefs([]);
     setResumeTarget("");
     setCategoryPicked(false);
-    setStepError("");
-    setMediaError("");
     setScreen("category");
   }
 
@@ -380,26 +311,21 @@ export default function IntakeForm() {
       meta: { step: currentName, ...patch },
     });
     setResumeTarget("");
-    setStepError("");
     setF(patch);
     const nextLine = patch.productLine || form.productLine;
     const list = screenList(nextLine, needsContact);
     const next = list[list.indexOf(currentName) + 1] || "review";
-    scheduleAdvance(() => setScreen(next));
+    window.setTimeout(() => setScreen(next), 170);
   }
   function goBack() {
-    cancelAdvanceTimer();
-    setStepError("");
     setScreen(screens[Math.max(screenIdx - 1, 0)]);
   }
   function goNext() {
-    cancelAdvanceTimer();
-    setStepError("");
     setScreen(screens[Math.min(screenIdx + 1, screens.length - 1)]);
   }
 
-  async function submit() {
-    if (isSubmitting) return;
+  function submit() {
+    const contactDetails = submissionContact(form, user);
     // 무엇이 빠졌는지 짚어주고 해당 위치로 데려간다 — 하단의 범용 에러만으로는
     // 사용자가 빠진 필드를 찾아 헤매게 된다.
     if (!conditionalComplete(form.category, form.conditional)) {
@@ -407,14 +333,9 @@ export default function IntakeForm() {
       document.getElementById("gflow-size-fit")?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
-    if (!contactReady) {
-      setStepError(contactDetails.name ? flowCopy.emailError : t.requiredError);
+    if (!hasContactDetails(contactDetails)) {
+      setStepError(t.requiredError);
       setScreen("contact");
-      return;
-    }
-    if (mediaBlocked) {
-      setStepError(flowCopy.mediaError);
-      setScreen("inspiration");
       return;
     }
     if (!form.termsAccepted) {
@@ -423,54 +344,34 @@ export default function IntakeForm() {
       document.getElementById("gflow-terms")?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
-    setStepError("");
-    cancelDraftTimer();
-    setIsSubmitting(true);
+    const payload = buildIntakePayload(form, refs, user);
+    const { order } = createIntake(payload, user?.id || null);
+    track("intake_submit", { path: "/custom/new", meta: { orderId: order.id } });
 
-    try {
-      const payload = buildIntakePayload(form, refs, user);
+    // 실서버 새도우 캡처 — Postgres에 인테이크+주문을 기록하고 접수 메일(고객 언어)을 보낸다.
+    // 포털 UI는 아직 로컬 스토어 기준이라 실패해도 흐름은 그대로 (정적 데모 포함).
+    // 키는 제출마다 새로 — 로컬 주문번호(DM-)는 브라우저마다 같은 값에서 시작해
+    // 서버의 idempotency_keys와 충돌하면 다른 고객의 접수가 조용히 유실된다.
+    apiFetch("/intakes", {
+      method: "POST",
+      headers: { "Idempotency-Key": `${order.id}-${crypto.randomUUID()}` },
+      body: {
+        ...payload,
+        email: contactDetails.contact,
+        name: contactDetails.name,
+        locale,
+        // base64/blob 프리뷰는 제외 — R2 publicUrl만 서버로 (jsonb·바디 한도 보호)
+        referenceMedia: refs.filter((m) => /^https?:\/\//.test(m.src || "")).slice(0, 5),
+      },
+    })
+      // 실서버 주문번호(BD-)가 진짜 — 접수 화면·포털 링크를 서버 코드로 승격
+      .then((resp) => {
+        if (resp?.orderCode) setDone((d) => (d ? { ...d, serverCode: resp.orderCode } : d));
+      })
+      .catch(() => {});
 
-      // The static showcase intentionally has no API and keeps its local DM-
-      // walkthrough. Every live/backoffice build must receive a real BD- code
-      // before showing completion or deleting the recoverable draft.
-      if (!LIVE_SERVER_INTAKE) {
-        const { order } = createIntake(payload, user?.id || null);
-        finalizeDraft();
-        track("intake_submit", { path: "/custom/new", meta: { orderId: order.id } });
-        setDone(order);
-        return;
-      }
-
-      if (!idempotencyKeyRef.current) {
-        const randomPart = globalThis.crypto?.randomUUID?.()
-          || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-        idempotencyKeyRef.current = `intake-${randomPart}`;
-      }
-      const resp = await apiFetch("/intakes", {
-        method: "POST",
-        headers: { "Idempotency-Key": idempotencyKeyRef.current },
-        body: {
-          ...payload,
-          email: contactDetails.contact,
-          name: contactDetails.name,
-          locale,
-          referenceMedia: payload.referenceMedia,
-        },
-      });
-      if (!resp?.orderCode || !/^BD-/i.test(resp.orderCode)) {
-        throw new Error("INVALID_INTAKE_RESPONSE");
-      }
-
-      finalizeDraft();
-      track("intake_submit", { path: "/custom/new", meta: { orderId: resp.orderCode } });
-      setDone({ id: resp.orderCode, serverCode: resp.orderCode, styleId: payload.styleId || null });
-    } catch (error) {
-      // Preserve every answer and attachment. isSubmitting=false below restarts
-      // autosave, while the same idempotency key makes the visible retry safe.
-      setStepError(error?.code === "RATE_LIMITED" ? flowCopy.rateError : flowCopy.submitError);
-    } finally {
-      setIsSubmitting(false);
-    }
+    window.localStorage.removeItem(DRAFT_KEY);
+    setDone(order);
   }
 
   if (done) {
@@ -478,7 +379,7 @@ export default function IntakeForm() {
     const serverBacked = Boolean(done.serverCode);
     return (
       <div className="page page-narrow">
-        <h1 ref={doneHeadingRef} className="page-title" tabIndex={-1}>{t.doneTitle}</h1>
+        <h1 className="page-title">{t.doneTitle}</h1>
         <div className="panel form-stack">
           <div className="summary-grid" style={{ gridTemplateColumns: serverBacked ? "1fr" : "1fr 1fr" }}>
             <div className="summary-card"><div className="num" style={{ fontSize: 24 }}>{done.serverCode || done.id}</div><div className="lbl">{t.orderIdLbl}</div></div>
@@ -519,11 +420,10 @@ export default function IntakeForm() {
     { value: "", label: g.notSureTitle, sub: g.notSureSub, media: null },
   ];
 
-  const colorOptions = ["D", "E", "F", "G"].map((v) => ({ value: v }));
-  const clarityOptions = ["IF", "VVS1", "VVS2", "VS1", "VS2"].map((v) => ({ value: v }));
+  const totalCaratRange = TOTAL_CARAT_RANGES[form.category] || TOTAL_CARAT_RANGES.ring;
   const sectionKicker = {
     category: g.pieceCard, design: g.pieceCard, metal: t.metal,
-    shape: g.stoneCard, carat: g.stoneCard, inspiration: g.inspirationCard, contact: t.contactTitle, review: t.reviewStep,
+    shape: g.stoneCard, carat: g.stoneCard, stones: g.stonesCard, inspiration: g.inspirationCard, contact: t.contactTitle, review: t.reviewStep,
   };
   const kicker = `${String(screenIdx + 1).padStart(2, "0")} — ${sectionKicker[screen] || ""}`;
   const stepShell = (title, hint, children, extra = {}) => (
@@ -537,7 +437,6 @@ export default function IntakeForm() {
       backLabel={t.back}
       onSkip={extra.onSkip || null}
       skipLabel={g.skip}
-      skipDisabled={Boolean(extra.skipDisabled)}
     >
       {children}
     </GalleryStep>
@@ -555,9 +454,6 @@ export default function IntakeForm() {
         </div>
       )}
       {consultMode && <p className="gflow-consult-note" role="status">✦ {g.consultNote}</p>}
-      {stepError && (
-        <p ref={errorRef} className="form-error" role="alert" tabIndex={-1}>{stepError}</p>
-      )}
       {/* 딥링크로 피스·디자인을 건너뛴 뒤에도 무엇이 선택돼 있는지 보이게 — 리뷰/디자인 화면은 자체 표시가 있어 제외 */}
       {selectedStyle && !["category", "design", "review"].includes(activeScreen) && (
         <div className="gflow-style-chip" role="status">
@@ -570,7 +466,6 @@ export default function IntakeForm() {
       {activeScreen === "category" && stepShell(g.qCategory, null, (
         <ImageOptionGrid
           columns={4}
-          ariaLabel={g.qCategory}
           options={categoryOptions}
           value={categoryPicked ? form.category : ""}
           onSelect={(value) => {
@@ -584,6 +479,8 @@ export default function IntakeForm() {
                   subcategory: defaultSubcategoryFor(value),
                   conditional: categoryDefaults(value),
                   styleId: "",
+                  // 총캐럿 범위가 카테고리마다 달라 기본 range로 리셋
+                  multiSpec: { ...form.multiSpec, totalCaratRange: [...(TOTAL_CARAT_RANGES[value] || TOTAL_CARAT_RANGES.ring).defaultRange] },
                 },
               "category",
             );
@@ -594,7 +491,6 @@ export default function IntakeForm() {
       {activeScreen === "design" && stepShell(g.qDesign, g.designHint, (
         <ImageOptionGrid
           columns={4}
-          ariaLabel={g.qDesign}
           options={designOptions}
           value={form.styleId}
           onSelect={(value) => {
@@ -610,7 +506,6 @@ export default function IntakeForm() {
 
       {activeScreen === "metal" && stepShell(g.qMetal, null, (
         <MetalSwatches
-          ariaLabel={g.qMetal}
           value={form.metal}
           labels={p.opsMetals}
           onSelect={(value) => selectAndAdvance({ metal: value }, "metal")}
@@ -620,14 +515,13 @@ export default function IntakeForm() {
       {activeScreen === "shape" && stepShell(g.qShape, null, (
         <>
           <ShapeTiles
-            ariaLabel={g.qShape}
             value={form.stonePrefs.shape}
             labels={p.shapes}
             onSelect={(value) => {
               setS({ shape: value });
               // 도움말을 읽는 중에는 선택이 곧장 다음 화면으로 튕기지 않는다 —
               // 셰입을 바꿔가며 아래 가이드를 비교하고, 준비되면 "다음"을 누른다
-              if (!shapeEduOpen) scheduleAdvance(goNext);
+              if (!shapeEduOpen) window.setTimeout(goNext, 170);
             }}
           />
           {shapeEduOpen && (
@@ -642,30 +536,69 @@ export default function IntakeForm() {
 
       {activeScreen === "carat" && stepShell(g.qCarat, g.caratHint, (
         <>
-          <CaratSlider value={form.stonePrefs.carat} shape={form.stonePrefs.shape} onChange={(value) => setS({ carat: value })} />
+          <CaratSlider min={SOLITAIRE_CARAT.min} max={SOLITAIRE_CARAT.max} step={SOLITAIRE_CARAT.step} value={form.stonePrefs.caratRange} shape={form.stonePrefs.shape} onChange={(value) => setS({ caratRange: value })} />
+          {/* 퀄리티 range — 멀티 '스톤' 스텝과 동일하게 스텝에서 바로 노출 (리뷰의 '조정'은 재편집용) */}
+          <div className="gflow-grange-fields">
+            <label className="field"><span>{g.colorRangeLbl}</span>
+              <GradeRangeSlider scale={COLOR_SCALE} ariaLabel={t.color} value={form.stonePrefs.colorRange} onChange={(v) => setS({ colorRange: v })} />
+            </label>
+            <label className="field"><span>{g.clarityRangeLbl}</span>
+              <GradeRangeSlider scale={CLARITY_SCALE} ariaLabel={t.clarity} value={form.stonePrefs.clarityRange} onChange={(v) => setS({ clarityRange: v })} />
+            </label>
+          </div>
           <button className="button primary" type="button" onClick={goNext}>{t.next}</button>
+          {/* 스텝에 캐럿+컬러+클래러티 슬라이더가 다 있으니 가이드도 셋 다 */}
           <details className="gflow-edu-toggle">
             <summary>{g.whatsThis}</summary>
-            <div className="gflow-edu-body"><StoneEduPanel field="carat" prefs={form.stonePrefs} /></div>
+            <div className="gflow-edu-body"><StoneEduPanel fields={["carat", "color", "clarity"]} prefs={form.stonePrefs} /></div>
+          </details>
+        </>
+      ))}
+
+      {/* 멀티스톤 — 총 캐럿 + 퀄리티 range 한 화면 (센터 캐럿 스텝의 멀티 버전, 세 슬라이더 동일 문법) */}
+      {activeScreen === "stones" && stepShell(g.qStones, g.stonesHint, (
+        <>
+          <div className="gflow-grange-fields">
+            <label className="field gflow-tcarat-field">
+              <span>
+                {g.totalCaratLbl}
+                <em className="gflow-tcarat-value">{formatCaratRange(form.multiSpec.totalCaratRange)}</em>
+              </span>
+              <TotalCaratSlider
+                value={form.multiSpec.totalCaratRange}
+                min={totalCaratRange.min} max={totalCaratRange.max} step={totalCaratRange.step}
+                onChange={(value) => setM({ totalCaratRange: value })}
+              />
+            </label>
+            <label className="field"><span>{g.colorRangeLbl}</span>
+              <GradeRangeSlider scale={COLOR_SCALE} ariaLabel={t.color} value={form.multiSpec.colorRange} onChange={(v) => setM({ colorRange: v })} />
+            </label>
+            <label className="field"><span>{g.clarityRangeLbl}</span>
+              <GradeRangeSlider scale={CLARITY_SCALE} ariaLabel={t.clarity} value={form.multiSpec.clarityRange} onChange={(v) => setM({ clarityRange: v })} />
+            </label>
+          </div>
+          <button className="button primary" type="button" onClick={goNext}>{t.next}</button>
+          {/* 멀티 스텝의 range는 multiSpec에 있다 — 총캐럿은 개별 스톤 크기가 아니므로 캐럿 하이라이트는 끔 */}
+          <details className="gflow-edu-toggle">
+            <summary>{g.whatsThis}</summary>
+            <div className="gflow-edu-body">
+              <StoneEduPanel
+                fields={["carat", "color", "clarity"]}
+                prefs={{
+                  ...form.stonePrefs, carat: null, caratRange: null,
+                  colorRange: form.multiSpec.colorRange, clarityRange: form.multiSpec.clarityRange,
+                }}
+              />
+            </div>
           </details>
         </>
       ))}
 
       {activeScreen === "inspiration" && stepShell(g.qInspiration, g.inspirationHint, (
         <div style={{ width: "min(100%, 640px)", display: "grid", gap: 16 }}>
-          <MediaPicker
-            value={refs}
-            maxItems={MAX_REFERENCE_MEDIA}
-            showSamples={false}
-            previewMode="list"
-            remoteRequired={LIVE_SERVER_INTAKE}
-            onBusyChange={setMediaBusy}
-            onErrorChange={setMediaError}
-            onChange={(v) => {
-              setRefs(sanitizeReferenceMedia(v));
-              setStepError("");
-            }}
-          />
+          <MediaPicker value={refs} maxItems={MAX_REFERENCE_MEDIA} showSamples={false} previewMode="list" onChange={(v) => {
+            setRefs(sanitizeReferenceMedia(v));
+          }} />
           {/* 사진만으로 다 담기지 않는 요청 — 텍스트로도 받는다 (buildIntakePayload가 form 전체를 실어 서버 formPayload로 전달) */}
           <label className="field"><span>{g.inspirationNotesLbl}</span>
             <textarea
@@ -675,47 +608,38 @@ export default function IntakeForm() {
               onChange={(e) => setForm((current) => ({ ...current, inspirationNotes: e.target.value }))}
             />
           </label>
-          <button className="button primary" type="button" disabled={mediaBlocked} onClick={goNext}>{t.next}</button>
+          <button className="button primary" type="button" onClick={goNext}>{t.next}</button>
         </div>
-      ), { onSkip: goNext, skipDisabled: mediaBlocked })}
+      ), { onSkip: goNext })}
 
       {/* 비회원: 리뷰 직전 연락처 — "확정 제안이 도착할 곳"으로 프레이밍해 이탈을 줄인다 */}
-      {activeScreen === "contact" && stepShell(!accountEmailLocked ? g.qContact : g.qContactName, g.contactHint, (
+      {activeScreen === "contact" && stepShell(isGuest ? g.qContact : g.qContactName, g.contactHint, (
         <div className="gflow-contact">
           <label className="field"><span>{t.name} <span className="req">*</span></span>
             <input
               value={form.name}
               autoComplete="name"
-              required
-              onChange={(e) => { setF({ name: e.target.value }); setStepError(""); }}
-              onKeyDown={(e) => { if (e.key === "Enter" && contactReady) goNext(); }}
+              onChange={(e) => setF({ name: e.target.value })}
+              onKeyDown={(e) => { if (e.key === "Enter" && guestContactReady) goNext(); }}
             />
           </label>
-          {!accountEmailLocked ? (
-            <label className="field"><span>{p.login.email} <span className="req">*</span></span>
+          {isGuest ? (
+            <label className="field"><span>{t.contact} <span className="req">*</span></span>
               <input
-                type="email"
                 value={form.contact}
                 autoComplete="email"
-                inputMode="email"
-                autoCapitalize="none"
-                spellCheck={false}
-                required
                 placeholder="you@email.com"
-                aria-invalid={form.contact ? !isValidEmail(form.contact) : undefined}
-                aria-describedby="gflow-email-hint"
-                onChange={(e) => { setF({ contact: e.target.value }); setStepError(""); }}
-                onKeyDown={(e) => { if (e.key === "Enter" && contactReady) goNext(); }}
+                onChange={(e) => setF({ contact: e.target.value })}
+                onKeyDown={(e) => { if (e.key === "Enter" && guestContactReady) goNext(); }}
               />
-              <small id="gflow-email-hint" className="form-hint">{flowCopy.emailHint}</small>
             </label>
           ) : (
             // 로그인 고객: 제안이 도착할 이메일은 계정에서 — 수정 불가로 보여주기만
-            <label className="field"><span>{p.login.email}</span>
-              <input type="email" value={user.email} readOnly />
+            <label className="field"><span>{t.contact}</span>
+              <input value={user.email} readOnly />
             </label>
           )}
-          <button className="button primary" type="button" disabled={!contactReady} onClick={goNext}>{t.next}</button>
+          <button className="button primary" type="button" disabled={!guestContactReady} onClick={goNext}>{t.next}</button>
         </div>
       ))}
 
@@ -740,15 +664,15 @@ export default function IntakeForm() {
                 <ShapeSilhouette shape={solitaire ? form.stonePrefs.shape : "round"} />
               </div>
               <div className="rc-body">
-                <span>{g.stoneCard}</span>
+                <span>{solitaire ? g.stoneCard : g.stonesCard}</span>
                 {solitaire ? (
                   <>
-                    <strong>{p.shapes[form.stonePrefs.shape] || form.stonePrefs.shape} {Number(form.stonePrefs.carat).toFixed(2)}ct</strong>
-                    <small>{form.stonePrefs.color} · {form.stonePrefs.clarity} · {form.stonePrefs.growth} · IGI</small>
+                    <strong>{p.shapes[form.stonePrefs.shape] || form.stonePrefs.shape} {formatCaratRange(form.stonePrefs.caratRange)}</strong>
+                    <small>{formatGradeRange(form.stonePrefs.colorRange)} · {formatGradeRange(form.stonePrefs.clarityRange)} · {form.stonePrefs.growth} · IGI</small>
                   </>
                 ) : (
                   <>
-                    <strong>{t.multiDefaultStandard}</strong>
+                    <strong>{formatCaratRange(form.multiSpec.totalCaratRange)} · {formatGradeRange(form.multiSpec.colorRange)} · {formatGradeRange(form.multiSpec.clarityRange)}</strong>
                     <small>{g.multiNote}</small>
                   </>
                 )}
@@ -856,29 +780,14 @@ export default function IntakeForm() {
             </div>
           </section>
 
-          {/* 센터스톤 퀄리티 — 추천 기본값 + 인라인 조정 */}
-          {solitaire && (
-            <section className="gflow-review-section">
-              <h4>{g.quality}</h4>
-              <div className="gflow-quality-row">
-                <strong>{form.stonePrefs.color} · {form.stonePrefs.clarity} · {form.stonePrefs.growth} · IGI</strong>
-                <button className="button secondary small" type="button" onClick={() => setAdjustQuality((v) => !v)}>{g.adjust}</button>
-              </div>
-              {adjustQuality && (
-                <>
-                  <ScalePicker ariaLabel={t.color} options={colorOptions} value={form.stonePrefs.color} onSelect={(value) => setS({ color: value })} />
-                  <ScalePicker ariaLabel={t.clarity} options={clarityOptions} value={form.stonePrefs.clarity} onSelect={(value) => setS({ clarity: value })} />
-                </>
-              )}
-              <p className="form-hint" style={{ margin: 0 }}>{g.qualityDefaultNote}</p>
-            </section>
-          )}
+          {/* 센터스톤 퀄리티 섹션 없음 — 위 스톤 리뷰 카드가 같은 요약을 이미 보여주고,
+              조정은 캐럿 스텝(퀄리티 range 슬라이더)에서 한다. 중복이라 제거. */}
 
           {needsContact && (
             <section className="gflow-review-section">
               <h4>{t.contactTitle}</h4>
               <div className="gflow-quality-row">
-                <strong>{contactDetails.name} · {contactDetails.contact}</strong>
+                <strong>{form.name} · {form.contact}</strong>
                 <button className="button secondary small" type="button" onClick={() => setScreen("contact")}>{g.contactEdit}</button>
               </div>
             </section>
@@ -918,15 +827,8 @@ export default function IntakeForm() {
             <span>{t.terms}</span>
           </label>
           <p className="form-hint">{p.ftc}</p>
-          <button
-            className="button primary gflow-submit"
-            type="button"
-            disabled={isSubmitting || mediaBusy}
-            aria-busy={isSubmitting}
-            onClick={submit}
-          >
-            {isSubmitting ? flowCopy.submitting : t.submit}
-          </button>
+          {stepError && <p className="form-error">{stepError}</p>}
+          <button className="button primary gflow-submit" type="button" onClick={submit}>{t.submit}</button>
         </div>
       ))}
 

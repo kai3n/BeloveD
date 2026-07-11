@@ -5,8 +5,9 @@ import { revokeSession } from "./session.js";
 import { rateLimit } from "./rateLimit.js";
 import { linkSessionToCustomer, recordAuthEvent } from "./activityRepository.js";
 import { linkChatToCustomer } from "./chatRepository.js";
+import { query } from "./db.js";
 import {
-  setSessionCookie, clearSessionCookie, requireCustomer,
+  setSessionCookie, clearSessionCookie, clearChatCookie, requireCustomer,
   COOKIE_CUSTOMER, COOKIE_ADMIN,
 } from "./middleware.js";
 
@@ -114,7 +115,8 @@ export function authRouter() {
         throw new ApiError("VALIDATION_ERROR", 400);
       }
       const { principalType, customerId, session } = await loginWithPassword(email, password);
-      setSessionCookie(res, principalType === "admin" ? COOKIE_ADMIN : COOKIE_CUSTOMER, session);
+      // bot_admin도 어드민 쿠키를 쓴다 — 권한 수준은 세션 행의 principal_type이 결정
+      setSessionCookie(res, principalType === "customer" ? COOKIE_CUSTOMER : COOKIE_ADMIN, session);
       if (principalType === "customer") await linkActivity(req, customerId);
       res.json({ ok: true, principal: principalType });
     } catch (e) { next(e); }
@@ -137,12 +139,22 @@ export function authRouter() {
       await revokeSession(req.cookies?.[COOKIE_ADMIN]);
       clearSessionCookie(res, COOKIE_CUSTOMER);
       clearSessionCookie(res, COOKIE_ADMIN);
+      // 로그아웃 시 라이브챗 스레드 쿠키도 제거 — 같은 브라우저에서 이전 대화가 남지 않게(개인정보)
+      clearChatCookie(res);
       res.json({ ok: true });
     } catch (e) { next(e); }
   });
 
-  r.get("/me", (req, res) => {
-    res.json({ principal: req.principal || null });
+  r.get("/me", async (req, res, next) => {
+    try {
+      const p = req.principal;
+      if (p?.type === "customer") {
+        // 이메일 포함 반환 — 클라가 로컬 스토리지 없이도 세션을 복원할 수 있게(정합 강화)
+        const { rows } = await query("select email from customers where id = $1", [p.id]);
+        return res.json({ principal: { type: "customer", id: p.id, email: rows[0]?.email || null } });
+      }
+      res.json({ principal: p || null });
+    } catch (e) { next(e); }
   });
 
   return r;

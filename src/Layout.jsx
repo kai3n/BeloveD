@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { BadgeCheck, ChevronDown, Facebook, Instagram, LogOut, Menu, Moon, RotateCcw, ShieldCheck, Sun, Truck, UserRound, X } from "lucide-react";
+import { BadgeCheck, ChevronDown, Facebook, Gem, Instagram, LogOut, Menu, Moon, ShieldCheck, Sun, Truck, UserRound, X } from "lucide-react";
 import { localeOptions } from "./translations.js";
 import { footerGroups, infoNav, social, trustStrip } from "./lib/infoContent.js";
 import { useLocale } from "./i18n.jsx";
@@ -11,6 +11,7 @@ import { useTheme } from "./theme.jsx";
 import { withBase } from "./components/ui.jsx";
 import { WITH_BACKOFFICE } from "./lib/flags.js";
 import ChatWidget from "./components/ChatWidget.jsx";
+import SaleBanner from "./components/SaleBanner.jsx";
 
 // 비즈니스 로고 — 원본에서 배경을 키잉한 투명 PNG (글자만 얹혀 어떤 배경에서도 박스가 없다)
 function BrandLogo() {
@@ -223,7 +224,7 @@ export function Footer() {
   const g = footerGroups[locale] ?? footerGroups.en;
   const n = infoNav[locale] ?? infoNav.en;
   const trust = trustStrip[locale] ?? trustStrip.en;
-  const trustIcons = [Truck, RotateCcw, ShieldCheck, BadgeCheck];
+  const trustIcons = [Truck, Gem, ShieldCheck, BadgeCheck];
   // 헤더의 가로 태스크바와 역할 분리 — 푸터는 브랜드 앵커 + 그룹 디렉토리 + 신뢰 스트립
   // GitHub Pages 하위 경로에서도 동작하도록 router Link 사용
   const columns = [
@@ -368,6 +369,7 @@ export default function Layout() {
     <>
       <ScrollManager />
       <EscapeBack />
+      <SaleBanner />
       <Header />
       <main>
         <Outlet />

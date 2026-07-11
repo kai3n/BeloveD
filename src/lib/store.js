@@ -166,6 +166,12 @@ function migrateDB(d) {
     changed = true;
   }
 
+  // 디파짓 30% 정합 — 구 시드(50%)로 심어진 로컬 DB를 공개 반품 정책·서버 기본값에 맞춘다
+  if (d?.settings?.opsDepositRate === 0.5) {
+    d.settings.opsDepositRate = 0.3;
+    changed = true;
+  }
+
   const shouldAuditStyleMedia = d?.settings?.styleMediaAuditVersion !== STYLE_MEDIA_AUDIT_VERSION;
   if (restoreOriginalStyleMedia(d, shouldAuditStyleMedia)) {
     changed = true;
@@ -214,6 +220,29 @@ function migrateDB(d) {
   // (공개 번들 노출 방지). 여기서는 오프라인/데모용 빈 구조만 보장한다.
   if (d?.settings && !d.settings.payment) {
     d.settings.payment = { zelle: "", venmo: "", note: "" };
+    changed = true;
+  }
+
+  // 멜리 단가(2026-07 총캐럿 스텝) — 구버전 저장 DB에 기본값 주입
+  if (d?.settings && d.settings.meleeUsdPerCt == null) {
+    d.settings.meleeUsdPerCt = 150;
+    changed = true;
+  }
+
+  // 런칭 세일(2026-07) — LAUNCH25 쿠폰을 기존 브라우저에 1회 주입.
+  // 어드민이 이후 삭제해도 재주입하지 않도록 버전 플래그로만 판단한다.
+  if (d?.settings && d.settings.launchSaleSeedVersion !== 1) {
+    if (Array.isArray(d.settings.coupons) && !d.settings.coupons.some((c) => c.code === "LAUNCH25")) {
+      d.settings.coupons = [...d.settings.coupons, { code: "LAUNCH25", kind: "percent", value: 25, labelKey: "launch", expiresAt: null }];
+    }
+    d.settings.launchSaleSeedVersion = 1;
+    changed = true;
+  }
+
+  // 세일 배너 설정 — 객체 자체가 없으면 시드 주입 (있으면 어드민의 온/오프·문구 상태 존중).
+  // 쿠폰 플래그와 분리: 플래그가 먼저 소모돼도 배너 주입이 누락되지 않게 한다.
+  if (d?.settings && !d.settings.saleBanner) {
+    d.settings.saleBanner = seed().settings.saleBanner;
     changed = true;
   }
 
@@ -1459,6 +1488,8 @@ export function sendQuote(quoteId) {
       shape: dia.shape, carat: dia.carat, caratMax: Math.round((Number(dia.carat) + 0.05) * 100) / 100,
       color: dia.color, clarity: dia.clarity,
       growth: dia.growth, lab: dia.lab, igiNo: dia.igiNo,
+      // 컬러 처리 고지 — 매뉴얼 §6.2: 고객에게 처음 소개할 때 반드시 명시
+      colorTreatment: dia.colorTreatment || null,
     };
   }
   if (!q.proposalMedia?.length) {

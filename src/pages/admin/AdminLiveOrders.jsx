@@ -7,6 +7,7 @@ import { MediaPicker, MediaThumb, usd } from "../../components/ui.jsx";
 import { getOpsStyle, isShippingAddressComplete } from "../../lib/store.js";
 import { pickI18n, useLocale } from "../../i18n.jsx";
 import { ConsoleHead, Pager, StatStrip } from "./console.jsx";
+import { formatGradeRange, formatCaratRange } from "../../lib/gradeScale.js";
 
 // 견적 컴포저 셀렉트 옵션 · 메탈 코드 → 라벨 (인테이크 프리필용)
 const SHAPES = ["round", "oval", "cushion", "princess", "emerald", "pear", "marquise", "radiant", "asscher", "heart"];
@@ -468,9 +469,9 @@ function StepCard({ step, index, order, done, changeRequest, expanded, onToggle,
     metalSpec: METAL_LABELS[fp.metal] || fp.metal || "18K White Gold",
     estWeightG: "", leadDays: "10",
     shape: sp.shape || "round",
-    caratMin: sp.carat ? String(sp.carat) : "",
-    caratMax: sp.carat ? (Number(sp.carat) + 0.05).toFixed(2) : "",
-    color: sp.color || "D", clarity: sp.clarity || "VS1", growth: sp.growth || "CVD",
+    caratMin: sp.caratRange?.[0] != null ? String(sp.caratRange[0]) : (sp.carat ? String(sp.carat) : ""),
+    caratMax: sp.caratRange?.[1] != null ? String(sp.caratRange[1]) : (sp.carat ? (Number(sp.carat) + 0.05).toFixed(2) : ""),
+    color: sp.colorRange?.[0] || sp.color || "D", clarity: sp.clarityRange?.[0] || sp.clarity || "VS1", growth: sp.growth || "CVD",
     lab: "IGI", igiNo: "", subNote: "", deposit: "",
   });
   const [busy, setBusy] = useState(false);
@@ -784,13 +785,15 @@ function AdminLiveOrderDetailContent({ orderCode }) {
     const { order } = state.data;
     const fp = order.intake?.formPayload || {};
     const sp = fp.stonePrefs || {};
+    const ms = fp.multiSpec || {};
     // 스타일 행 — 오픈 브리프(스타일 미정)는 상담 주문임을 명시해 "누락"으로 오독되지 않게 한다
     const styleId = fp.styleId || order.intake?.styleCode || "";
     const style = styleId ? getOpsStyle(styleId) : null;
     return [
       ["Style", styleId ? (style ? pickI18n(style.name, "en") : styleId) : t.consultOpenBrief],
       [t.category, [order.intake?.category, fp.productLine].filter(Boolean).join(" · ")],
-      ["Stone", [sp.shape, sp.carat && `${sp.carat}ct`, sp.color, sp.clarity, sp.growth].filter(Boolean).join(" · ")],
+      ["Stone", [sp.shape, formatCaratRange(sp.caratRange) || (sp.carat && `${sp.carat}ct`), formatGradeRange(sp.colorRange) || sp.color, formatGradeRange(sp.clarityRange) || sp.clarity, sp.growth].filter(Boolean).join(" · ")],
+      ["Stones", [formatCaratRange(ms.totalCaratRange) && `${formatCaratRange(ms.totalCaratRange)} total`, ms.standard, ms.meleeSpec].filter(Boolean).join(" · ")],
       ["Fit", Object.entries(fp.conditional || {}).map(([k, v]) => `${k}: ${v}`).join(" · ")],
       ["Engraving", (fp.engraving || "").trim()],
       ["Coupon", (fp.couponCode || "").trim()],

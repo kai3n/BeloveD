@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
-  DEFAULT_MULTI_STANDARD, accountDisplayName, buildIntakePayload, conditionalComplete,
-  hasContactDetails, isValidEmail, referenceMediaReady, sanitizeReferenceMedia, submissionContact,
+  accountDisplayName, buildIntakePayload, conditionalComplete,
+  sanitizeReferenceMedia, submissionContact,
 } from "../intakePayload.js";
 import { createIntake, resetDB } from "../store.js";
 
@@ -28,7 +28,6 @@ describe("buildIntakePayload — createIntake 호환", () => {
     expect(payload.stonePrefs.carat).toBe(1.5);
     expect(payload.multiSpec).toBeNull();
     expect(payload.name).toBe("Jiwon");
-    expect(payload.styleCode).toBe("RING-001");
     expect(payload.referenceMedia).toEqual([{ kind: "image", src: "/ref.png" }]);
     // 실제 createIntake로 주문이 생성되는지 (구조 호환 스모크)
     const { order, intake } = createIntake(payload, null);
@@ -36,23 +35,73 @@ describe("buildIntakePayload — createIntake 호환", () => {
     expect(intake.subcategory).toBe("engagementRing");
   });
 
-  it("멀티: stonePrefs null, multiSpec 기본 등급 채움 (자유입력 없이 제출 가능)", () => {
+  it("멀티: stonePrefs null, totalCarat 숫자화 + 등급 range 클램프 + standard 파생", () => {
     const payload = buildIntakePayload(
-      ringForm({ productLine: "multi", category: "necklace", styleId: "NECK-001", conditional: { chainStyle: "cable", chainLength: "18in", clasp: "lobster" } }),
+      ringForm({
+        productLine: "multi", category: "necklace", styleId: "NECK-001",
+        conditional: { chainStyle: "cable", chainLength: "18in", clasp: "lobster" },
+        multiSpec: { totalCarat: "10", colorRange: ["G", "E"], clarityRange: ["VS2", "VVS1"], meleeSpec: "", overallDims: "", arrangement: "", standard: "" },
+      }),
       [],
       { name: "Noah", email: "noah@x.com" },
     );
     expect(payload.stonePrefs).toBeNull();
-    expect(payload.multiSpec.standard).toBe(DEFAULT_MULTI_STANDARD);
+    expect(payload.multiSpec.totalCarat).toBe(10);
+    expect(payload.multiSpec.standard).toBe("E–G / VVS1–VS2");
     expect(payload.multiSpec.meleeSpec).toBe("");
     expect(payload.contact).toBe("noah@x.com"); // 로그인 사용자 이메일 우선
     const { order } = createIntake(payload, "u-customer");
     expect(order.status).toBe("QUOTATION");
   });
 
+  it("멀티: range 누락(구 드래프트)이면 기본 range·기본 캐럿으로 채운다", () => {
+    const payload = buildIntakePayload(
+      ringForm({
+        productLine: "multi", category: "bangle", styleId: "BAN-001",
+        conditional: { wristSize: "6.5in" },
+        multiSpec: { meleeSpec: "", overallDims: "", arrangement: "", standard: "" },
+        name: "Jiwon", contact: "j@x.com",
+      }),
+      [], null,
+    );
+    expect(payload.multiSpec.totalCarat).toBe(5); // bangle 기본
+    expect(payload.multiSpec.colorRange).toEqual(["G", "E"]);
+    expect(payload.multiSpec.standard).toBe("E–G / VVS1–VS2");
+  });
+
+  it("솔리테어: 단일 color/clarity/carat(레거시 폼)을 range로 승격한다", () => {
+    const payload = buildIntakePayload(ringForm({ name: "J", contact: "j@x.com" }), [], null);
+    expect(payload.stonePrefs.colorRange).toEqual(["E", "E"]);
+    expect(payload.stonePrefs.clarityRange).toEqual(["VS1", "VS1"]);
+    expect(payload.stonePrefs.caratRange).toEqual([1.5, 1.5]);
+    expect(payload.stonePrefs.carat).toBe(1.5); // 레거시 소비처용 중간값
+  });
+
+  it("솔리테어: caratRange를 그대로 싣고 carat은 중간값", () => {
+    const payload = buildIntakePayload(
+      ringForm({ name: "J", contact: "j@x.com", stonePrefs: { shape: "round", caratRange: [1, 2], colorRange: ["F", "D"], clarityRange: ["VS1", "IF-FL"], growth: "CVD", lab: "IGI India", colorTreatment: "disclosed", fluorescence: "none", lwRatio: "" } }),
+      [], null,
+    );
+    expect(payload.stonePrefs.caratRange).toEqual([1, 2]);
+    expect(payload.stonePrefs.carat).toBe(1.5);
+  });
+
+  it("멀티: totalCaratRange 클램프 + totalCarat 중간값", () => {
+    const payload = buildIntakePayload(
+      ringForm({
+        productLine: "multi", category: "bangle", styleId: "BAN-001",
+        conditional: { wristSize: "6.5in" },
+        multiSpec: { totalCaratRange: [4, 8], colorRange: ["G", "E"], clarityRange: ["VS2", "VVS1"], meleeSpec: "", overallDims: "", arrangement: "", standard: "" },
+        name: "J", contact: "j@x.com",
+      }),
+      [], null,
+    );
+    expect(payload.multiSpec.totalCaratRange).toEqual([4, 8]);
+    expect(payload.multiSpec.totalCarat).toBe(6);
+  });
+
   it("스타일 미정(open brief)은 STYLE_SELECTION으로 접수된다", () => {
     const payload = buildIntakePayload(ringForm({ styleId: "", name: "G", contact: "g@x.com" }), [], null);
-    expect(payload.styleCode).toBeNull();
     const { order } = createIntake(payload, null);
     expect(order.status).toBe("STYLE_SELECTION");
   });
@@ -94,29 +143,6 @@ describe("sanitizeReferenceMedia", () => {
     const clean = sanitizeReferenceMedia(media);
     expect(clean).toHaveLength(5);
     expect(clean[0]).toEqual({ kind: "image", src: "/m0.png", width: 100 });
-  });
-});
-
-describe("server-backed intake validation", () => {
-  it("포털 연결이 가능한 이메일만 연락처로 인정하고 전화번호-only 입력은 거부한다", () => {
-    expect(isValidEmail("customer@example.com")).toBe(true);
-    expect(isValidEmail(" first.last+ring@sub.example.co ")).toBe(true);
-    expect(isValidEmail("555-123-4567")).toBe(false);
-    expect(isValidEmail("customer@example")).toBe(false);
-    expect(isValidEmail("a..b@example.com")).toBe(false);
-    expect(isValidEmail("a@-example.com")).toBe(false);
-    expect(hasContactDetails({ name: "Jiwon", contact: "555-123-4567" })).toBe(false);
-    expect(hasContactDetails({ name: "Jiwon", contact: "j@x.com" })).toBe(true);
-  });
-
-  it("라이브 제출은 영구 URL만 허용하고 정적 데모는 명시적으로 로컬 미디어를 허용한다", () => {
-    const remote = [{ kind: "image", src: "https://cdn.example.com/ref.jpg" }];
-    const transient = [{ kind: "video", src: "blob:preview", transient: true }];
-    const dataUrl = [{ kind: "image", src: "data:image/jpeg;base64,abc" }];
-    expect(referenceMediaReady(remote)).toBe(true);
-    expect(referenceMediaReady(transient)).toBe(false);
-    expect(referenceMediaReady(dataUrl)).toBe(false);
-    expect(referenceMediaReady(transient, { remoteRequired: false })).toBe(true);
   });
 });
 

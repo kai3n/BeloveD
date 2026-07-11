@@ -143,7 +143,7 @@ export function seed() {
         estWeightG: 4.2, metalRefUsdPerG: 95, lossRatePct: 8, nonMetalUsd: 320,
         internal: { diamondCostUsd: 380, laborUsd: 75, extrasUsd: 60, riskUsd: 40, multiplier: 1.8 },
         snapshot: { benchmarkUsdPerCt: 224, carat: 1.0 },
-        diamondAmountUsd: 403, metalAmountUsd: 431, totalUsd: 1154, depositUsd: 577, balanceUsd: 577,
+        diamondAmountUsd: 403, metalAmountUsd: 431, totalUsd: 1154, depositUsd: 346, balanceUsd: 808,
         validUntil: "2026-06-20", leadDays: 10, acceptedAt: "2026-06-10T15:00:00.000Z", createdAt: "2026-06-09T15:00:00.000Z" },
     ],
     milestones: [
@@ -258,10 +258,25 @@ export function seed() {
     settings: {
       goldSpotPerGram: 85, goldPurity: 0.75, tierThresholdUsd: 20000, warrantyMonths: 12, cosmeticWindowDays: 7,
       // Operations Manual
-      opsDepositRate: 0.5, opsMultiplier: 1.8, defaultLossRatePct: 8, productionLeadDays: 10,
+      // 디파짓 30% — 공개 반품 정책·실서버 기본값(customerRepository)과 동일해야 한다
+      opsDepositRate: 0.3, opsMultiplier: 1.8, defaultLossRatePct: 8, productionLeadDays: 10,
       metalRefUsdPerG: { "14ky": 62, "18ky": 80, "14kr": 62, "18kr": 80, "18kw": 85, "pt": 38 },
       // 쿠폰 카탈로그 — 어드민 콘솔에서 등록/삭제/만료 관리, 서버 settings로 write-through
       coupons: BASE_COUPONS.map((c) => ({ ...c })),
+      // 멀티스톤 총캐럿 견적용 멜리(스몰 스톤) 단가 — 어드민 벤치마크 페이지에서 조정
+      meleeUsdPerCt: 150,
+      // 상단 세일 배너 — 어드민 쿠폰 페이지에서 온/오프·문구 관리, 서버 write-through로 전 고객 배포
+      saleBanner: {
+        enabled: true,
+        code: "LAUNCH25",
+        copy: {
+          en: "Launch Sale: 25% Off All Lab Diamond Jewelry",
+          ko: "런칭 세일: 랩다이아 주얼리 전 품목 25% 할인",
+          zh: "开业特惠：培育钻石珠宝全场七五折",
+          es: "Oferta de lanzamiento: 25% en toda la joyería de diamantes de laboratorio",
+        },
+      },
+      launchSaleSeedVersion: 1,
       designChangeFeeUsd: 15, cancelAfterProductionMinUsd: 140, freeMinorRevisions: 1,
       // 어드민 최소 개입 자동화: 전 주문이 기본 벤더로 자동 매칭 (스타일별 supplierId로 오버라이드 가능)
       defaultSupplierId: "u-supplier1", autoDueDays: 3, batchValidDays: 10,

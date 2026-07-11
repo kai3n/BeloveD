@@ -24,6 +24,21 @@ export async function saveChatEmail(email, locale) {
   return apiFetch("/chat/email", { method: "POST", body: { email, locale } });
 }
 
+// 예약 가능한 20분 슬롯(UTC ISO 배열)
+export async function fetchConsultationSlots() {
+  return apiFetch("/chat/consultation/slots");
+}
+
+// 화상 상담 예약 — 슬롯 확정(slot=UTC ISO, tz=방문자 타임존)
+export async function bookConsultation({ name, contact, note, slot, tz, locale } = {}) {
+  return apiFetch("/chat/consultation", { method: "POST", body: { name, contact, note, slot, tz, locale } });
+}
+
+// CSAT 평점 제출 (1~5)
+export async function submitCsat(rating) {
+  return apiFetch("/chat/csat", { method: "POST", body: { rating } });
+}
+
 // 서버 media.js ALLOWED_TYPES와 정렬 — 이미지·영상만 첨부 허용.
 export const CHAT_MAX_BYTES = 100 * 1024 * 1024;       // 이미지 상한
 export const CHAT_VIDEO_MAX_BYTES = 30 * 1024 * 1024;  // 영상 상한 30MB

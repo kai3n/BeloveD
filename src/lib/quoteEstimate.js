@@ -4,10 +4,19 @@
 import { benchmarkFor, findCoupon, getSettings, listStyleSpecs } from "./store.js";
 import { quoteCompute } from "./ops.js";
 import { applyCoupon } from "./coupons.js";
+import { SOLITAIRE_CARAT, caratRangeMid, clampCaratRange, clampTotalCaratRange } from "./gradeScale.js";
 
 // 컬러/클래리티에 따른 소폭 보정 — 등급이 높을수록 비싸진다(표시용 추정).
 const COLOR_FACTOR = { D: 1.12, E: 1.06, F: 1.0, G: 0.95, H: 0.9 };
-const CLARITY_FACTOR = { IF: 1.12, VVS1: 1.08, VVS2: 1.05, VS1: 1.0, VS2: 0.96, SI1: 0.9 };
+const CLARITY_FACTOR = { "IF-FL": 1.12, IF: 1.12, VVS1: 1.08, VVS2: 1.05, VS1: 1.0, VS2: 0.96, SI1: 0.9 };
+
+// range 양끝 factor 평균 — 레거시 단일값(form.color)은 그대로 조회
+function rangeFactor(factors, range, legacy) {
+  if (Array.isArray(range) && range.length) {
+    return ((factors[range[0]] ?? 1.0) + (factors[range[1]] ?? 1.0)) / 2;
+  }
+  return factors[legacy] ?? 1.0;
+}
 // 스펙이 없을 때의 카테고리별 기본 세팅 중량(g)/공임(USD)
 const DEFAULT_WEIGHT_G = { ring: 4.2, necklace: 3.0, bangle: 9.0, earrings: 3.4 };
 const DEFAULT_LABOR_USD = { ring: 320, necklace: 260, bangle: 520, earrings: 300 };
@@ -25,7 +34,7 @@ export function estimateQuoteRange(form) {
   const metalRefUsdPerG = s.metalRefUsdPerG?.[form.metal] ?? 85;
   const multiplier = s.opsMultiplier ?? 1.8;
   const lossRatePct = s.defaultLossRatePct ?? 8;
-  const depositRate = s.opsDepositRate ?? 0.5;
+  const depositRate = s.opsDepositRate ?? 0.3; // 공개 정책·서버 기본과 동일 (30%)
 
   // 세팅 중량/공임: 선택 스타일의 승인 스펙 우선, 없으면 카테고리 기본값
   const spec = form.styleId
@@ -40,16 +49,17 @@ export function estimateQuoteRange(form) {
   let benchmarkUsdPerCt;
   let carat;
   if (solitaire) {
-    carat = Number(form.stonePrefs?.carat) || 1.0;
+    // 캐럿 range의 중간값으로 추정 — ±밴드가 범위의 불확실성을 표현한다
+    carat = caratRangeMid(clampCaratRange(SOLITAIRE_CARAT, form.stonePrefs?.caratRange ?? form.stonePrefs?.carat)) || 1.0;
     const bench = benchmarkFor(form.stonePrefs?.shape || "round", carat);
     const unit = bench?.unitUsdPerCt ?? 400;
     benchmarkUsdPerCt = unit
-      * (COLOR_FACTOR[form.stonePrefs?.color] ?? 1.0)
-      * (CLARITY_FACTOR[form.stonePrefs?.clarity] ?? 1.0);
+      * rangeFactor(COLOR_FACTOR, form.stonePrefs?.colorRange, form.stonePrefs?.color)
+      * rangeFactor(CLARITY_FACTOR, form.stonePrefs?.clarityRange, form.stonePrefs?.clarity);
   } else {
-    // 멀티스톤: 멜레 총합을 약 1ct 상당으로 가정하고 멜레 할인 적용
-    carat = 1.0;
-    benchmarkUsdPerCt = (benchmarkFor("round", 1.0)?.unitUsdPerCt ?? 320) * 0.8;
+    // 멀티스톤: 총 캐럿 range 중간값 × 멜리 단가 — 퀄리티 range는 상담에서 확정(견적 미반영)
+    carat = caratRangeMid(clampTotalCaratRange(form.category, form.multiSpec?.totalCaratRange ?? form.multiSpec?.totalCarat));
+    benchmarkUsdPerCt = s.meleeUsdPerCt ?? 150;
   }
 
   const { totalUsd, diamondAmountUsd } = quoteCompute({
@@ -82,4 +92,24 @@ export function estimateQuoteRange(form) {
     savingsTop: top.high - low, // "Up to $X less than <top>"
     coupon: coupon ? { code: coupon.code, labelKey: coupon.labelKey, savedUsd: round10(applied.discountUsd) } : null,
   };
+}
+
+// 홈 가격 비교 보드용 루스 스톤 시세 — 세팅·메탈 없이 스톤 단독 고객가.
+// 벤치마크·배수는 어드민 설정을 그대로 읽으므로 보드가 견적 엔진과 항상 정합.
+export function estimateLooseStoneCompare({ shape = "round", carat = 1.0, color = "F", clarity = "VS1" } = {}) {
+  const s = getSettings() || {};
+  const multiplier = s.opsMultiplier ?? 1.8;
+  const unit = (benchmarkFor(shape, carat)?.unitUsdPerCt ?? 400)
+    * (COLOR_FACTOR[color] ?? 1.0)
+    * (CLARITY_FACTOR[clarity] ?? 1.0);
+  const stoneUsd = unit * carat * multiplier;
+  const low = round10(stoneUsd * 0.92);
+  const high = round10(stoneUsd * 1.1);
+  const competitors = COMPETITORS.map((c) => ({
+    name: c.name,
+    low: round10(low * c.lo),
+    high: round10(high * c.hi),
+  }));
+  const top = competitors.reduce((a, b) => (b.high > a.high ? b : a));
+  return { beloved: { low, high }, competitors, topName: top.name, savingsTop: top.high - low };
 }

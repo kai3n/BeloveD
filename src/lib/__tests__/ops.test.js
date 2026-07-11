@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   MILESTONE_STAGES, CARAT_TIERS, tierForCarat, quoteCompute, reconcileDelta,
   publicDiamondView, customerOrderView, supplierTaskView, randomQueryCode,
+  autoBrief, poolStoneMatches,
 } from "../ops.js";
 
 describe("quote 공식 (매뉴얼 §7)", () => {
@@ -79,5 +80,30 @@ describe("기타", () => {
     const c = randomQueryCode();
     expect(c).toMatch(/^[A-Z0-9]{4}-[A-Z0-9]{4}$/);
     expect(randomQueryCode()).not.toBe(randomQueryCode());
+  });
+});
+
+describe("autoBrief — 등급 range", () => {
+  it("멀티: totalCarat과 파생 standard가 브리프에 실린다", () => {
+    const brief = autoBrief({ productLine: "multi", multiSpec: { totalCarat: 5, standard: "E–G / VVS1–VS2", meleeSpec: "", overallDims: "", arrangement: "" } });
+    expect(brief).toContain("5ct total");
+    expect(brief).toContain("E–G / VVS1–VS2");
+  });
+  it("솔리테어: colorRange가 있으면 range 라벨, 없으면 단일값", () => {
+    const brief = autoBrief({ productLine: "solitaire", stonePrefs: { carat: 1.5, shape: "round", colorRange: ["F", "D"], clarityRange: ["VS1", "IF-FL"], growth: "CVD", lab: "IGI", colorTreatment: "disclosed" } });
+    expect(brief).toContain("D–F/IF-FL–VS1");
+    const legacy = autoBrief({ productLine: "solitaire", stonePrefs: { carat: 1.5, shape: "round", color: "E", clarity: "VS1", growth: "CVD", lab: "IGI", colorTreatment: "disclosed" } });
+    expect(legacy).toContain("E/VS1");
+  });
+});
+
+describe("poolStoneMatches — range 하한 매칭", () => {
+  const stone = { shape: "round", carat: 1.5, color: "F", clarity: "VS1", growth: "CVD" };
+  const opts = { caratUnder: 0.05, caratOver: 0.4 };
+  it("스톤 등급이 range 하한 이상이면 매칭", () => {
+    expect(poolStoneMatches(stone, { shape: "round", carat: 1.5, colorRange: ["G", "D"], clarityRange: ["VS2", "IF-FL"], growth: "CVD" }, opts)).toBe(true);
+  });
+  it("하한 미달이면 탈락", () => {
+    expect(poolStoneMatches(stone, { shape: "round", carat: 1.5, colorRange: ["E", "D"], clarityRange: ["VS2", "IF-FL"], growth: "CVD" }, opts)).toBe(false);
   });
 });

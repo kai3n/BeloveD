@@ -17,7 +17,8 @@ const ALLOWED_TYPES = new Map([
   ["video/quicktime", "mov"],
   ["video/webm", "webm"],
 ]);
-const MAX_BYTES = 100 * 1024 * 1024; // 100MB (영상 리뷰 감안)
+const MAX_BYTES = 100 * 1024 * 1024; // 100MB (이미지 상한)
+const VIDEO_MAX_BYTES = 30 * 1024 * 1024; // 영상 30MB (클라이언트 CHAT_VIDEO_MAX_BYTES와 정렬)
 const SIGN_TTL_SECONDS = 60 * 10;
 const DEFAULT_LOCAL_MEDIA_ROOT = join(tmpdir(), "belovediamond-media");
 const DEFAULT_LOCAL_MEDIA_RETENTION_MS = 24 * 60 * 60 * 1000;
@@ -85,10 +86,12 @@ const SCOPES = new Set(["reference", "review", "proposal", "cad", "qc", "style",
 
 function validateUploadInput({ scope, contentType, size }) {
   if (!SCOPES.has(scope)) throw new ApiError("VALIDATION_ERROR", 400, "bad scope");
-  const ext = ALLOWED_TYPES.get(String(contentType || "").toLowerCase());
+  const ct = String(contentType || "").toLowerCase();
+  const ext = ALLOWED_TYPES.get(ct);
   if (!ext) throw new ApiError("UNSUPPORTED_MEDIA_TYPE", 400);
   const bytes = Number(size);
-  if (!Number.isFinite(bytes) || bytes <= 0 || bytes > MAX_BYTES) {
+  const cap = ct.startsWith("video/") ? VIDEO_MAX_BYTES : MAX_BYTES; // 영상은 서버에서도 30MB 강제
+  if (!Number.isFinite(bytes) || bytes <= 0 || bytes > cap) {
     throw new ApiError("MEDIA_TOO_LARGE", 400);
   }
   return { ext, bytes, contentType: String(contentType).toLowerCase() };
@@ -238,7 +241,10 @@ export async function createUploadUrl({ scope, contentType, size, origin }) {
     ContentType: contentType,
     ContentLength: bytes,
   });
-  const uploadUrl = await getSignedUrl(client(), command, { expiresIn: SIGN_TTL_SECONDS });
+  const uploadUrl = await getSignedUrl(client(), command, {
+    expiresIn: SIGN_TTL_SECONDS,
+    unhoistableHeaders: new Set(["content-length"]),
+  });
   const publicUrl = `${process.env.R2_PUBLIC_URL.replace(/\/$/, "")}/${key}`;
   return { uploadUrl, publicUrl, key, expiresIn: SIGN_TTL_SECONDS };
 }

@@ -69,6 +69,30 @@ const CUSTOMER_COPY = {
   es: { subject: "BeloveD respondió a tu mensaje", line: "Nuestro equipo acaba de responder a tu chat.", cta: "VER RESPUESTA" },
 };
 
+const BOOKING_COPY = {
+  en: { subject: "Your BeloveD video consultation is booked", line: (w) => `You're booked for a video consultation on <strong>${w}</strong>.`, join: "Join the video call", noLink: "We'll send your video link before the call.", note: "Add it to your calendar. Reply to this email to reschedule." },
+  ko: { subject: "BeloveD 화상 상담 예약이 확정됐어요", line: (w) => `<strong>${w}</strong>에 화상 상담이 예약되었어요.`, join: "화상 상담 입장", noLink: "상담 전에 화상 링크를 보내드릴게요.", note: "캘린더에 추가해 주세요. 일정 변경은 이 메일에 답장해 주세요." },
+  zh: { subject: "您的 BeloveD 视频咨询已预约", line: (w) => `您已预约 <strong>${w}</strong> 的视频咨询。`, join: "加入视频通话", noLink: "我们会在通话前发送视频链接。", note: "请加入日历。如需改期，请回复此邮件。" },
+  es: { subject: "Tu videoconsulta con BeloveD está reservada", line: (w) => `Tienes una videoconsulta reservada el <strong>${w}</strong>.`, join: "Unirse a la videollamada", noLink: "Te enviaremos el enlace antes de la llamada.", note: "Agrégalo a tu calendario. Responde a este correo para reprogramar." },
+};
+
+// 예약 확정 메일 — 고객에게 선택 슬롯 + Zoom 링크(CONSULTATION_MEETING_URL). 링크 없으면 안내만.
+export async function notifyBookingConfirmed({ to, locale = "en", when, meetingUrl }) {
+  if (!to) return null;
+  const t = BOOKING_COPY[locale] || BOOKING_COPY.en;
+  const link = isHttpUrl(meetingUrl)
+    ? button(escapeHtml(meetingUrl), t.join)
+    : `<p style="font-size:14px;color:#6a6357">${t.noLink}</p>`;
+  return sendOrderMail(
+    to,
+    t.subject,
+    `<p style="font-size:15px;line-height:1.6">${t.line(escapeHtml(when))}</p>
+     ${link}
+     <p style="font-size:13px;color:#8a8377;line-height:1.5">${t.note}</p>`,
+    { type: "chat_booking_confirmed", locale, to },
+  );
+}
+
 export async function notifyCustomerReply({ to, locale = "en", preview }) {
   if (!to) return null;
   const t = CUSTOMER_COPY[locale] || CUSTOMER_COPY.en;

@@ -8,6 +8,7 @@ import {
 import { useLocale } from "../i18n.jsx";
 import { MediaThumb, Stars, withBase } from "../components/ui.jsx";
 import { listReviews } from "../lib/store.js";
+import { estimateLooseStoneCompare } from "../lib/quoteEstimate.js";
 import { apiFetch } from "../lib/api.js";
 import { useDBVersion } from "../lib/useDB.js";
 import { DESIGN_CATEGORIES } from "../lib/designSlots.js";
@@ -88,12 +89,12 @@ const quoteBoardCopy = {
     chipsAria: "Comparison stone specification",
     listAria: "Lab diamond price range comparison",
     chips: ["1.00ct", "VS+", "Ideal", "IGI / GIA"],
-    savingsPill: "BeloveD, from $320",
+    savingsPill: (from) => `BeloveD, from ${from}`,
     saveBadge: "Lowest range",
-    saveLine: "Up to $560 below Blue Nile",
+    saveLine: (save, name) => `Up to ${save} below ${name}`,
     note: "Example loose-stone ranges. Final quote depends on live inventory, certificate, setting, and metal.",
-    stats: [
-      { value: "$320+", label: "Loose stones, from" },
+    stats: (from) => [
+      { value: `${from}+`, label: "Loose stones, from" },
       { value: "1.00ct", label: "Comparable lab-grown example" },
       { value: "VS+", label: "Clean everyday clarity" },
     ],
@@ -109,12 +110,12 @@ const quoteBoardCopy = {
     chipsAria: "비교 스톤 사양",
     listAria: "랩다이아몬드 가격 범위 비교",
     chips: ["1.00ct", "VS+", "Ideal", "IGI / GIA"],
-    savingsPill: "BeloveD는 $320부터",
+    savingsPill: (from) => `BeloveD는 ${from}부터`,
     saveBadge: "가장 낮은 가격대",
-    saveLine: "Blue Nile 대비 최대 $560 절약",
+    saveLine: (save, name) => `${name} 대비 최대 ${save} 절약`,
     note: "루스 스톤 예시 범위입니다. 최종 견적은 실시간 재고, 인증서, 세팅, 메탈에 따라 달라집니다.",
-    stats: [
-      { value: "$320+", label: "루스 스톤 시작 견적" },
+    stats: (from) => [
+      { value: `${from}+`, label: "루스 스톤 시작 견적" },
       { value: "1.00ct", label: "비교 기준 랩다이아몬드" },
       { value: "VS+", label: "일상에 충분히 맑은 등급" },
     ],
@@ -130,12 +131,12 @@ const quoteBoardCopy = {
     chipsAria: "对比钻石规格",
     listAria: "培育钻石价格区间对比",
     chips: ["1.00ct", "VS+", "Ideal", "IGI / GIA"],
-    savingsPill: "BeloveD $320 起",
+    savingsPill: (from) => `BeloveD ${from} 起`,
     saveBadge: "最优区间",
-    saveLine: "较 Blue Nile 至多节省 $560",
+    saveLine: (save, name) => `较 ${name} 至多节省 ${save}`,
     note: "裸石价格为示例区间。最终报价取决于实时库存、证书、镶嵌与金属。",
-    stats: [
-      { value: "$320+", label: "裸石起始报价" },
+    stats: (from) => [
+      { value: `${from}+`, label: "裸石起始报价" },
       { value: "1.00ct", label: "培育钻石对比规格" },
       { value: "VS+", label: "日常佩戴净度之选" },
     ],
@@ -151,12 +152,12 @@ const quoteBoardCopy = {
     chipsAria: "Especificación de piedra comparable",
     listAria: "Comparación de rangos de precio lab-grown",
     chips: ["1.00ct", "VS+", "Ideal", "IGI / GIA"],
-    savingsPill: "BeloveD desde $320",
+    savingsPill: (from) => `BeloveD desde ${from}`,
     saveBadge: "Rango más bajo",
-    saveLine: "Hasta $560 menos que Blue Nile",
+    saveLine: (save, name) => `Hasta ${save} menos que ${name}`,
     note: "Rangos de piedra suelta como ejemplo. La cotización final depende de inventario, certificado, montura y metal.",
-    stats: [
-      { value: "$320+", label: "Cotización inicial" },
+    stats: (from) => [
+      { value: `${from}+`, label: "Cotización inicial" },
       { value: "1.00ct", label: "Ejemplo comparable" },
       { value: "VS+", label: "Claridad limpia diaria" },
     ],
@@ -275,31 +276,38 @@ function Collections({ locale }) {
   );
 }
 
+// 경쟁사별 표시 사양 — 가격은 엔진에서, 사양 문구만 정적
+const competitorDisplay = {
+  "Blue Nile": { spec: "1.00ct D-F / VS1-VS2 / Ideal", cert: "GIA / IGI" },
+  "Brilliant Earth": { spec: "1.00ct F-G / VS1-VS2 / Ideal", cert: "IGI / GIA" },
+};
+
+const fmtUsd = (n) => `$${n.toLocaleString("en-US")}`;
+
 function HomeCore({ locale }) {
+  useDBVersion(); // 어드민이 벤치마크·배수를 바꾸면 보드도 갱신
   const copy = quoteBoardCopy[locale] ?? quoteBoardCopy.en;
+  // 비교 사양은 칩과 동일: 1.00ct round / VS+ (기본값 F/VS1)
+  const cmp = estimateLooseStoneCompare();
+  const maxHigh = Math.max(cmp.beloved.high, ...cmp.competitors.map((c) => c.high));
+  const widthPct = (high) => `${Math.round((high / maxHigh) * 100)}%`;
   const comparisons = [
-    {
-      seller: "Blue Nile",
-      range: "$650-$950",
-      spec: "1.00ct D-F / VS1-VS2 / Ideal",
-      cert: "GIA / IGI",
-      width: "100%",
-    },
-    {
-      seller: "Brilliant Earth",
-      range: "$520-$820",
-      spec: "1.00ct F-G / VS1-VS2 / Ideal",
-      cert: "IGI / GIA",
-      width: "82%",
-    },
+    ...cmp.competitors.map((c) => ({
+      seller: c.name,
+      range: `${fmtUsd(c.low)}-${fmtUsd(c.high)}`,
+      spec: competitorDisplay[c.name]?.spec ?? copy.belovedSpec,
+      cert: competitorDisplay[c.name]?.cert ?? "IGI / GIA",
+      width: widthPct(c.high),
+    })),
     {
       seller: "BeloveD",
-      range: "$320-$390",
+      range: `${fmtUsd(cmp.beloved.low)}-${fmtUsd(cmp.beloved.high)}`,
       spec: copy.belovedSpec,
       cert: "IGI / GIA",
-      width: "41%",
+      width: widthPct(cmp.beloved.high),
     },
   ];
+  const belovedFrom = fmtUsd(cmp.beloved.low);
 
   return (
     <section className="spread-noir" id="beloved-way">
@@ -307,7 +315,7 @@ function HomeCore({ locale }) {
         <span className="noir-eyebrow">{copy.label}</span>
         <h2>{renderLines(copy.boardTitle)}</h2>
         <p className="noir-sub">{copy.body}</p>
-        <span className="spread-noir-pill">{copy.savingsPill}</span>
+        <span className="spread-noir-pill">{copy.savingsPill(belovedFrom)}</span>
       </div>
 
       <div className="spread-noir-chips" aria-label={copy.chipsAria}>
@@ -331,7 +339,7 @@ function HomeCore({ locale }) {
               </div>
               <div className="spread-noir-rowfoot">
                 <p>{spec} · {cert}</p>
-                {isBeloved ? <strong>{copy.saveLine}</strong> : null}
+                {isBeloved ? <strong>{copy.saveLine(fmtUsd(cmp.savingsTop), cmp.topName)}</strong> : null}
               </div>
             </article>
           );
@@ -339,7 +347,7 @@ function HomeCore({ locale }) {
       </div>
 
       <div className="spread-noir-stats">
-        {copy.stats.map((stat) => (
+        {copy.stats(belovedFrom).map((stat) => (
           <div className="spread-noir-stat" key={stat.value}>
             <strong>{stat.value}</strong>
             <span>{stat.label}</span>

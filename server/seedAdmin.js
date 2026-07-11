@@ -29,6 +29,21 @@ export function resolveSeedPassword(env = process.env) {
 
 const email = (process.env.SEED_ADMIN_EMAIL || "admin@belovediamond.test").toLowerCase();
 
+// 봇 어드민(제한 세션) — BOT_ADMIN_EMAIL/BOT_ADMIN_PASSWORD가 둘 다 있을 때만 시드.
+// 비밀번호 원문은 어디에도 로깅하지 않는다.
+export function resolveBotSeed(env = process.env) {
+  const botEmail = (env.BOT_ADMIN_EMAIL || "").trim().toLowerCase();
+  const botPassword = env.BOT_ADMIN_PASSWORD;
+  if (!botEmail && !botPassword) return null; // 미설정 — 봇 시드 스킵
+  if (!botEmail || !botPassword) {
+    throw new Error("BOT_ADMIN_EMAIL and BOT_ADMIN_PASSWORD must be set together");
+  }
+  if (botPassword.length < MIN_PASSWORD_LEN) {
+    throw new Error(`BOT_ADMIN_PASSWORD must be at least ${MIN_PASSWORD_LEN} characters`);
+  }
+  return { email: botEmail, password: botPassword };
+}
+
 async function run() {
   const { password, generated } = resolveSeedPassword();
   await query(
@@ -46,6 +61,16 @@ async function run() {
     console.log("Set SEED_ADMIN_PASSWORD to choose a known password, then re-run seed:admin.");
   } else {
     console.log(`seeded admin ${email} (using SEED_ADMIN_PASSWORD)`);
+  }
+
+  const bot = resolveBotSeed();
+  if (bot) {
+    await query(
+      `insert into admin_users (email, name, password_hash, role) values ($1,$2,$3,'bot')
+       on conflict (email) do update set password_hash=excluded.password_hash, role='bot', active=true`,
+      [bot.email, "BeloveDiamond Bot", hashPassword(bot.password)],
+    );
+    console.log(`seeded bot admin ${bot.email}`);
   }
 }
 
