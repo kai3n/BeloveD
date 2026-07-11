@@ -218,7 +218,6 @@ export default function IntakeForm() {
   const [refs, setRefs] = useState(() => sanitizeReferenceMedia(draft?.refs));
   const [stepError, setStepError] = useState("");
   const [termsError, setTermsError] = useState(false); // 제출 시 약관 미동의 — 체크박스 줄 빨간 강조
-  const [adjustQuality, setAdjustQuality] = useState(false);
 
   const setF = (patch) => setForm((f) => ({ ...f, ...patch }));
   const setC = (patch) => setForm((f) => ({ ...f, conditional: { ...f.conditional, ...patch } }));
@@ -772,27 +771,8 @@ export default function IntakeForm() {
             </div>
           </section>
 
-          {/* 센터스톤 퀄리티 — 추천 기본 range + 인라인 조정 (브릴리언스식 듀얼 핸들) */}
-          {solitaire && (
-            <section className="gflow-review-section">
-              <h4>{g.quality}</h4>
-              <div className="gflow-quality-row">
-                <strong>{formatGradeRange(form.stonePrefs.colorRange)} · {formatGradeRange(form.stonePrefs.clarityRange)} · {form.stonePrefs.growth} · IGI</strong>
-                <button className="button secondary small" type="button" onClick={() => setAdjustQuality((v) => !v)}>{g.adjust}</button>
-              </div>
-              {adjustQuality && (
-                <div className="gflow-grange-fields">
-                  <label className="field"><span>{g.colorRangeLbl}</span>
-                    <GradeRangeSlider scale={COLOR_SCALE} ariaLabel={t.color} value={form.stonePrefs.colorRange} onChange={(v) => setS({ colorRange: v })} />
-                  </label>
-                  <label className="field"><span>{g.clarityRangeLbl}</span>
-                    <GradeRangeSlider scale={CLARITY_SCALE} ariaLabel={t.clarity} value={form.stonePrefs.clarityRange} onChange={(v) => setS({ clarityRange: v })} />
-                  </label>
-                </div>
-              )}
-              <p className="form-hint" style={{ margin: 0 }}>{g.qualityDefaultNote}</p>
-            </section>
-          )}
+          {/* 센터스톤 퀄리티 섹션 없음 — 위 스톤 리뷰 카드가 같은 요약을 이미 보여주고,
+              조정은 캐럿 스텝(퀄리티 range 슬라이더)에서 한다. 중복이라 제거. */}
 
           {needsContact && (
             <section className="gflow-review-section">

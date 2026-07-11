@@ -5213,8 +5213,6 @@ button.text-link:hover {
 .gflow-review-card .rc-body small { font-size: 12px; color: var(--muted); }
 .gflow-review-section { border: 1px solid var(--line); background: var(--surface); padding: 16px 18px; display: grid; gap: 12px; }
 .gflow-review-section > h4 { margin: 0; font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; }
-.gflow-quality-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-.gflow-quality-row strong { font-family: var(--serif); font-size: 18px; font-weight: 600; }
 .gflow-submit { width: 100%; }
 /* 약관 미동의 상태로 제출 시 — 체크박스 줄을 빨간 테두리·글씨로 짚어준다 */
 .gflow-terms { border: 1px solid transparent; padding: 10px 12px; transition: border-color 0.15s ease; }
