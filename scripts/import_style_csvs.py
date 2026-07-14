@@ -9,7 +9,7 @@ are reused (delete that dir to force a fresh fetch + re-watermark).
 import csv, re, json, urllib.request, io
 from pathlib import Path
 from urllib.parse import unquote
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFilter
 
 ROOT = Path(__file__).resolve().parents[1]
 CSVDIR = ROOT / "scripts" / "style-csvs"
@@ -42,6 +42,40 @@ def watermark(im, opacity=0.62, frac=0.15, pad_frac=0.038):
     layer.paste(mk, (W - mw - pad, H - mh - pad), mk)
     return Image.alpha_composite(im, layer).convert("RGB")
 
+# 경쟁사(Grown Brilliance) "GB" 각인이 밴드 안쪽에 렌더된 이미지 — 좌우 깨끗한 밴드 색을
+# 가로로 보간해 덮어 각인을 제거한다. {파일명: (x0,y0,x1,y1)} (해당 렌더 크기 기준 좌표).
+GB_MARK_BOXES = {
+    "RIGWR4428-WG-RB-WH-500-M0-new.jpg": (702, 678, 808, 732),
+    "BNGTXR00883-WG-RB-WH-100-M0-new.jpg": (732, 676, 818, 726),
+    "BNG341590-WG-RB-WH-300-M0-new.jpg": (696, 662, 794, 724),
+    "BNGYR1450K-WG-RB-WH-200-M0-new.jpg": (742, 668, 824, 722),
+    "BNGYR1450K-WG-RB-WH-200-M1-new.jpg": (620, 620, 682, 676),
+    "PNGTXP01957-RG-M2.jpg": (644, 500, 696, 548),
+}
+
+def _feather(w, h, f):
+    m = Image.new("L", (w, h), 0)
+    ImageDraw.Draw(m).rectangle([f, f, w - f, h - f], fill=255)
+    return m.filter(ImageFilter.GaussianBlur(f * 0.5))
+
+def strip_competitor_mark(name, im):
+    box = GB_MARK_BOXES.get(name)
+    if not box:
+        return im
+    im = im.convert("RGB")
+    x0, y0, x1, y1 = box; w = x1 - x0; h = y1 - y0
+    L = im.crop((x0 - 5, y0, x0 - 1, y1)).resize((1, h)).load()
+    R = im.crop((x1 + 1, y0, x1 + 5, y1)).resize((1, h)).load()
+    fill = Image.new("RGB", (w, h)); fp = fill.load()
+    for yy in range(h):
+        lc = L[0, yy]; rc = R[0, yy]
+        for xx in range(w):
+            t = xx / (w - 1) if w > 1 else 0
+            fp[xx, yy] = tuple(int(lc[k] * (1 - t) + rc[k] * t) for k in range(3))
+    fill = fill.filter(ImageFilter.GaussianBlur(1.4))
+    im.paste(fill, (x0, y0), _feather(w, h, 5))
+    return im
+
 def inner_url(url):
     m = re.search(r"(https://images\.grownbrilliance\.com/.*)$", url)
     return m.group(1) if m else url
@@ -64,7 +98,7 @@ def localize(url):
     try:
         req = urllib.request.Request(inner_url(url), headers=UA)
         data = urllib.request.urlopen(req, timeout=30).read()
-        im = Image.open(io.BytesIO(data))
+        im = strip_competitor_mark(name, Image.open(io.BytesIO(data)))
         watermark(im).save(dst, "JPEG", quality=90)
         print(f"  ✓ {name}")
         _img_cache[url] = web; return web
