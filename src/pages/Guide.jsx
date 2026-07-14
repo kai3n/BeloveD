@@ -4,11 +4,12 @@ import { useLocale } from "../i18n.jsx";
 import { BENCHMARK_SHAPES } from "../lib/ops.js";
 import { ShapeSilhouette } from "../components/intake/pickers.jsx";
 
-// 허브 카드 표지 — 화이트 배경 실사(디자인 카탈로그와 같은 관례라 양 테마 모두 안전)
+// 허브 카드 표지 — 다크 배경 실사(트위저 랩다이아·브릴리언트 링) + 셰입 실루엣 그래픽.
+// 셋 다 다크+샴페인골드 톤으로 통일. 이전 fourc/shapes는 삭제된 옛 카탈로그 SKU를 참조해 깨져 있었음.
 const hubCards = [
-  { key: "lab", to: "/guide/lab-diamond", image: "/assets/diamond-hero-white-poster.webp" },
-  { key: "fourc", to: "/guide/4c", image: "/assets/designs/RIGTXR01745-WG-RB-WH-150-M0.jpg" },
-  { key: "shapes", to: "/guide/shapes", image: "/assets/designs/RIGTXR06263-2.50-GW4-1-NEW.jpg" },
+  { key: "lab", to: "/guide/lab-diamond", image: "/assets/lab-diamond-tweezers.webp" },
+  { key: "fourc", to: "/guide/4c", image: "/assets/hero-diamond-ring-crisp.png" },
+  { key: "shapes", to: "/guide/shapes", image: "/assets/diamond-shapes-noir.png" },
 ];
 
 export function GuideHub() {
