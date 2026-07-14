@@ -39,6 +39,7 @@ GB_MARK_BOXES = {
     "BNGYR1450K-WG-RB-WH-200-M0-new.jpg": ((752, 674, 824, 718), 0.30, 7),
     "BNGYR1450K-WG-RB-WH-200-M1-new.jpg": ((622, 624, 680, 676), 0.30, 7),
     "PNGTXP01957-RG-M2.jpg": ((648, 504, 692, 546), 0.5, 5),
+    "AJE06021-WG-M1.jpg": ((816, 468, 870, 510), 0.35, 7),  # 허기 후프 안쪽 밴드
 }
 
 def strip_competitor_mark(name, im):
