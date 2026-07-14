@@ -1,21 +1,22 @@
 #!/usr/bin/env python3
 """Rebuild the sample style catalog from the Style CSVs (scripts/style-csvs/).
-Parses -> downloads competitor reference images -> stamps the BD monogram
-watermark -> self-hosts under public/assets/designs -> writes styleSeedData.js.
+Parses -> downloads competitor reference images -> removes any competitor "GB"
+engraving -> self-hosts under public/assets/designs -> writes styleSeedData.js.
 
-Requires Pillow + network. Idempotent: images already in public/assets/designs
-are reused (delete that dir to force a fresh fetch + re-watermark).
+Requires Pillow + opencv-python + network. Idempotent: images already in
+public/assets/designs are reused (delete that dir to force a fresh fetch).
 """
 import csv, re, json, urllib.request, io
 from pathlib import Path
 from urllib.parse import unquote
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import Image
+import cv2
+import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
 CSVDIR = ROOT / "scripts" / "style-csvs"
 DESIGNS = ROOT / "public/assets/designs"
 OUT = ROOT / "src/lib/styleSeedData.js"
-MARK_SRC = ROOT / "public/assets/brand-mark.png"
 
 CSV = {
     "engagement": CSVDIR / "Style - Engagement Rings.csv",
@@ -27,54 +28,34 @@ CSV = {
 
 UA = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
 
-# --- BD monogram watermark (crop off padding + the stray glyph below y~515) ---
-_mark_full = Image.open(MARK_SRC).convert("RGBA").crop((0, 0, 620, 515))
-_mark = _mark_full.crop(_mark_full.getchannel("A").getbbox())
-
-def watermark(im, opacity=0.62, frac=0.15, pad_frac=0.038):
-    im = im.convert("RGBA")
-    W, H = im.size
-    mw = max(1, int(W * frac)); mh = int(mw * _mark.height / _mark.width)
-    mk = _mark.resize((mw, mh), Image.LANCZOS)
-    mk.putalpha(mk.getchannel("A").point(lambda p: int(p * opacity)))
-    pad = int(W * pad_frac)
-    layer = Image.new("RGBA", im.size, (0, 0, 0, 0))
-    layer.paste(mk, (W - mw - pad, H - mh - pad), mk)
-    return Image.alpha_composite(im, layer).convert("RGB")
-
-# 경쟁사(Grown Brilliance) "GB" 각인이 밴드 안쪽에 렌더된 이미지 — 좌우 깨끗한 밴드 색을
-# 가로로 보간해 덮어 각인을 제거한다. {파일명: (x0,y0,x1,y1)} (해당 렌더 크기 기준 좌표).
+# 경쟁사(Grown Brilliance) "GB" 각인이 밴드 안쪽에 렌더된 이미지 — 각인 글자 픽셀만
+# 지역 임계값으로 마스킹하고 cv2.inpaint(Telea)로 주변 금속 질감을 전파해 자연스럽게
+# 제거한다. {파일명: ((x0,y0,x1,y1), k, dilate)} — k는 임계값 강도(클수록 덜 포함),
+# dilate는 마스크 확장 커널 크기. 좌표는 해당 그로운브릴리언스 렌더(1200px 기준).
 GB_MARK_BOXES = {
-    "RIGWR4428-WG-RB-WH-500-M0-new.jpg": (702, 678, 808, 732),
-    "BNGTXR00883-WG-RB-WH-100-M0-new.jpg": (732, 676, 818, 726),
-    "BNG341590-WG-RB-WH-300-M0-new.jpg": (696, 662, 794, 724),
-    "BNGYR1450K-WG-RB-WH-200-M0-new.jpg": (742, 668, 824, 722),
-    "BNGYR1450K-WG-RB-WH-200-M1-new.jpg": (620, 620, 682, 676),
-    "PNGTXP01957-RG-M2.jpg": (644, 500, 696, 548),
+    "RIGWR4428-WG-RB-WH-500-M0-new.jpg": ((706, 682, 770, 724), 0.55, 5),
+    "BNGTXR00883-WG-RB-WH-100-M0-new.jpg": ((740, 684, 812, 720), 0.55, 5),
+    "BNG341590-WG-RB-WH-300-M0-new.jpg": ((708, 672, 786, 716), 0.30, 7),
+    "BNGYR1450K-WG-RB-WH-200-M0-new.jpg": ((752, 674, 824, 718), 0.30, 7),
+    "BNGYR1450K-WG-RB-WH-200-M1-new.jpg": ((622, 624, 680, 676), 0.30, 7),
+    "PNGTXP01957-RG-M2.jpg": ((648, 504, 692, 546), 0.5, 5),
 }
 
-def _feather(w, h, f):
-    m = Image.new("L", (w, h), 0)
-    ImageDraw.Draw(m).rectangle([f, f, w - f, h - f], fill=255)
-    return m.filter(ImageFilter.GaussianBlur(f * 0.5))
-
 def strip_competitor_mark(name, im):
-    box = GB_MARK_BOXES.get(name)
-    if not box:
+    spec = GB_MARK_BOXES.get(name)
+    if not spec:
         return im
-    im = im.convert("RGB")
-    x0, y0, x1, y1 = box; w = x1 - x0; h = y1 - y0
-    L = im.crop((x0 - 5, y0, x0 - 1, y1)).resize((1, h)).load()
-    R = im.crop((x1 + 1, y0, x1 + 5, y1)).resize((1, h)).load()
-    fill = Image.new("RGB", (w, h)); fp = fill.load()
-    for yy in range(h):
-        lc = L[0, yy]; rc = R[0, yy]
-        for xx in range(w):
-            t = xx / (w - 1) if w > 1 else 0
-            fp[xx, yy] = tuple(int(lc[k] * (1 - t) + rc[k] * t) for k in range(3))
-    fill = fill.filter(ImageFilter.GaussianBlur(1.4))
-    im.paste(fill, (x0, y0), _feather(w, h, 5))
-    return im
+    (x0, y0, x1, y1), k, dl = spec
+    arr = cv2.cvtColor(np.array(im.convert("RGB")), cv2.COLOR_RGB2BGR)
+    gray = cv2.cvtColor(arr, cv2.COLOR_BGR2GRAY)
+    reg = gray[y0:y1, x0:x1]
+    thr = reg.mean() - k * reg.std()  # 각인 글자는 주변 밝은 금속보다 어둡다
+    mask = np.zeros(gray.shape, np.uint8)
+    mask[y0:y1, x0:x1] = (reg < thr).astype(np.uint8) * 255
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, np.ones((5, 5), np.uint8))
+    mask = cv2.dilate(mask, np.ones((dl, dl), np.uint8), 1)
+    out = cv2.inpaint(arr, mask, 4, cv2.INPAINT_TELEA)
+    return Image.fromarray(cv2.cvtColor(out, cv2.COLOR_BGR2RGB))
 
 def inner_url(url):
     m = re.search(r"(https://images\.grownbrilliance\.com/.*)$", url)
@@ -89,7 +70,7 @@ def basename_for(url):
 
 _img_cache = {}
 def localize(url):
-    """download -> watermark -> save; return /assets/designs/<name> or None."""
+    """download -> strip competitor mark -> save; return /assets/designs/<name> or None."""
     if url in _img_cache: return _img_cache[url]
     name = basename_for(url); dst = DESIGNS / name
     web = f"/assets/designs/{name}"
@@ -99,7 +80,7 @@ def localize(url):
         req = urllib.request.Request(inner_url(url), headers=UA)
         data = urllib.request.urlopen(req, timeout=30).read()
         im = strip_competitor_mark(name, Image.open(io.BytesIO(data)))
-        watermark(im).save(dst, "JPEG", quality=90)
+        im.convert("RGB").save(dst, "JPEG", quality=90)
         print(f"  ✓ {name}")
         _img_cache[url] = web; return web
     except Exception as e:
