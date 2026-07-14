@@ -10,27 +10,45 @@ const productSignature = (src) => {
   return numericGroups.sort((a, b) => b.length - a.length)[0] || code;
 };
 
+// v17 카탈로그 (scripts/import_style_csvs.py 생성). 스크립트 재실행 시 이 맵도 함께 갱신.
 const expectedProductTitles = {
-  "RING-001": "Four-Prong Solitaire Ring",
-  "RING-002": "Cathedral Six-Prong Solitaire Ring",
-  "RING-003": "Round Halo Engagement Ring",
-  "RING-004": "Emerald Hidden Halo Engagement Ring",
-  "RING-005": "Round Three-Stone Ring",
-  "RING-006": "Cushion Double-Row Side-Stone Halo Ring",
-  "RING-007": "Bold Bezel Solitaire Ring",
-  "RING-009": "Low Four-Prong Solitaire Ring",
-  "BAND-001": "Shared-Prong Diamond Eternity Band",
-  "BAND-005": "French Pavé Wedding Band",
-  "BAND-006": "Channel-Set Eternity Band",
+  "RING-001": "Classic Four-Prong Three Stone",
+  "RING-002": "Classic Six-Prong Solitaire",
+  "RING-003": "Classic Four-Prong Side Stone",
+  "RING-004": "Classic Four-Prong Solitaire",
+  "RING-005": "Four-Prong Cathedral Solitaire",
+  "RING-006": "Six-Prong Cathedral Solitaire",
+  "RING-007": "Four-Prong Basket Solitaire",
+  "RING-008": "Four-Prong Hidden Halo Solitaire",
+  "RING-009": "Six-Prong Hidden Halo Solitaire",
+  "RING-010": "Four-Prong Half-Eternity Pavé Solitaire",
+  "RING-011": "Half-Eternity Pavé Halo",
+  "RING-012": "Four-Prong Half-Eternity Pavé Three Stone",
+  "RING-013": "Six-Prong Half-Eternity Pavé Solitaire",
+  "RING-014": "Four-Prong Full-Eternity Pavé Solitaire",
+  "RING-015": "Three-Quarter Eternity Pavé Halo",
+  "RING-016": "Four-Prong Three-Quarter Eternity Pavé Solitaire",
+  "RING-017": "Three-Quarter Eternity Pavé Hidden Halo",
+  "RING-018": "Four-Prong Knife Edge Solitaire",
+  "RING-019": "Four-Prong Knife Edge Pavé Three Stone",
+  "RING-020": "Six-Prong Knife Edge Solitaire",
+  "RING-021": "Four-Prong Knife Edge Pavé Solitaire",
+  "RING-022": "French Pavé Eternity Band",
+  "RING-023": "Low Dome Basket Eternity Band",
+  "RING-024": "Pavé Band",
+  "RING-025": "Channel Set Band",
   "EARR-001": "Round Diamond Stud Earrings",
   "EARR-002": "Inside-Out Hoop Earrings",
   "EARR-003": "Princess Halo Stud Earrings",
   "EARR-004": "Cushion Huggie Hoop Earrings",
   "EARR-005": "Emerald Halo Drop Earrings",
-  "EARR-006": "Graduated Inside-Out Huggie Hoop Earrings",
+  "EARR-006": "Round and Pear Drop Earrings",
+  "EARR-007": "Marquise Flower Stud Earrings",
   "BRAC-001": "Four-Prong Tennis Bracelet",
-  "BRAC-002": "Shared-Prong Bangle Bracelet",
-  "BRAC-003": "Beveled X Tennis Bracelet",
+  "BRAC-002": "Boundless Eternity Bracelet",
+  "BRAC-003": "Emerald Tennis Bracelet",
+  "BRAC-004": "Shared-Prong Bangle Bracelet",
+  "BRAC-005": "Boundless Station Bracelet",
   "NECK-001": "Round Solitaire Pendant",
   "NECK-002": "Round Halo Pendant",
   "NECK-003": "Cluster Flower Pendant",
@@ -121,13 +139,12 @@ describe("style seed media", () => {
     })).toEqual([]);
   });
 
-  it("keeps the cathedral six-prong style away from the old four-prong solitaire media", () => {
+  it("maps the classic six-prong solitaire grid style to its own product media", () => {
     const style = styleSeedData.find((item) => item.id === "RING-002");
 
-    expect(style?.name.en).toBe("Cathedral Six-Prong Solitaire Ring");
-    expect(style?.name.ko).toBe("캐시드럴 6프롱 솔리테어 링");
-    expect(style?.supplierEvidence).toContain("cathedral-six-prong-solitaire-engagement-ring");
-    expect(style?.coverImage).toContain("RIGTXR01745");
-    expect(style?.coverImage).not.toContain("RIGTX06263R200");
+    expect(style?.name.en).toBe("Classic Six-Prong Solitaire");
+    expect(style?.name.ko).toBe("클래식 6프롱 솔리테어");
+    expect(style?.supplierEvidence).toContain("Classic-Six-Prong-Solitaire");
+    expect(style?.coverImage).toContain("BE121H6");
   });
 });

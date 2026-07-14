@@ -9,7 +9,7 @@ import {
   autoBrief, candidateAutoPrice, isCandidateComplete, poolStoneMatches,
 } from "./ops.js";
 
-const KEY = "lumina-db-v16"; // v16: 제품 초안(product draft) flow — 디자인 승인 스텝 제거, draft-first 견적
+const KEY = "lumina-db-v17"; // v17: 샘플 스타일 카탈로그 재생성(BD 워터마크·확장 스타일) — 옛 캐시 폐기
 
 // 테스트(node) 환경 폴백
 const memoryStorage = (() => {
@@ -24,15 +24,9 @@ const GENERATED_STYLE_MEDIA_PREFIX = "/assets/product-styles/";
 const STYLE_MEDIA_AUDIT_VERSION = "original-product-media-v6";
 const STYLE_COPY_AUDIT_VERSION = "seed-style-copy-v3";
 const DIAMOND_DEPOSIT_FLOW_VERSION = "deposit-before-diamond-lock-v1";
-const REMOVED_DUPLICATE_SEED_STYLE_IDS = new Set([
-  "RING-008",
-  "RING-010",
-  "RING-011",
-  "RING-012",
-  "RING-013",
-  "RING-014",
-  "BAND-002",
-]);
+// v17 카탈로그 재생성으로 RING-008/010~014·BAND-002가 다시 유효 스타일이 됨 — 프루닝 목록 비움.
+// (스테일 캐시는 위 KEY 버전 상향으로 폐기되고, 시드에 없는 CSV-import 잔재는 isRemovedSeedStyle 조건2가 정리)
+const REMOVED_DUPLICATE_SEED_STYLE_IDS = new Set([]);
 const STYLE_COPY_FIELDS = [
   "category",
   "subcategory",

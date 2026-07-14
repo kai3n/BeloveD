@@ -4,15 +4,11 @@ export const styleSeedData = [
     "id": "RING-001",
     "category": "ring",
     "subcategory": "engagementRing",
-    "coverImage": "/assets/designs/RIGTXR09875R400-WG-RB-WH-400-M0.jpg",
+    "coverImage": "/assets/designs/BE1D5320_white_Round_top_2_carat.jpg",
     "media": [
       {
         "kind": "image",
-        "src": "/assets/designs/RIGTXR09875R400-WG-RB-WH-400-M0.jpg"
-      },
-      {
-        "kind": "image",
-        "src": "/assets/designs/RIGTXR09875R400-WG-RB-WH-400-M1.jpg"
+        "src": "/assets/designs/BE1D5320_white_Round_top_2_carat.jpg"
       }
     ],
     "mediaComplete": true,
@@ -27,13 +23,13 @@ export const styleSeedData = [
     "leadDays": 12,
     "availableForSale": true,
     "published": true,
-    "supplierEvidence": "https://www.grownbrilliance.com/4-ctw-round-lab-grown-diamond-solitaire-engagement-ring-platinum/pid/RIGTXR09875R400PL2",
+    "supplierEvidence": "https://www.brilliantearth.com/Opera-Three-Stone-Diamond-Ring-White-Gold-BE1D5320-8032928/",
     "firstQuoteAt": "2026-06-27",
     "name": {
-      "en": "Four-Prong Solitaire Ring",
-      "ko": "4프롱 솔리테어 링",
-      "zh": "四爪单钻戒",
-      "es": "Anillo solitario de 4 garras"
+      "en": "Classic Four-Prong Three Stone",
+      "ko": "클래식 4프롱 쓰리 스톤",
+      "zh": "经典 四爪 三石",
+      "es": "clásico cuatro garras tres piedras"
     },
     "detailLabel": {
       "en": "Custom starter design",
@@ -64,15 +60,11 @@ export const styleSeedData = [
     "id": "RING-002",
     "category": "ring",
     "subcategory": "engagementRing",
-    "coverImage": "/assets/designs/RIGTXR01745-WG-RB-WH-150-M0.jpg",
+    "coverImage": "/assets/designs/BE121H6_white_Round_top_2_carat.jpg",
     "media": [
       {
         "kind": "image",
-        "src": "/assets/designs/RIGTXR01745-WG-RB-WH-150-M0.jpg"
-      },
-      {
-        "kind": "image",
-        "src": "/assets/designs/RIGTXR01745-WG-RB-WH-150-M3.jpg"
+        "src": "/assets/designs/BE121H6_white_Round_top_2_carat.jpg"
       }
     ],
     "mediaComplete": true,
@@ -87,13 +79,13 @@ export const styleSeedData = [
     "leadDays": 12,
     "availableForSale": true,
     "published": true,
-    "supplierEvidence": "https://www.grownbrilliance.com/1-1-2-ctw-round-lab-grown-diamond-cathedral-six-prong-solitaire-engagement-ring-platinum/pid/RIGTXR01745-PL2",
+    "supplierEvidence": "https://www.brilliantearth.com/Classic-Six-Prong-Solitaire-Ring-White-Gold-BE121H6-1151509/",
     "firstQuoteAt": "2026-06-27",
     "name": {
-      "en": "Cathedral Six-Prong Solitaire Ring",
-      "ko": "캐시드럴 6프롱 솔리테어 링",
-      "zh": "大教堂六爪单钻戒",
-      "es": "Anillo solitario catedral de 6 garras"
+      "en": "Classic Six-Prong Solitaire",
+      "ko": "클래식 6프롱 솔리테어",
+      "zh": "经典 六爪 单钻",
+      "es": "clásico seis garras solitario"
     },
     "detailLabel": {
       "en": "Custom starter design",
@@ -124,15 +116,11 @@ export const styleSeedData = [
     "id": "RING-003",
     "category": "ring",
     "subcategory": "engagementRing",
-    "coverImage": "/assets/designs/RIGKSR6117R600-WG-RB-WH-700-M0.jpg",
+    "coverImage": "/assets/designs/BE1D879_white_Emerald_top_2_carat.jpg",
     "media": [
       {
         "kind": "image",
-        "src": "/assets/designs/RIGKSR6117R600-WG-RB-WH-700-M0.jpg"
-      },
-      {
-        "kind": "image",
-        "src": "/assets/designs/RIGKSR6117R600-WG-RB-WH-700-M1.jpg"
+        "src": "/assets/designs/BE1D879_white_Emerald_top_2_carat.jpg"
       }
     ],
     "mediaComplete": true,
@@ -147,13 +135,13 @@ export const styleSeedData = [
     "leadDays": 12,
     "availableForSale": true,
     "published": true,
-    "supplierEvidence": "https://www.grownbrilliance.com/7-ctw-round-lab-grown-diamond-halo-engagement-ring-platinum/pid/RIGKSR6115R600-PL3",
+    "supplierEvidence": "https://www.brilliantearth.com/Symphony-Tapered-Baguette-Three-Stone-Diamond-Ring-(1/2-ct.-tw.)-White-Gold-BE1D879-12137289/",
     "firstQuoteAt": "2026-06-27",
     "name": {
-      "en": "Round Halo Engagement Ring",
-      "ko": "라운드 헤일로 약혼반지",
-      "zh": "圆形光环订婚戒指",
-      "es": "Anillo de compromiso halo redondo"
+      "en": "Classic Four-Prong Side Stone",
+      "ko": "클래식 4프롱 사이드 스톤",
+      "zh": "经典 四爪 侧石",
+      "es": "clásico cuatro garras piedra lateral"
     },
     "detailLabel": {
       "en": "Custom starter design",
@@ -184,23 +172,11 @@ export const styleSeedData = [
     "id": "RING-004",
     "category": "ring",
     "subcategory": "engagementRing",
-    "coverImage": "/assets/designs/RIGTXR03183-GW4_1.jpg",
+    "coverImage": "/assets/designs/BE1343_white_Oval_top_2_carat.jpg",
     "media": [
       {
         "kind": "image",
-        "src": "/assets/designs/RIGTXR03183-GW4_1.jpg"
-      },
-      {
-        "kind": "image",
-        "src": "/assets/designs/RIGTXR03183-GW4.jpg"
-      },
-      {
-        "kind": "image",
-        "src": "/assets/designs/RIGTXR03183-GW4-1-new.jpg"
-      },
-      {
-        "kind": "image",
-        "src": "/assets/designs/RIGTXR03183-WG-M3.jpg"
+        "src": "/assets/designs/BE1343_white_Oval_top_2_carat.jpg"
       }
     ],
     "mediaComplete": true,
@@ -215,13 +191,13 @@ export const styleSeedData = [
     "leadDays": 12,
     "availableForSale": true,
     "published": true,
-    "supplierEvidence": "https://www.grownbrilliance.com/2-1-2-ctw-emerald-lab-grown-diamond-hidden-halo-engagement-ring-14k-white-gold/pid/RIGTXR03183-GW2",
+    "supplierEvidence": "https://www.bluenile.com/complete-jewel?j=17747604&s=11247872&utm_source=google&utm_medium=sem_unbranded_shopping&utm_campaign=semus_bn_google_us_engagement_engagement&utm_term=Natural_Engagement_Rings&utm_content=754884800603&gad_source=1&gad_campaignid=20398587011&gbraid=0AAAAAD_EjsjCNY_rUqDpgzv0YQF9TS4Na&gclid=Cj0KCQjwxvjRBhC2ARIsAI7KJa2Ow8sgzFq8phere0YKmg95n1J0hIXqTLh7JCXLYOIMqdFMewNInKUaAlbfEALw_wcB",
     "firstQuoteAt": "2026-06-27",
     "name": {
-      "en": "Emerald Hidden Halo Engagement Ring",
-      "ko": "에메랄드 히든 헤일로 약혼반지",
-      "zh": "祖母绿形隐藏光环订婚戒指",
-      "es": "Anillo de compromiso halo oculto esmeralda"
+      "en": "Classic Four-Prong Solitaire",
+      "ko": "클래식 4프롱 솔리테어",
+      "zh": "经典 四爪 单钻",
+      "es": "clásico cuatro garras solitario"
     },
     "detailLabel": {
       "en": "Custom starter design",
@@ -252,19 +228,11 @@ export const styleSeedData = [
     "id": "RING-005",
     "category": "ring",
     "subcategory": "engagementRing",
-    "coverImage": "/assets/designs/RIGJRD0315-HW4_1.jpg",
+    "coverImage": "/assets/designs/BE1761_white_Round_top_2_carat.jpg",
     "media": [
       {
         "kind": "image",
-        "src": "/assets/designs/RIGJRD0315-HW4_1.jpg"
-      },
-      {
-        "kind": "image",
-        "src": "/assets/designs/RIGJRD0315-HW4_2.jpg"
-      },
-      {
-        "kind": "image",
-        "src": "/assets/designs/RIGJRD0315-HW4-1-new.jpg"
+        "src": "/assets/designs/BE1761_white_Round_top_2_carat.jpg"
       }
     ],
     "mediaComplete": true,
@@ -279,13 +247,13 @@ export const styleSeedData = [
     "leadDays": 12,
     "availableForSale": true,
     "published": true,
-    "supplierEvidence": "https://www.grownbrilliance.com/4-ctw-round-lab-grown-diamond-three-stone-ring-18k-white-gold/pid/RIGJRD0315HW2",
+    "supplierEvidence": "https://www.brilliantearth.com/Elodie-Cathedral-Solitaire-Ring-14K-White-Gold-BE1761-76788366/?utm_source=google&utm_medium=cpc&utm_campaign=SEM_PLA_US_ER_Conversion&utm_content=733311247350&gad_source=1&gad_campaignid=22248316004",
     "firstQuoteAt": "2026-06-27",
     "name": {
-      "en": "Round Three-Stone Ring",
-      "ko": "라운드 쓰리 스톤 링",
-      "zh": "圆形三石戒指",
-      "es": "Anillo de tres piedras redondas"
+      "en": "Four-Prong Cathedral Solitaire",
+      "ko": "4프롱 캐시드럴 솔리테어",
+      "zh": "四爪 大教堂 单钻",
+      "es": "cuatro garras catedral solitario"
     },
     "detailLabel": {
       "en": "Custom starter design",
@@ -316,11 +284,11 @@ export const styleSeedData = [
     "id": "RING-006",
     "category": "ring",
     "subcategory": "engagementRing",
-    "coverImage": "/assets/designs/RIG0894X4C400H1-GW-NEW.jpg",
+    "coverImage": "/assets/designs/BE1761_white_Marquise_top_2_carat.jpg",
     "media": [
       {
         "kind": "image",
-        "src": "/assets/designs/RIG0894X4C400H1-GW-NEW.jpg"
+        "src": "/assets/designs/BE1761_white_Marquise_top_2_carat.jpg"
       }
     ],
     "mediaComplete": true,
@@ -335,13 +303,13 @@ export const styleSeedData = [
     "leadDays": 12,
     "availableForSale": true,
     "published": true,
-    "supplierEvidence": "https://www.grownbrilliance.com/7-ctw-cushion-lab-grown-diamond-double-row-side-stones-halo-engagement-ring-14k-white-gold/pid/RIG0894X4C500H1PL2",
+    "supplierEvidence": "https://www.brilliantearth.com/Elodie-Cathedral-Solitaire-Ring-Platinum-BE1761-25378093/",
     "firstQuoteAt": "2026-06-27",
     "name": {
-      "en": "Cushion Double-Row Side-Stone Halo Ring",
-      "ko": "쿠션 더블 로우 사이드 스톤 헤일로 링",
-      "zh": "垫形双排侧石光环戒指",
-      "es": "Anillo halo cushion con doble fila lateral"
+      "en": "Six-Prong Cathedral Solitaire",
+      "ko": "6프롱 캐시드럴 솔리테어",
+      "zh": "六爪 大教堂 单钻",
+      "es": "seis garras catedral solitario"
     },
     "detailLabel": {
       "en": "Custom starter design",
@@ -371,16 +339,12 @@ export const styleSeedData = [
   {
     "id": "RING-007",
     "category": "ring",
-    "subcategory": "statementRing",
-    "coverImage": "/assets/designs/RIGRVR02048-YG-RB-WH-200-M0.jpg",
+    "subcategory": "engagementRing",
+    "coverImage": "/assets/designs/BE17652_RD_200ct_white_side1.jpg",
     "media": [
       {
         "kind": "image",
-        "src": "/assets/designs/RIGRVR02048-YG-RB-WH-200-M0.jpg"
-      },
-      {
-        "kind": "image",
-        "src": "/assets/designs/RIGRVR02048-YG-RB-WH-200-M1.jpg"
+        "src": "/assets/designs/BE17652_RD_200ct_white_side1.jpg"
       }
     ],
     "mediaComplete": true,
@@ -395,13 +359,69 @@ export const styleSeedData = [
     "leadDays": 12,
     "availableForSale": true,
     "published": true,
-    "supplierEvidence": "https://www.grownbrilliance.com/2-ctw-round-lab-grown-diamond-bold-bezel-solitaire-engagement-ring-14k-yellow-gold/pid/RIGRVR02048-GY2",
+    "supplierEvidence": "https://www.brilliantearth.com/Audrey-Perfect-Fit-1.4mm-Solitaire-Ring-14K-White-Gold-BE17652-76820235/",
     "firstQuoteAt": "2026-06-27",
     "name": {
-      "en": "Bold Bezel Solitaire Ring",
-      "ko": "볼드 베젤 솔리테어 링",
-      "zh": "宽边包镶单钻戒",
-      "es": "Anillo solitario bisel bold"
+      "en": "Four-Prong Basket Solitaire",
+      "ko": "4프롱 바스켓 솔리테어",
+      "zh": "四爪 篮式 单钻",
+      "es": "cuatro garras basket solitario"
+    },
+    "detailLabel": {
+      "en": "Custom starter design",
+      "ko": "맞춤 시작 디자인",
+      "zh": "定制起点设计",
+      "es": "Diseño inicial personalizado"
+    },
+    "description": {
+      "en": "This is a sample starting point, not a limit. Share references and we can adjust shape, scale, stones, metal, and finish after review.",
+      "ko": "이 디자인은 제한이 아니라 시작점입니다. 원하는 레퍼런스를 보내주시면 형태, 크기, 스톤, 메탈, 마감을 검토 후 조정할 수 있습니다.",
+      "zh": "这是起点样例，不是限制。上传参考后，我们可评估并调整造型、尺寸、宝石、金属与细节。",
+      "es": "Este diseño es un punto de partida, no un límite. Comparte referencias y ajustamos forma, escala, piedras, metal y acabado tras revisar."
+    },
+    "flexibleText": {
+      "en": "Shape, stone, metal, scale",
+      "ko": "형태, 스톤, 메탈, 크기",
+      "zh": "造型、宝石、金属、比例",
+      "es": "Forma, piedra, metal, escala"
+    },
+    "beforeProductionText": {
+      "en": "Quote and CAD approval",
+      "ko": "견적 및 CAD 승인",
+      "zh": "报价与 CAD 确认",
+      "es": "Cotización y aprobación CAD"
+    }
+  },
+  {
+    "id": "RING-008",
+    "category": "ring",
+    "subcategory": "engagementRing",
+    "coverImage": "/assets/designs/BE1D17653_RD_200ct_white_side1.jpg",
+    "media": [
+      {
+        "kind": "image",
+        "src": "/assets/designs/BE1D17653_RD_200ct_white_side1.jpg"
+      }
+    ],
+    "mediaComplete": true,
+    "metalOptions": [
+      "18kw",
+      "18ky",
+      "18kr",
+      "pt"
+    ],
+    "estWeightG": 4.2,
+    "laborUsd": 95,
+    "leadDays": 12,
+    "availableForSale": true,
+    "published": true,
+    "supplierEvidence": "https://www.brilliantearth.com/Audrey-Perfect-Fit-Hidden-Halo-1.4mm-Diamond-Ring-14K-White-Gold-BE1D17653-76785919/?utm_source=google&utm_medium=cpc&utm_campaign=SEM_PLA_US_ER_Conversion&utm_content=733311247350&gad_source=1&gad_campaignid=22248316004",
+    "firstQuoteAt": "2026-06-27",
+    "name": {
+      "en": "Four-Prong Hidden Halo Solitaire",
+      "ko": "4프롱 히든 헤일로 솔리테어",
+      "zh": "四爪 隐藏光环 单钻",
+      "es": "cuatro garras halo oculto solitario"
     },
     "detailLabel": {
       "en": "Custom starter design",
@@ -432,19 +452,11 @@ export const styleSeedData = [
     "id": "RING-009",
     "category": "ring",
     "subcategory": "engagementRing",
-    "coverImage": "/assets/designs/RIGTX06263R200-GW4_1.jpg",
+    "coverImage": "/assets/designs/BE1D9876_white_Round_top_2_carat.jpg",
     "media": [
       {
         "kind": "image",
-        "src": "/assets/designs/RIGTX06263R200-GW4_1.jpg"
-      },
-      {
-        "kind": "image",
-        "src": "/assets/designs/RIGTX06263R200-GW4_2.jpg"
-      },
-      {
-        "kind": "image",
-        "src": "/assets/designs/RIGTXR06263-2.50-GW4-1-NEW.jpg"
+        "src": "/assets/designs/BE1D9876_white_Round_top_2_carat.jpg"
       }
     ],
     "mediaComplete": true,
@@ -459,13 +471,13 @@ export const styleSeedData = [
     "leadDays": 12,
     "availableForSale": true,
     "published": true,
-    "supplierEvidence": "https://www.grownbrilliance.com/2-ctw-round-lab-grown-diamond-low-solitaire-engagement-ring-14k-white-gold/pid/RIGTX06263R200-GW2",
+    "supplierEvidence": "https://www.brilliantearth.com/Sydney-Perfect-Fit-Hidden-Halo-Six-Prong-Diamond-Ring-14K-White-Gold-BE1D9876-76787118/?utm_source=google&utm_medium=cpc&utm_campaign=SEM_PLA_US_ER_Conversion&utm_content=733311247350&gad_source=4&gad_campaignid=22248316004",
     "firstQuoteAt": "2026-06-27",
     "name": {
-      "en": "Low Four-Prong Solitaire Ring",
-      "ko": "로우 4프롱 솔리테어 링",
-      "zh": "低款四爪单钻戒",
-      "es": "Anillo solitario bajo de 4 garras"
+      "en": "Six-Prong Hidden Halo Solitaire",
+      "ko": "6프롱 히든 헤일로 솔리테어",
+      "zh": "六爪 隐藏光环 单钻",
+      "es": "seis garras halo oculto solitario"
     },
     "detailLabel": {
       "en": "Custom starter design",
@@ -493,7 +505,735 @@ export const styleSeedData = [
     }
   },
   {
-    "id": "BAND-001",
+    "id": "RING-010",
+    "category": "ring",
+    "subcategory": "weddingBand",
+    "coverImage": "/assets/designs/BE1PD25R25_white_Round_top_2_carat.jpg",
+    "media": [
+      {
+        "kind": "image",
+        "src": "/assets/designs/BE1PD25R25_white_Round_top_2_carat.jpg"
+      }
+    ],
+    "mediaComplete": true,
+    "metalOptions": [
+      "18kw",
+      "18ky",
+      "18kr",
+      "pt"
+    ],
+    "estWeightG": 4.2,
+    "laborUsd": 95,
+    "leadDays": 12,
+    "availableForSale": true,
+    "published": true,
+    "supplierEvidence": "https://www.brilliantearth.com/Petite-Shared-Prong-Half-Coverage-Diamond-Ring-14K-White-Gold-BE1PD25R25-76788913/",
+    "firstQuoteAt": "2026-06-27",
+    "name": {
+      "en": "Four-Prong Half-Eternity Pavé Solitaire",
+      "ko": "4프롱 하프 이터니티 파베 솔리테어",
+      "zh": "四爪 半永恒 密钉 单钻",
+      "es": "cuatro garras medio eternity pavé solitario"
+    },
+    "detailLabel": {
+      "en": "Custom starter design",
+      "ko": "맞춤 시작 디자인",
+      "zh": "定制起点设计",
+      "es": "Diseño inicial personalizado"
+    },
+    "description": {
+      "en": "This is a sample starting point, not a limit. Share references and we can adjust shape, scale, stones, metal, and finish after review.",
+      "ko": "이 디자인은 제한이 아니라 시작점입니다. 원하는 레퍼런스를 보내주시면 형태, 크기, 스톤, 메탈, 마감을 검토 후 조정할 수 있습니다.",
+      "zh": "这是起点样例，不是限制。上传参考后，我们可评估并调整造型、尺寸、宝石、金属与细节。",
+      "es": "Este diseño es un punto de partida, no un límite. Comparte referencias y ajustamos forma, escala, piedras, metal y acabado tras revisar."
+    },
+    "flexibleText": {
+      "en": "Shape, stone, metal, scale",
+      "ko": "형태, 스톤, 메탈, 크기",
+      "zh": "造型、宝石、金属、比例",
+      "es": "Forma, piedra, metal, escala"
+    },
+    "beforeProductionText": {
+      "en": "Quote and CAD approval",
+      "ko": "견적 및 CAD 승인",
+      "zh": "报价与 CAD 确认",
+      "es": "Cotización y aprobación CAD"
+    }
+  },
+  {
+    "id": "RING-011",
+    "category": "ring",
+    "subcategory": "weddingBand",
+    "coverImage": "/assets/designs/BE1D166_white_Round_top_2_carat.jpg",
+    "media": [
+      {
+        "kind": "image",
+        "src": "/assets/designs/BE1D166_white_Round_top_2_carat.jpg"
+      }
+    ],
+    "mediaComplete": true,
+    "metalOptions": [
+      "18kw",
+      "18ky",
+      "18kr",
+      "pt"
+    ],
+    "estWeightG": 4.2,
+    "laborUsd": 95,
+    "leadDays": 12,
+    "availableForSale": true,
+    "published": true,
+    "supplierEvidence": "https://www.brilliantearth.com/Cambria-Halo-Diamond-Ring-White-Gold-BE1D166-4896696/",
+    "firstQuoteAt": "2026-06-27",
+    "name": {
+      "en": "Half-Eternity Pavé Halo",
+      "ko": "하프 이터니티 파베 헤일로",
+      "zh": "半永恒 密钉 光环",
+      "es": "medio eternity pavé halo"
+    },
+    "detailLabel": {
+      "en": "Custom starter design",
+      "ko": "맞춤 시작 디자인",
+      "zh": "定制起点设计",
+      "es": "Diseño inicial personalizado"
+    },
+    "description": {
+      "en": "This is a sample starting point, not a limit. Share references and we can adjust shape, scale, stones, metal, and finish after review.",
+      "ko": "이 디자인은 제한이 아니라 시작점입니다. 원하는 레퍼런스를 보내주시면 형태, 크기, 스톤, 메탈, 마감을 검토 후 조정할 수 있습니다.",
+      "zh": "这是起点样例，不是限制。上传参考后，我们可评估并调整造型、尺寸、宝石、金属与细节。",
+      "es": "Este diseño es un punto de partida, no un límite. Comparte referencias y ajustamos forma, escala, piedras, metal y acabado tras revisar."
+    },
+    "flexibleText": {
+      "en": "Shape, stone, metal, scale",
+      "ko": "형태, 스톤, 메탈, 크기",
+      "zh": "造型、宝石、金属、比例",
+      "es": "Forma, piedra, metal, escala"
+    },
+    "beforeProductionText": {
+      "en": "Quote and CAD approval",
+      "ko": "견적 및 CAD 승인",
+      "zh": "报价与 CAD 确认",
+      "es": "Cotización y aprobación CAD"
+    }
+  },
+  {
+    "id": "RING-012",
+    "category": "ring",
+    "subcategory": "weddingBand",
+    "coverImage": "/assets/designs/BE1D1602_white_Oval_top_2_carat.jpg",
+    "media": [
+      {
+        "kind": "image",
+        "src": "/assets/designs/BE1D1602_white_Oval_top_2_carat.jpg"
+      }
+    ],
+    "mediaComplete": true,
+    "metalOptions": [
+      "18kw",
+      "18ky",
+      "18kr",
+      "pt"
+    ],
+    "estWeightG": 4.2,
+    "laborUsd": 95,
+    "leadDays": 12,
+    "availableForSale": true,
+    "published": true,
+    "supplierEvidence": "https://www.brilliantearth.com/Lyra-Three-Stone-Diamond-Ring-(1/4-ct.-tw.)-14K-White-Gold-BE1D1602-76788324/?utm_source=google&utm_medium=cpc&utm_campaign=SEM_PLA_US_ER_Conversion&utm_content=733311247380&gad_source=1&gad_campaignid=22248316004",
+    "firstQuoteAt": "2026-06-27",
+    "name": {
+      "en": "Four-Prong Half-Eternity Pavé Three Stone",
+      "ko": "4프롱 하프 이터니티 파베 쓰리 스톤",
+      "zh": "四爪 半永恒 密钉 三石",
+      "es": "cuatro garras medio eternity pavé tres piedras"
+    },
+    "detailLabel": {
+      "en": "Custom starter design",
+      "ko": "맞춤 시작 디자인",
+      "zh": "定制起点设计",
+      "es": "Diseño inicial personalizado"
+    },
+    "description": {
+      "en": "This is a sample starting point, not a limit. Share references and we can adjust shape, scale, stones, metal, and finish after review.",
+      "ko": "이 디자인은 제한이 아니라 시작점입니다. 원하는 레퍼런스를 보내주시면 형태, 크기, 스톤, 메탈, 마감을 검토 후 조정할 수 있습니다.",
+      "zh": "这是起点样例，不是限制。上传参考后，我们可评估并调整造型、尺寸、宝石、金属与细节。",
+      "es": "Este diseño es un punto de partida, no un límite. Comparte referencias y ajustamos forma, escala, piedras, metal y acabado tras revisar."
+    },
+    "flexibleText": {
+      "en": "Shape, stone, metal, scale",
+      "ko": "형태, 스톤, 메탈, 크기",
+      "zh": "造型、宝石、金属、比例",
+      "es": "Forma, piedra, metal, escala"
+    },
+    "beforeProductionText": {
+      "en": "Quote and CAD approval",
+      "ko": "견적 및 CAD 승인",
+      "zh": "报价与 CAD 确认",
+      "es": "Cotización y aprobación CAD"
+    }
+  },
+  {
+    "id": "RING-013",
+    "category": "ring",
+    "subcategory": "weddingBand",
+    "coverImage": "/assets/designs/BE1D1516_white_Round_top_2_carat.jpg",
+    "media": [
+      {
+        "kind": "image",
+        "src": "/assets/designs/BE1D1516_white_Round_top_2_carat.jpg"
+      }
+    ],
+    "mediaComplete": true,
+    "metalOptions": [
+      "18kw",
+      "18ky",
+      "18kr",
+      "pt"
+    ],
+    "estWeightG": 4.2,
+    "laborUsd": 95,
+    "leadDays": 12,
+    "availableForSale": true,
+    "published": true,
+    "supplierEvidence": "https://www.brilliantearth.com/Six-Prong-Petite-Shared-Prong-Diamond-Ring-(1/5-ct.-tw.)-14K-White-Gold-BE1D1516-76822931/",
+    "firstQuoteAt": "2026-06-27",
+    "name": {
+      "en": "Six-Prong Half-Eternity Pavé Solitaire",
+      "ko": "6프롱 하프 이터니티 파베 솔리테어",
+      "zh": "六爪 半永恒 密钉 单钻",
+      "es": "seis garras medio eternity pavé solitario"
+    },
+    "detailLabel": {
+      "en": "Custom starter design",
+      "ko": "맞춤 시작 디자인",
+      "zh": "定制起点设计",
+      "es": "Diseño inicial personalizado"
+    },
+    "description": {
+      "en": "This is a sample starting point, not a limit. Share references and we can adjust shape, scale, stones, metal, and finish after review.",
+      "ko": "이 디자인은 제한이 아니라 시작점입니다. 원하는 레퍼런스를 보내주시면 형태, 크기, 스톤, 메탈, 마감을 검토 후 조정할 수 있습니다.",
+      "zh": "这是起点样例，不是限制。上传参考后，我们可评估并调整造型、尺寸、宝石、金属与细节。",
+      "es": "Este diseño es un punto de partida, no un límite. Comparte referencias y ajustamos forma, escala, piedras, metal y acabado tras revisar."
+    },
+    "flexibleText": {
+      "en": "Shape, stone, metal, scale",
+      "ko": "형태, 스톤, 메탈, 크기",
+      "zh": "造型、宝石、金属、比例",
+      "es": "Forma, piedra, metal, escala"
+    },
+    "beforeProductionText": {
+      "en": "Quote and CAD approval",
+      "ko": "견적 및 CAD 승인",
+      "zh": "报价与 CAD 确认",
+      "es": "Cotización y aprobación CAD"
+    }
+  },
+  {
+    "id": "RING-014",
+    "category": "ring",
+    "subcategory": "weddingBand",
+    "coverImage": "/assets/designs/BE1D2414_white_Oval_top_2_carat.jpg",
+    "media": [
+      {
+        "kind": "image",
+        "src": "/assets/designs/BE1D2414_white_Oval_top_2_carat.jpg"
+      }
+    ],
+    "mediaComplete": true,
+    "metalOptions": [
+      "18kw",
+      "18ky",
+      "18kr",
+      "pt"
+    ],
+    "estWeightG": 4.2,
+    "laborUsd": 95,
+    "leadDays": 12,
+    "availableForSale": true,
+    "published": true,
+    "supplierEvidence": "https://www.brilliantearth.com/Perfect-Fit-Eternity-Diamond-Ring-(1-1/3-ct.-tw.)-14K-White-Gold-BE1D2414-76788451/?utm_source=google&utm_medium=cpc&utm_campaign=SEM_PLA_US_ER_Conversion&utm_content=733311247350&gad_source=1&gad_campaignid=22248316004",
+    "firstQuoteAt": "2026-06-27",
+    "name": {
+      "en": "Four-Prong Full-Eternity Pavé Solitaire",
+      "ko": "4프롱 풀 이터니티 파베 솔리테어",
+      "zh": "四爪 全永恒 密钉 单钻",
+      "es": "cuatro garras eternity completo pavé solitario"
+    },
+    "detailLabel": {
+      "en": "Custom starter design",
+      "ko": "맞춤 시작 디자인",
+      "zh": "定制起点设计",
+      "es": "Diseño inicial personalizado"
+    },
+    "description": {
+      "en": "This is a sample starting point, not a limit. Share references and we can adjust shape, scale, stones, metal, and finish after review.",
+      "ko": "이 디자인은 제한이 아니라 시작점입니다. 원하는 레퍼런스를 보내주시면 형태, 크기, 스톤, 메탈, 마감을 검토 후 조정할 수 있습니다.",
+      "zh": "这是起点样例，不是限制。上传参考后，我们可评估并调整造型、尺寸、宝石、金属与细节。",
+      "es": "Este diseño es un punto de partida, no un límite. Comparte referencias y ajustamos forma, escala, piedras, metal y acabado tras revisar."
+    },
+    "flexibleText": {
+      "en": "Shape, stone, metal, scale",
+      "ko": "형태, 스톤, 메탈, 크기",
+      "zh": "造型、宝石、金属、比例",
+      "es": "Forma, piedra, metal, escala"
+    },
+    "beforeProductionText": {
+      "en": "Quote and CAD approval",
+      "ko": "견적 및 CAD 승인",
+      "zh": "报价与 CAD 确认",
+      "es": "Cotización y aprobación CAD"
+    }
+  },
+  {
+    "id": "RING-015",
+    "category": "ring",
+    "subcategory": "weddingBand",
+    "coverImage": "/assets/designs/BE1D64_RD_200ct_white_side1.jpg",
+    "media": [
+      {
+        "kind": "image",
+        "src": "/assets/designs/BE1D64_RD_200ct_white_side1.jpg"
+      }
+    ],
+    "mediaComplete": true,
+    "metalOptions": [
+      "18kw",
+      "18ky",
+      "18kr",
+      "pt"
+    ],
+    "estWeightG": 4.2,
+    "laborUsd": 95,
+    "leadDays": 12,
+    "availableForSale": true,
+    "published": true,
+    "supplierEvidence": "https://www.brilliantearth.com/Waverly-Halo-Diamond-Ring-(1/2-ct.-tw.)-14K-White-Gold-BE1D64-76823653/?utm_source=google&utm_medium=cpc&utm_campaign=SEM_PLA_US_ER_Conversion&utm_content=733311247350&gad_source=1&gad_campaignid=22248316004",
+    "firstQuoteAt": "2026-06-27",
+    "name": {
+      "en": "Three-Quarter Eternity Pavé Halo",
+      "ko": "쓰리쿼터 이터니티 파베 헤일로",
+      "zh": "四分之三永恒 密钉 光环",
+      "es": "eternity tres cuartos pavé halo"
+    },
+    "detailLabel": {
+      "en": "Custom starter design",
+      "ko": "맞춤 시작 디자인",
+      "zh": "定制起点设计",
+      "es": "Diseño inicial personalizado"
+    },
+    "description": {
+      "en": "This is a sample starting point, not a limit. Share references and we can adjust shape, scale, stones, metal, and finish after review.",
+      "ko": "이 디자인은 제한이 아니라 시작점입니다. 원하는 레퍼런스를 보내주시면 형태, 크기, 스톤, 메탈, 마감을 검토 후 조정할 수 있습니다.",
+      "zh": "这是起点样例，不是限制。上传参考后，我们可评估并调整造型、尺寸、宝石、金属与细节。",
+      "es": "Este diseño es un punto de partida, no un límite. Comparte referencias y ajustamos forma, escala, piedras, metal y acabado tras revisar."
+    },
+    "flexibleText": {
+      "en": "Shape, stone, metal, scale",
+      "ko": "형태, 스톤, 메탈, 크기",
+      "zh": "造型、宝石、金属、比例",
+      "es": "Forma, piedra, metal, escala"
+    },
+    "beforeProductionText": {
+      "en": "Quote and CAD approval",
+      "ko": "견적 및 CAD 승인",
+      "zh": "报价与 CAD 确认",
+      "es": "Cotización y aprobación CAD"
+    }
+  },
+  {
+    "id": "RING-016",
+    "category": "ring",
+    "subcategory": "weddingBand",
+    "coverImage": "/assets/designs/BE1D145_white_Round_top_2_carat.jpg",
+    "media": [
+      {
+        "kind": "image",
+        "src": "/assets/designs/BE1D145_white_Round_top_2_carat.jpg"
+      }
+    ],
+    "mediaComplete": true,
+    "metalOptions": [
+      "18kw",
+      "18ky",
+      "18kr",
+      "pt"
+    ],
+    "estWeightG": 4.2,
+    "laborUsd": 95,
+    "leadDays": 12,
+    "availableForSale": true,
+    "published": true,
+    "supplierEvidence": "https://www.brilliantearth.com/Luxe-French-Pav%C3%A9-Perfect-Fit-Diamond-Ring-(1/2-ct.-tw.)-14K-White-Gold-BE1D145-76787082/?utm_source=google&utm_medium=cpc&utm_campaign=SEM_PLA_US_ER_Conversion&utm_content=733311247350&gad_source=1&gad_campaignid=22248316004",
+    "firstQuoteAt": "2026-06-27",
+    "name": {
+      "en": "Four-Prong Three-Quarter Eternity Pavé Solitaire",
+      "ko": "4프롱 쓰리쿼터 이터니티 파베 솔리테어",
+      "zh": "四爪 四分之三永恒 密钉 单钻",
+      "es": "cuatro garras eternity tres cuartos pavé solitario"
+    },
+    "detailLabel": {
+      "en": "Custom starter design",
+      "ko": "맞춤 시작 디자인",
+      "zh": "定制起点设计",
+      "es": "Diseño inicial personalizado"
+    },
+    "description": {
+      "en": "This is a sample starting point, not a limit. Share references and we can adjust shape, scale, stones, metal, and finish after review.",
+      "ko": "이 디자인은 제한이 아니라 시작점입니다. 원하는 레퍼런스를 보내주시면 형태, 크기, 스톤, 메탈, 마감을 검토 후 조정할 수 있습니다.",
+      "zh": "这是起点样例，不是限制。上传参考后，我们可评估并调整造型、尺寸、宝石、金属与细节。",
+      "es": "Este diseño es un punto de partida, no un límite. Comparte referencias y ajustamos forma, escala, piedras, metal y acabado tras revisar."
+    },
+    "flexibleText": {
+      "en": "Shape, stone, metal, scale",
+      "ko": "형태, 스톤, 메탈, 크기",
+      "zh": "造型、宝石、金属、比例",
+      "es": "Forma, piedra, metal, escala"
+    },
+    "beforeProductionText": {
+      "en": "Quote and CAD approval",
+      "ko": "견적 및 CAD 승인",
+      "zh": "报价与 CAD 确认",
+      "es": "Cotización y aprobación CAD"
+    }
+  },
+  {
+    "id": "RING-017",
+    "category": "ring",
+    "subcategory": "weddingBand",
+    "coverImage": "/assets/designs/BE1D6362P_RD_200ct_white_side1.jpg",
+    "media": [
+      {
+        "kind": "image",
+        "src": "/assets/designs/BE1D6362P_RD_200ct_white_side1.jpg"
+      }
+    ],
+    "mediaComplete": true,
+    "metalOptions": [
+      "18kw",
+      "18ky",
+      "18kr",
+      "pt"
+    ],
+    "estWeightG": 4.2,
+    "laborUsd": 95,
+    "leadDays": 12,
+    "availableForSale": true,
+    "published": true,
+    "supplierEvidence": "https://www.brilliantearth.com/Gala-Diamond-Ring-14K-White-Gold-BE1D6362P-76788400/?utm_source=google&utm_medium=cpc&utm_campaign=SEM_PLA_US_ER_Conversion&utm_content=733311247380&gad_source=1&gad_campaignid=22248316004",
+    "firstQuoteAt": "2026-06-27",
+    "name": {
+      "en": "Three-Quarter Eternity Pavé Hidden Halo",
+      "ko": "쓰리쿼터 이터니티 파베 히든 헤일로",
+      "zh": "四分之三永恒 密钉 隐藏光环",
+      "es": "eternity tres cuartos pavé halo oculto"
+    },
+    "detailLabel": {
+      "en": "Custom starter design",
+      "ko": "맞춤 시작 디자인",
+      "zh": "定制起点设计",
+      "es": "Diseño inicial personalizado"
+    },
+    "description": {
+      "en": "This is a sample starting point, not a limit. Share references and we can adjust shape, scale, stones, metal, and finish after review.",
+      "ko": "이 디자인은 제한이 아니라 시작점입니다. 원하는 레퍼런스를 보내주시면 형태, 크기, 스톤, 메탈, 마감을 검토 후 조정할 수 있습니다.",
+      "zh": "这是起点样例，不是限制。上传参考后，我们可评估并调整造型、尺寸、宝石、金属与细节。",
+      "es": "Este diseño es un punto de partida, no un límite. Comparte referencias y ajustamos forma, escala, piedras, metal y acabado tras revisar."
+    },
+    "flexibleText": {
+      "en": "Shape, stone, metal, scale",
+      "ko": "형태, 스톤, 메탈, 크기",
+      "zh": "造型、宝石、金属、比例",
+      "es": "Forma, piedra, metal, escala"
+    },
+    "beforeProductionText": {
+      "en": "Quote and CAD approval",
+      "ko": "견적 및 CAD 승인",
+      "zh": "报价与 CAD 确认",
+      "es": "Cotización y aprobación CAD"
+    }
+  },
+  {
+    "id": "RING-018",
+    "category": "ring",
+    "subcategory": "engagementRing",
+    "coverImage": "/assets/designs/BE1524_white_Emerald_top_2_carat.jpg",
+    "media": [
+      {
+        "kind": "image",
+        "src": "/assets/designs/BE1524_white_Emerald_top_2_carat.jpg"
+      }
+    ],
+    "mediaComplete": true,
+    "metalOptions": [
+      "18kw",
+      "18ky",
+      "18kr",
+      "pt"
+    ],
+    "estWeightG": 4.2,
+    "laborUsd": 95,
+    "leadDays": 12,
+    "availableForSale": true,
+    "published": true,
+    "supplierEvidence": "https://www.brilliantearth.com/Piper-Knife-Edge-Solitaire-Ring-14K-White-Gold-BE1524-76785969/",
+    "firstQuoteAt": "2026-06-27",
+    "name": {
+      "en": "Four-Prong Knife Edge Solitaire",
+      "ko": "4프롱 나이프 엣지 솔리테어",
+      "zh": "四爪 刀锋 单钻",
+      "es": "cuatro garras knife edge solitario"
+    },
+    "detailLabel": {
+      "en": "Custom starter design",
+      "ko": "맞춤 시작 디자인",
+      "zh": "定制起点设计",
+      "es": "Diseño inicial personalizado"
+    },
+    "description": {
+      "en": "This is a sample starting point, not a limit. Share references and we can adjust shape, scale, stones, metal, and finish after review.",
+      "ko": "이 디자인은 제한이 아니라 시작점입니다. 원하는 레퍼런스를 보내주시면 형태, 크기, 스톤, 메탈, 마감을 검토 후 조정할 수 있습니다.",
+      "zh": "这是起点样例，不是限制。上传参考后，我们可评估并调整造型、尺寸、宝石、金属与细节。",
+      "es": "Este diseño es un punto de partida, no un límite. Comparte referencias y ajustamos forma, escala, piedras, metal y acabado tras revisar."
+    },
+    "flexibleText": {
+      "en": "Shape, stone, metal, scale",
+      "ko": "형태, 스톤, 메탈, 크기",
+      "zh": "造型、宝石、金属、比例",
+      "es": "Forma, piedra, metal, escala"
+    },
+    "beforeProductionText": {
+      "en": "Quote and CAD approval",
+      "ko": "견적 및 CAD 승인",
+      "zh": "报价与 CAD 确认",
+      "es": "Cotización y aprobación CAD"
+    }
+  },
+  {
+    "id": "RING-019",
+    "category": "ring",
+    "subcategory": "weddingBand",
+    "coverImage": "/assets/designs/BNS12xBNH01_M1_RND_DIM_wht_0100CT_W_W.002.jpg",
+    "media": [
+      {
+        "kind": "image",
+        "src": "/assets/designs/BNS12xBNH01_M1_RND_DIM_wht_0100CT_W_W.002.jpg"
+      }
+    ],
+    "mediaComplete": true,
+    "metalOptions": [
+      "18kw",
+      "18ky",
+      "18kr",
+      "pt"
+    ],
+    "estWeightG": 4.2,
+    "laborUsd": 95,
+    "leadDays": 12,
+    "availableForSale": true,
+    "published": true,
+    "supplierEvidence": "https://www.bluenile.com/engagement-rings/custom-engagement-rings/knife-edge-pave-engagement-ring-4-prong-nouveau-head-item-293453?srsltid=AfmBOory28JlAQvU0305tHL_XcXe6wOg6cjmZJhqKF-_Um4SDwsPbGuqM5g",
+    "firstQuoteAt": "2026-06-27",
+    "name": {
+      "en": "Four-Prong Knife Edge Pavé Three Stone",
+      "ko": "4프롱 나이프 엣지 파베 쓰리 스톤",
+      "zh": "四爪 刀锋 密钉 三石",
+      "es": "cuatro garras knife edge pavé tres piedras"
+    },
+    "detailLabel": {
+      "en": "Custom starter design",
+      "ko": "맞춤 시작 디자인",
+      "zh": "定制起点设计",
+      "es": "Diseño inicial personalizado"
+    },
+    "description": {
+      "en": "This is a sample starting point, not a limit. Share references and we can adjust shape, scale, stones, metal, and finish after review.",
+      "ko": "이 디자인은 제한이 아니라 시작점입니다. 원하는 레퍼런스를 보내주시면 형태, 크기, 스톤, 메탈, 마감을 검토 후 조정할 수 있습니다.",
+      "zh": "这是起点样例，不是限制。上传参考后，我们可评估并调整造型、尺寸、宝石、金属与细节。",
+      "es": "Este diseño es un punto de partida, no un límite. Comparte referencias y ajustamos forma, escala, piedras, metal y acabado tras revisar."
+    },
+    "flexibleText": {
+      "en": "Shape, stone, metal, scale",
+      "ko": "형태, 스톤, 메탈, 크기",
+      "zh": "造型、宝石、金属、比例",
+      "es": "Forma, piedra, metal, escala"
+    },
+    "beforeProductionText": {
+      "en": "Quote and CAD approval",
+      "ko": "견적 및 CAD 승인",
+      "zh": "报价与 CAD 确认",
+      "es": "Cotización y aprobación CAD"
+    }
+  },
+  {
+    "id": "RING-020",
+    "category": "ring",
+    "subcategory": "engagementRing",
+    "coverImage": "/assets/designs/six-prong-solitaire-engagement-ring-knife-edge-shank__02947.1783355634.jpg",
+    "media": [
+      {
+        "kind": "image",
+        "src": "/assets/designs/six-prong-solitaire-engagement-ring-knife-edge-shank__02947.1783355634.jpg"
+      }
+    ],
+    "mediaComplete": true,
+    "metalOptions": [
+      "18kw",
+      "18ky",
+      "18kr",
+      "pt"
+    ],
+    "estWeightG": 4.2,
+    "laborUsd": 95,
+    "leadDays": 12,
+    "availableForSale": true,
+    "published": true,
+    "supplierEvidence": "https://www.jewelrypoint.com/6-prong-solitaire-engagement-ring-mounting-knife-edge-band/?gad_source=4&gad_campaignid=22384748286&gbraid=0AAAAAD9WMcceEy9yCQLhIAfq_rQg-yrWV&gclid=EAIaIQobChMI2Ni0s_TOlQMVRR6tBh1c4RRcEAQYAyABEgJqcvD_BwE",
+    "firstQuoteAt": "2026-06-27",
+    "name": {
+      "en": "Six-Prong Knife Edge Solitaire",
+      "ko": "6프롱 나이프 엣지 솔리테어",
+      "zh": "六爪 刀锋 单钻",
+      "es": "seis garras knife edge solitario"
+    },
+    "detailLabel": {
+      "en": "Custom starter design",
+      "ko": "맞춤 시작 디자인",
+      "zh": "定制起点设计",
+      "es": "Diseño inicial personalizado"
+    },
+    "description": {
+      "en": "This is a sample starting point, not a limit. Share references and we can adjust shape, scale, stones, metal, and finish after review.",
+      "ko": "이 디자인은 제한이 아니라 시작점입니다. 원하는 레퍼런스를 보내주시면 형태, 크기, 스톤, 메탈, 마감을 검토 후 조정할 수 있습니다.",
+      "zh": "这是起点样例，不是限制。上传参考后，我们可评估并调整造型、尺寸、宝石、金属与细节。",
+      "es": "Este diseño es un punto de partida, no un límite. Comparte referencias y ajustamos forma, escala, piedras, metal y acabado tras revisar."
+    },
+    "flexibleText": {
+      "en": "Shape, stone, metal, scale",
+      "ko": "형태, 스톤, 메탈, 크기",
+      "zh": "造型、宝石、金属、比例",
+      "es": "Forma, piedra, metal, escala"
+    },
+    "beforeProductionText": {
+      "en": "Quote and CAD approval",
+      "ko": "견적 및 CAD 승인",
+      "zh": "报价与 CAD 确认",
+      "es": "Cotización y aprobación CAD"
+    }
+  },
+  {
+    "id": "RING-021",
+    "category": "ring",
+    "subcategory": "weddingBand",
+    "coverImage": "/assets/designs/BE1DT2686_white_Round_top_2_carat.jpg",
+    "media": [
+      {
+        "kind": "image",
+        "src": "/assets/designs/BE1DT2686_white_Round_top_2_carat.jpg"
+      }
+    ],
+    "mediaComplete": true,
+    "metalOptions": [
+      "18kw",
+      "18ky",
+      "18kr",
+      "pt"
+    ],
+    "estWeightG": 4.2,
+    "laborUsd": 95,
+    "leadDays": 12,
+    "availableForSale": true,
+    "published": true,
+    "supplierEvidence": "https://www.brilliantearth.com/Tacori-Sculpted-Crescent-Knife-Edge-Diamond-Ring-White-Gold-BE1DT2686-12921130/",
+    "firstQuoteAt": "2026-06-27",
+    "name": {
+      "en": "Four-Prong Knife Edge Pavé Solitaire",
+      "ko": "4프롱 나이프 엣지 파베 솔리테어",
+      "zh": "四爪 刀锋 密钉 单钻",
+      "es": "cuatro garras knife edge pavé solitario"
+    },
+    "detailLabel": {
+      "en": "Custom starter design",
+      "ko": "맞춤 시작 디자인",
+      "zh": "定制起点设计",
+      "es": "Diseño inicial personalizado"
+    },
+    "description": {
+      "en": "This is a sample starting point, not a limit. Share references and we can adjust shape, scale, stones, metal, and finish after review.",
+      "ko": "이 디자인은 제한이 아니라 시작점입니다. 원하는 레퍼런스를 보내주시면 형태, 크기, 스톤, 메탈, 마감을 검토 후 조정할 수 있습니다.",
+      "zh": "这是起点样例，不是限制。上传参考后，我们可评估并调整造型、尺寸、宝石、金属与细节。",
+      "es": "Este diseño es un punto de partida, no un límite. Comparte referencias y ajustamos forma, escala, piedras, metal y acabado tras revisar."
+    },
+    "flexibleText": {
+      "en": "Shape, stone, metal, scale",
+      "ko": "형태, 스톤, 메탈, 크기",
+      "zh": "造型、宝石、金属、比例",
+      "es": "Forma, piedra, metal, escala"
+    },
+    "beforeProductionText": {
+      "en": "Quote and CAD approval",
+      "ko": "견적 및 CAD 승인",
+      "zh": "报价与 CAD 确认",
+      "es": "Cotización y aprobación CAD"
+    }
+  },
+  {
+    "id": "RING-022",
+    "category": "ring",
+    "subcategory": "weddingBand",
+    "coverImage": "/assets/designs/BNGTXR00883-WG-RB-WH-100-M0-new.jpg",
+    "media": [
+      {
+        "kind": "image",
+        "src": "/assets/designs/BNGTXR00883-WG-RB-WH-100-M0-new.jpg"
+      }
+    ],
+    "mediaComplete": true,
+    "metalOptions": [
+      "18kw",
+      "18ky",
+      "18kr",
+      "pt"
+    ],
+    "estWeightG": 4.2,
+    "laborUsd": 95,
+    "leadDays": 12,
+    "availableForSale": true,
+    "published": true,
+    "supplierEvidence": "https://www.grownbrilliance.com/1-ctw-round-lab-grown-diamond-eternity-band-platinum/pid/BNGTXR00883-900PL2?algoliaQueryId=99a64bb32066eda75e81b0f1e139dbb1",
+    "firstQuoteAt": "2026-06-27",
+    "name": {
+      "en": "French Pavé Eternity Band",
+      "ko": "프렌치 파베 이터니티 밴드",
+      "zh": "法式密钉永恒戒圈",
+      "es": "Banda eternity pavé francés"
+    },
+    "detailLabel": {
+      "en": "Custom starter design",
+      "ko": "맞춤 시작 디자인",
+      "zh": "定制起点设计",
+      "es": "Diseño inicial personalizado"
+    },
+    "description": {
+      "en": "This is a sample starting point, not a limit. Share references and we can adjust shape, scale, stones, metal, and finish after review.",
+      "ko": "이 디자인은 제한이 아니라 시작점입니다. 원하는 레퍼런스를 보내주시면 형태, 크기, 스톤, 메탈, 마감을 검토 후 조정할 수 있습니다.",
+      "zh": "这是起点样例，不是限制。上传参考后，我们可评估并调整造型、尺寸、宝石、金属与细节。",
+      "es": "Este diseño es un punto de partida, no un límite. Comparte referencias y ajustamos forma, escala, piedras, metal y acabado tras revisar."
+    },
+    "flexibleText": {
+      "en": "Shape, stone, metal, scale",
+      "ko": "형태, 스톤, 메탈, 크기",
+      "zh": "造型、宝石、金属、比例",
+      "es": "Forma, piedra, metal, escala"
+    },
+    "beforeProductionText": {
+      "en": "Quote and CAD approval",
+      "ko": "견적 및 CAD 승인",
+      "zh": "报价与 CAD 确认",
+      "es": "Cotización y aprobación CAD"
+    }
+  },
+  {
+    "id": "RING-023",
     "category": "ring",
     "subcategory": "weddingBand",
     "coverImage": "/assets/designs/RIGWR4428-WG-RB-WH-500-M0-new.jpg",
@@ -526,10 +1266,10 @@ export const styleSeedData = [
     "supplierEvidence": "https://www.grownbrilliance.com/5-ctw-shared-prong-round-lab-grown-diamond-eternity-band-14k-white-gold/pid/BNGWR4428-700GW2",
     "firstQuoteAt": "2026-06-27",
     "name": {
-      "en": "Shared-Prong Diamond Eternity Band",
-      "ko": "쉐어드 프롱 다이아 이터니티 밴드",
-      "zh": "爪镶排钻",
-      "es": "Banda eternity de diamantes compartidos"
+      "en": "Low Dome Basket Eternity Band",
+      "ko": "로우 돔 바스켓 이터니티 밴드",
+      "zh": "低圆顶篮式永恒戒圈",
+      "es": "Banda eternity basket domo bajo"
     },
     "detailLabel": {
       "en": "Custom starter design",
@@ -557,18 +1297,14 @@ export const styleSeedData = [
     }
   },
   {
-    "id": "BAND-005",
+    "id": "RING-024",
     "category": "ring",
     "subcategory": "weddingBand",
-    "coverImage": "/assets/designs/BNGTXR04267-YG-RB-WH-100-M0-new.jpg",
+    "coverImage": "/assets/designs/BNG341590-WG-RB-WH-300-M0-new.jpg",
     "media": [
       {
         "kind": "image",
-        "src": "/assets/designs/BNGTXR04267-YG-RB-WH-100-M0-new.jpg"
-      },
-      {
-        "kind": "image",
-        "src": "/assets/designs/BNGTXR04267-YG-RB-WH-100-M1-new.jpg"
+        "src": "/assets/designs/BNG341590-WG-RB-WH-300-M0-new.jpg"
       }
     ],
     "mediaComplete": true,
@@ -583,13 +1319,13 @@ export const styleSeedData = [
     "leadDays": 12,
     "availableForSale": true,
     "published": true,
-    "supplierEvidence": "https://www.grownbrilliance.com/1-ctw-round-lab-grown-diamond-french-pave-wedding-band-14k-yellow-gold/pid/BNGTXR04267-GY2",
+    "supplierEvidence": "http://grownbrilliance.com/3-ctw-domed-round-lab-grown-diamond-eternity-band-platinum/pid/BNG341590-7.00PL4?algoliaQueryId=12aa90d075aa1c41db3733f84b4379fe",
     "firstQuoteAt": "2026-06-27",
     "name": {
-      "en": "French Pavé Wedding Band",
-      "ko": "프렌치 파베 웨딩 밴드",
-      "zh": "戒臂铺小钻",
-      "es": "Banda de boda pavé francés"
+      "en": "Pavé Band",
+      "ko": "파베 밴드",
+      "zh": "密钉戒圈",
+      "es": "Banda pavé"
     },
     "detailLabel": {
       "en": "Custom starter design",
@@ -617,7 +1353,7 @@ export const styleSeedData = [
     }
   },
   {
-    "id": "BAND-006",
+    "id": "RING-025",
     "category": "ring",
     "subcategory": "weddingBand",
     "coverImage": "/assets/designs/BNGYR1450K-WG-RB-WH-200-M0-new.jpg",
@@ -632,7 +1368,7 @@ export const styleSeedData = [
       },
       {
         "kind": "image",
-        "src": "/assets/designs/BNGYR1450-set.jpg"
+        "src": "/assets/designs/BNGYR1450F-GW4_-_BNGYR1450G-GW4_-_BNGYR1450K-GW4_-_BNGYR1450M-GW4_E_new.jpg"
       }
     ],
     "mediaComplete": true,
@@ -650,10 +1386,10 @@ export const styleSeedData = [
     "supplierEvidence": "https://www.grownbrilliance.com/2-ctw-round-lab-grown-diamond-channel-set-eternity-band-platinum/pid/BNGYR1450K-PL2-700",
     "firstQuoteAt": "2026-06-27",
     "name": {
-      "en": "Channel-Set Eternity Band",
-      "ko": "채널 세트 이터니티 밴드",
-      "zh": "槽镶排钻",
-      "es": "Banda eternity channel set"
+      "en": "Channel Set Band",
+      "ko": "채널 세트 밴드",
+      "zh": "槽镶戒圈",
+      "es": "Banda channel set"
     },
     "detailLabel": {
       "en": "Custom starter design",
@@ -713,7 +1449,7 @@ export const styleSeedData = [
     "name": {
       "en": "Round Diamond Stud Earrings",
       "ko": "라운드 다이아몬드 스터드 이어링",
-      "zh": "单钻",
+      "zh": "圆形钻石耳钉",
       "es": "Aretes de diamantes redondos"
     },
     "detailLabel": {
@@ -774,7 +1510,7 @@ export const styleSeedData = [
     "name": {
       "en": "Inside-Out Hoop Earrings",
       "ko": "인사이드 아웃 후프 이어링",
-      "zh": "钻石圈圈耳圈",
+      "zh": "内外镶钻圈形耳环",
       "es": "Aros inside-out"
     },
     "detailLabel": {
@@ -834,12 +1570,12 @@ export const styleSeedData = [
     "leadDays": 10,
     "availableForSale": true,
     "published": true,
-    "supplierEvidence": "https://www.grownbrilliance.com/1-1-5-ctw-princess-lab-grown-diamond-halo-stud-earrings-14k-rose-gold/pid/EAGTXE02393-GP3",
+    "supplierEvidence": "https://www.grownbrilliance.com/1-1-5-ctw-princess-lab-grown-diamond-halo-stud-earrings-14k-white-gold/pid/EAGTXE02393-GW3?category_id=49",
     "firstQuoteAt": "2026-06-27",
     "name": {
       "en": "Princess Halo Stud Earrings",
       "ko": "프린세스 헤일로 스터드 이어링",
-      "zh": "主钻+一圈碎钻",
+      "zh": "公主方光环耳钉",
       "es": "Aretes halo princess"
     },
     "detailLabel": {
@@ -900,7 +1636,7 @@ export const styleSeedData = [
     "name": {
       "en": "Cushion Huggie Hoop Earrings",
       "ko": "쿠션 허기 후프 이어링",
-      "zh": "贴耳小圈钻",
+      "zh": "垫形贴耳圈耳环",
       "es": "Aros huggie cushion"
     },
     "detailLabel": {
@@ -961,7 +1697,7 @@ export const styleSeedData = [
     "name": {
       "en": "Emerald Halo Drop Earrings",
       "ko": "에메랄드 헤일로 드롭 이어링",
-      "zh": "钻坠下来",
+      "zh": "祖母绿形光环垂坠耳环",
       "es": "Aretes colgantes halo esmeralda"
     },
     "detailLabel": {
@@ -992,20 +1728,12 @@ export const styleSeedData = [
   {
     "id": "EARR-006",
     "category": "earrings",
-    "subcategory": "huggies",
-    "coverImage": "/assets/designs/EAGRVE04056-RG-RB-WH-200-M3.jpg",
+    "subcategory": "drops",
+    "coverImage": "/assets/designs/AJE09546-WG-M0.jpg",
     "media": [
       {
         "kind": "image",
-        "src": "/assets/designs/EAGRVE04056-RG-RB-WH-200-M3.jpg"
-      },
-      {
-        "kind": "image",
-        "src": "/assets/designs/EAGRVE04056-RG-RB-WH-200-M1.jpg"
-      },
-      {
-        "kind": "image",
-        "src": "/assets/designs/EARRVE04056-GW4-new.jpg"
+        "src": "/assets/designs/AJE09546-WG-M0.jpg"
       }
     ],
     "mediaComplete": true,
@@ -1021,13 +1749,70 @@ export const styleSeedData = [
     "leadDays": 10,
     "availableForSale": true,
     "published": true,
-    "supplierEvidence": "https://www.grownbrilliance.com/2-ctw-round-lab-grown-diamond-graduated-inside-out-huggie-hoop-earrings-14k-rose-gold/pid/EARRVE04056-GP2",
+    "supplierEvidence": "https://www.grownbrilliance.com/4-ctw-pear-and-oval-lab-grown-diamond-drop-earrings-14k-white-gold/pid/EAGAJE09546-GW2?algoliaQueryId=ed74e9eebe06214cb2d30147f83e452d",
     "firstQuoteAt": "2026-06-27",
     "name": {
-      "en": "Graduated Inside-Out Huggie Hoop Earrings",
-      "ko": "그라데이티드 인사이드 아웃 허기 후프 이어링",
-      "zh": "小钻连大钻",
-      "es": "Aros huggie inside-out graduados"
+      "en": "Round and Pear Drop Earrings",
+      "ko": "라운드 앤 페어 드롭 이어링",
+      "zh": "圆形梨形垂坠耳环",
+      "es": "Aretes colgantes redondo y pera"
+    },
+    "detailLabel": {
+      "en": "Custom starter design",
+      "ko": "맞춤 시작 디자인",
+      "zh": "定制起点设计",
+      "es": "Diseño inicial personalizado"
+    },
+    "description": {
+      "en": "This is a sample starting point, not a limit. Share references and we can adjust shape, scale, stones, metal, and finish after review.",
+      "ko": "이 디자인은 제한이 아니라 시작점입니다. 원하는 레퍼런스를 보내주시면 형태, 크기, 스톤, 메탈, 마감을 검토 후 조정할 수 있습니다.",
+      "zh": "这是起点样例，不是限制。上传参考后，我们可评估并调整造型、尺寸、宝石、金属与细节。",
+      "es": "Este diseño es un punto de partida, no un límite. Comparte referencias y ajustamos forma, escala, piedras, metal y acabado tras revisar."
+    },
+    "flexibleText": {
+      "en": "Pairing, post, drop length",
+      "ko": "페어링, 포스트, 드롭 길이",
+      "zh": "配对、耳针、垂坠长度",
+      "es": "Par, poste, largo de caída"
+    },
+    "beforeProductionText": {
+      "en": "Quote and CAD approval",
+      "ko": "견적 및 CAD 승인",
+      "zh": "报价与 CAD 确认",
+      "es": "Cotización y aprobación CAD"
+    }
+  },
+  {
+    "id": "EARR-007",
+    "category": "earrings",
+    "subcategory": "studs",
+    "coverImage": "/assets/designs/AJE00461-WG-M0_.jpg",
+    "media": [
+      {
+        "kind": "image",
+        "src": "/assets/designs/AJE00461-WG-M0_.jpg"
+      }
+    ],
+    "mediaComplete": true,
+    "metalOptions": [
+      "14kw",
+      "14ky",
+      "14kr",
+      "18kw",
+      "18ky"
+    ],
+    "estWeightG": 2.4,
+    "laborUsd": 80,
+    "leadDays": 10,
+    "availableForSale": true,
+    "published": true,
+    "supplierEvidence": "https://www.grownbrilliance.com/1-1-2-ctw-marquise-lab-grown-diamond-flower-stud-earrings-platinum/pid/EAGAJE00896TC-GW4?customQueryId=q1783923746541oqyl8sck2&category_id=35",
+    "firstQuoteAt": "2026-06-27",
+    "name": {
+      "en": "Marquise Flower Stud Earrings",
+      "ko": "마퀴즈 플라워 스터드 이어링",
+      "zh": "马眼形花朵耳钉",
+      "es": "Aretes flor marquise"
     },
     "detailLabel": {
       "en": "Custom starter design",
@@ -1058,23 +1843,11 @@ export const styleSeedData = [
     "id": "BRAC-001",
     "category": "bangle",
     "subcategory": "tennisBracelet",
-    "coverImage": "/assets/designs/BCGTXBR00769-YG-RB-WH-1200-M0.jpg",
+    "coverImage": "/assets/designs/BCGTXBR00769-WG-RB-WH-1200-M0.jpg",
     "media": [
       {
         "kind": "image",
-        "src": "/assets/designs/BCGTXBR00769-YG-RB-WH-1200-M0.jpg"
-      },
-      {
-        "kind": "image",
-        "src": "/assets/designs/BCGTXBR00769-YG-RB-WH-1200-M3.jpg"
-      },
-      {
-        "kind": "image",
-        "src": "/assets/designs/BCGTXBR00769-GW2-1-NEW.jpg"
-      },
-      {
-        "kind": "image",
-        "src": "/assets/designs/BCGTXBR00769-YG-M2.jpg"
+        "src": "/assets/designs/BCGTXBR00769-WG-RB-WH-1200-M0.jpg"
       }
     ],
     "mediaComplete": true,
@@ -1089,12 +1862,12 @@ export const styleSeedData = [
     "leadDays": 16,
     "availableForSale": true,
     "published": true,
-    "supplierEvidence": "https://www.grownbrilliance.com/12-ctw-round-lab-grown-diamond-four-prong-tennis-bracelet-14k-yellow-gold-7-5-inches/pid/BCGTXBR00769-GY2",
+    "supplierEvidence": "https://www.grownbrilliance.com/12-ctw-round-lab-grown-diamond-four-prong-tennis-bracelet-14k-platinum-7-5-inches/pid/BCGTXBR00769-PL2?category_id=112",
     "firstQuoteAt": "2026-06-27",
     "name": {
       "en": "Four-Prong Tennis Bracelet",
       "ko": "4프롱 테니스 브레이슬릿",
-      "zh": "网球手链",
+      "zh": "四爪网球手链",
       "es": "Pulsera tenis de 4 garras"
     },
     "detailLabel": {
@@ -1124,6 +1897,118 @@ export const styleSeedData = [
   },
   {
     "id": "BRAC-002",
+    "category": "bangle",
+    "subcategory": "tennisBracelet",
+    "coverImage": "/assets/designs/BRAAAB02136V-WG-RB-446-M0-1.jpg",
+    "media": [
+      {
+        "kind": "image",
+        "src": "/assets/designs/BRAAAB02136V-WG-RB-446-M0-1.jpg"
+      }
+    ],
+    "mediaComplete": true,
+    "metalOptions": [
+      "14kw",
+      "14ky",
+      "18kw",
+      "18ky"
+    ],
+    "estWeightG": 9.6,
+    "laborUsd": 170,
+    "leadDays": 16,
+    "availableForSale": true,
+    "published": true,
+    "supplierEvidence": "https://www.grownbrilliance.com/boundless-eternity-bracelet-14k-white-gold-7-inches/pid/BOBRA02136VGW2-7.0?customQueryId=q17839229609208h2q9etkj&category_id=67",
+    "firstQuoteAt": "2026-06-27",
+    "name": {
+      "en": "Boundless Eternity Bracelet",
+      "ko": "바운드리스 이터니티 브레이슬릿",
+      "zh": "无界永恒手链",
+      "es": "Pulsera eternity boundless"
+    },
+    "detailLabel": {
+      "en": "Custom starter design",
+      "ko": "맞춤 시작 디자인",
+      "zh": "定制起点设计",
+      "es": "Diseño inicial personalizado"
+    },
+    "description": {
+      "en": "This is a sample starting point, not a limit. Share references and we can adjust shape, scale, stones, metal, and finish after review.",
+      "ko": "이 디자인은 제한이 아니라 시작점입니다. 원하는 레퍼런스를 보내주시면 형태, 크기, 스톤, 메탈, 마감을 검토 후 조정할 수 있습니다.",
+      "zh": "这是起点样例，不是限制。上传参考后，我们可评估并调整造型、尺寸、宝石、金属与细节。",
+      "es": "Este diseño es un punto de partida, no un límite. Comparte referencias y ajustamos forma, escala, piedras, metal y acabado tras revisar."
+    },
+    "flexibleText": {
+      "en": "Length, clasp, stone size",
+      "ko": "길이, 잠금장식, 스톤 크기",
+      "zh": "长度、扣件、宝石尺寸",
+      "es": "Largo, broche, tamaño de piedra"
+    },
+    "beforeProductionText": {
+      "en": "Quote and CAD approval",
+      "ko": "견적 및 CAD 승인",
+      "zh": "报价与 CAD 确认",
+      "es": "Cotización y aprobación CAD"
+    }
+  },
+  {
+    "id": "BRAC-003",
+    "category": "bangle",
+    "subcategory": "tennisBracelet",
+    "coverImage": "/assets/designs/BCGTXBR01703-WG-EM-WH-700-M0.jpg",
+    "media": [
+      {
+        "kind": "image",
+        "src": "/assets/designs/BCGTXBR01703-WG-EM-WH-700-M0.jpg"
+      }
+    ],
+    "mediaComplete": true,
+    "metalOptions": [
+      "14kw",
+      "14ky",
+      "18kw",
+      "18ky"
+    ],
+    "estWeightG": 9.6,
+    "laborUsd": 170,
+    "leadDays": 16,
+    "availableForSale": true,
+    "published": true,
+    "supplierEvidence": "https://www.grownbrilliance.com/5-ctw-emerald-lab-grown-diamond-tennis-bracelet-14k-white-gold-7-5-inches/pid/BCTXBR01703-5GW270?customQueryId=q178392307649715od03rfv",
+    "firstQuoteAt": "2026-06-27",
+    "name": {
+      "en": "Emerald Tennis Bracelet",
+      "ko": "에메랄드 테니스 브레이슬릿",
+      "zh": "祖母绿网球手链",
+      "es": "Pulsera tenis esmeralda"
+    },
+    "detailLabel": {
+      "en": "Custom starter design",
+      "ko": "맞춤 시작 디자인",
+      "zh": "定制起点设计",
+      "es": "Diseño inicial personalizado"
+    },
+    "description": {
+      "en": "This is a sample starting point, not a limit. Share references and we can adjust shape, scale, stones, metal, and finish after review.",
+      "ko": "이 디자인은 제한이 아니라 시작점입니다. 원하는 레퍼런스를 보내주시면 형태, 크기, 스톤, 메탈, 마감을 검토 후 조정할 수 있습니다.",
+      "zh": "这是起点样例，不是限制。上传参考后，我们可评估并调整造型、尺寸、宝石、金属与细节。",
+      "es": "Este diseño es un punto de partida, no un límite. Comparte referencias y ajustamos forma, escala, piedras, metal y acabado tras revisar."
+    },
+    "flexibleText": {
+      "en": "Length, clasp, stone size",
+      "ko": "길이, 잠금장식, 스톤 크기",
+      "zh": "长度、扣件、宝石尺寸",
+      "es": "Largo, broche, tamaño de piedra"
+    },
+    "beforeProductionText": {
+      "en": "Quote and CAD approval",
+      "ko": "견적 및 CAD 승인",
+      "zh": "报价与 CAD 确认",
+      "es": "Cotización y aprobación CAD"
+    }
+  },
+  {
+    "id": "BRAC-004",
     "category": "bangle",
     "subcategory": "bangle",
     "coverImage": "/assets/designs/BCGVG2664K-WG-RB-WH-210-M0.jpg",
@@ -1162,7 +2047,7 @@ export const styleSeedData = [
     "name": {
       "en": "Shared-Prong Bangle Bracelet",
       "ko": "쉐어드 프롱 뱅글 브레이슬릿",
-      "zh": "满钻手镯",
+      "zh": "共爪手镯",
       "es": "Brazalete de garras compartidas"
     },
     "detailLabel": {
@@ -1191,18 +2076,14 @@ export const styleSeedData = [
     }
   },
   {
-    "id": "BRAC-003",
+    "id": "BRAC-005",
     "category": "bangle",
-    "subcategory": "tennisBracelet",
-    "coverImage": "/assets/designs/BCGTXBR09965-YG-RB-WH-200-M0.jpg",
+    "subcategory": "chainBracelet",
+    "coverImage": "/assets/designs/BRAAAB01755U-WG-RB-350-M0-1.jpg",
     "media": [
       {
         "kind": "image",
-        "src": "/assets/designs/BCGTXBR09965-YG-RB-WH-200-M0.jpg"
-      },
-      {
-        "kind": "image",
-        "src": "/assets/designs/BCGTXBR09965-YG-RB-WH-200-M3.jpg"
+        "src": "/assets/designs/BRAAAB01755U-WG-RB-350-M0-1.jpg"
       }
     ],
     "mediaComplete": true,
@@ -1217,13 +2098,13 @@ export const styleSeedData = [
     "leadDays": 16,
     "availableForSale": true,
     "published": true,
-    "supplierEvidence": "https://www.grownbrilliance.com/2-ctw-round-lab-grown-diamond-beveled-x-tennis-bracelet-14k-yellow-gold-7-inches/pid/TXBR09965GY2-2-70",
+    "supplierEvidence": "https://www.grownbrilliance.com/boundless-station-bracelet-14k-white-gold-6-inches/pid/BOBRA01755UGW2-6.0?algoliaQueryId=0d19910ee1c6777c60cdf063b61b6342",
     "firstQuoteAt": "2026-06-27",
     "name": {
-      "en": "Beveled X Tennis Bracelet",
-      "ko": "베벨드 X 테니스 브레이슬릿",
-      "zh": "站点钻手链",
-      "es": "Pulsera tenis Beveled X"
+      "en": "Boundless Station Bracelet",
+      "ko": "바운드리스 스테이션 브레이슬릿",
+      "zh": "无界站点手链",
+      "es": "Pulsera station boundless"
     },
     "detailLabel": {
       "en": "Custom starter design",
@@ -1287,7 +2168,7 @@ export const styleSeedData = [
     "name": {
       "en": "Round Solitaire Pendant",
       "ko": "라운드 솔리테어 펜던트",
-      "zh": "单钻",
+      "zh": "圆形单钻吊坠",
       "es": "Colgante solitario redondo"
     },
     "detailLabel": {
@@ -1352,7 +2233,7 @@ export const styleSeedData = [
     "name": {
       "en": "Round Halo Pendant",
       "ko": "라운드 헤일로 펜던트",
-      "zh": "单钻带一圈碎钻",
+      "zh": "圆形光环吊坠",
       "es": "Colgante halo redondo"
     },
     "detailLabel": {
@@ -1409,7 +2290,7 @@ export const styleSeedData = [
     "name": {
       "en": "Cluster Flower Pendant",
       "ko": "클러스터 플라워 펜던트",
-      "zh": "四叶草",
+      "zh": "簇镶花朵吊坠",
       "es": "Colgante floral cluster"
     },
     "detailLabel": {
@@ -1466,7 +2347,7 @@ export const styleSeedData = [
     "name": {
       "en": "Thirteen-Stone Demi Eternity Necklace",
       "ko": "13스톤 데미 이터니티 네크리스",
-      "zh": "横向排钻",
+      "zh": "十三石半圈永恒项链",
       "es": "Collar demi eternity de trece piedras"
     },
     "detailLabel": {
@@ -1523,8 +2404,8 @@ export const styleSeedData = [
     "name": {
       "en": "Round and Pear Diamond Drop Necklace",
       "ko": "라운드 앤 페어 다이아 드롭 네크리스",
-      "zh": "小圆钻连大钻",
-      "es": "Collar colgante de diamantes redondos y pera"
+      "zh": "圆形与梨形钻石垂坠项链",
+      "es": "Collar de diamantes redondo y pera"
     },
     "detailLabel": {
       "en": "Custom starter design",
@@ -1580,7 +2461,7 @@ export const styleSeedData = [
     "name": {
       "en": "Marquise Pear Flower Pendant",
       "ko": "마퀴즈 페어 플라워 펜던트",
-      "zh": "蝴蝶大钻",
+      "zh": "马眼形梨形花朵吊坠",
       "es": "Colgante floral marquise y pera"
     },
     "detailLabel": {
@@ -1645,7 +2526,7 @@ export const styleSeedData = [
     "name": {
       "en": "Four-Prong Tennis Necklace",
       "ko": "4프롱 테니스 네크리스",
-      "zh": "网球项链",
+      "zh": "四爪网球项链",
       "es": "Collar tenis de 4 garras"
     },
     "detailLabel": {
@@ -1714,7 +2595,7 @@ export const styleSeedData = [
     "name": {
       "en": "Station Necklace",
       "ko": "스테이션 네크리스",
-      "zh": "泡泡链",
+      "zh": "站钻项链",
       "es": "Collar station"
     },
     "detailLabel": {
@@ -1771,7 +2652,7 @@ export const styleSeedData = [
     "name": {
       "en": "Diamond Cross Pendant",
       "ko": "다이아몬드 크로스 펜던트",
-      "zh": "十字架",
+      "zh": "钻石十字吊坠",
       "es": "Colgante cruz de diamantes"
     },
     "detailLabel": {
@@ -1831,9 +2712,9 @@ export const styleSeedData = [
     "firstQuoteAt": "2026-06-27",
     "name": {
       "en": "Shield Diamond Cross Statement Pendant",
-      "ko": "쉴드 다이아몬드 크로스 스테이트먼트 펜던트",
-      "zh": "十字架 2",
-      "es": "Colgante cruz statement con diamante shield"
+      "ko": "쉴드 다이아몬드 크로스 펜던트",
+      "zh": "盾形钻石十字吊坠",
+      "es": "Colgante cruz shield"
     },
     "detailLabel": {
       "en": "Custom starter design",
