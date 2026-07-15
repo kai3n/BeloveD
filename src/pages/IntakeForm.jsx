@@ -9,7 +9,7 @@ import { createIntake, findCoupon, getDiamond, listOpsStyles } from "../lib/stor
 import { apiFetch } from "../lib/api.js";
 import {
   MAX_REFERENCE_MEDIA, RING_SIZE_OPTIONS, buildIntakePayload, conditionalComplete,
-  accountDisplayName, hasContactDetails, sanitizeReferenceMedia, submissionContact,
+  accountDisplayName, hasContactDetails, isValidEmail, sanitizeReferenceMedia, submissionContact,
 } from "../lib/intakePayload.js";
 import { useDBVersion } from "../lib/useDB.js";
 import { pickI18n, useLocale } from "../i18n.jsx";
@@ -244,6 +244,9 @@ export default function IntakeForm() {
   const guestContactReady = isGuest
     ? hasContactDetails(submissionContact(form, user))
     : Boolean(form.name.trim());
+  // 이메일칸에 뭔가 입력했지만 유효한 이메일이 아니면 그 이유를 빨간 메시지로 짚어준다
+  // (Next가 왜 눌리지 않는지 알 수 있게). 비어 있으면 아직 안 쓴 것이라 조용히 둔다.
+  const contactInvalid = isGuest && form.contact.trim().length > 0 && !isValidEmail(form.contact);
   const selectedStyle = styles.find((st) => st.id === form.styleId) || null;
   const activeCoupon = findCoupon(form.couponCode);
   const selectedStyleName = selectedStyle ? pickI18n(selectedStyle.name, locale) : g.consultPiece;
@@ -627,11 +630,15 @@ export default function IntakeForm() {
             <label className="field"><span>{t.contact} <span className="req">*</span></span>
               <input
                 value={form.contact}
+                type="email"
+                inputMode="email"
                 autoComplete="email"
                 placeholder="you@email.com"
+                aria-invalid={contactInvalid}
                 onChange={(e) => setF({ contact: e.target.value })}
                 onKeyDown={(e) => { if (e.key === "Enter" && guestContactReady) goNext(); }}
               />
+              {contactInvalid && <p className="form-error gflow-field-error">{t.contactInvalid}</p>}
             </label>
           ) : (
             // 로그인 고객: 제안이 도착할 이메일은 계정에서 — 수정 불가로 보여주기만

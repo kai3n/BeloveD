@@ -431,6 +431,9 @@ html[data-theme="day"] .lux-calendar-day.is-selected {
   color: #15120c;
 }
 .form-error { color: #e08585; font-size: 13px; margin: 0; }
+/* 인테이크 위저드 필드 하단 검증 메시지 — 눈에 띄는 진한 빨강 */
+.gflow-field-error { color: #d63b3b; font-weight: 600; font-size: 13.5px; margin: 8px 0 0; }
+.gflow-contact input[aria-invalid="true"] { border-color: #d63b3b; box-shadow: 0 0 0 2px rgba(214, 59, 59, 0.14); }
 .form-hint { color: var(--quiet); font-size: 12px; margin: 0; line-height: 1.6; }
 .demo-panel { margin-top: 18px; display: grid; gap: 10px; }
 

@@ -1,8 +1,8 @@
 export const localeOptions = [
   { code: "en", label: "EN", name: "English", htmlLang: "en" },
   { code: "zh", label: "中文", name: "Chinese", htmlLang: "zh-CN" },
-  { code: "ko", label: "KO", name: "Korean", htmlLang: "ko" },
-  { code: "es", label: "ES", name: "Spanish", htmlLang: "es" },
+  { code: "ko", label: "한국어", name: "Korean", htmlLang: "ko" },
+  { code: "es", label: "Español", name: "Spanish", htmlLang: "es" },
 ];
 
 export const translations = {
