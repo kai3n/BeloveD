@@ -11,6 +11,7 @@ import {
   setSessionCookie,
 } from "./middleware.js";
 import { createUploadUrl } from "./media.js";
+import { sendVendorInvite, sendVendorPasswordReset } from "./mailer.js";
 import {
   acceptSupplierInvite,
   addSupplierUpdate,
@@ -18,6 +19,7 @@ import {
   completeSupplierJob,
   createSupplier,
   createSupplierInvite,
+  createSupplierPasswordReset,
   getSupplierById,
   getSupplierOrder,
   listSupplierInventory,
@@ -25,6 +27,7 @@ import {
   listSuppliers,
   loginSupplier,
   reviewSupplierUpdate,
+  resetSupplierPassword,
   saveSupplierInventory,
   transitionSupplierJobByAdmin,
   transitionSupplierWorkflow,
@@ -36,6 +39,18 @@ const VENDOR_UPLOAD_SCOPES = new Set(["proposal", "cad", "qc"]);
 
 function vendorOrigin(req) {
   return process.env.VENDOR_ORIGIN || process.env.PUBLIC_ORIGIN || `${req.protocol}://${req.get("host")}`;
+}
+
+function vendorAppUrl(req) {
+  const url = new URL(process.env.VENDOR_APP_URL || vendorOrigin(req));
+  if (!new Set(["http:", "https:"]).has(url.protocol)) throw new ApiError("INTERNAL_ERROR", 500);
+  return url;
+}
+
+function vendorAuthUrl(req, parameter, token) {
+  const url = vendorAppUrl(req);
+  url.searchParams.set(parameter, token);
+  return url.toString();
 }
 
 export function supplierRouter() {
@@ -59,6 +74,34 @@ export function supplierRouter() {
         const { email, password } = req.body || {};
         if (typeof email !== "string" || typeof password !== "string") throw new ApiError("VALIDATION_ERROR", 400);
         const result = await loginSupplier(email, password);
+        setSessionCookie(res, COOKIE_SUPPLIER, result.session);
+        res.json({ ok: true, supplier: result.supplier });
+      } catch (e) { next(e); }
+    });
+
+  r.post("/auth/password-reset/request",
+    rateLimit({ limit: 20, windowMs: MINUTE }),
+    rateLimit({ limit: 3, windowMs: MINUTE, keyFn: (req) => `${req.ip}:${String(req.body?.email || "").toLowerCase()}` }),
+    async (req, res, next) => {
+      try {
+        const { email } = req.body || {};
+        if (typeof email !== "string") throw new ApiError("VALIDATION_ERROR", 400);
+        const reset = await createSupplierPasswordReset(email);
+        if (reset) {
+          const link = vendorAuthUrl(req, "reset", reset.token);
+          await sendVendorPasswordReset(reset.supplier.email, link, reset.supplier.locale)
+            .catch((error) => console.error("[supplier-password-reset] email delivery failed", error));
+        }
+        res.status(202).json({ ok: true });
+      } catch (e) { next(e); }
+    });
+
+  r.post("/auth/password-reset/confirm",
+    rateLimit({ limit: 10, windowMs: MINUTE }),
+    async (req, res, next) => {
+      try {
+        const { token, password } = req.body || {};
+        const result = await resetSupplierPassword(token, password);
         setSessionCookie(res, COOKIE_SUPPLIER, result.session);
         res.json({ ok: true, supplier: result.supplier });
       } catch (e) { next(e); }
@@ -185,12 +228,20 @@ export function supplierAdminRouter() {
   r.post("/suppliers/:supplierCode/invites", requireFullAdmin, async (req, res, next) => {
     try {
       const invite = await createSupplierInvite(req.params.supplierCode, req.principal.id);
-      const base = vendorOrigin(req).replace(/\/$/, "");
+      const inviteUrl = vendorAuthUrl(req, "token", invite.token);
+      let emailSent = true;
+      try {
+        await sendVendorInvite(invite.supplier.email, inviteUrl, invite.supplier.locale);
+      } catch (error) {
+        emailSent = false;
+        console.error("[supplier-invite] email delivery failed", error);
+      }
       res.status(201).json({
         ok: true,
         supplier: invite.supplier,
         expiresAt: invite.expiresAt,
-        inviteUrl: `${base}/accept-invite?token=${encodeURIComponent(invite.token)}`,
+        inviteUrl,
+        emailSent,
       });
     } catch (e) { next(e); }
   });

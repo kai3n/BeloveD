@@ -568,31 +568,55 @@ function AddStoneSheet({ onClose, onDone }) {
 function LoginPage({ onAuthenticated }) {
   const { t, locale } = useI18n();
   const brand = vendorBrand(locale);
-  const token = new URLSearchParams(window.location.search).get("token");
+  const parameters = new URLSearchParams(window.location.search);
+  const token = parameters.get("token");
+  const resetToken = parameters.get("reset");
+  const [forgot, setForgot] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmation, setConfirmation] = useState("");
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const submit = async (event) => {
     event.preventDefault();
-    setBusy(true); setError("");
+    setBusy(true); setError(""); setMessage("");
     try {
-      const result = token
-        ? await vendorApi.acceptInvite(token, password)
-        : await vendorApi.login(email, password);
-      if (token) window.history.replaceState({}, "", window.location.pathname);
+      if (forgot) {
+        await vendorApi.requestPasswordReset(email);
+        setMessage(t("如果该邮箱对应有效账号，我们已经发送了密码重置链接。"));
+        return;
+      }
+      if ((token || resetToken) && password !== confirmation) {
+        setError(t("两次输入的密码不一致"));
+        return;
+      }
+      const result = token ? await vendorApi.acceptInvite(token, password)
+        : resetToken ? await vendorApi.confirmPasswordReset(resetToken, password)
+          : await vendorApi.login(email, password);
+      if (token || resetToken) window.history.replaceState({}, "", window.location.pathname);
       onAuthenticated(result.supplier);
     } catch (e) {
-      setError(e.code === "INVALID_CREDENTIALS" ? t("邮箱或密码不正确") : t("登录失败，请稍后重试"));
+      setError(e.code === "INVALID_CREDENTIALS" ? t("邮箱或密码不正确")
+        : e.code === "SUPPLIER_PASSWORD_RESET_INVALID" ? t("重置链接无效或已过期")
+          : t("登录失败，请稍后重试"));
     } finally { setBusy(false); }
   };
+  const title = token ? "设置密码并激活账号" : resetToken ? "设置新密码" : forgot ? "重置密码" : "供应商工作台";
+  const subtitle = token ? "此邀请链接将在使用后失效。"
+    : resetToken ? "请输入新的登录密码。"
+      : forgot ? "输入登录邮箱，我们会发送一个一小时内有效的重置链接。"
+        : "使用平台分配的账号登录。";
   return <main className="login-page">
-    <div className="login-brand"><span>{brand.mark}</span><p>{brand.name}</p><h1>{t(token ? "设置密码并激活账号" : "供应商工作台")}</h1><small>{t(token ? "此邀请链接将在使用后失效。" : "使用平台分配的账号登录。")}</small></div>
+    <div className="login-brand"><span>{brand.mark}</span><p>{brand.name}</p><h1>{t(title)}</h1><small>{t(subtitle)}</small></div>
     <form className="login-card" onSubmit={submit}>
-      {!token && <label>{t("邮箱")}<input autoComplete="username" inputMode="email" value={email} onChange={(e) => setEmail(e.target.value)} /></label>}
-      <label>{t(token ? "设置密码" : "密码")}<input autoComplete={token ? "new-password" : "current-password"} type="password" minLength="8" value={password} onChange={(e) => setPassword(e.target.value)} /></label>
+      {!token && !resetToken && <label>{t("邮箱")}<input required autoComplete="username" inputMode="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></label>}
+      {!forgot && <label>{t(token ? "设置密码" : resetToken ? "新密码" : "密码")}<input required autoComplete={token || resetToken ? "new-password" : "current-password"} type="password" minLength="8" value={password} onChange={(e) => setPassword(e.target.value)} /></label>}
+      {(token || resetToken) && <label>{t("确认新密码")}<input required autoComplete="new-password" type="password" minLength="8" value={confirmation} onChange={(e) => setConfirmation(e.target.value)} /></label>}
       {error && <p className="login-error">{error}</p>}
-      <button disabled={busy || (!token && !email) || password.length < 8}>{busy ? t("请稍候…") : t(token ? "激活并登录" : "登录")}</button>
+      {message && <p className="login-message">{message}</p>}
+      <button disabled={busy || (forgot ? !email : password.length < 8 || ((token || resetToken) && confirmation.length < 8))}>{busy ? t("请稍候…") : t(forgot ? "发送重置链接" : token ? "激活并登录" : resetToken ? "重置并登录" : "登录")}</button>
+      {!token && !resetToken && <button className="login-link" type="button" onClick={() => { setForgot(value => !value); setError(""); setMessage(""); }}>{t(forgot ? "返回登录" : "忘记密码？")}</button>}
     </form>
     <p className="login-foot"><ShieldCheck size={14} />{t("客户联系方式、零售价与付款信息不会显示在此端。")}</p>
   </main>;

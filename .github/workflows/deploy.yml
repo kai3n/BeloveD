@@ -25,11 +25,11 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
-      - run: npm run build
+      - run: npm run build:web
         env:
           GITHUB_PAGES: "1"
-      # Vendor 手机端作为同仓独立 App，发布到 /BeloveD/vendor/。
-      # 默认 Demo Mode，不连接或暴露生产 Vendor API。
+      # Publish the standalone Vendor mobile app from this repository at /BeloveD/vendor/.
+      # Keep GitHub Pages in Demo Mode so it never connects to or exposes the production Vendor API.
       - uses: pnpm/action-setup@v4
         with:
           version: 10.27.0

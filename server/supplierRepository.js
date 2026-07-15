@@ -5,6 +5,9 @@ import { hashPassword, verifyPassword } from "./passwords.js";
 import { hashToken, issueSession, revokeAllForPrincipal } from "./session.js";
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const PASSWORD_RESET_TTL_MS = 60 * 60 * 1000;
+const PASSWORD_RESET_WINDOW_MS = 60 * 60 * 1000;
+const MAX_PASSWORD_RESETS_PER_WINDOW = 5;
 const SUPPLIER_SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const UPDATE_TYPES = new Set(["ACKNOWLEDGE", "NOTE", "STONE", "ESTIMATE", "CAD", "PROGRESS", "QC", "SHIPPING", "HANDOFF_READY"]);
@@ -89,6 +92,8 @@ function supplierView(row) {
     timezone: row.timezone,
     activeOrderCount: Number(row.active_order_count || 0),
     lastLoginAt: row.last_login_at,
+    invitedAt: row.invited_at || null,
+    inviteExpiresAt: row.invite_expires_at || null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -148,10 +153,18 @@ function inventoryView(row) {
 
 export async function listSuppliers() {
   const { rows } = await query(`
-    select s.*, count(a.id) filter (where a.status = 'active') as active_order_count
+    select s.*, coalesce(a.active_order_count, 0) as active_order_count,
+      i.created_at as invited_at, i.expires_at as invite_expires_at
     from suppliers s
-    left join supplier_order_assignments a on a.supplier_id = s.id
-    group by s.id
+    left join (
+      select supplier_id, count(*)::int as active_order_count
+      from supplier_order_assignments where status='active' group by supplier_id
+    ) a on a.supplier_id = s.id
+    left join lateral (
+      select created_at, expires_at from supplier_invites
+      where supplier_id=s.id and accepted_at is null and revoked_at is null
+      order by created_at desc limit 1
+    ) i on true
     order by s.created_at desc
   `);
   return rows.map(supplierView);
@@ -227,6 +240,83 @@ export async function acceptSupplierInvite(rawToken, password) {
     return updated.rows[0];
   });
   return { supplier: supplierView(supplier), session: await issueSession("supplier", supplier.id, SUPPLIER_SESSION_TTL_MS) };
+}
+
+export async function createSupplierPasswordReset(email) {
+  const normalized = emailOf(email);
+  if (!EMAIL_RE.test(normalized)) return null;
+
+  return withTransaction(async (client) => {
+    const { rows } = await client.query(
+      "select * from suppliers where email=$1 and status='active' for update",
+      [normalized],
+    );
+    const supplier = rows[0];
+    if (!supplier?.password_hash) return null;
+
+    const recent = await client.query(`
+      select count(*)::int as count
+      from supplier_password_reset_tokens
+      where supplier_id=$1 and created_at > $2
+    `, [supplier.id, new Date(Date.now() - PASSWORD_RESET_WINDOW_MS)]);
+    if (recent.rows[0].count >= MAX_PASSWORD_RESETS_PER_WINDOW) return null;
+
+    const raw = randomBytes(32).toString("hex");
+    const expiresAt = new Date(Date.now() + PASSWORD_RESET_TTL_MS);
+    await client.query(`
+      update supplier_password_reset_tokens set used_at=now()
+      where supplier_id=$1 and used_at is null
+    `, [supplier.id]);
+    await client.query(`
+      insert into supplier_password_reset_tokens (token_hash, supplier_id, expires_at)
+      values ($1,$2,$3)
+    `, [hashToken(raw), supplier.id, expiresAt]);
+    await client.query(`
+      insert into audit_log (actor_type, actor_ref, entity_type, entity_ref, action, after_json)
+      values ('supplier', $1, 'supplier', $1, 'password_reset_requested', $2)
+    `, [supplier.supplier_code, { expiresAt }]);
+    return { token: raw, expiresAt, supplier: supplierView(supplier) };
+  });
+}
+
+export async function resetSupplierPassword(rawToken, password) {
+  if (typeof rawToken !== "string" || typeof password !== "string" || password.length < 8) {
+    throw new ApiError("VALIDATION_ERROR", 400);
+  }
+
+  const supplier = await withTransaction(async (client) => {
+    const { rows } = await client.query(`
+      select s.*, t.expires_at, t.used_at
+      from supplier_password_reset_tokens t
+      join suppliers s on s.id=t.supplier_id
+      where t.token_hash=$1
+      for update of t
+    `, [hashToken(rawToken)]);
+    const row = rows[0];
+    if (!row || row.used_at || new Date(row.expires_at) <= new Date()
+      || row.status !== "active" || !row.password_hash) {
+      throw new ApiError("SUPPLIER_PASSWORD_RESET_INVALID", 400);
+    }
+
+    await client.query(`
+      update supplier_password_reset_tokens set used_at=now()
+      where supplier_id=$1 and used_at is null
+    `, [row.id]);
+    const updated = await client.query(`
+      update suppliers set password_hash=$1, updated_at=now()
+      where id=$2 returning *
+    `, [hashPassword(password), row.id]);
+    await client.query(`
+      insert into audit_log (actor_type, actor_ref, entity_type, entity_ref, action, after_json)
+      values ('supplier', $1, 'supplier', $1, 'password_reset_completed', $2)
+    `, [row.supplier_code, supplierView(updated.rows[0])]);
+    return updated.rows[0];
+  });
+
+  return {
+    supplier: supplierView(supplier),
+    session: await issueSession("supplier", supplier.id, SUPPLIER_SESSION_TTL_MS),
+  };
 }
 
 export async function loginSupplier(email, password) {

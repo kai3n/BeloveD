@@ -39,6 +39,9 @@ button { cursor: pointer; }
 .login-card > button { width: 100%; height: 48px; border: 0; border-radius: 12px; background: var(--brand); color: #fff; font-size: 12px; font-weight: 700; }
 .login-card > button:disabled { background: #aab8b4; }
 .login-error { margin: -2px 0 12px; color: #a94a40; font-size: 10px; }
+.login-message { margin: -2px 0 12px; color: #28715e; font-size: 11px; line-height: 1.5; }
+.login-card > .login-link { height: auto; margin-top: 15px; padding: 3px; background: transparent; color: var(--brand-2); font-weight: 600; }
+.login-card > .login-link:disabled { background: transparent; }
 .login-foot { color: #667a74; font-size: 9px; display: flex; align-items: flex-start; gap: 6px; line-height: 1.5; padding: 12px 4px 0; }
 .login-foot svg { flex: 0 0 auto; color: #48766b; }
 
