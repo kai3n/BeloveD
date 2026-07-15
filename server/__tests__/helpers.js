@@ -20,3 +20,9 @@ export async function truncateActivity() {
 export async function truncateChat() {
   await query("truncate table chat_messages, chat_threads, consultation_bookings, push_subscriptions restart identity cascade");
 }
+
+export async function truncateSuppliers() {
+  await query(`truncate table supplier_updates, supplier_inventory,
+    supplier_order_assignments, supplier_invites, suppliers
+    restart identity cascade`);
+}

@@ -1,5 +1,5 @@
-// Cloudflare R2 미디어 서비스 — 서버는 presigned PUT URL만 발급하고
-// 파일은 브라우저가 R2로 직접 업로드한다 (Vercel 함수 4.5MB 바디 제한 우회).
+// S3-compatible media service (Tencent COS or Cloudflare R2). The server only
+// issues short-lived PUT URLs; browsers upload directly to object storage.
 import { randomBytes } from "node:crypto";
 import { dirname, extname, join, relative, sep } from "node:path";
 import { tmpdir } from "node:os";
@@ -52,31 +52,70 @@ export function r2Configured(env = process.env) {
   return Boolean(env.R2_ACCOUNT_ID && env.R2_ACCESS_KEY_ID && env.R2_SECRET_ACCESS_KEY && env.R2_BUCKET && env.R2_PUBLIC_URL);
 }
 
+export function cosConfigured(env = process.env) {
+  return Boolean(env.COS_REGION && env.COS_ACCESS_KEY_ID && env.COS_SECRET_ACCESS_KEY
+    && env.COS_BUCKET && env.COS_PUBLIC_URL);
+}
+
 export function localMediaEnabled(env = process.env) {
   return env.NODE_ENV !== "production" && env.VERCEL_ENV !== "production";
 }
 
 export function mediaProvider(env = process.env) {
+  if (env.MEDIA_PROVIDER === "cos") return cosConfigured(env) ? "cos" : null;
+  if (env.MEDIA_PROVIDER === "r2") return r2Configured(env) ? "r2" : null;
+  if (cosConfigured(env)) return "cos";
   if (r2Configured(env)) return "r2";
   if (localMediaEnabled(env)) return "local";
   return null;
 }
 
 let _client;
-function client() {
-  if (!_client) {
-    _client = new S3Client({
+let _clientKey;
+
+function cloudConfig(env = process.env, preferredProvider = null) {
+  const provider = preferredProvider || mediaProvider(env);
+  if (provider === "cos") {
+    return {
+      provider,
+      region: env.COS_REGION,
+      endpoint: env.COS_ENDPOINT || `https://cos.${env.COS_REGION}.myqcloud.com`,
+      accessKeyId: env.COS_ACCESS_KEY_ID,
+      secretAccessKey: env.COS_SECRET_ACCESS_KEY,
+      bucket: env.COS_BUCKET,
+      publicUrl: env.COS_PUBLIC_URL,
+    };
+  }
+  if (provider === "r2") {
+    return {
+      provider,
       region: "auto",
+      endpoint: `https://${env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+      accessKeyId: env.R2_ACCESS_KEY_ID,
+      secretAccessKey: env.R2_SECRET_ACCESS_KEY,
+      bucket: env.R2_BUCKET,
+      publicUrl: env.R2_PUBLIC_URL,
+    };
+  }
+  return null;
+}
+
+function client(config) {
+  const key = JSON.stringify([config.provider, config.region, config.endpoint, config.accessKeyId]);
+  if (!_client || _clientKey !== key) {
+    _client = new S3Client({
+      region: config.region,
       // 브라우저 직접 PUT과 호환: SDK 기본 체크섬 서명이 URL에 박히면
       // 클라이언트가 같은 체크섬을 못 보내 업로드가 거부된다.
       requestChecksumCalculation: "WHEN_REQUIRED",
       responseChecksumValidation: "WHEN_REQUIRED",
-      endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+      endpoint: config.endpoint,
       credentials: {
-        accessKeyId: process.env.R2_ACCESS_KEY_ID,
-        secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+        accessKeyId: config.accessKeyId,
+        secretAccessKey: config.secretAccessKey,
       },
     });
+    _clientKey = key;
   }
   return _client;
 }
@@ -95,6 +134,15 @@ function validateUploadInput({ scope, contentType, size }) {
     throw new ApiError("MEDIA_TOO_LARGE", 400);
   }
   return { ext, bytes, contentType: String(contentType).toLowerCase() };
+}
+
+function validatedKeyPrefix(value) {
+  if (value == null || value === "") return "";
+  const prefix = String(value);
+  if (!/^[a-z0-9-]+(?:\/[a-z0-9-]+)*$/.test(prefix) || prefix.length > 120) {
+    throw new ApiError("VALIDATION_ERROR", 400, "bad key prefix");
+  }
+  return prefix;
 }
 
 function safeOrigin(origin) {
@@ -223,29 +271,31 @@ async function createLocalUploadUrl({ scope, contentType, ext, bytes, origin }) 
   };
 }
 
-export async function createUploadUrl({ scope, contentType, size, origin }) {
+export async function createUploadUrl({ scope, contentType, size, origin, keyPrefix, provider }) {
   const validated = validateUploadInput({ scope, contentType, size });
-  if (!r2Configured()) {
+  const prefix = validatedKeyPrefix(keyPrefix);
+  const config = cloudConfig(process.env, provider);
+  if (!config) {
     if (!localMediaEnabled()) throw new ApiError("MEDIA_NOT_CONFIGURED", 503);
     return createLocalUploadUrl({ scope, origin, ...validated });
   }
   const { ext, bytes } = validated;
-  const key = `${scope}/${new Date().toISOString().slice(0, 10)}/${randomBytes(12).toString("hex")}.${ext}`;
+  const key = `${prefix ? `${prefix}/` : ""}${scope}/${new Date().toISOString().slice(0, 10)}/${randomBytes(12).toString("hex")}.${ext}`;
   // ContentLength를 서명에 포함 — presigned PUT이 정확히 이 바이트 수만 허용한다.
   // 이게 없으면 클라이언트가 선언한 size와 무관하게 임의 크기(수 GB)를 올릴 수 있어
   // MAX_BYTES 검사가 무의미해진다 (비인증 스토리지/대역폭 비용 DoS). 브라우저는
   // 본문 PUT 시 Content-Length를 항상 보내므로 정상 업로드에는 영향이 없다.
   const command = new PutObjectCommand({
-    Bucket: process.env.R2_BUCKET,
+    Bucket: config.bucket,
     Key: key,
     ContentType: contentType,
     ContentLength: bytes,
   });
-  const uploadUrl = await getSignedUrl(client(), command, {
+  const uploadUrl = await getSignedUrl(client(config), command, {
     expiresIn: SIGN_TTL_SECONDS,
     unhoistableHeaders: new Set(["content-length"]),
   });
-  const publicUrl = `${process.env.R2_PUBLIC_URL.replace(/\/$/, "")}/${key}`;
+  const publicUrl = `${config.publicUrl.replace(/\/$/, "")}/${key}`;
   return { uploadUrl, publicUrl, key, expiresIn: SIGN_TTL_SECONDS };
 }
 

@@ -1,15 +1,16 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
-import { Activity, CircleDollarSign, Coins, CreditCard, Gem, MessagesSquare, ShoppingBag, Star, TicketPercent, Users } from "lucide-react";
+import { Activity, Building2, CircleDollarSign, Coins, CreditCard, Gem, MessagesSquare, ShoppingBag, Star, TicketPercent, Users } from "lucide-react";
 import { syncAdminCatalogFromServer } from "../../lib/serverSync.js";
 import { apiFetch } from "../../lib/api.js";
 import { useLocale } from "../../i18n.jsx";
 import { useAuth } from "../../lib/auth.jsx";
 
 const CHAT_LABEL = { en: "Messages", ko: "메시지", zh: "消息", es: "Mensajes" };
+const SUPPLIER_LABEL = { en: "Vendors", ko: "벤더", zh: "供应商", es: "Proveedores" };
 
 // 돈 관련 메뉴 — bot_admin 세션에는 숨긴다 (서버 requireFullAdmin이 최종 방어선)
-const FULL_ADMIN_MENU = new Set(["benchmark", "metals", "payments", "coupons"]);
+const FULL_ADMIN_MENU = new Set(["benchmark", "metals", "payments", "coupons", "suppliers"]);
 
 export default function Admin() {
   const { p, locale } = useLocale();
@@ -42,6 +43,7 @@ export default function Admin() {
     { to: "/bo-4q9z7m/coupons", key: "coupons", Icon: TicketPercent },
     { to: "/bo-4q9z7m/reviews", key: "reviews", Icon: Star },
     { to: "/bo-4q9z7m/members", key: "members", Icon: Users },
+    { to: "/bo-4q9z7m/suppliers", key: "suppliers", Icon: Building2, label: SUPPLIER_LABEL[locale] || SUPPLIER_LABEL.en },
     { to: "/bo-4q9z7m/analytics", key: "analytics", Icon: Activity },
   ].filter((item) => adminLevel !== "bot" || !FULL_ADMIN_MENU.has(item.key));
   return (
@@ -70,4 +72,3 @@ export default function Admin() {
     </div>
   );
 }
-
