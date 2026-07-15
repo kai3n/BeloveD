@@ -28,6 +28,16 @@ jobs:
       - run: npm run build
         env:
           GITHUB_PAGES: "1"
+      # Vendor 手机端作为同仓独立 App，发布到 /BeloveD/vendor/。
+      # 默认 Demo Mode，不连接或暴露生产 Vendor API。
+      - run: corepack enable
+      - run: pnpm --dir apps/vendor-mobile install --frozen-lockfile
+      - run: pnpm --dir apps/vendor-mobile build
+        env:
+          GITHUB_PAGES: "1"
+          VITE_DEMO_MODE: "true"
+      - run: mkdir -p dist/vendor
+      - run: cp -R apps/vendor-mobile/dist/. dist/vendor/
       # SPA 라우팅: 새로고침/딥링크 404를 index.html로 폴백
       - run: cp dist/index.html dist/404.html
       - uses: actions/upload-pages-artifact@v3
