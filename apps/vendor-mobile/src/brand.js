@@ -1,4 +1,4 @@
-// Vendor UI 白标配置。部署时可用 VITE_VENDOR_BRAND_* 覆盖，无需修改页面代码。
+// Vendor UI white-label configuration. Override it at deploy time with VITE_VENDOR_BRAND_* without changing page code.
 const BRAND_BY_LOCALE = {
   zh: {
     name: import.meta.env.VITE_VENDOR_BRAND_ZH || "得月",

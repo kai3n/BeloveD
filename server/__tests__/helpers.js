@@ -22,7 +22,7 @@ export async function truncateChat() {
 }
 
 export async function truncateSuppliers() {
-  await query(`truncate table supplier_updates, supplier_inventory,
+  await query(`truncate table supplier_password_reset_tokens, supplier_updates, supplier_inventory,
     supplier_order_assignments, supplier_invites, suppliers
     restart identity cascade`);
 }

@@ -4,12 +4,14 @@ import { createApp } from "../app.js";
 import { query } from "../db.js";
 import { hashPassword } from "../passwords.js";
 import { __resetRateLimit } from "../rateLimit.js";
+import { drainMail } from "../mailer.js";
 import { truncateAuth, truncateCustomerCore, truncateSuppliers } from "./helpers.js";
 
 const app = createApp();
 
 beforeEach(async () => {
   __resetRateLimit();
+  drainMail();
   await truncateSuppliers();
   await truncateCustomerCore();
   await truncateAuth();
@@ -49,6 +51,7 @@ async function inviteAndActivate(admin, email, displayName) {
   const accepted = await request(app).post("/v1/vendor/auth/accept-invite")
     .send({ token, password: "vendor-pass-123" });
   expect(accepted.status).toBe(200);
+  drainMail();
   return { supplierCode, cookie: accepted.headers["set-cookie"] };
 }
 
@@ -112,6 +115,74 @@ async function advanceSolitaireToProduction(admin, vendorCookie, jobCode) {
 }
 
 describe("one account per vendor", () => {
+  it("emails a subpath-safe activation link and exposes the pending invitation state", async () => {
+    const previousAppUrl = process.env.VENDOR_APP_URL;
+    process.env.VENDOR_APP_URL = "https://vendor.example.com/BeloveD/vendor/";
+    try {
+      const admin = await adminCookie();
+      const created = await request(app).post("/v1/admin/suppliers").set("Cookie", admin).send({
+        email: "new-vendor@example.com", displayName: "New Vendor", contactName: "Vendor Contact", locale: "en",
+      });
+      const supplierCode = created.body.supplier.supplierCode;
+      const invitation = await request(app).post(`/v1/admin/suppliers/${supplierCode}/invites`).set("Cookie", admin);
+      expect(invitation.status).toBe(201);
+      expect(invitation.body.emailSent).toBe(true);
+      const inviteUrl = new URL(invitation.body.inviteUrl);
+      expect(inviteUrl.pathname).toBe("/BeloveD/vendor/");
+      expect(inviteUrl.searchParams.get("token")).toBeTruthy();
+      expect(drainMail()).toEqual([expect.objectContaining({
+        type: "vendor_invite", to: "new-vendor@example.com", link: invitation.body.inviteUrl, locale: "en",
+      })]);
+
+      const directory = await request(app).get("/v1/admin/suppliers").set("Cookie", admin);
+      expect(directory.body.suppliers[0]).toMatchObject({ supplierCode, status: "invited" });
+      expect(directory.body.suppliers[0].invitedAt).toBeTruthy();
+      expect(directory.body.suppliers[0].inviteExpiresAt).toBeTruthy();
+    } finally {
+      if (previousAppUrl === undefined) delete process.env.VENDOR_APP_URL;
+      else process.env.VENDOR_APP_URL = previousAppUrl;
+    }
+  });
+
+  it("resets a vendor password with a one-time link while keeping existing sessions", async () => {
+    const admin = await adminCookie();
+    const email = "password-reset@example.com";
+    const vendor = await inviteAndActivate(admin, email, "Password Reset Vendor");
+
+    const unknown = await request(app).post("/v1/vendor/auth/password-reset/request")
+      .send({ email: "unknown@example.com" });
+    expect(unknown.status).toBe(202);
+    expect(unknown.body).toEqual({ ok: true });
+    expect(drainMail()).toEqual([]);
+
+    const requested = await request(app).post("/v1/vendor/auth/password-reset/request").send({ email });
+    expect(requested.status).toBe(202);
+    expect(requested.body).toEqual({ ok: true });
+    const messages = drainMail();
+    expect(messages).toHaveLength(1);
+    expect(messages[0]).toMatchObject({ type: "vendor_password_reset", to: email, locale: "zh" });
+    const resetToken = new URL(messages[0].link).searchParams.get("reset");
+    expect(resetToken).toBeTruthy();
+
+    const reset = await request(app).post("/v1/vendor/auth/password-reset/confirm")
+      .send({ token: resetToken, password: "new-vendor-pass-456" });
+    expect(reset.status).toBe(200);
+    expect(reset.body.supplier.email).toBe(email);
+    const newCookie = reset.headers["set-cookie"];
+
+    expect((await request(app).get("/v1/vendor/me").set("Cookie", vendor.cookie)).status).toBe(200);
+    expect((await request(app).get("/v1/vendor/me").set("Cookie", newCookie)).status).toBe(200);
+    expect((await request(app).post("/v1/vendor/auth/password")
+      .send({ email, password: "vendor-pass-123" })).status).toBe(401);
+    expect((await request(app).post("/v1/vendor/auth/password")
+      .send({ email, password: "new-vendor-pass-456" })).status).toBe(200);
+
+    const reused = await request(app).post("/v1/vendor/auth/password-reset/confirm")
+      .send({ token: resetToken, password: "another-vendor-pass-789" });
+    expect(reused.status).toBe(400);
+    expect(reused.body.error.code).toBe("SUPPLIER_PASSWORD_RESET_INVALID");
+  });
+
   it("invites the vendor, assigns only its order, and strips customer PII", async () => {
     const admin = await adminCookie();
     const orderCode = await createOrder();

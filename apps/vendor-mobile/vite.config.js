@@ -5,8 +5,8 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   return {
     plugins: [react()],
-    // GitHub Pages 项目站位于 /BeloveD/；Vendor App 独立发布到其 /vendor/ 子路径。
-    base: process.env.GITHUB_PAGES ? "/BeloveD/vendor/" : "/",
+    // The GitHub Pages project is served from /BeloveD/; the Vendor App is published under its /vendor/ subpath.
+    base: process.env.GITHUB_PAGES ? "/BeloveD/vendor/" : process.env.VENDOR_BASE_PATH || "/",
     server: {
       port: 5174,
       proxy: env.BELOVED_API_PROXY

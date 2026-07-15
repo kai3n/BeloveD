@@ -91,6 +91,66 @@ export async function sendLoginCode(email, code, locale = "en") {
   ), { type: "login_code", code, locale });
 }
 
+const VENDOR_RESET_COPY = {
+  en: {
+    subject: "Reset your De Lune Vendor password",
+    line: "A password reset was requested for your Vendor account. This link expires in 1 hour.",
+    cta: "RESET PASSWORD",
+    ignore: "If you did not request this reset, you can ignore this email and your password will remain unchanged.",
+  },
+  zh: {
+    subject: "重置您的得月供应商账号密码",
+    line: "我们收到了您的供应商账号密码重置请求。此链接将在 1 小时后失效。",
+    cta: "重置密码",
+    ignore: "如果这不是您本人的操作，可以忽略此邮件，您的密码不会改变。",
+  },
+  ko: {
+    subject: "De Lune 벤더 비밀번호 재설정",
+    line: "벤더 계정의 비밀번호 재설정 요청이 접수되었습니다. 링크는 1시간 후 만료됩니다.",
+    cta: "비밀번호 재설정",
+    ignore: "직접 요청하지 않으셨다면 이 메일을 무시하세요. 기존 비밀번호는 변경되지 않습니다.",
+  },
+};
+
+export async function sendVendorPasswordReset(email, link, locale = "en") {
+  const t = VENDOR_RESET_COPY[locale] || VENDOR_RESET_COPY.en;
+  return deliver(email, t.subject, wrap(
+    `<p style="font-size:15px;line-height:1.6">${t.line}</p>
+     <p style="margin:24px 0"><a href="${link}" style="background:#123f3a;color:#fff;padding:14px 26px;text-decoration:none;letter-spacing:.1em;font-size:13px">${t.cta}</a></p>`,
+    t.ignore,
+  ), { type: "vendor_password_reset", link, locale, subject: t.subject });
+}
+
+const VENDOR_INVITE_COPY = {
+  en: {
+    subject: "You are invited to the De Lune Vendor workspace",
+    line: "Your Vendor account is ready. Use the secure link below to set a password and activate your account. The link expires in 7 days.",
+    cta: "ACTIVATE ACCOUNT",
+    ignore: "This invitation was created by the BeloveD operations team. If you were not expecting it, contact your operations representative.",
+  },
+  zh: {
+    subject: "得月供应商工作台邀请",
+    line: "您的供应商账号已经创建。请使用下方安全链接设置密码并激活账号。链接将在 7 天后失效。",
+    cta: "激活账号",
+    ignore: "此邀请由 BeloveD 订单团队创建。如您并未预期收到邀请，请联系对应的订单负责人。",
+  },
+  ko: {
+    subject: "De Lune 벤더 작업공간 초대",
+    line: "벤더 계정이 준비되었습니다. 아래 보안 링크에서 비밀번호를 설정하고 계정을 활성화하세요. 링크는 7일 후 만료됩니다.",
+    cta: "계정 활성화",
+    ignore: "이 초대는 BeloveD 운영팀이 만들었습니다. 예상하지 못한 초대라면 담당자에게 문의해 주세요.",
+  },
+};
+
+export async function sendVendorInvite(email, link, locale = "en") {
+  const t = VENDOR_INVITE_COPY[locale] || VENDOR_INVITE_COPY.en;
+  return deliver(email, t.subject, wrap(
+    `<p style="font-size:15px;line-height:1.6">${t.line}</p>
+     <p style="margin:24px 0"><a href="${link}" style="background:#123f3a;color:#fff;padding:14px 26px;text-decoration:none;letter-spacing:.1em;font-size:13px">${t.cta}</a></p>`,
+    t.ignore,
+  ), { type: "vendor_invite", link, locale, subject: t.subject });
+}
+
 // 주문 알림 등 임의 메일 — wrap 레이아웃 적용 후 발송. meta는 dev sink 검증용.
 // disclaimer: 하단 면책 문구(로케일별) — 호출부가 넘기지 않으면 붙이지 않는다.
 export async function sendOrderMail(to, subject, innerHtml, meta = {}, disclaimer = "") {

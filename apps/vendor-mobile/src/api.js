@@ -29,7 +29,7 @@ export async function apiFetch(path, { method = "GET", body, headers } = {}) {
   return data;
 }
 
-// 服务端只签名，手机直接 PUT 到对象存储。
+// The server only signs the request; the phone uploads directly to object storage with PUT.
 export async function uploadVendorMedia(file, scope = "qc") {
   const signed = await apiFetch("/vendor/media/upload-url", {
     method: "POST",
@@ -47,6 +47,8 @@ export async function uploadVendorMedia(file, scope = "qc") {
 export const vendorApi = {
   login: (email, password) => apiFetch("/vendor/auth/password", { method: "POST", body: { email, password } }),
   acceptInvite: (token, password) => apiFetch("/vendor/auth/accept-invite", { method: "POST", body: { token, password } }),
+  requestPasswordReset: (email) => apiFetch("/vendor/auth/password-reset/request", { method: "POST", body: { email } }),
+  confirmPasswordReset: (token, password) => apiFetch("/vendor/auth/password-reset/confirm", { method: "POST", body: { token, password } }),
   logout: () => apiFetch("/vendor/auth/logout", { method: "POST" }),
   me: () => apiFetch("/vendor/me"),
   orders: (status = "") => apiFetch(`/vendor/orders${status ? `?status=${status}` : ""}`),
