@@ -30,7 +30,9 @@ jobs:
           GITHUB_PAGES: "1"
       # Vendor 手机端作为同仓独立 App，发布到 /BeloveD/vendor/。
       # 默认 Demo Mode，不连接或暴露生产 Vendor API。
-      - run: corepack enable
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.27.0
       - run: pnpm --dir apps/vendor-mobile install --frozen-lockfile
       - run: pnpm --dir apps/vendor-mobile build
         env:
