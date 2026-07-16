@@ -707,6 +707,68 @@
   margin-top: 16px;
 }
 
+/* ── 제안 컴포저: 자동 견적 바 ───────────────────────────── */
+.quote-estimate {
+  margin: 0 0 4px;
+  padding: 10px 13px 11px;
+  border: 1px solid var(--admin-line);
+  border-radius: 9px;
+  background: var(--admin-stone);
+}
+.quote-estimate-row {
+  display: flex;
+  align-items: baseline;
+  gap: 11px;
+}
+.quote-estimate-tag {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--admin-gold);
+}
+.quote-estimate-total {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--admin-ink);
+  font-variant-numeric: tabular-nums;
+}
+.quote-estimate-apply {
+  margin-left: auto;
+  padding: 5px 12px;
+  border: 1px solid var(--admin-gold);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--admin-gold);
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.quote-estimate-apply:hover:not(:disabled) {
+  background: var(--admin-gold);
+  color: var(--admin-surface);
+}
+.quote-estimate-apply:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.quote-estimate-breakdown {
+  margin: 5px 0 0;
+  font-size: 11.5px;
+  color: var(--admin-quiet);
+  font-variant-numeric: tabular-nums;
+}
+.quote-deposit-hint {
+  display: block;
+  margin-top: 5px;
+  font-size: 11.5px;
+  color: var(--admin-gold);
+  font-variant-numeric: tabular-nums;
+}
+
 /* 벤치마크 격자 */
 .con-bench .data-table input {
   width: 88px;
