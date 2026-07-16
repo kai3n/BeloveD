@@ -180,7 +180,7 @@ const FLOW_GUARD_COPY = {
     depositInvalid: "Deposit must be greater than $0 and no more than the proposal total.",
     estLabel: "Auto estimate", estApply: "Use estimate", estDiamond: "diamond", estMetal: "metal", estLabor: "labor",
     depositAuto: (pct, amt) => `Leave blank → ${pct}% deposit (${amt})`,
-    couponLabel: "Coupon", couponListLabel: "List", couponFinalLabel: "Customer pays",
+    couponLabel: "Coupon", couponListLabel: "List", couponFinalLabel: "Customer pays", couponAtCost: "At cost",
     igiRequired: "Enter the certificate number before securing the diamond.",
     qcRequired: "Upload at least one finished-piece photo or video before sending QC.",
     uploadBusy: "Wait for every upload to finish before sending.",
@@ -207,7 +207,7 @@ const FLOW_GUARD_COPY = {
     depositInvalid: "디파짓은 $0보다 크고 제안 총액 이하여야 합니다.",
     estLabel: "자동 추정가", estApply: "추정가 적용", estDiamond: "다이아", estMetal: "메탈", estLabor: "공임",
     depositAuto: (pct, amt) => `비우면 자동 ${pct}% (${amt})`,
-    couponLabel: "쿠폰", couponListLabel: "정가", couponFinalLabel: "고객 결제가",
+    couponLabel: "쿠폰", couponListLabel: "정가", couponFinalLabel: "고객 결제가", couponAtCost: "원가",
     igiRequired: "다이아 확보 전에 감정서 번호를 입력해 주세요.",
     qcRequired: "QC를 보내기 전에 완성품 사진이나 영상을 하나 이상 업로드해 주세요.",
     uploadBusy: "모든 업로드가 끝난 뒤 보내주세요.",
@@ -230,7 +230,7 @@ const FLOW_GUARD_COPY = {
     totalRequired: "请输入大于 $0 的方案总价。", depositInvalid: "定金必须大于 $0 且不超过方案总价。",
     estLabel: "自动预估", estApply: "应用预估", estDiamond: "钻石", estMetal: "金属", estLabor: "工费",
     depositAuto: (pct, amt) => `留空 → ${pct}% 定金（${amt}）`,
-    couponLabel: "优惠券", couponListLabel: "原价", couponFinalLabel: "客户支付",
+    couponLabel: "优惠券", couponListLabel: "原价", couponFinalLabel: "客户支付", couponAtCost: "成本价",
     igiRequired: "锁定钻石前请输入证书编号。", qcRequired: "发送质检前请至少上传一张成品照片或视频。",
     uploadBusy: "请等待所有上传完成后再发送。", trackingRequired: "标记发货前请输入运单号。",
     confirmFire: (action) => `确认${action}？订单将更新并向客户发送邮件。`,
@@ -249,7 +249,7 @@ const FLOW_GUARD_COPY = {
     totalRequired: "Introduce un total de propuesta mayor que $0.", depositInvalid: "El depósito debe ser mayor que $0 y no superar el total.",
     estLabel: "Estimación automática", estApply: "Usar estimación", estDiamond: "diamante", estMetal: "metal", estLabor: "mano de obra",
     depositAuto: (pct, amt) => `Vacío → depósito del ${pct}% (${amt})`,
-    couponLabel: "Cupón", couponListLabel: "Precio", couponFinalLabel: "Cliente paga",
+    couponLabel: "Cupón", couponListLabel: "Precio", couponFinalLabel: "Cliente paga", couponAtCost: "Al costo",
     igiRequired: "Introduce el certificado antes de asegurar el diamante.", qcRequired: "Sube al menos una foto o video de la pieza antes de enviar el control.",
     uploadBusy: "Espera a que terminen todas las cargas.", trackingRequired: "Introduce el número de guía antes de marcar el envío.",
     confirmFire: (action) => `¿${action}? Esto actualizará el pedido y enviará un correo al cliente.`,
@@ -738,7 +738,7 @@ function StepCard({ step, index, order, done, changeRequest, expanded, onToggle,
               <label className="quote-coupon-toggle">
                 <input type="checkbox" checked={couponApplied} onChange={(e) => setCouponApplied(e.target.checked)} />
                 <span className="quote-coupon-code">{t.couponLabel} · {coupon.code}</span>
-                {coupon.kind === "percent" && <span className="quote-coupon-pct">−{coupon.value}%</span>}
+                <span className="quote-coupon-pct">{coupon.kind === "margin0" ? t.couponAtCost : `−${coupon.value}%`}</span>
               </label>
               {couponApplied && discountUsd > 0 && (
                 <div className="quote-coupon-breakdown">

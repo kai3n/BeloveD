@@ -126,16 +126,17 @@ export default function AdminCoupons() {
       </ConsoleHead>
 
       {/* 세일 배너 — 쿠폰과 한 캠페인 묶음이라 이 페이지에서 관리 */}
-      <section className="con-table-panel con-narrow" style={{ padding: 18, display: "grid", gap: 12 }}>
-        <div className="con-adjust" style={{ margin: 0 }}>
-          <span className="con-adjust-label">{c.bannerTitle}</span>
-          <label className="field" style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <input
-              type="checkbox" checked={bannerDraft.enabled} style={{ width: "auto" }}
-              onChange={(e) => setBannerDraft((d) => ({ ...d, enabled: e.target.checked }))}
-            />
-            <span>{c.bannerOn}</span>
-          </label>
+      <section className="con-table-panel con-narrow coupon-panel">
+        <div className="con-section-label" style={{ marginTop: 0 }}><h3>{c.bannerTitle}</h3></div>
+        <p className="con-note" style={{ margin: "0 0 14px" }}>{c.bannerSub}</p>
+        <label className="coupon-toggle">
+          <input
+            type="checkbox" checked={bannerDraft.enabled}
+            onChange={(e) => setBannerDraft((d) => ({ ...d, enabled: e.target.checked }))}
+          />
+          <span>{c.bannerOn}</span>
+        </label>
+        <div className="coupon-banner-row">
           <label className="field"><span>{c.bannerCode}</span>
             <input
               value={bannerDraft.code} maxLength={20} placeholder="LAUNCH25"
@@ -144,42 +145,46 @@ export default function AdminCoupons() {
           </label>
           <button className="button primary small" type="button" onClick={saveBanner}>{c.bannerSave}</button>
         </div>
-        {bannerCodeUnknown && <p className="form-error" style={{ margin: 0 }}>{c.bannerCodeWarn}</p>}
-        <p className="con-note" style={{ margin: 0 }}>{c.bannerSub}</p>
-        {BANNER_LOCALES.map((code) => (
-          <label key={code} className="field"><span>{code.toUpperCase()}</span>
-            <input
-              value={bannerDraft.copy[code]}
-              onChange={(e) => setBannerDraft((d) => ({ ...d, copy: { ...d.copy, [code]: e.target.value } }))}
-            />
-          </label>
-        ))}
+        {bannerCodeUnknown && <p className="form-error" style={{ margin: "0 0 12px" }}>{c.bannerCodeWarn}</p>}
+        <div className="coupon-banner-copy">
+          {BANNER_LOCALES.map((code) => (
+            <label key={code} className="field field-inline"><span>{code.toUpperCase()}</span>
+              <input
+                value={bannerDraft.copy[code]}
+                onChange={(e) => setBannerDraft((d) => ({ ...d, copy: { ...d.copy, [code]: e.target.value } }))}
+              />
+            </label>
+          ))}
+        </div>
       </section>
 
-      <div className="con-adjust con-narrow">
-        <span className="con-adjust-label">{c.addTitle}</span>
-        <label className="field"><span>{c.code}</span>
-          <input
-            value={code} placeholder="SUMMER20" maxLength={20}
-            onChange={(e) => setCode(e.target.value.toUpperCase())}
-            onKeyDown={(e) => { if (e.key === "Enter") submitAdd(); }}
-          />
-        </label>
-        <label className="field field-pct"><span>{c.pct}</span>
-          <input
-            type="number" min="1" max="99" step="1" value={pct} placeholder="10"
-            onChange={(e) => setPct(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") submitAdd(); }}
-          />
-        </label>
-        <label className="field"><span>{c.expiry}</span>
-          <input type="date" value={expiresAt} min={todayStr()} onChange={(e) => setExpiresAt(e.target.value)} />
-        </label>
-        <button className="button primary small" type="button" disabled={!code.trim() || !Number(pct)} onClick={submitAdd}>
-          {c.add}
-        </button>
-      </div>
-      {error && <p className="form-error con-narrow">{error}</p>}
+      {/* 새 이벤트 쿠폰 — 라벨을 섹션 헤더로 올려 입력 행이 한 줄에 들어가게 */}
+      <section className="con-table-panel con-narrow coupon-panel">
+        <div className="con-section-label" style={{ marginTop: 0 }}><h3>{c.addTitle}</h3></div>
+        <div className="coupon-add-row">
+          <label className="field"><span>{c.code}</span>
+            <input
+              value={code} placeholder="SUMMER20" maxLength={20}
+              onChange={(e) => setCode(e.target.value.toUpperCase())}
+              onKeyDown={(e) => { if (e.key === "Enter") submitAdd(); }}
+            />
+          </label>
+          <label className="field field-pct"><span>{c.pct}</span>
+            <input
+              type="number" min="1" max="99" step="1" value={pct} placeholder="10"
+              onChange={(e) => setPct(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") submitAdd(); }}
+            />
+          </label>
+          <label className="field"><span>{c.expiry}</span>
+            <input type="date" value={expiresAt} min={todayStr()} onChange={(e) => setExpiresAt(e.target.value)} />
+          </label>
+          <button className="button primary small" type="button" disabled={!code.trim() || !Number(pct)} onClick={submitAdd}>
+            {c.add}
+          </button>
+        </div>
+        {error && <p className="form-error" style={{ margin: "12px 0 0" }}>{error}</p>}
+      </section>
 
       <div className="con-table-panel con-narrow">
         <table className="data-table">
