@@ -505,14 +505,14 @@ function StepCard({ step, index, order, done, changeRequest, expanded, onToggle,
       })
       : null
   ), [step.composer, f.metalSpec, f.estWeightG, f.shape, f.caratMin, f.caratMax, f.color, f.clarity, f.growth, f.lab, fp.styleId, category]);
-  // 총액이 비어 있으면(어드민 미입력) 추정가로 1회 프리필 — 이후엔 어드민 편집/‘적용’ 버튼만 반영
-  const prefilledRef = useRef(false);
+  // Total(정가)은 추정가를 자동으로 따라간다 — 스펙(메탈 중량·캐럿·등급…)을 바꾸면 즉시 갱신.
+  // 단, 어드민이 Total을 직접 입력한 순간부터는 고정(수동 우선). ‘Use estimate’로 다시 자동 추적 재개.
+  const totalEditedRef = useRef(false);
   useEffect(() => {
-    if (!prefilledRef.current && estimate && f.total === "") {
-      prefilledRef.current = true;
-      setF((prev) => ({ ...prev, total: String(estimate.totalUsd) }));
+    if (step.composer === "proposal" && estimate && !totalEditedRef.current) {
+      setF((prev) => (prev.total === String(estimate.totalUsd) ? prev : { ...prev, total: String(estimate.totalUsd) }));
     }
-  }, [estimate, f.total]);
+  }, [estimate, step.composer]);
   const depositRate = getSettings()?.opsDepositRate ?? 0.3;
   // 쿠폰 — 인테이크에서 고객이 넣은 코드(있으면). 오퍼레이터가 확정 제안에서 검증(적용/해제).
   // Total 칸 = 정가(list). 쿠폰 적용 시 고객 결제가 = 정가 − 할인.
@@ -722,7 +722,7 @@ function StepCard({ step, index, order, done, changeRequest, expanded, onToggle,
                 <button
                   type="button"
                   className="quote-estimate-apply"
-                  onClick={() => setF({ ...f, total: String(estimate.totalUsd) })}
+                  onClick={() => { totalEditedRef.current = false; setF({ ...f, total: String(estimate.totalUsd) }); }}
                   disabled={Number(f.total) === estimate.totalUsd}
                 >
                   {t.estApply}
@@ -753,7 +753,7 @@ function StepCard({ step, index, order, done, changeRequest, expanded, onToggle,
           <div className="filter-grid admin-event-fields">
             {step.fields?.includes("total") && (
               <label className="field"><span>{t.total}{coupon && couponApplied && discountUsd > 0 ? ` · ${t.couponListLabel}` : ""}</span>
-                <input type="number" min="0.01" step="0.01" value={f.total} onChange={(e) => setF({ ...f, total: e.target.value })} required aria-invalid={step.composer === "proposal" && !(totalValue > 0)} /></label>
+                <input type="number" min="0.01" step="0.01" value={f.total} onChange={(e) => { totalEditedRef.current = true; setF({ ...f, total: e.target.value }); }} required aria-invalid={step.composer === "proposal" && !(totalValue > 0)} /></label>
             )}
             {step.composer === "proposal" && (
               <label className="field"><span>{t.deposit}</span>
