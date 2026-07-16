@@ -615,6 +615,98 @@
 /* 좁은 콘텐츠 페이지 (메탈 시세 등) — 패널이 화면 전체로 퍼지지 않게 */
 .con-narrow { max-width: 660px; }
 
+/* ── 히어로 영상 관리 ────────────────────────────────────── */
+.hero-admin-card {
+  padding: 14px;
+  border: 1px solid var(--admin-line);
+  border-radius: 12px;
+  background: var(--admin-surface-soft);
+}
+.hero-admin-card.is-staged {
+  margin-top: 18px;
+  border-color: var(--admin-gold);
+  background: var(--admin-gold-soft);
+}
+.hero-admin-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 0 12px;
+}
+.hero-admin-card-head h3 {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--admin-ink);
+}
+.hero-admin-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.hero-admin-badge::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.hero-admin-badge.is-live {
+  color: #4fae7a;
+  background: rgba(79, 174, 122, 0.14);
+}
+.hero-admin-badge.is-staged {
+  color: var(--admin-gold);
+  background: var(--admin-gold-soft);
+}
+.hero-admin-video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 8px;
+  background: #000;
+}
+.hero-admin-path {
+  margin-top: 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  word-break: break-all;
+}
+.hero-admin-uploading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  color: var(--admin-gold);
+}
+.hero-admin-uploading::before {
+  content: "";
+  width: 13px;
+  height: 13px;
+  border: 2px solid var(--admin-gold-soft);
+  border-top-color: var(--admin-gold);
+  border-radius: 50%;
+  animation: hero-admin-spin 0.7s linear infinite;
+}
+@keyframes hero-admin-spin { to { transform: rotate(360deg); } }
+.hero-admin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+}
+
 /* 벤치마크 격자 */
 .con-bench .data-table input {
   width: 88px;

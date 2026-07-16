@@ -1039,7 +1039,7 @@ export function MediaPicker({
           {hasLimit ? p.picker.limitHint(items.length, maxItems) : p.picker.dropSub}
         </span>
       </button>
-      {items.length > 0 && (
+      {items.length > 0 && previewMode !== "none" && (
         previewMode === "list" ? (
           <div className="picker-list" aria-label={p.picker.attachedLabel || p.picker.hint(items.length)}>
             {items.map((m, i) => {
