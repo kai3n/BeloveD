@@ -7,6 +7,7 @@ import { MediaPicker, MediaThumb, usd } from "../../components/ui.jsx";
 import { findCoupon, getOpsStyle, getSettings, isShippingAddressComplete } from "../../lib/store.js";
 import { estimateProposalQuote } from "../../lib/proposalEstimate.js";
 import { applyCoupon } from "../../lib/coupons.js";
+import { useDBVersion } from "../../lib/useDB.js";
 import { pickI18n, useLocale } from "../../i18n.jsx";
 import { ConsoleHead, Pager, StatStrip } from "./console.jsx";
 import { formatGradeRange, formatCaratRange } from "../../lib/gradeScale.js";
@@ -494,6 +495,9 @@ function StepCard({ step, index, order, done, changeRequest, expanded, onToggle,
   const [error, setError] = useState("");
   const [couponApplied, setCouponApplied] = useState(true);
   // 워크숍 가격 엔진으로 Total/Deposit 자동 추정 — 폼 필드가 바뀌면 즉시 다시 계산한다(발송 전 추정치)
+  // dbVersion: 다른 탭에서 시세표(다이아 벤치마크·메탈 시세·멀티플라이어)를 바꾸면 스토어 구독으로
+  // 리렌더 → deps 변경 → 열려 있는 컴포저도 실시간 재계산된다.
+  const dbVersion = useDBVersion();
   const category = order.intake?.category;
   const estimate = useMemo(() => (
     step.composer === "proposal"
@@ -504,7 +508,7 @@ function StepCard({ step, index, order, done, changeRequest, expanded, onToggle,
         styleId: fp.styleId, category,
       })
       : null
-  ), [step.composer, f.metalSpec, f.estWeightG, f.shape, f.caratMin, f.caratMax, f.color, f.clarity, f.growth, f.lab, fp.styleId, category]);
+  ), [step.composer, f.metalSpec, f.estWeightG, f.shape, f.caratMin, f.caratMax, f.color, f.clarity, f.growth, f.lab, fp.styleId, category, dbVersion]);
   // Total(정가)은 추정가를 자동으로 따라간다 — 스펙(메탈 중량·캐럿·등급…)을 바꾸면 즉시 갱신.
   // 단, 어드민이 Total을 직접 입력한 순간부터는 고정(수동 우선). ‘Use estimate’로 다시 자동 추적 재개.
   const totalEditedRef = useRef(false);

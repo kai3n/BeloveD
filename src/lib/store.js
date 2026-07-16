@@ -20,6 +20,21 @@ const storage = typeof localStorage !== "undefined" ? localStorage : memoryStora
 
 let cache = null;
 const listeners = new Set();
+
+// 탭 간 실시간 동기화 — 다른 탭이 스토어를 저장하면(가격표·설정 수정 등) 이 탭도 즉시 최신값으로 갱신한다.
+// storage 이벤트는 '다른' 탭의 변경에만 발생하므로 저장 루프가 없다. 구독 컴포넌트(견적 컴포저 등)가 재계산된다.
+if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
+  window.addEventListener("storage", (event) => {
+    if (event.key !== KEY || !event.newValue) return;
+    try {
+      const parsed = JSON.parse(event.newValue);
+      if (!isValidDB(parsed)) return;
+      cache = parsed;
+      migrateDB(cache);
+      listeners.forEach((fn) => fn());
+    } catch { /* 손상된 값 무시 */ }
+  });
+}
 const GENERATED_STYLE_MEDIA_PREFIX = "/assets/product-styles/";
 const STYLE_MEDIA_AUDIT_VERSION = "original-product-media-v6";
 const STYLE_COPY_AUDIT_VERSION = "seed-style-copy-v3";
