@@ -380,6 +380,12 @@ function ServerProposalCard({ pay, media, fc, t, shapes }) {
             <p className="section-label">{fc.priceTitle}</p>
             <div className="proposal-total">
               <span className="proposal-total-label">{fc.totalLabel}</span>
+              {pay.coupon?.code && pay.listUsd > total && (
+                <div className="proposal-coupon">
+                  <div className="proposal-coupon-row"><span>{fc.listLabel}</span><s>{usd(pay.listUsd)}</s></div>
+                  <div className="proposal-coupon-row is-save"><span>{fc.couponSaved} · {pay.coupon.code}</span><strong>−{usd(pay.coupon.discountUsd)}</strong></div>
+                </div>
+              )}
               <div className="proposal-amount">{usd(total)}</div>
               <p className="form-hint">{fc.totalMeta}</p>
             </div>

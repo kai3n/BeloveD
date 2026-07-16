@@ -360,6 +360,12 @@ function ProposalCard({ quote, intake, style, fc, t, p, locale, shippingProps, o
           <p className="section-label">{fc.priceTitle}</p>
           <div className="proposal-total">
             <span className="proposal-total-label">{fc.totalLabel}</span>
+            {quote.coupon?.code && quote.coupon.discountUsd > 0 && (
+              <div className="proposal-coupon">
+                <div className="proposal-coupon-row"><span>{fc.listLabel}</span><s>{usd(quote.listUsd ?? quote.totalUsd + quote.coupon.discountUsd)}</s></div>
+                <div className="proposal-coupon-row is-save"><span>{fc.couponSaved} · {quote.coupon.code}</span><strong>−{usd(quote.coupon.discountUsd)}</strong></div>
+              </div>
+            )}
             <div className="proposal-amount">{usd(quote.totalUsd)}</div>
             <p className="form-hint">{fc.totalMeta}</p>
           </div>

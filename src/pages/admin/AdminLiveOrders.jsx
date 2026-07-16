@@ -4,8 +4,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { apiFetch, ApiUnavailableError } from "../../lib/api.js";
 import { MediaPicker, MediaThumb, usd } from "../../components/ui.jsx";
-import { getOpsStyle, getSettings, isShippingAddressComplete } from "../../lib/store.js";
+import { findCoupon, getOpsStyle, getSettings, isShippingAddressComplete } from "../../lib/store.js";
 import { estimateProposalQuote } from "../../lib/proposalEstimate.js";
+import { applyCoupon } from "../../lib/coupons.js";
 import { pickI18n, useLocale } from "../../i18n.jsx";
 import { ConsoleHead, Pager, StatStrip } from "./console.jsx";
 import { formatGradeRange, formatCaratRange } from "../../lib/gradeScale.js";
@@ -179,6 +180,7 @@ const FLOW_GUARD_COPY = {
     depositInvalid: "Deposit must be greater than $0 and no more than the proposal total.",
     estLabel: "Auto estimate", estApply: "Use estimate", estDiamond: "diamond", estMetal: "metal", estLabor: "labor",
     depositAuto: (pct, amt) => `Leave blank → ${pct}% deposit (${amt})`,
+    couponLabel: "Coupon", couponListLabel: "List", couponFinalLabel: "Customer pays",
     igiRequired: "Enter the certificate number before securing the diamond.",
     qcRequired: "Upload at least one finished-piece photo or video before sending QC.",
     uploadBusy: "Wait for every upload to finish before sending.",
@@ -205,6 +207,7 @@ const FLOW_GUARD_COPY = {
     depositInvalid: "디파짓은 $0보다 크고 제안 총액 이하여야 합니다.",
     estLabel: "자동 추정가", estApply: "추정가 적용", estDiamond: "다이아", estMetal: "메탈", estLabor: "공임",
     depositAuto: (pct, amt) => `비우면 자동 ${pct}% (${amt})`,
+    couponLabel: "쿠폰", couponListLabel: "정가", couponFinalLabel: "고객 결제가",
     igiRequired: "다이아 확보 전에 감정서 번호를 입력해 주세요.",
     qcRequired: "QC를 보내기 전에 완성품 사진이나 영상을 하나 이상 업로드해 주세요.",
     uploadBusy: "모든 업로드가 끝난 뒤 보내주세요.",
@@ -227,6 +230,7 @@ const FLOW_GUARD_COPY = {
     totalRequired: "请输入大于 $0 的方案总价。", depositInvalid: "定金必须大于 $0 且不超过方案总价。",
     estLabel: "自动预估", estApply: "应用预估", estDiamond: "钻石", estMetal: "金属", estLabor: "工费",
     depositAuto: (pct, amt) => `留空 → ${pct}% 定金（${amt}）`,
+    couponLabel: "优惠券", couponListLabel: "原价", couponFinalLabel: "客户支付",
     igiRequired: "锁定钻石前请输入证书编号。", qcRequired: "发送质检前请至少上传一张成品照片或视频。",
     uploadBusy: "请等待所有上传完成后再发送。", trackingRequired: "标记发货前请输入运单号。",
     confirmFire: (action) => `确认${action}？订单将更新并向客户发送邮件。`,
@@ -245,6 +249,7 @@ const FLOW_GUARD_COPY = {
     totalRequired: "Introduce un total de propuesta mayor que $0.", depositInvalid: "El depósito debe ser mayor que $0 y no superar el total.",
     estLabel: "Estimación automática", estApply: "Usar estimación", estDiamond: "diamante", estMetal: "metal", estLabor: "mano de obra",
     depositAuto: (pct, amt) => `Vacío → depósito del ${pct}% (${amt})`,
+    couponLabel: "Cupón", couponListLabel: "Precio", couponFinalLabel: "Cliente paga",
     igiRequired: "Introduce el certificado antes de asegurar el diamante.", qcRequired: "Sube al menos una foto o video de la pieza antes de enviar el control.",
     uploadBusy: "Espera a que terminen todas las cargas.", trackingRequired: "Introduce el número de guía antes de marcar el envío.",
     confirmFire: (action) => `¿${action}? Esto actualizará el pedido y enviará un correo al cliente.`,
@@ -487,6 +492,7 @@ function StepCard({ step, index, order, done, changeRequest, expanded, onToggle,
   const [uploadBusy, setUploadBusy] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [error, setError] = useState("");
+  const [couponApplied, setCouponApplied] = useState(true);
   // 워크숍 가격 엔진으로 Total/Deposit 자동 추정 — 폼 필드가 바뀌면 즉시 다시 계산한다(발송 전 추정치)
   const category = order.intake?.category;
   const estimate = useMemo(() => (
@@ -508,6 +514,16 @@ function StepCard({ step, index, order, done, changeRequest, expanded, onToggle,
     }
   }, [estimate, f.total]);
   const depositRate = getSettings()?.opsDepositRate ?? 0.3;
+  // 쿠폰 — 인테이크에서 고객이 넣은 코드(있으면). 오퍼레이터가 확정 제안에서 검증(적용/해제).
+  // Total 칸 = 정가(list). 쿠폰 적용 시 고객 결제가 = 정가 − 할인.
+  const coupon = step.composer === "proposal" ? findCoupon(fp.couponCode) : null;
+  const multiplier = getSettings()?.opsMultiplier ?? 1.8;
+  const listValue = Number(f.total) || 0;
+  const couponResult = coupon && couponApplied && listValue > 0
+    ? applyCoupon({ totalUsd: listValue, diamondAmountUsd: estimate?.diamondUsd || 0, multiplier }, coupon)
+    : null;
+  const finalUsd = couponResult ? couponResult.totalUsd : listValue; // 고객이 실제 결제하는 금액
+  const discountUsd = couponResult ? couponResult.discountUsd : 0;
   // 한 번 보낸 스텝은 잠근다 — 중복 발송(중복 메일·중복 컨펌)이 재발송 필요보다 훨씬 흔한 사고다.
   // done은 stage가 아니라 "이 이벤트가 실제 발사됐는가"(타임라인) 기준 — 같은 stage에 도달하는
   // 스텝들(디파짓/다이아 둘 다 CAD)이 한꺼번에 체크되는 오판 방지.
@@ -519,7 +535,7 @@ function StepCard({ step, index, order, done, changeRequest, expanded, onToggle,
   const validationMessage = !available ? blockedReason
     : uploadError ? uploadError
     : step.composer === "proposal" && !(totalValue > 0) ? t.totalRequired
-      : step.composer === "proposal" && depositValue !== null && (!(depositValue > 0) || depositValue > totalValue) ? t.depositInvalid
+      : step.composer === "proposal" && depositValue !== null && (!(depositValue > 0) || depositValue > finalUsd) ? t.depositInvalid
         : step.fields?.includes("igi") && !f.igi.trim() ? t.igiRequired
           : step.type === "qc_ready" && uploadBusy ? t.uploadBusy
             : step.type === "qc_ready" && remoteMedia.length === 0 ? t.qcRequired
@@ -555,7 +571,9 @@ function StepCard({ step, index, order, done, changeRequest, expanded, onToggle,
               },
               ...(f.subNote.trim() ? { substitutionNote: f.subNote.trim() } : {}),
               ...(f.note.trim() ? { note: f.note.trim() } : {}),
-              totalUsd: totalValue,
+              // totalUsd = 고객 결제가(쿠폰 적용 후). 쿠폰이 걸리면 원가·할인을 함께 실어 고객 포털에서 분해 표시.
+              totalUsd: finalUsd,
+              ...(discountUsd > 0 ? { listUsd: listValue, coupon: { code: coupon.code, discountUsd } } : {}),
               ...(depositValue !== null ? { depositUsd: depositValue } : {}),
             }
             : {
@@ -700,6 +718,7 @@ function StepCard({ step, index, order, done, changeRequest, expanded, onToggle,
               <div className="quote-estimate-row">
                 <span className="quote-estimate-tag">{t.estLabel}</span>
                 <strong className="quote-estimate-total">{usd(estimate.totalUsd)}</strong>
+                {coupon && <span className="quote-estimate-listtag">{t.couponListLabel}</span>}
                 <button
                   type="button"
                   className="quote-estimate-apply"
@@ -714,16 +733,33 @@ function StepCard({ step, index, order, done, changeRequest, expanded, onToggle,
               </p>
             </div>
           )}
+          {step.composer === "proposal" && coupon && (
+            <div className={`quote-coupon${couponApplied && discountUsd > 0 ? " is-on" : ""}`}>
+              <label className="quote-coupon-toggle">
+                <input type="checkbox" checked={couponApplied} onChange={(e) => setCouponApplied(e.target.checked)} />
+                <span className="quote-coupon-code">{t.couponLabel} · {coupon.code}</span>
+                {coupon.kind === "percent" && <span className="quote-coupon-pct">−{coupon.value}%</span>}
+              </label>
+              {couponApplied && discountUsd > 0 && (
+                <div className="quote-coupon-breakdown">
+                  <span>{t.couponListLabel} {usd(listValue)}</span>
+                  <span className="quote-coupon-arrow">→</span>
+                  <span className="quote-coupon-final">{t.couponFinalLabel} <strong>{usd(finalUsd)}</strong></span>
+                  <span className="quote-coupon-saved">−{usd(discountUsd)}</span>
+                </div>
+              )}
+            </div>
+          )}
           <div className="filter-grid admin-event-fields">
             {step.fields?.includes("total") && (
-              <label className="field"><span>{t.total}</span>
+              <label className="field"><span>{t.total}{coupon && couponApplied && discountUsd > 0 ? ` · ${t.couponListLabel}` : ""}</span>
                 <input type="number" min="0.01" step="0.01" value={f.total} onChange={(e) => setF({ ...f, total: e.target.value })} required aria-invalid={step.composer === "proposal" && !(totalValue > 0)} /></label>
             )}
             {step.composer === "proposal" && (
               <label className="field"><span>{t.deposit}</span>
-                <input type="number" min="0.01" step="0.01" max={totalValue > 0 ? totalValue : undefined} value={f.deposit} onChange={(e) => setF({ ...f, deposit: e.target.value })} aria-invalid={Boolean(f.deposit) && (!(depositValue > 0) || depositValue > totalValue)} />
-                {totalValue > 0 && f.deposit === "" && (
-                  <small className="quote-deposit-hint">{t.depositAuto(Math.round(depositRate * 100), usd(Math.round(totalValue * depositRate)))}</small>
+                <input type="number" min="0.01" step="0.01" max={finalUsd > 0 ? finalUsd : undefined} value={f.deposit} onChange={(e) => setF({ ...f, deposit: e.target.value })} aria-invalid={Boolean(f.deposit) && (!(depositValue > 0) || depositValue > finalUsd)} />
+                {finalUsd > 0 && f.deposit === "" && (
+                  <small className="quote-deposit-hint">{t.depositAuto(Math.round(depositRate * 100), usd(Math.round(finalUsd * depositRate)))}</small>
                 )}</label>
             )}
             {step.fields?.includes("igi") && (

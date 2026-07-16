@@ -4889,6 +4889,19 @@ button.text-link:hover {
   font-family: var(--luxury-display); font-size: clamp(36px, 6vw, 48px);
   line-height: 1.05; color: var(--text);
 }
+/* 쿠폰 분해 — 원가(취소선) → 쿠폰 할인 → (아래 proposal-amount = 최종가) */
+.proposal-coupon {
+  display: inline-flex; flex-direction: column; gap: 3px;
+  margin: 0 0 8px; padding: 8px 14px; border-radius: 8px;
+  background: rgba(143, 125, 84, 0.08); border: 1px solid rgba(143, 125, 84, 0.22);
+}
+.proposal-coupon-row {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 18px;
+  font-size: 13px; color: var(--quiet);
+}
+.proposal-coupon-row s { color: var(--quiet); }
+.proposal-coupon-row.is-save { color: #8f7d54; font-weight: 600; }
+.proposal-coupon-row.is-save strong { font-weight: 700; }
 .proposal-split { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .proposal-split > div { border: 1px solid var(--line); background: var(--surface); padding: 12px 14px; text-align: center; }
 .proposal-split span {
