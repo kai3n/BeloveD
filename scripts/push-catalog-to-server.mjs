@@ -32,7 +32,8 @@ maybe("metalRefUsdPerG", settings.metalRefUsdPerG);
 maybe("defaultLossRatePct", settings.defaultLossRatePct);
 maybe("opsMultiplier", settings.opsMultiplier);
 maybe("opsDepositRate", settings.opsDepositRate);
-maybe("payment", settings.payment || { zelle: "", venmo: "", note: "" });
+// payment(Zelle/Venmo 실계정)은 Admin → Payments에서만 관리한다. 카탈로그 push는 절대 건드리지 않는다 —
+// 예전에 시드 빈 값으로 서버 설정을 덮어써 고객 결제 안내가 사라진 사고가 있었다(FORCE 포함).
 maybe("designCopy", settings.designCopy || {});
 await putSettingsValues(patch);
 console.log(`settings: pushed keys [${Object.keys(patch).join(", ") || "none — all present"}]`);
