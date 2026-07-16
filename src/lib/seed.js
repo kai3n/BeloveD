@@ -289,7 +289,7 @@ export function seed() {
       shipToAddress: "BeloveD Receiving, 550 S Hill St #1100, Los Angeles, CA 90013",
       // 디파짓/잔금 수동 확인 결제 채널 — 실계좌는 서버 settings(/v1/settings/public)가 유일한 소스.
       // 클라이언트 프로토타입 시드에는 실핸들을 넣지 않는다 (공개 번들 노출 방지).
-      payment: { zelle: "", venmo: "", note: "" },
+      payment: { zelle: "", venmo: "", note: "", zelleQr: "", venmoQr: "" },
       paymentChannelsVersion: 1,
       reviewsSeedVersion: 3,
       demoDeliveredSeedVersion: 1,

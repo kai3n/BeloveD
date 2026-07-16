@@ -242,6 +242,9 @@ DEFAULTS = {  # estWeightG, laborUsd, leadDays, metalOptions
 def subcat(cat, name):
     t = name.lower()
     if cat == "ring":
+        # 센터스톤 키워드가 우선 — "Half-Eternity Pavé Solitaire"처럼 밴드(생크)가 파베/이터니티여도
+        # 솔리테어·헤일로·쓰리스톤이면 약혼반지다. 웨딩밴드는 센터스톤 없는 밴드류만.
+        if any(k in t for k in ("solitaire", "halo", "three stone", "side stone", "toi et moi")): return "engagementRing"
         if any(k in t for k in ("band", "eternity", "pavé", "channel")): return "weddingBand"
         return "engagementRing"
     if cat == "earrings":

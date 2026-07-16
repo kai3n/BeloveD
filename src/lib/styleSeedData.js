@@ -507,7 +507,7 @@ export const styleSeedData = [
   {
     "id": "RING-010",
     "category": "ring",
-    "subcategory": "weddingBand",
+    "subcategory": "engagementRing",
     "coverImage": "/assets/designs/BE1PD25R25_white_Round_top_2_carat.jpg",
     "media": [
       {
@@ -563,7 +563,7 @@ export const styleSeedData = [
   {
     "id": "RING-011",
     "category": "ring",
-    "subcategory": "weddingBand",
+    "subcategory": "engagementRing",
     "coverImage": "/assets/designs/BE1D166_white_Round_top_2_carat.jpg",
     "media": [
       {
@@ -619,7 +619,7 @@ export const styleSeedData = [
   {
     "id": "RING-012",
     "category": "ring",
-    "subcategory": "weddingBand",
+    "subcategory": "engagementRing",
     "coverImage": "/assets/designs/BE1D1602_white_Oval_top_2_carat.jpg",
     "media": [
       {
@@ -675,7 +675,7 @@ export const styleSeedData = [
   {
     "id": "RING-013",
     "category": "ring",
-    "subcategory": "weddingBand",
+    "subcategory": "engagementRing",
     "coverImage": "/assets/designs/BE1D1516_white_Round_top_2_carat.jpg",
     "media": [
       {
@@ -731,7 +731,7 @@ export const styleSeedData = [
   {
     "id": "RING-014",
     "category": "ring",
-    "subcategory": "weddingBand",
+    "subcategory": "engagementRing",
     "coverImage": "/assets/designs/BE1D2414_white_Oval_top_2_carat.jpg",
     "media": [
       {
@@ -787,7 +787,7 @@ export const styleSeedData = [
   {
     "id": "RING-015",
     "category": "ring",
-    "subcategory": "weddingBand",
+    "subcategory": "engagementRing",
     "coverImage": "/assets/designs/BE1D64_RD_200ct_white_side1.jpg",
     "media": [
       {
@@ -843,7 +843,7 @@ export const styleSeedData = [
   {
     "id": "RING-016",
     "category": "ring",
-    "subcategory": "weddingBand",
+    "subcategory": "engagementRing",
     "coverImage": "/assets/designs/BE1D145_white_Round_top_2_carat.jpg",
     "media": [
       {
@@ -899,7 +899,7 @@ export const styleSeedData = [
   {
     "id": "RING-017",
     "category": "ring",
-    "subcategory": "weddingBand",
+    "subcategory": "engagementRing",
     "coverImage": "/assets/designs/BE1D6362P_RD_200ct_white_side1.jpg",
     "media": [
       {
@@ -1011,7 +1011,7 @@ export const styleSeedData = [
   {
     "id": "RING-019",
     "category": "ring",
-    "subcategory": "weddingBand",
+    "subcategory": "engagementRing",
     "coverImage": "/assets/designs/BNS12xBNH01_M1_RND_DIM_wht_0100CT_W_W.002.jpg",
     "media": [
       {
@@ -1123,7 +1123,7 @@ export const styleSeedData = [
   {
     "id": "RING-021",
     "category": "ring",
-    "subcategory": "weddingBand",
+    "subcategory": "engagementRing",
     "coverImage": "/assets/designs/BE1DT2686_white_Round_top_2_carat.jpg",
     "media": [
       {

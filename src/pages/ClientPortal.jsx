@@ -8,7 +8,7 @@ import {
   updateShippingAddress, isShippingAddressComplete,
 } from "../lib/store.js";
 import { useDBVersion } from "../lib/useDB.js";
-import { MediaPicker, MediaThumb, usd } from "../components/ui.jsx";
+import { MediaPicker, MediaThumb, usd, withBase } from "../components/ui.jsx";
 import ReviewForm from "../components/ReviewForm.jsx";
 import ServerOrderPortal from "./ServerOrderPortal.jsx";
 import { pickI18n, useLocale } from "../i18n.jsx";
@@ -446,9 +446,10 @@ export function PaymentCard({
   const [reportBusy, setReportBusy] = useState(false);
   const [reportError, setReportError] = useState("");
   const methods = [
-    { key: "zelle", name: "Zelle", handle: payment.zelle, hint: fc.zelleHint },
-    { key: "venmo", name: "Venmo", handle: payment.venmo, hint: fc.venmoHint },
+    { key: "zelle", name: "Zelle", handle: payment.zelle, qr: payment.zelleQr, hint: fc.zelleHint },
+    { key: "venmo", name: "Venmo", handle: payment.venmo, qr: payment.venmoQr, hint: fc.venmoHint },
   ].filter((m) => String(m.handle || "").trim());
+  const resolveQr = (url) => (/^https?:\/\//i.test(url || "") ? url : withBase(url));
   const settingsReady = settingsStatus === "ready";
   const paymentConfigured = settingsReady && methods.length > 0;
   const effectiveReportDisabled = reportDisabled || !paymentConfigured || !(Number(amountUsd) > 0);
@@ -491,7 +492,12 @@ export function PaymentCard({
                 <h4>{m.name}</h4>
                 <small>{m.hint}</small>
               </div>
-              <code className="payment-recipient">{m.handle}</code>
+              {/* 계정 원문(이메일 등)은 화면에 노출하지 않는다 — QR 스캔 또는 복사 버튼만 */}
+              {m.qr ? (
+                <img className="payment-qr" src={resolveQr(m.qr)} alt={`${m.name} QR`} loading="lazy" width={150} height={150} />
+              ) : (
+                <code className="payment-recipient">{m.handle}</code>
+              )}
               <button
                 className={`payment-handle ${copiedKey === m.key ? "is-copied" : ""}`}
                 type="button"

@@ -16,7 +16,7 @@ const STR = {
     menu: "Hero video", title: "Home hero video.", sub: "The looping background at the top of the homepage.",
     liveTitle: "Currently live", live: "Live",
     uploadTitle: "Replace it", uploadHint: "Drop a web-ready MP4 below — ideally 1080p (1920×1080), muted, ≤30MB. A still frame is captured automatically for the poster.",
-    uploading: "Uploading video…",
+    uploading: "Uploading video…", videoOnly: "Only video files can be the hero — that file was skipped.",
     stagedTitle: "New video — preview", stagedBadge: "Not live yet",
     stagedNote: "This is a preview. Your homepage will not change until you publish it.",
     publish: "Publish to homepage", discard: "Discard", reset: "Reset to default video",
@@ -26,7 +26,7 @@ const STR = {
     menu: "히어로 영상", title: "홈 히어로 영상.", sub: "홈페이지 상단에서 반복 재생되는 배경 영상입니다.",
     liveTitle: "현재 라이브", live: "라이브",
     uploadTitle: "새 영상으로 교체", uploadHint: "아래에 웹용 MP4를 드롭하세요 — 1080p(1920×1080)·무음·30MB 이하 권장. 포스터(첫 프레임)는 자동으로 만들어집니다.",
-    uploading: "영상 업로드 중…",
+    uploading: "영상 업로드 중…", videoOnly: "히어로는 영상 파일만 가능합니다 — 해당 파일은 제외했어요.",
     stagedTitle: "새 영상 — 미리보기", stagedBadge: "아직 공개 안 됨",
     stagedNote: "미리보기 상태입니다. '홈에 게시'를 눌러야 실제 홈페이지가 바뀝니다.",
     publish: "홈에 게시", discard: "취소", reset: "기본 영상으로 되돌리기",
@@ -36,7 +36,7 @@ const STR = {
     menu: "首页视频", title: "首页 Hero 视频。", sub: "首页顶部循环播放的背景视频。",
     liveTitle: "当前生效", live: "生效中",
     uploadTitle: "更换视频", uploadHint: "在下方拖入适合网页的 MP4 —— 建议 1080p（1920×1080）、静音、不超过 30MB。海报帧会自动生成。",
-    uploading: "正在上传视频…",
+    uploading: "正在上传视频…", videoOnly: "Hero 仅支持视频文件——已跳过该文件。",
     stagedTitle: "新视频 — 预览", stagedBadge: "尚未上线",
     stagedNote: "这是预览。点击“发布到首页”后首页才会更改。",
     publish: "发布到首页", discard: "放弃", reset: "恢复默认视频",
@@ -46,7 +46,7 @@ const STR = {
     menu: "Video hero", title: "Video hero del inicio.", sub: "El fondo en bucle en la parte superior de la página de inicio.",
     liveTitle: "En vivo ahora", live: "En vivo",
     uploadTitle: "Reemplazarlo", uploadHint: "Suelta abajo un MP4 listo para web — idealmente 1080p (1920×1080), silenciado, ≤30MB. El póster se captura automáticamente.",
-    uploading: "Subiendo video…",
+    uploading: "Subiendo video…", videoOnly: "El hero solo admite archivos de video — ese archivo se omitió.",
     stagedTitle: "Nuevo video — vista previa", stagedBadge: "Aún no publicado",
     stagedNote: "Esto es una vista previa. Tu página de inicio no cambiará hasta que lo publiques.",
     publish: "Publicar en el inicio", discard: "Descartar", reset: "Restablecer al video predeterminado",
@@ -65,7 +65,16 @@ export default function AdminHero() {
   const [uploading, setUploading] = useState(false);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
+  const [skippedNote, setSkippedNote] = useState("");
   const [saving, setSaving] = useState(false);
+
+  // 영상만 받는다 — 이미지가 들어오면 슬롯(1/1)만 차지한 채 미리보기 카드에 안 잡혀
+  // 제거 버튼 없이 잠기는 상태가 되므로, 여기서 걸러내고 안내만 남긴다.
+  const acceptVideos = (next) => {
+    const videos = (next || []).filter((m) => m?.kind === "video");
+    setSkippedNote(videos.length < (next || []).length ? c.videoOnly : "");
+    setItems(videos);
+  };
 
   // R2 업로드가 끝나 재생 가능한 원격 영상만 "게시 준비됨"으로 취급 (transient=업로드 실패 로컬 blob)
   const staged = items.find((m) => m?.kind === "video" && m?.src && !m.transient);
@@ -78,6 +87,7 @@ export default function AdminHero() {
       await apiFetch("/admin/settings", { method: "PUT", body: patch });
       updateSettings(patch);
       setItems([]);
+      setSkippedNote("");
       setNotice(c.saved);
     } catch {
       setError(c.saveFailed);
@@ -117,7 +127,7 @@ export default function AdminHero() {
         {!staged && (
           <MediaPicker
             value={items}
-            onChange={setItems}
+            onChange={acceptVideos}
             onBusyChange={setUploading}
             maxItems={1}
             scope="hero"
@@ -127,6 +137,7 @@ export default function AdminHero() {
           />
         )}
         {uploading && <p className="con-note hero-admin-uploading" role="status">{c.uploading}</p>}
+        {skippedNote && !uploading && <p className="form-error" role="alert" style={{ margin: "10px 0 0" }}>{skippedNote}</p>}
 
         {/* 스테이징된 새 영상 — 실제 미리보기 + 게시/취소 */}
         {staged && (
