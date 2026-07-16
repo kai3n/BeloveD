@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
@@ -7,7 +7,13 @@ import {
 } from "lucide-react";
 import { useLocale } from "../i18n.jsx";
 import { MediaThumb, Stars, withBase } from "../components/ui.jsx";
-import { listReviews } from "../lib/store.js";
+import { getSettings, listReviews, subscribe } from "../lib/store.js";
+
+// 히어로 배경 영상/포스터 — 어드민이 교체하면 서버→스토어 하이드레이션으로 반영된다.
+// settings는 in-place로 갱신되므로 참조가 아니라 URL 문자열(primitive)을 스냅샷으로 구독한다.
+const HERO_VIDEO_FALLBACK = "/assets/hero-v2.mp4";
+const HERO_POSTER_FALLBACK = "/assets/hero-v2-poster.jpg";
+const resolveAsset = (url) => (/^https?:\/\//i.test(url || "") ? url : withBase(url));
 import { estimateLooseStoneCompare } from "../lib/quoteEstimate.js";
 import { apiFetch } from "../lib/api.js";
 import { useDBVersion } from "../lib/useDB.js";
@@ -176,6 +182,8 @@ function renderLines(lines) {
 function Hero({ t, p }) {
   const [playing, setPlaying] = useState(true);
   const videoRef = useRef(null);
+  const heroVideo = useSyncExternalStore(subscribe, () => getSettings()?.heroVideo || HERO_VIDEO_FALLBACK);
+  const heroPoster = useSyncExternalStore(subscribe, () => getSettings()?.heroPoster || HERO_POSTER_FALLBACK);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -195,14 +203,16 @@ function Hero({ t, p }) {
     <section className={`hero-noir ${playing ? "is-playing" : "is-paused"}`} id="top">
       <div className="hero-noir-media" aria-hidden="true">
         <video
+          key={heroVideo}
           ref={videoRef}
+          poster={resolveAsset(heroPoster)}
           autoPlay
           muted
           loop
           playsInline
           preload="auto"
         >
-          <source src={withBase("/assets/hero-main-2.mp4")} type="video/mp4" />
+          <source src={resolveAsset(heroVideo)} type="video/mp4" />
         </video>
       </div>
 

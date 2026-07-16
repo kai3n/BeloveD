@@ -17,6 +17,8 @@ export const PUBLIC_SETTINGS_KEYS = [
   "coupons", // 쿠폰 카탈로그 — 위저드 견적 추정이 소비 (코드는 공개돼도 되는 '약속')
   "meleeUsdPerCt", // 멀티스톤 총캐럿 견적 단가 — 위저드 견적 추정이 소비
   "saleBanner", // 상단 세일 배너 — 전 방문자 부팅 경로가 소비
+  "heroVideo", // 홈 히어로 배경 영상 URL — 어드민에서 교체
+  "heroPoster", // 히어로 영상 포스터(첫 프레임) URL
 ];
 
 export async function getSettingsValues(keys) {

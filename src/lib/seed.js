@@ -265,6 +265,9 @@ export function seed() {
       coupons: BASE_COUPONS.map((c) => ({ ...c })),
       // 멀티스톤 총캐럿 견적용 멜리(스몰 스톤) 단가 — 어드민 벤치마크 페이지에서 조정
       meleeUsdPerCt: 150,
+      // 홈 히어로 배경 영상 — 어드민 "히어로" 페이지에서 교체(서버 write-through로 전 방문자 반영)
+      heroVideo: "/assets/hero-v2.mp4",
+      heroPoster: "/assets/hero-v2-poster.jpg",
       // 상단 세일 배너 — 어드민 쿠폰 페이지에서 온/오프·문구 관리, 서버 write-through로 전 고객 배포
       saleBanner: {
         enabled: true,

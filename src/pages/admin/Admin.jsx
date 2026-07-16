@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
-import { Activity, CircleDollarSign, Coins, CreditCard, Gem, MessagesSquare, ShoppingBag, Star, TicketPercent, Users } from "lucide-react";
+import { Activity, CircleDollarSign, Coins, CreditCard, Film, Gem, MessagesSquare, ShoppingBag, Star, TicketPercent, Users } from "lucide-react";
 import { syncAdminCatalogFromServer } from "../../lib/serverSync.js";
 import { apiFetch } from "../../lib/api.js";
 import { useLocale } from "../../i18n.jsx";
@@ -39,6 +39,7 @@ export default function Admin() {
     { to: "/bo-4q9z7m/benchmark", key: "benchmark", Icon: CircleDollarSign },
     { to: "/bo-4q9z7m/metals", key: "metals", Icon: Coins },
     { to: "/bo-4q9z7m/payments", key: "payments", Icon: CreditCard },
+    { to: "/bo-4q9z7m/hero", key: "hero", Icon: Film },
     { to: "/bo-4q9z7m/coupons", key: "coupons", Icon: TicketPercent },
     { to: "/bo-4q9z7m/reviews", key: "reviews", Icon: Star },
     { to: "/bo-4q9z7m/members", key: "members", Icon: Users },

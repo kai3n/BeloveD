@@ -82,7 +82,7 @@ function client() {
 }
 
 // scope: 업로드 용도별 키 프리픽스 (경로 추측 방지를 위해 랜덤 토큰 포함)
-const SCOPES = new Set(["reference", "review", "proposal", "cad", "qc", "style", "chat"]);
+const SCOPES = new Set(["reference", "review", "proposal", "cad", "qc", "style", "chat", "hero"]);
 
 function validateUploadInput({ scope, contentType, size }) {
   if (!SCOPES.has(scope)) throw new ApiError("VALIDATION_ERROR", 400, "bad scope");

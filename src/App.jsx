@@ -29,6 +29,7 @@ const AdminChat = WITH_BACKOFFICE ? lazy(() => import("./pages/admin/AdminChat.j
 const AdminBenchmark = WITH_BACKOFFICE ? lazy(() => import("./pages/admin/AdminBenchmark.jsx")) : null;
 const AdminMetals = WITH_BACKOFFICE ? lazy(() => import("./pages/admin/AdminMetals.jsx")) : null;
 const AdminPayments = WITH_BACKOFFICE ? lazy(() => import("./pages/admin/AdminPayments.jsx")) : null;
+const AdminHero = WITH_BACKOFFICE ? lazy(() => import("./pages/admin/AdminHero.jsx")) : null;
 const AdminCoupons = WITH_BACKOFFICE ? lazy(() => import("./pages/admin/AdminCoupons.jsx")) : null;
 const AdminMembers = WITH_BACKOFFICE ? lazy(() => import("./pages/admin/AdminMembers.jsx")) : null;
 const AdminCustomers = WITH_BACKOFFICE ? lazy(() => import("./pages/admin/AdminCustomers.jsx")) : null;
@@ -106,6 +107,7 @@ export default function App() {
               <Route path="benchmark" element={<AdminBenchmark />} />
               <Route path="metals" element={<AdminMetals />} />
               <Route path="payments" element={<AdminPayments />} />
+              <Route path="hero" element={<AdminHero />} />
               <Route path="coupons" element={<AdminCoupons />} />
               <Route path="reviews" element={<AdminReviews />} />
               <Route path="chat" element={<AdminChat />} />
