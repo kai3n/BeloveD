@@ -44,26 +44,34 @@ describe("orderMail", () => {
   });
 
   describe("journeyStrip — 전체 여정 중 현재 단계 표시", () => {
-    it("received/ko: 1/6 단계, 현재만 ● 강조, 완료 ✓ 없음", () => {
+    it("received/ko: 1/7 단계, 현재만 ● 강조, 완료 ✓ 없음", () => {
       const html = journeyStrip("received", "ko");
-      expect(html).toContain("6단계 중 1단계");
+      expect(html).toContain("7단계 중 1단계");
       expect(html).toContain("● 접수");
       expect(html).not.toContain("✓");
       expect(html).toContain("→");
     });
 
-    it("production_started/en: step 4 of 6, 앞 3단계 ✓, 현재 ● Crafting", () => {
+    it("production_started/en: step 4 of 7, 앞 3단계 ✓, 현재 ● Crafting", () => {
       const html = journeyStrip("production_started", "en");
-      expect(html).toContain("step 4 of 6");
+      expect(html).toContain("step 4 of 7");
       expect(html.match(/✓/g)).toHaveLength(3);
       expect(html).toContain("● Crafting");
     });
 
-    it("delivered: 6단계 전부 ✓, ● 없음", () => {
+    it("shipped: 배송 완료 이전의 독립 스텝 — step 6 of 7, ● Shipped, Delivered는 미완", () => {
+      const html = journeyStrip("shipped", "en");
+      expect(html).toContain("step 6 of 7");
+      expect(html).toContain("● Shipped");
+      expect(html.match(/✓/g)).toHaveLength(5);
+      expect(html).not.toContain("✓ Delivered");
+    });
+
+    it("delivered: 7단계 전부 ✓, ● 없음", () => {
       const html = journeyStrip("delivered", "en");
-      expect(html.match(/✓/g)).toHaveLength(6);
+      expect(html.match(/✓/g)).toHaveLength(7);
       expect(html).not.toContain("●");
-      expect(html).toContain("step 6 of 6");
+      expect(html).toContain("step 7 of 7");
     });
 
     it("취소 계열 이벤트에는 여정 스트립을 넣지 않는다", () => {
@@ -71,9 +79,9 @@ describe("orderMail", () => {
       expect(journeyStrip("cancel_requested", "ko")).toBe("");
     });
 
-    it("4개 언어 라벨 파리티 — 6단계 + progress 문구", () => {
+    it("4개 언어 라벨 파리티 — 7단계 + progress 문구", () => {
       for (const loc of ["en", "ko", "zh", "es"]) {
-        for (const k of ["request", "proposal", "design", "crafting", "finalCheck", "delivery"]) {
+        for (const k of ["request", "proposal", "design", "crafting", "finalCheck", "shipped", "delivered"]) {
           expect(typeof JOURNEY_LABELS[loc][k], `${loc}/${k}`).toBe("string");
         }
         expect(JOURNEY_LABELS[loc].progress(2, 6)).toContain("2");
@@ -81,7 +89,7 @@ describe("orderMail", () => {
     });
 
     it("미지원 로케일은 en 라벨로 폴백한다", () => {
-      expect(journeyStrip("shipped", "fr")).toContain("Delivery");
+      expect(journeyStrip("shipped", "fr")).toContain("Shipped");
     });
   });
 

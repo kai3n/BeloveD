@@ -14,14 +14,15 @@ const CHROME = {
 
 export { CHROME };
 
-// 고객 여정 6단계 — 상태 메일마다 전체 여정 중 현재 위치를 화살표 스트립으로 보여준다.
+// 고객 여정 7단계 — 상태 메일마다 전체 여정 중 현재 위치를 화살표 스트립으로 보여준다.
 // 포털 마일스톤(13종)보다 굵은 단위: 메일에서는 "전체 중 어디까지 왔나"만 한눈에 보이면 된다.
-const JOURNEY = ["request", "proposal", "design", "crafting", "finalCheck", "delivery"];
+// 배송은 "배송 중(shipped)"과 "배송 완료(delivered)"를 분리 — shipped 메일에서 완료 이전 상태임이 보이도록.
+const JOURNEY = ["request", "proposal", "design", "crafting", "finalCheck", "shipped", "delivered"];
 export const JOURNEY_LABELS = {
-  en: { request: "Request", proposal: "Proposal", design: "Design", crafting: "Crafting", finalCheck: "Final check", delivery: "Delivery", progress: (n, total) => `Order progress — step ${n} of ${total}` },
-  ko: { request: "접수", proposal: "제안", design: "디자인", crafting: "제작", finalCheck: "최종 확인", delivery: "배송", progress: (n, total) => `주문 진행 — ${total}단계 중 ${n}단계` },
-  zh: { request: "接单", proposal: "方案", design: "设计", crafting: "制作", finalCheck: "终检", delivery: "配送", progress: (n, total) => `订单进度 — 共 ${total} 步 · 第 ${n} 步` },
-  es: { request: "Solicitud", proposal: "Propuesta", design: "Diseño", crafting: "Fabricación", finalCheck: "Revisión final", delivery: "Entrega", progress: (n, total) => `Progreso del pedido — paso ${n} de ${total}` },
+  en: { request: "Request", proposal: "Proposal", design: "Design", crafting: "Crafting", finalCheck: "Final check", shipped: "Shipped", delivered: "Delivered", progress: (n, total) => `Order progress — step ${n} of ${total}` },
+  ko: { request: "접수", proposal: "제안", design: "디자인", crafting: "제작", finalCheck: "최종 확인", shipped: "배송 중", delivered: "배송 완료", progress: (n, total) => `주문 진행 — ${total}단계 중 ${n}단계` },
+  zh: { request: "接单", proposal: "方案", design: "设计", crafting: "制作", finalCheck: "终检", shipped: "已发货", delivered: "已送达", progress: (n, total) => `订单进度 — 共 ${total} 步 · 第 ${n} 步` },
+  es: { request: "Solicitud", proposal: "Propuesta", design: "Diseño", crafting: "Fabricación", finalCheck: "Revisión final", shipped: "Enviado", delivered: "Entregado", progress: (n, total) => `Progreso del pedido — paso ${n} de ${total}` },
 };
 // 이벤트 → 여정 단계. 취소 계열은 매핑하지 않는다 — 취소 메일에 진행 스트립은 어울리지 않는다.
 const EVENT_STAGE = {
@@ -30,7 +31,7 @@ const EVENT_STAGE = {
   deposit_confirmed: "design", diamond_locked: "design", cad_ready: "design",
   production_started: "crafting",
   qc_ready: "finalCheck", balance_requested: "finalCheck", balance_confirmed: "finalCheck",
-  shipped: "delivery", delivered: "delivery",
+  shipped: "shipped", delivered: "delivered",
 };
 
 // 결제 영수증 라벨 — deposit_confirmed/balance_confirmed 메일에 금액 내역을 싣는다
