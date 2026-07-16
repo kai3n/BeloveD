@@ -5638,6 +5638,8 @@ html[data-theme="day"] .admin-page .form-error {
 }
 .admin-event-fields {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  /* 각 칸을 상단 정렬 — Deposit 힌트로 행이 커져도 Total 인풋이 늘어나지 않게 */
+  align-items: start;
 }
 .admin-live-order-head,
 .admin-live-order-meta,
