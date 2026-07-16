@@ -8,7 +8,7 @@ import {
 import { createIntake, findCoupon, getDiamond, listOpsStyles } from "../lib/store.js";
 import { apiFetch } from "../lib/api.js";
 import {
-  MAX_REFERENCE_MEDIA, RING_SIZE_OPTIONS, buildIntakePayload, conditionalComplete,
+  MAX_REFERENCE_MEDIA, PRONG_OPTIONS, RING_SIZE_OPTIONS, buildIntakePayload, conditionalComplete,
   accountDisplayName, hasContactDetails, isValidEmail, sanitizeReferenceMedia, submissionContact,
 } from "../lib/intakePayload.js";
 import { useDBVersion } from "../lib/useDB.js";
@@ -38,11 +38,18 @@ const CATEGORY_FALLBACK_MEDIA = {
 };
 
 function categoryDefaults(category) {
-  if (category === "ring") return { ringSize: "" };
+  if (category === "ring") return { ringSize: "", prong: "four-prong" };
   if (category === "necklace") return { chainStyle: "", chainLength: "18in", clasp: "" };
   if (category === "bangle") return { wristSize: "" };
   if (category === "earrings") return { earringDetails: "" };
   return {};
+}
+
+// 선택한 스타일 이미지가 6프롱이면 6프롱을, 아니면 4프롱을 기본 프롱으로 프리필한다.
+// (스타일명은 참조용 — 고객이 Size & Fit에서 언제든 바꿀 수 있다)
+function inferProngFromStyle(style) {
+  const en = String(style?.name?.en || "").toLowerCase();
+  return /six[-\s]?prong|6[-\s]?prong/.test(en) ? "six-prong" : "four-prong";
 }
 
 // 완료 화면 스크롤 복귀 — reduced-motion 사용자는 애니메이션 없이 즉시("auto"), 그 외 부드럽게("smooth")
@@ -164,7 +171,10 @@ export default function IntakeForm() {
     subcategory: initialSubcategory,
     // 미공개/삭제된 스타일 코드가 URL로 들어와도 유령 styleId를 만들지 않는다
     styleId: styleFromParam ? styleParam : "", metal: "18kw",
-    conditional: categoryDefaults(initialCategory),
+    conditional: {
+      ...categoryDefaults(initialCategory),
+      ...(styleFromParam ? { prong: inferProngFromStyle(styleFromParam) } : {}),
+    },
     stonePrefs: {
       shape: refDiamond?.shape || "round",
       // 쇼케이스 다이아 프리필은 단일값 → [v,v] range로 승격
@@ -502,6 +512,10 @@ export default function IntakeForm() {
               styleId: value,
               subcategory: nextStyle ? styleSubcategoryKey(nextStyle) : defaultSubcategoryFor(form.category),
               productLine: value ? inferProductLineFromStyle(nextStyle) : "solitaire",
+              // 반지는 선택한 스타일의 프롱 수를 기본값으로 프리필(고객이 이후 바꿀 수 있음)
+              ...(nextStyle?.category === "ring"
+                ? { conditional: { ...form.conditional, prong: inferProngFromStyle(nextStyle) } }
+                : {}),
             }, "design");
           }}
         />
@@ -713,6 +727,25 @@ export default function IntakeForm() {
                     onChange={(value) => setC({ ringSize: value })}
                   />
                 </label>
+              )}
+              {cat === "ring" && form.subcategory === "engagementRing" && (
+                <div className="field gflow-prong-field">
+                  <span>{t.prong} <span className="gflow-prong-hint">{t.prongHint}</span></span>
+                  <div className="gflow-prong-seg" role="radiogroup" aria-label={t.prong}>
+                    {PRONG_OPTIONS.map((opt) => (
+                      <button
+                        key={opt}
+                        type="button"
+                        role="radio"
+                        aria-checked={form.conditional.prong === opt}
+                        className={form.conditional.prong === opt ? "is-active" : ""}
+                        onClick={() => setC({ prong: opt })}
+                      >
+                        {opt === "six-prong" ? t.prongSix : t.prongFour}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               )}
               {cat === "bangle" && (
                 <label className="field"><span>{t.wristSize}</span>

@@ -126,7 +126,7 @@ const en = {
     earringHelp: { kicker: "Earring design guide", title: "Choosing your style", how: ["Tell us post (pierced) or clip-on, and whether the pair must match.", "Drop length is measured from the top of the earring to its lowest point."], cols: ["Style", "Drop"], rows: [["Stud", "Sits on the lobe"], ["Drop", "Up to ~15 mm"], ["Dangle", "15 mm and longer"]] },
     name: "Name", contact: "Email", contactInvalid: "Please enter a valid email address so we can send your proposal.", productLine: "Product line", category: "Category", subcategory: "Subcategory",
     style: "Style", noStyle: "Not decided yet", budget: "Budget ($, optional)", metal: "Metal",
-    ringSize: "Ring size", ringSizeSelect: "Select size", chainStyle: "Chain style", chainStyleSelect: "Select chain style", chainLength: "Chain length",
+    ringSize: "Ring size", ringSizeSelect: "Select size", prong: "Prong setting", prongHint: "(the style image is just a reference)", prongFour: "4 prongs", prongSix: "6 prongs", chainStyle: "Chain style", chainStyleSelect: "Select chain style", chainLength: "Chain length",
     selectedDesign: "Selected design", preview: "Preview", closePreview: "Close preview",
     clasp: "Clasp", claspSelect: "Select clasp", wristSize: "Bracelet size", wristSizeSelect: "Select wrist size", earringDetails: "Pair setup", earringDetailsSelect: "Select pair setup",
     optionLabels: {
@@ -539,7 +539,7 @@ const ko = {
     earringHelp: { kicker: "귀걸이 디자인 가이드", title: "스타일 선택", how: ["포스트(피어싱) 또는 클립, 그리고 페어 매칭 여부를 알려주세요.", "드롭 길이는 귀걸이 맨 위에서 가장 낮은 지점까지입니다."], cols: ["스타일", "드롭"], rows: [["스터드", "귓불에 밀착"], ["드롭", "약 15mm까지"], ["댕글", "15mm 이상"]] },
     name: "이름", contact: "이메일", contactInvalid: "제안서를 보내드릴 수 있도록 유효한 이메일 주소를 입력해 주세요.", productLine: "제품 라인", category: "카테고리", subcategory: "서브카테고리",
     style: "스타일", noStyle: "아직 미정", budget: "예산 ($, 선택)", metal: "메탈",
-    ringSize: "링 사이즈", ringSizeSelect: "사이즈 선택", chainStyle: "체인 스타일", chainStyleSelect: "체인 스타일 선택", chainLength: "체인 길이",
+    ringSize: "링 사이즈", ringSizeSelect: "사이즈 선택", prong: "프롱 세팅", prongHint: "(스타일 이미지는 참고용이에요)", prongFour: "4프롱", prongSix: "6프롱", chainStyle: "체인 스타일", chainStyleSelect: "체인 스타일 선택", chainLength: "체인 길이",
     selectedDesign: "선택한 디자인", preview: "미리보기", closePreview: "미리보기 닫기",
     clasp: "클라스프", claspSelect: "클라스프 선택", wristSize: "팔찌 사이즈", wristSizeSelect: "손목 사이즈 선택", earringDetails: "귀걸이 페어", earringDetailsSelect: "페어 옵션 선택",
     optionLabels: {
@@ -952,7 +952,7 @@ const zh = {
     earringHelp: { kicker: "耳饰设计指南", title: "选择款式", how: ["请告知耳针(穿孔)或耳夹，以及是否需要成对匹配。", "垂坠长度从耳饰顶端量到最低点。"], cols: ["款式", "垂坠"], rows: [["耳钉", "贴合耳垂"], ["短垂", "约 15 mm 以内"], ["长垂", "15 mm 以上"]] },
     name: "姓名", contact: "邮箱", contactInvalid: "请输入有效的邮箱地址，以便我们发送方案。", productLine: "产品线", category: "类别", subcategory: "子分类",
     style: "款式", noStyle: "尚未决定", budget: "预算（$，可选）", metal: "金属",
-    ringSize: "戒指尺寸", ringSizeSelect: "选择尺寸", chainStyle: "链条款式", chainStyleSelect: "选择链条款式", chainLength: "链长",
+    ringSize: "戒指尺寸", ringSizeSelect: "选择尺寸", prong: "镶爪", prongHint: "（款式图片仅供参考）", prongFour: "4爪", prongSix: "6爪", chainStyle: "链条款式", chainStyleSelect: "选择链条款式", chainLength: "链长",
     selectedDesign: "已选设计", preview: "预览", closePreview: "关闭预览",
     clasp: "搭扣", claspSelect: "选择搭扣", wristSize: "手链尺寸", wristSizeSelect: "选择腕围尺寸", earringDetails: "耳饰配对", earringDetailsSelect: "选择配对方式",
     optionLabels: {
@@ -1365,7 +1365,7 @@ const es = {
     earringHelp: { kicker: "Guía de diseño de aretes", title: "Elegir tu estilo", how: ["Indícanos poste (perforado) o clip, y si el par debe coincidir.", "El largo de caída se mide desde la parte superior hasta el punto más bajo."], cols: ["Estilo", "Caída"], rows: [["Stud", "Sobre el lóbulo"], ["Drop", "Hasta ~15 mm"], ["Dangle", "15 mm o más"]] },
     name: "Nombre", contact: "Correo", contactInvalid: "Ingresa un correo electrónico válido para enviarte tu propuesta.", productLine: "Línea de producto", category: "Categoría", subcategory: "Subcategoría",
     style: "Estilo", noStyle: "Aún sin decidir", budget: "Presupuesto ($, opcional)", metal: "Metal",
-    ringSize: "Talla de anillo", ringSizeSelect: "Elegir talla", chainStyle: "Estilo de cadena", chainStyleSelect: "Elegir cadena", chainLength: "Largo de cadena",
+    ringSize: "Talla de anillo", ringSizeSelect: "Elegir talla", prong: "Garras", prongHint: "(la imagen del estilo es solo referencia)", prongFour: "4 garras", prongSix: "6 garras", chainStyle: "Estilo de cadena", chainStyleSelect: "Elegir cadena", chainLength: "Largo de cadena",
     selectedDesign: "Diseño elegido", preview: "Vista previa", closePreview: "Cerrar vista previa",
     clasp: "Broche", claspSelect: "Elegir broche", wristSize: "Talla de pulsera", wristSizeSelect: "Elegir talla de muñeca", earringDetails: "Configuración del par", earringDetailsSelect: "Elegir configuración",
     optionLabels: {

@@ -14,6 +14,8 @@ import {
 export const DEFAULT_MULTI_STANDARD = "F-G / VS+";
 export const MAX_REFERENCE_MEDIA = 5;
 export const RING_SIZE_OPTIONS = Array.from({ length: 21 }, (_, i) => String(3 + i * 0.5).replace(/\.0$/, ""));
+// 약혼반지 프롱 수 — 스타일은 참조 이미지일 뿐, 고객이 4/6프롱을 직접 고른다.
+export const PRONG_OPTIONS = ["four-prong", "six-prong"];
 
 // 주문 포털은 이메일 세션을 기준으로 주문을 연결한다. 전화번호나 느슨한
 // "무언가 입력됨" 검증을 통과시키면 접수 후 주문을 열 수 없으므로, 브라우저의

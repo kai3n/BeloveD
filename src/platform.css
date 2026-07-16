@@ -434,6 +434,13 @@ html[data-theme="day"] .lux-calendar-day.is-selected {
 /* 인테이크 위저드 필드 하단 검증 메시지 — 눈에 띄는 진한 빨강 */
 .gflow-field-error { color: #d63b3b; font-weight: 600; font-size: 13.5px; margin: 8px 0 0; }
 .gflow-contact input[aria-invalid="true"] { border-color: #d63b3b; box-shadow: 0 0 0 2px rgba(214, 59, 59, 0.14); }
+/* 약혼반지 프롱(4/6) 선택 세그먼트 */
+.gflow-prong-field { display: flex; flex-direction: column; gap: 8px; }
+.gflow-prong-hint { color: var(--quiet, #8a8578); font-weight: 400; font-size: 12px; margin-left: 4px; }
+.gflow-prong-seg { display: flex; gap: 10px; }
+.gflow-prong-seg button { flex: 1; padding: 13px 12px; border: 1px solid rgba(143, 125, 84, 0.35); background: transparent; border-radius: 6px; font: inherit; color: inherit; cursor: pointer; transition: border-color 0.15s, background 0.15s, color 0.15s; }
+.gflow-prong-seg button:hover { border-color: #8f7d54; }
+.gflow-prong-seg button.is-active { border-color: #8f7d54; background: #8f7d54; color: #fff; font-weight: 600; }
 .form-hint { color: var(--quiet); font-size: 12px; margin: 0; line-height: 1.6; }
 .demo-panel { margin-top: 18px; display: grid; gap: 10px; }
 
