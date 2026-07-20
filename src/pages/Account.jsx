@@ -168,15 +168,19 @@ export function AccountOrders() {
 
   // 실서버(BD-) 주문이 진실 — 있으면 로컬 데모 미러(DM-) 대신 이것만 보여준다.
   // 같은 제출이 DM-/BD- 두 번호로 따로 보이던 혼란 제거. 서버 미접속(정적 데모)이면 로컬 폴백.
-  const [serverOrders, setServerOrders] = useState([]);
+  // null=로딩 중(빈 상태 플래시 방지) — 실패 시 로컬 폴백 유지(정적 데모와 동일 경로)
+  const [serverOrders, setServerOrders] = useState(null);
   useEffect(() => {
     let cancelled = false;
     apiFetch("/orders")
       .then((d) => { if (!cancelled) setServerOrders(d.orders || []); })
-      .catch(() => {});
+      .catch(() => { if (!cancelled) setServerOrders([]); });
     return () => { cancelled = true; };
   }, [user?.id]);
 
+  if (serverOrders === null) {
+    return <p className="form-hint" role="status" style={{ margin: "18px 0" }}>…</p>;
+  }
   if (serverOrders.length > 0) {
     return (
       <>

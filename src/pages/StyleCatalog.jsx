@@ -94,6 +94,13 @@ export default function StyleCatalog() {
       ? requestedSubcat
       : "all"
   ));
+  // 뒤로가기/헤더 재클릭으로 URL 파라미터가 바뀌면 탭 state를 따라가게 동기화 (desync 방지)
+  useEffect(() => {
+    const nextCat = CATS.includes(requestedCat) ? requestedCat : "all";
+    const nextSub = nextCat !== "all" && subcategoryKeysFor(nextCat).includes(requestedSubcat) ? requestedSubcat : "all";
+    setCat(nextCat);
+    setSubcat(nextSub);
+  }, [requestedCat, requestedSubcat]);
   const styles = listOpsStyles({ publishedOnly: true });
   const catalogCopy = getSettings().designCopy?.[locale] || {};
   const visibleCategories = cat === "all" ? DESIGN_CATEGORIES : [categoryMeta(cat)].filter(Boolean);
@@ -135,7 +142,7 @@ export default function StyleCatalog() {
 
       <div className="chip-row design-category-tabs" aria-label="Design categories">
         {CATS.map((c) => (
-          <button key={c} className={`chip ${cat === c ? "is-active" : ""}`} onClick={() => chooseCategory(c)}>
+          <button key={c} className={`chip ${cat === c ? "is-active" : ""}`} aria-pressed={cat === c} onClick={() => chooseCategory(c)}>
             {catLabel(p, c)}
           </button>
         ))}
@@ -143,7 +150,7 @@ export default function StyleCatalog() {
       {subcategoryKeys.length > 0 && (
         <div className="chip-row design-subcategory-tabs" aria-label="Design subcategories">
           {["all", ...subcategoryKeys].map((key) => (
-            <button key={key} className={`chip ${subcat === key ? "is-active" : ""}`} onClick={() => chooseSubcategory(key)}>
+            <button key={key} className={`chip ${subcat === key ? "is-active" : ""}`} aria-pressed={subcat === key} onClick={() => chooseSubcategory(key)}>
               {subcategoryLabel(key)}
             </button>
           ))}

@@ -92,7 +92,9 @@ describe("auth routes", () => {
     expect(admin.body.error.code).toBe("ADMIN_AUTH_REQUIRED");
   });
 
-  it("admin session cookies are rejected by customer-only routes and take precedence if both cookies exist", async () => {
+  // 과거 회귀: 어드민 쿠키가 있으면 고객 세션을 무시해 고객 API가 전부 401(주문 포털 재로그인 루프).
+  // 올바른 동작 — 라우트 성격대로: 어드민 라우트는 admin, 고객 라우트는 customer 세션으로 통과한다.
+  it("both cookies: admin routes act as admin, customer routes act as customer (no 401 loop)", async () => {
     const protectedApp = createProtectedApp();
     const customerCookie = await issueCustomerCookie("both@b.com");
     const adminCookie = await issueAdminCookie("both-admin@b.com");
@@ -103,6 +105,14 @@ describe("auth routes", () => {
     expect(admin.body.principal.type).toBe("admin");
 
     const customer = await request(protectedApp).get("/customer-only").set("Cookie", bothCookies);
+    expect(customer.status).toBe(200);
+    expect(customer.body.principal.type).toBe("customer");
+  });
+
+  it("admin cookie alone is still rejected by customer-only routes", async () => {
+    const protectedApp = createProtectedApp();
+    const adminCookie = await issueAdminCookie("only-admin@b.com");
+    const customer = await request(protectedApp).get("/customer-only").set("Cookie", adminCookie);
     expect(customer.status).toBe(401);
     expect(customer.body.error.code).toBe("CUSTOMER_AUTH_REQUIRED");
   });

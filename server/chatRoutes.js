@@ -28,8 +28,8 @@ export const STAFF_AGENT = {
 
 // 현재 요청자의 스레드 해석 — 로그인 고객이면 고객 스레드, 아니면 bd_chat 토큰
 async function resolveThread(req) {
-  if (req.principal?.type === "customer") {
-    const t = await findCustomerThread(req.principal.id);
+  if (req.principalCustomer) {
+    const t = await findCustomerThread(req.principalCustomer.id);
     if (t) return t;
   }
   const token = req.cookies?.[COOKIE_CHAT];
@@ -38,8 +38,8 @@ async function resolveThread(req) {
   if (!t) return null;
   // 로그인 고객인데 토큰 스레드가 '다른 고객' 소유면 무시 — 공용/키오스크 브라우저에서
   // (로그아웃 없이) 이전 사용자의 대화가 새 로그인 사용자에게 노출되는 것을 막는다.
-  if (req.principal?.type === "customer" && t.customer_id != null
-      && Number(t.customer_id) !== Number(req.principal.id)) {
+  if (req.principalCustomer && t.customer_id != null
+      && Number(t.customer_id) !== Number(req.principalCustomer.id)) {
     return null;
   }
   return t;
@@ -54,7 +54,7 @@ async function resolveOrCreateThread(req, res, locale) {
     token,
     activitySessionId: req.cookies?.bd_aid || null,
     locale: locale || "en",
-    customerId: req.principal?.type === "customer" ? req.principal.id : null,
+    customerId: req.principalCustomer?.id ?? null,
   });
   setChatCookie(res, token);
   return thread;

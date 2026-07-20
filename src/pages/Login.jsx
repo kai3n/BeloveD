@@ -94,6 +94,7 @@ export default function Login() {
 
   async function sendCode(e) {
     e?.preventDefault();
+    if (busy) return; // 재전송 연타 방지
     setError(""); setBusy(true);
     try {
       await requestLoginCode(email.trim());
@@ -156,7 +157,7 @@ export default function Login() {
           <button className="button primary" type="submit" disabled={busy || code.length !== 6}>{c.verify}</button>
           <div className="row-actions" style={{ justifyContent: "space-between" }}>
             <button type="button" className="text-link" onClick={() => { setStep("email"); setCode(""); setError(""); }}>{c.changeEmail}</button>
-            <button type="button" className="text-link" disabled={cooldown > 0} onClick={sendCode}>
+            <button type="button" className="text-link" disabled={cooldown > 0 || busy} onClick={sendCode}>
               {cooldown > 0 ? c.resendIn(cooldown) : c.resend}
             </button>
           </div>

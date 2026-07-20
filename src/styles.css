@@ -531,6 +531,9 @@ html[data-theme="day"] .mobile-menu-button:focus-visible {
   width: 34px;
   height: 34px;
 }
+/* 주 내비 진입점은 44px 터치 타겟 (WCAG 2.5.8) */
+.mobile-menu-button { width: 44px; height: 44px; }
+.hero-noir-pause { width: 44px; height: 44px; }
 
 .icon-button:hover,
 .mobile-menu-button:hover {
@@ -3436,10 +3439,11 @@ html[data-theme="day"] .quality {
   gap: 12px;
   align-items: center;
   transform: translateY(130%);
-  transition: transform 0.55s cubic-bezier(0.2, 0.7, 0.2, 1);
+  visibility: hidden; /* 숨김 상태에서 보이지 않는 탭 스톱 방지 (aria-hidden과 일치) */
+  transition: transform 0.55s cubic-bezier(0.2, 0.7, 0.2, 1), visibility 0s linear 0.55s;
 }
 
-.noir-dock.show { transform: translateY(0); }
+.noir-dock.show { transform: translateY(0); visibility: visible; transition-delay: 0s, 0s; }
 
 .noir-dock-lab b {
   display: block;

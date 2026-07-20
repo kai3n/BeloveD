@@ -6,7 +6,7 @@ import {
   EARRING_PAIRING_OPTIONS, BRACELET_WRIST_OPTIONS, OPS_CATEGORIES,
 } from "../lib/ops.js";
 import { createIntake, findCoupon, getDiamond, listOpsStyles } from "../lib/store.js";
-import { apiFetch } from "../lib/api.js";
+import { apiFetch, ApiUnavailableError } from "../lib/api.js";
 import {
   MAX_REFERENCE_MEDIA, PRONG_OPTIONS, RING_SIZE_OPTIONS, buildIntakePayload, conditionalComplete,
   accountDisplayName, hasContactDetails, isValidEmail, sanitizeReferenceMedia, submissionContact,
@@ -236,6 +236,7 @@ export default function IntakeForm() {
   const [done, setDone] = useState(null);
   const [refs, setRefs] = useState(() => sanitizeReferenceMedia(draft?.refs));
   const [stepError, setStepError] = useState("");
+  const [submitBusy, setSubmitBusy] = useState(false);
   const [termsError, setTermsError] = useState(false); // 제출 시 약관 미동의 — 체크박스 줄 빨간 강조
 
   const setF = (patch) => setForm((f) => ({ ...f, ...patch }));
@@ -337,7 +338,8 @@ export default function IntakeForm() {
     setScreen(screens[Math.min(screenIdx + 1, screens.length - 1)]);
   }
 
-  function submit() {
+  async function submit() {
+    if (submitBusy) return; // 중복 제출 방지 (Idempotency-Key가 제출마다 새로 생성되므로 필수)
     const contactDetails = submissionContact(form, user);
     // 무엇이 빠졌는지 짚어주고 해당 위치로 데려간다 — 하단의 범용 에러만으로는
     // 사용자가 빠진 필드를 찾아 헤매게 된다.
@@ -358,33 +360,41 @@ export default function IntakeForm() {
       return;
     }
     const payload = buildIntakePayload(form, refs, user);
+    setStepError("");
+    setSubmitBusy(true);
     const { order } = createIntake(payload, user?.id || null);
     track("intake_submit", { path: "/custom/new", meta: { orderId: order.id } });
 
-    // 실서버 새도우 캡처 — Postgres에 인테이크+주문을 기록하고 접수 메일(고객 언어)을 보낸다.
-    // 포털 UI는 아직 로컬 스토어 기준이라 실패해도 흐름은 그대로 (정적 데모 포함).
+    // 실서버 캡처가 진실 — 성공(BD- 번호) 또는 서버 부재(정적 데모, 로컬 DM- 폴백)만 완료 화면.
+    // 실서버 장애(5xx/네트워크)면 거짓 성공을 보여주지 않는다: 드래프트를 보존하고 오류+재시도.
     // 키는 제출마다 새로 — 로컬 주문번호(DM-)는 브라우저마다 같은 값에서 시작해
     // 서버의 idempotency_keys와 충돌하면 다른 고객의 접수가 조용히 유실된다.
-    apiFetch("/intakes", {
-      method: "POST",
-      headers: { "Idempotency-Key": `${order.id}-${crypto.randomUUID()}` },
-      body: {
-        ...payload,
-        email: contactDetails.contact,
-        name: contactDetails.name,
-        locale,
-        // base64/blob 프리뷰는 제외 — R2 publicUrl만 서버로 (jsonb·바디 한도 보호)
-        referenceMedia: refs.filter((m) => /^https?:\/\//.test(m.src || "")).slice(0, 5),
-      },
-    })
-      // 실서버 주문번호(BD-)가 진짜 — 접수 화면·포털 링크를 서버 코드로 승격
-      .then((resp) => {
-        if (resp?.orderCode) setDone((d) => (d ? { ...d, serverCode: resp.orderCode } : d));
-      })
-      .catch(() => {});
-
-    window.localStorage.removeItem(DRAFT_KEY);
-    setDone(order);
+    try {
+      const resp = await apiFetch("/intakes", {
+        method: "POST",
+        headers: { "Idempotency-Key": `${order.id}-${crypto.randomUUID()}` },
+        body: {
+          ...payload,
+          email: contactDetails.contact,
+          name: contactDetails.name,
+          locale,
+          // base64/blob 프리뷰는 제외 — R2 publicUrl만 서버로 (jsonb·바디 한도 보호)
+          referenceMedia: refs.filter((m) => /^https?:\/\//.test(m.src || "")).slice(0, 5),
+        },
+      });
+      window.localStorage.removeItem(DRAFT_KEY);
+      setDone({ ...order, serverCode: resp?.orderCode || null });
+    } catch (err) {
+      if (err instanceof ApiUnavailableError) {
+        // 서버 없는 정적 데모 — 로컬 접수로 완료 (기존 동작 유지)
+        window.localStorage.removeItem(DRAFT_KEY);
+        setDone(order);
+      } else {
+        setStepError(t.submitFailed || t.requiredError);
+      }
+    } finally {
+      setSubmitBusy(false);
+    }
   }
 
   if (done) {
@@ -648,11 +658,11 @@ export default function IntakeForm() {
                 inputMode="email"
                 autoComplete="email"
                 placeholder="you@email.com"
-                aria-invalid={contactInvalid}
+                aria-invalid={contactInvalid} aria-describedby={contactInvalid ? "gflow-contact-error" : undefined}
                 onChange={(e) => setF({ contact: e.target.value })}
                 onKeyDown={(e) => { if (e.key === "Enter" && guestContactReady) goNext(); }}
               />
-              {contactInvalid && <p className="form-error gflow-field-error">{t.contactInvalid}</p>}
+              {contactInvalid && <p className="form-error gflow-field-error" id="gflow-contact-error" role="alert">{t.contactInvalid}</p>}
             </label>
           ) : (
             // 로그인 고객: 제안이 도착할 이메일은 계정에서 — 수정 불가로 보여주기만
@@ -867,8 +877,8 @@ export default function IntakeForm() {
             <span>{t.terms}</span>
           </label>
           <p className="form-hint">{p.ftc}</p>
-          {stepError && <p className="form-error">{stepError}</p>}
-          <button className="button primary gflow-submit" type="button" onClick={submit}>{t.submit}</button>
+          {stepError && <p className="form-error" role="alert">{stepError}</p>}
+          <button className="button primary gflow-submit" type="button" disabled={submitBusy} aria-busy={submitBusy} onClick={submit}>{t.submit}</button>
         </div>
       ))}
 

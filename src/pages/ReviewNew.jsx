@@ -116,13 +116,15 @@ export default function ReviewNew() {
   }
 
   async function pickServerOrder(orderCode) {
+    if (busy) return;
+    setBusy(true);
     try {
       await apiFetch("/reviews/verify", { method: "POST", body: { orderCode } });
       setError("");
       setVerified({ mode: "server", orderCode, tracking: "" });
     } catch (err) {
       setError(err?.code === "REVIEW_EXISTS" ? c.already : c.invalid);
-    }
+    } finally { setBusy(false); }
   }
 
   function pickOrder(id) {
@@ -200,7 +202,7 @@ export default function ReviewNew() {
             <label className="field"><span>{c.code}</span>
               <input value={code} onChange={(e) => setCode(e.target.value)} placeholder={c.codePh} required />
             </label>
-            {error && <p className="form-error">{error}</p>}
+            {error && <p className="form-error" role="alert">{error}</p>}
             <button className="button primary" type="submit" disabled={busy}>{c.verify}</button>
           </form>
         </>

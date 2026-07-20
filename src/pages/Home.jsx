@@ -6,7 +6,7 @@ import {
   Play,
 } from "lucide-react";
 import { useLocale } from "../i18n.jsx";
-import { MediaThumb, Stars, withBase } from "../components/ui.jsx";
+import { prefersReducedMotion, MediaThumb, Stars, withBase } from "../components/ui.jsx";
 import { getSettings, listReviews, subscribe } from "../lib/store.js";
 
 // 히어로 배경 영상/포스터 — 어드민이 교체하면 서버→스토어 하이드레이션으로 반영된다.
@@ -180,7 +180,7 @@ function renderLines(lines) {
 }
 
 function Hero({ t, p }) {
-  const [playing, setPlaying] = useState(true);
+  const [playing, setPlaying] = useState(() => !prefersReducedMotion()); // 모션 감소 선호 시 정지 시작
   const videoRef = useRef(null);
   const heroVideo = useSyncExternalStore(subscribe, () => getSettings()?.heroVideo || HERO_VIDEO_FALLBACK);
   const heroPoster = useSyncExternalStore(subscribe, () => getSettings()?.heroPoster || HERO_POSTER_FALLBACK);
@@ -465,6 +465,30 @@ function LovedWorn({ locale }) {
     el.scrollTo({ left: cells[next].offsetLeft - el.offsetLeft, behavior: "smooth" });
   };
   const active = open ? (open.media[mIdx] || open.media[0]) : null;
+  // 라이트박스 접근성 — 열리면 다이얼로그로 포커스 이동, Tab 순환 트랩, Escape 닫기, 닫히면 원위치 복귀
+  const lbRef = useRef(null);
+  const lbReturnRef = useRef(null);
+  useEffect(() => {
+    if (!open) {
+      lbReturnRef.current?.focus?.();
+      lbReturnRef.current = null;
+      return undefined;
+    }
+    lbReturnRef.current = document.activeElement;
+    lbRef.current?.focus();
+    const onKey = (e) => {
+      if (e.key === "Escape") { e.preventDefault(); setOpen(null); return; }
+      if (e.key !== "Tab") return;
+      const focusables = lbRef.current?.querySelectorAll("button, a[href]");
+      if (!focusables?.length) { e.preventDefault(); return; }
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open]);
   return (
     <section className="lw-section" aria-label={copy.title}>
       <div className="lw-head">
@@ -510,15 +534,15 @@ function LovedWorn({ locale }) {
       </div>
 
       {open && (
-        <div className="lw-lightbox" role="dialog" aria-modal="true" onClick={() => setOpen(null)}>
+        <div className="lw-lightbox" role="dialog" aria-modal="true" aria-label={open.quote} ref={lbRef} tabIndex={-1} onClick={() => setOpen(null)}>
           <div className="lw-lightbox-inner" onClick={(e) => e.stopPropagation()}>
             <div className="lw-lightbox-media">
               <MediaThumb media={active} ratio="4 / 5" alt={open.quote} eager />
               {open.media.length > 1 && (
                 <div className="lw-lightbox-nav">
-                  <button type="button" onClick={() => setMIdx((i) => (i - 1 + open.media.length) % open.media.length)}>‹</button>
+                  <button type="button" aria-label="Previous" onClick={() => setMIdx((i) => (i - 1 + open.media.length) % open.media.length)}>‹</button>
                   <span>{mIdx + 1} / {open.media.length}</span>
-                  <button type="button" onClick={() => setMIdx((i) => (i + 1) % open.media.length)}>›</button>
+                  <button type="button" aria-label="Next" onClick={() => setMIdx((i) => (i + 1) % open.media.length)}>›</button>
                 </div>
               )}
             </div>

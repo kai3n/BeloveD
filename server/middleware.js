@@ -37,20 +37,32 @@ export function clearSessionCookie(res, name) {
   res.clearCookie(name, { path: "/" });
 }
 
-// Resolves both cookies (if present) into req.principal = { type, id } | null
+// Resolves both cookies (if present). 오너가 같은 브라우저에서 어드민+고객을 오가므로
+// 두 세션을 모두 해석해 둔다 — req.principal 기본값은 admin 우선(어드민 콘솔·/auth/me 호환),
+// 고객 라우트 가드(requireCustomer)와 고객향 핸들러가 고객 세션을 우선 선택해 401 루프를 막는다.
 export async function attachPrincipal(req, _res, next) {
   try {
     const adminSid = req.cookies?.[COOKIE_ADMIN];
     const custSid = req.cookies?.[COOKIE_CUSTOMER];
-    const admin = adminSid ? await getSession(adminSid) : null;
-    const customer = !admin && custSid ? await getSession(custSid) : null;
-    const row = admin || customer;
-    req.principal = row ? { type: row.principal_type, id: Number(row.principal_id) } : null;
+    const [admin, customer] = await Promise.all([
+      adminSid ? getSession(adminSid) : null,
+      custSid ? getSession(custSid) : null,
+    ]);
+    req.principalAdmin = admin ? { type: admin.principal_type, id: Number(admin.principal_id) } : null;
+    req.principalCustomer = customer?.principal_type === "customer"
+      ? { type: "customer", id: Number(customer.principal_id) }
+      : null;
+    req.principal = req.principalAdmin || req.principalCustomer;
     next();
   } catch (e) { next(e); }
 }
 
 export function requireCustomer(req, _res, next) {
+  // 어드민 쿠키가 함께 있어도 고객 라우트는 고객 세션으로 동작한다 (동시 로그인 401 방지)
+  if (req.principalCustomer) {
+    req.principal = req.principalCustomer;
+    return next();
+  }
   if (req.principal?.type === "customer") return next();
   next(new ApiError("CUSTOMER_AUTH_REQUIRED", 401));
 }

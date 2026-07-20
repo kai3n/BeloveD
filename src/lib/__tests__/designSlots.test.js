@@ -69,6 +69,7 @@ describe("design slot cards", () => {
     const bezelSlot = cards.find((card) => card.title === "Bezel Bracelet");
 
     expect(bezelSlot?.media?.kind).toBe("image");
-    expect(bezelSlot?.media?.src).toContain("/assets/designs/BCGTXBR07076");
+    // 과거 참조 파일(BCGTXBR07076)이 저장소에 없어 깨진 이미지가 노출됐다 → 실재 브레이슬릿 자산으로 교체
+    expect(bezelSlot?.media?.src).toContain("/assets/designs/BCGTXBR01703");
   });
 });

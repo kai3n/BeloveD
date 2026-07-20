@@ -26,7 +26,7 @@ const COPY = {
     deniedTitle: "We couldn't open this order",
     deniedBody: "This order belongs to a different account. Sign in with the email you used when ordering.",
     unavailableTitle: "The order portal is warming up",
-    unavailableBody: "Please try again in a moment, or email support@belovediamond.com — we answer within one business day.",
+    unavailableBody: "Please try again in a moment, or email support@belovediamond.com — we answer within one business day.", retry: "Try again",
     loading: "Loading your order…",
     waiting: {
       CUSTOMER: "Your turn — a confirmation below is waiting for you.",
@@ -92,7 +92,7 @@ const COPY = {
     deniedTitle: "이 주문을 열 수 없습니다",
     deniedBody: "다른 계정의 주문입니다. 주문할 때 사용한 이메일로 로그인해 주세요.",
     unavailableTitle: "주문 포털을 준비하고 있어요",
-    unavailableBody: "잠시 후 다시 시도해 주세요. 급하시면 support@belovediamond.com으로 문의 주시면 영업일 기준 하루 안에 답변드립니다.",
+    unavailableBody: "잠시 후 다시 시도해 주세요. 급하시면 support@belovediamond.com으로 문의 주시면 영업일 기준 하루 안에 답변드립니다.", retry: "다시 시도",
     loading: "주문을 불러오는 중…",
     waiting: {
       CUSTOMER: "지금은 고객님 차례예요 — 아래 컨펌이 기다리고 있습니다.",
@@ -158,7 +158,7 @@ const COPY = {
     deniedTitle: "无法打开此订单",
     deniedBody: "该订单属于其他账户。请使用下单时的邮箱登录。",
     unavailableTitle: "订单页面正在准备",
-    unavailableBody: "请稍后重试，或致信 support@belovediamond.com，我们会在一个工作日内回复。",
+    unavailableBody: "请稍后重试，或致信 support@belovediamond.com，我们会在一个工作日内回复。", retry: "重试",
     loading: "正在加载订单…",
     waiting: {
       CUSTOMER: "轮到您了 — 下方有待您确认的事项。",
@@ -224,7 +224,7 @@ const COPY = {
     deniedTitle: "No pudimos abrir este pedido",
     deniedBody: "Este pedido pertenece a otra cuenta. Inicia sesión con el correo que usaste al ordenar.",
     unavailableTitle: "El portal del pedido se está preparando",
-    unavailableBody: "Inténtalo de nuevo en un momento, o escríbenos a support@belovediamond.com — contestamos en un día hábil.",
+    unavailableBody: "Inténtalo de nuevo en un momento, o escríbenos a support@belovediamond.com — contestamos en un día hábil.", retry: "Reintentar",
     loading: "Cargando tu pedido…",
     waiting: {
       CUSTOMER: "Tu turno — hay una confirmación esperándote abajo.",
@@ -607,6 +607,9 @@ export default function ServerOrderPortal({ orderCode }) {
           <p className="form-hint">{copy.body}</p>
           {state.status !== "unavailable" && (
             <Link className="button primary" to={LOGIN_FOR.customer} state={{ from: location.pathname }}>{t.signInCta}</Link>
+          )}
+          {state.status === "unavailable" && (
+            <button className="button primary" type="button" onClick={() => loadOrder({ initial: true })}>{t.retry}</button>
           )}
         </div>
       </div>

@@ -695,7 +695,7 @@ function ConversationPanel({ messages, draft, setDraft, onSend, t }) {
         })}
       </div>
       <form className="conversation-form" onSubmit={(e) => { e.preventDefault(); onSend(); }}>
-        <textarea value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={copy.placeholder} rows={2} />
+        <textarea value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={copy.placeholder} aria-label={copy.placeholder} rows={2} />
         <button className="button primary small" type="submit" disabled={!draft.trim()}>{copy.send}</button>
       </form>
     </section>
@@ -846,7 +846,7 @@ function CustomerDecisionPanel({
             <span>{t.rejectMedia}</span>
             <MediaPicker value={attachments} onChange={setAttachments} maxItems={5} showSamples={false} previewMode="list" />
           </div>
-          {error && <p className="form-error">{error}</p>}
+          {error && <p className="form-error" role="alert">{error}</p>}
           <button className="button primary small" type="button" onClick={submitReject}>{t.sendRejection}</button>
         </div>
       )}

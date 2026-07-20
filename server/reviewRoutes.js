@@ -24,7 +24,7 @@ export function reviewRouter() {
     rateLimit({ limit: 10, windowMs: MINUTE, keyFn: (req) => `review-verify:${req.ip}` }),
     async (req, res, next) => {
       try {
-        const customerId = req.principal?.type === "customer" ? req.principal.id : null;
+        const customerId = req.principalCustomer?.id ?? null;
         await verifyReviewEligibility({ orderCode: req.body?.orderCode, tracking: req.body?.tracking, customerId });
         res.json({ ok: true });
       } catch (e) { next(e); }
@@ -35,7 +35,7 @@ export function reviewRouter() {
     rateLimit({ limit: 5, windowMs: MINUTE, keyFn: (req) => `review-submit:${req.ip}` }),
     async (req, res, next) => {
       try {
-        const customerId = req.principal?.type === "customer" ? req.principal.id : null;
+        const customerId = req.principalCustomer?.id ?? null;
         const review = await submitCustomerReview({ ...(req.body || {}), customerId });
         res.status(201).json({ ok: true, review });
       } catch (e) { next(e); }

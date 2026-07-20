@@ -37,14 +37,22 @@ export function withBase(src) {
 
 // eager=true는 히어로/단독 노출처럼 즉시 보여야 할 때만. 그 외(그리드·카드)는 기본 lazy.
 // fit="contain": 임의 업로드 콘텐츠(제안·CAD·QC·레퍼런스)처럼 잘리면 안 되는 이미지용.
+// 모션 감소 선호 시 그리드 영상 자동재생을 끈다 (WCAG 2.2.2/2.3.3) — 포스터 정지 프레임만 표시
+const REDUCED_MOTION = typeof window !== "undefined" && typeof window.matchMedia === "function"
+  && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+export const prefersReducedMotion = () => REDUCED_MOTION;
+
 // 기본 cover는 큐레이션된 정사각 제품샷 카드용.
 export function MediaThumb({ media, ratio = "1 / 1", alt = "", eager = false, fit = "cover" }) {
   const fitClass = fit === "contain" ? "media-thumb is-contain" : "media-thumb";
-  if (!media) return <div className="media-thumb media-empty" style={{ aspectRatio: ratio }} />;
-  const src = withBase(media.src);
+  const src = media ? withBase(media.src) : null;
+  // 깨진 이미지·만료 URL은 브라우저 기본 깨짐 아이콘 대신 기존 빈 카드로 폴백
+  const [broken, setBroken] = useState(false);
+  useEffect(() => { setBroken(false); }, [src]);
+  if (!media || broken) return <div className="media-thumb media-empty" style={{ aspectRatio: ratio }} />;
   if (media.kind === "video") {
     // 그리드 영상 썸네일은 화면 밖에서 버퍼링하지 않도록 preload="none" — 보이면 autoplay
-    return <video className={fitClass} style={{ aspectRatio: ratio }} src={src} poster={media.poster ? withBase(media.poster) : undefined} muted loop autoPlay playsInline preload="none" />;
+    return <video className={fitClass} style={{ aspectRatio: ratio }} src={src} poster={media.poster ? withBase(media.poster) : undefined} muted loop autoPlay={!REDUCED_MOTION} playsInline preload="none" onError={() => setBroken(true)} />;
   }
   if (media.pos) {
     return (
@@ -54,7 +62,7 @@ export function MediaThumb({ media, ratio = "1 / 1", alt = "", eager = false, fi
       />
     );
   }
-  return <img className={fitClass} style={{ aspectRatio: ratio }} src={src} alt={alt} loading={eager ? "eager" : "lazy"} decoding="async" />;
+  return <img className={fitClass} style={{ aspectRatio: ratio }} src={src} alt={alt} loading={eager ? "eager" : "lazy"} onError={() => setBroken(true)} decoding="async" />;
 }
 
 export function MediaZoomModal({ mediaItems, activeIndex = 0, onActiveIndexChange, onClose, alt = "" }) {
@@ -1068,7 +1076,7 @@ export function MediaPicker({
             {items.map((m, i) => (
               <div key={i} className="picker-cell is-selected">
                 <MediaThumb media={m} alt="" />
-                <button type="button" className="chip remove-media" onClick={() => changeItems(items.filter((_, j) => j !== i))}>✕</button>
+                <button type="button" className="chip remove-media" aria-label={p.picker.removeLabel || "Remove"} onClick={() => changeItems(items.filter((_, j) => j !== i))}>✕</button>
               </div>
             ))}
           </div>

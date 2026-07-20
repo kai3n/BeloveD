@@ -1,6 +1,6 @@
 const BEZEL_BRACELET_SAMPLE_MEDIA = {
   kind: "image",
-  src: "/assets/designs/BCGTXBR07076-RG-RB-WH-811-M0.jpg",
+  src: "/assets/designs/BCGTXBR01703-WG-EM-WH-700-M0.jpg",
 };
 
 export const DESIGN_CATEGORIES = [

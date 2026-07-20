@@ -367,11 +367,12 @@ function ScrollManager() {
 export default function Layout() {
   return (
     <>
+      <a className="skip-link" href="#main">Skip to content</a>
       <ScrollManager />
       <EscapeBack />
       <SaleBanner />
       <Header />
-      <main>
+      <main id="main">
         <Outlet />
       </main>
       <Footer />
