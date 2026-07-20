@@ -109,7 +109,7 @@ export default function AdminBenchmark() {
       <div className="con-table-panel con-bench">
         <table className="data-table">
           <thead>
-            <tr><th /> {CARAT_TIERS.map((tier) => <th key={tier.key}>{tier.key}</th>)}</tr>
+            <tr><th />{CARAT_TIERS.map((tier) => <th key={tier.key}>{tier.key}</th>)}</tr>
           </thead>
           <tbody>
             {BENCHMARK_SHAPES.map((shape) => (

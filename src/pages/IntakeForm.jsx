@@ -7,6 +7,7 @@ import {
 } from "../lib/ops.js";
 import { createIntake, findCoupon, getDiamond, listOpsStyles } from "../lib/store.js";
 import { apiFetch, ApiUnavailableError } from "../lib/api.js";
+import { WITH_BACKOFFICE } from "../lib/flags.js";
 import {
   MAX_REFERENCE_MEDIA, PRONG_OPTIONS, RING_SIZE_OPTIONS, buildIntakePayload, conditionalComplete,
   accountDisplayName, hasContactDetails, isValidEmail, sanitizeReferenceMedia, submissionContact,
@@ -385,8 +386,10 @@ export default function IntakeForm() {
       window.localStorage.removeItem(DRAFT_KEY);
       setDone({ ...order, serverCode: resp?.orderCode || null });
     } catch (err) {
-      if (err instanceof ApiUnavailableError) {
-        // 서버 없는 정적 데모 — 로컬 접수로 완료 (기존 동작 유지)
+      // 로컬 접수 폴백은 서버가 애초에 없는 정적 데모 빌드 전용(Login과 동일 게이트).
+      // 실서버 빌드에서는 게이트웨이 오류(502/504)·함수 크래시도 비JSON 응답이라
+      // ApiUnavailableError로 들어오므로, 여기서 폴백하면 주문이 조용히 유실된다.
+      if (err instanceof ApiUnavailableError && !WITH_BACKOFFICE) {
         window.localStorage.removeItem(DRAFT_KEY);
         setDone(order);
       } else {

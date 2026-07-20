@@ -1704,6 +1704,7 @@ html[data-theme="day"] .quality {
   font-size: 21px;
   line-height: 1.1;
   color: var(--text);
+  overflow-wrap: anywhere;
 }
 
 .info-channel-link {

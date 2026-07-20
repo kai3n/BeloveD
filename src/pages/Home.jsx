@@ -450,21 +450,6 @@ function LovedWorn({ locale }) {
       document.body.style.overflow = originalOverflow;
     };
   }, [open]);
-  if (reviews.length === 0) return null;
-  // rating이 문자열/누락이어도 평균이 NaN으로 깨지지 않게 숫자로 강제
-  const avg = (reviews.reduce((s, r) => s + (Number(r.rating) || 0), 0) / reviews.length).toFixed(1);
-  // iOS에서 scroll-snap mandatory와 scrollBy(smooth)가 충돌해 안 움직인다 → 셀 offsetLeft로 정확히 이동
-  const scroll = (dir) => {
-    const el = trackRef.current;
-    if (!el) return;
-    const cells = [...el.querySelectorAll(".lw-cell")];
-    if (cells.length === 0) return;
-    const width = cells[0].offsetWidth + 10;
-    const idx = Math.round(el.scrollLeft / width);
-    const next = Math.min(Math.max(idx + dir, 0), cells.length - 1);
-    el.scrollTo({ left: cells[next].offsetLeft - el.offsetLeft, behavior: "smooth" });
-  };
-  const active = open ? (open.media[mIdx] || open.media[0]) : null;
   // 라이트박스 접근성 — 열리면 다이얼로그로 포커스 이동, Tab 순환 트랩, Escape 닫기, 닫히면 원위치 복귀
   const lbRef = useRef(null);
   const lbReturnRef = useRef(null);
@@ -489,6 +474,21 @@ function LovedWorn({ locale }) {
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [open]);
+  if (reviews.length === 0) return null;
+  // rating이 문자열/누락이어도 평균이 NaN으로 깨지지 않게 숫자로 강제
+  const avg = (reviews.reduce((s, r) => s + (Number(r.rating) || 0), 0) / reviews.length).toFixed(1);
+  // iOS에서 scroll-snap mandatory와 scrollBy(smooth)가 충돌해 안 움직인다 → 셀 offsetLeft로 정확히 이동
+  const scroll = (dir) => {
+    const el = trackRef.current;
+    if (!el) return;
+    const cells = [...el.querySelectorAll(".lw-cell")];
+    if (cells.length === 0) return;
+    const width = cells[0].offsetWidth + 10;
+    const idx = Math.round(el.scrollLeft / width);
+    const next = Math.min(Math.max(idx + dir, 0), cells.length - 1);
+    el.scrollTo({ left: cells[next].offsetLeft - el.offsetLeft, behavior: "smooth" });
+  };
+  const active = open ? (open.media[mIdx] || open.media[0]) : null;
   return (
     <section className="lw-section" aria-label={copy.title}>
       <div className="lw-head">

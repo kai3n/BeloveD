@@ -1,7 +1,8 @@
 /* 라이브챗 위젯 — 테마 토큰(--surface/--accent/--text …)으로 day·NOIR 자동 적응 */
-.chat-root { position: fixed; right: 20px; bottom: 20px; z-index: 940; font-family: var(--sans); transition: opacity .25s ease, transform .25s ease; }
-/* 홈 히어로 구간 — 버블을 부드럽게 숨김(스크롤하면 등장) */
-.chat-root--hidden { opacity: 0; transform: translateY(12px); pointer-events: none; }
+.chat-root { position: fixed; right: 20px; bottom: 20px; z-index: 940; font-family: var(--sans); transition: opacity .25s ease, transform .25s ease, visibility 0s linear 0s; }
+/* 홈 히어로 구간 — 버블을 부드럽게 숨김(스크롤하면 등장).
+   visibility도 함께 꺼서 보이지 않는 키보드 탭 스톱이 되지 않게 한다(페이드아웃 후 지연 적용). */
+.chat-root--hidden { opacity: 0; transform: translateY(12px); pointer-events: none; visibility: hidden; transition-delay: 0s, 0s, .25s; }
 
 /* 닫힌 버블 */
 .chat-launcher {
