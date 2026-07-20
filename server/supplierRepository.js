@@ -3,6 +3,7 @@ import { ApiError } from "./errors.js";
 import { query, withTransaction } from "./db.js";
 import { hashPassword, verifyPassword } from "./passwords.js";
 import { hashToken, issueSession, revokeAllForPrincipal } from "./session.js";
+import { createReadUrl } from "./media.js";
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const PASSWORD_RESET_TTL_MS = 60 * 60 * 1000;
@@ -37,6 +38,39 @@ const LOCALES = new Set(["zh", "en", "ko"]);
 const SUPPLIER_STATUSES = new Set(["invited", "active", "suspended", "archived"]);
 const INVENTORY_AVAILABILITY = new Set(["available", "reserved", "unavailable", "sold"]);
 const DUMMY_HASH = hashPassword(randomBytes(32).toString("hex"));
+
+function supplierMedia(supplierId, value) {
+  if (!Array.isArray(value)) return [];
+  const ownedPrefix = `vendor/${supplierId}/`;
+  return value.slice(0, 12).map((item) => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) throw new ApiError("VALIDATION_ERROR", 400);
+    const key = item.key == null ? "" : String(item.key);
+    const url = item.url == null ? "" : String(item.url);
+    if (key && (!key.startsWith(ownedPrefix) || key.length > 512)) throw new ApiError("VALIDATION_ERROR", 400, "media key not owned by supplier");
+    // Keep https URLs for legacy rows uploaded before object keys were stored.
+    if (!key && !/^https:\/\/[^\s]+$/.test(url)) throw new ApiError("VALIDATION_ERROR", 400, "media key required");
+    return {
+      name: String(item.name || "").slice(0, 255),
+      type: String(item.type || "").slice(0, 100),
+      size: Number.isFinite(Number(item.size)) ? Number(item.size) : null,
+      ...(key ? { key, provider: new Set(["cos", "r2", "local"]).has(item.provider) ? item.provider : "cos" } : {}),
+      ...(url ? { url } : {}),
+    };
+  });
+}
+
+async function readableSupplierMedia(supplierId, value) {
+  return Promise.all(supplierMedia(supplierId, value).map(async (item) => {
+    if (!item.key) return item;
+    try {
+      return { ...item, url: await createReadUrl({ key: item.key, provider: item.provider }) };
+    } catch (error) {
+      // Local development and legacy configuration still have a usable URL.
+      if (item.url && (error?.code === "MEDIA_NOT_CONFIGURED" || error?.code === "VALIDATION_ERROR")) return item;
+      throw error;
+    }
+  }));
+}
 
 function emailOf(value) {
   return String(value || "").trim().toLowerCase();
@@ -410,11 +444,11 @@ export async function getSupplierOrder(supplierId, jobCode) {
     )
     order by created_at desc
   `, [supplierId, jobCode]);
-  return { ...vendorOrderView(rows[0]), updates: updates.rows.map((row) => ({
+  return { ...vendorOrderView(rows[0]), updates: await Promise.all(updates.rows.map(async (row) => ({
     id: row.id,
     type: row.update_type,
     note: row.note,
-    media: row.media || [],
+    media: await readableSupplierMedia(supplierId, row.media),
     data: row.data || {},
     version: row.version,
     status: row.review_status,
@@ -422,13 +456,13 @@ export async function getSupplierOrder(supplierId, jobCode) {
     reviewedAt: row.reviewed_at,
     supersedesUpdateId: row.supersedes_update_id,
     createdAt: row.created_at,
-  })) };
+  }))) };
 }
 
 export async function addSupplierUpdate(supplierId, jobCode, payload = {}) {
   const type = String(payload.type || "NOTE").toUpperCase();
   const note = payload.note == null ? null : String(payload.note).trim();
-  const media = Array.isArray(payload.media) ? payload.media.slice(0, 12) : [];
+  const media = supplierMedia(supplierId, payload.media);
   const data = validateStructuredUpdate(type, payload.data);
   if (!UPDATE_TYPES.has(type) || (note && note.length > 2000)) throw new ApiError("VALIDATION_ERROR", 400);
   return withTransaction(async (client) => {

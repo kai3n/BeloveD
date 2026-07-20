@@ -36,13 +36,16 @@ import {
 
 const MINUTE = 60 * 1000;
 const VENDOR_UPLOAD_SCOPES = new Set(["proposal", "cad", "qc"]);
+const VENDOR_VIDEO_MAX_BYTES = 200 * 1024 * 1024;
 
 function vendorOrigin(req) {
   return process.env.VENDOR_ORIGIN || process.env.PUBLIC_ORIGIN || `${req.protocol}://${req.get("host")}`;
 }
 
 function vendorAppUrl(req) {
-  const url = new URL(process.env.VENDOR_APP_URL || vendorOrigin(req));
+  const url = process.env.VENDOR_APP_URL
+    ? new URL(process.env.VENDOR_APP_URL)
+    : new URL("/vendor/", `${vendorOrigin(req).replace(/\/$/, "")}/`);
   if (!new Set(["http:", "https:"]).has(url.protocol)) throw new ApiError("INTERNAL_ERROR", 500);
   return url;
 }
@@ -174,6 +177,7 @@ export function supplierRouter() {
           origin: vendorOrigin(req),
           keyPrefix: `vendor/${req.principal.supplierId}`,
           provider: process.env.VENDOR_MEDIA_PROVIDER || "cos",
+          videoMaxBytes: VENDOR_VIDEO_MAX_BYTES,
         });
         res.status(201).json({ ok: true, ...signed });
       } catch (e) { next(e); }

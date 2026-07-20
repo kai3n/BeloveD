@@ -493,8 +493,8 @@ function UploadSheet({ order, kind, onClose, onDone }) {
       let update;
       if (!DEMO_MODE) {
         const scope = kind === "QC" ? "qc" : kind === "CAD" ? "cad" : "proposal";
-        const urls = await Promise.all(files.map(file => uploadVendorMedia(file, scope)));
-        media = urls.map((url, i) => ({ name: files[i].name, type: files[i].type, size: files[i].size, url }));
+        const uploaded = await Promise.all(files.map(file => uploadVendorMedia(file, scope)));
+        media = uploaded.map((object, i) => ({ name: files[i].name, type: files[i].type, size: files[i].size, ...object }));
         update = (await vendorApi.addUpdate(order.code, { type: kind, note, media, data })).update;
       } else {
         const priorVersions = order.updates.filter(item => item.type === kind).map(item => item.version || 1);
@@ -521,11 +521,11 @@ function UploadSheet({ order, kind, onClose, onDone }) {
         <div className="two-col"><label>{t("币种")}<select value={data.currency} onChange={e => setDataField("currency", e.target.value)}><option value="CNY">CNY</option><option value="USD">USD</option></select></label><label>{t("生产周期（天）")}<input type="number" min="1" value={data.leadTimeDays} onChange={e => setDataField("leadTimeDays", e.target.value)} /></label></div>
         <label>{t("估算假设")}<textarea value={data.assumptions} onChange={e => setDataField("assumptions", e.target.value)} placeholder={t("例如：US 6 戒围、1.5ct 主石尺寸、PT950…")} /></label>
       </div>}
-      <button className="upload-drop" onClick={() => inputRef.current?.click()}><span><UploadCloud size={25} /></span><strong>{t("从手机选择照片或视频")}</strong><small>{t("支持 JPG、PNG、WebP、MP4 · 视频最大 30MB")}</small></button>
+      <button className="upload-drop" onClick={() => inputRef.current?.click()}><span><UploadCloud size={25} /></span><strong>{t("从手机选择照片或视频")}</strong><small>{t("支持 JPG、PNG、WebP、MP4 · 视频最大 200MB")}</small></button>
       <input ref={inputRef} hidden multiple accept="image/*,video/*" type="file" onChange={e => setFiles([...e.target.files])} />
       {files.length > 0 && <div className="file-list">{files.map((file, index) => <div key={`${file.name}-${file.size}`}><FileText size={17} /><span><strong>{file.name}</strong><small>{(file.size / 1024 / 1024).toFixed(1)} MB</small></span><button aria-label={t("移除文件")} onClick={() => setFiles(current => current.filter((_, i) => i !== index))}><X size={15} /></button></div>)}</div>}
       <label>{t("进度说明（选填）")}</label><textarea value={note} onChange={e => setNote(e.target.value)} placeholder={t("说明这次更新完成了什么、下一步是什么…")} />
-      <div className="privacy-tip"><ShieldCheck size={17} /><p><strong>{t("安全直传")}</strong> {t("文件从手机直接上传到腾讯云 COS，API 只保存文件地址。")}</p></div>
+      <div className="privacy-tip"><ShieldCheck size={17} /><p><strong>{t("安全直传")}</strong> {t("文件从手机直接上传到腾讯云 COS，API 只保存对象标识。")}</p></div>
       {error && <p className="upload-error"><AlertCircle size={15} />{error}</p>}
       <button className="sheet-submit" disabled={!files.length || !structuredValid || busy} onClick={submit}>{busy ? t("正在上传…") : `${t("提交订单团队审核")}${files.length ? ` · ${files.length}` : ""}`}</button>
     </div>

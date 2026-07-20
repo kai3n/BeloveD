@@ -41,7 +41,11 @@ export async function uploadVendorMedia(file, scope = "qc") {
     body: file,
   });
   if (!uploaded.ok) throw new ApiError("UPLOAD_FAILED", uploaded.status);
-  return signed.publicUrl;
+  return {
+    key: signed.key,
+    provider: signed.provider || "cos",
+    ...(signed.provider === "local" ? { url: signed.publicUrl } : {}),
+  };
 }
 
 export const vendorApi = {

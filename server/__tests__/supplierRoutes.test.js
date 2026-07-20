@@ -115,6 +115,31 @@ async function advanceSolitaireToProduction(admin, vendorCookie, jobCode) {
 }
 
 describe("one account per vendor", () => {
+  it("defaults activation links to the same-origin /vendor/ app", async () => {
+    const previousAppUrl = process.env.VENDOR_APP_URL;
+    const previousVendorOrigin = process.env.VENDOR_ORIGIN;
+    delete process.env.VENDOR_APP_URL;
+    process.env.VENDOR_ORIGIN = "https://belovediamond.com";
+    try {
+      const admin = await adminCookie();
+      const created = await request(app).post("/v1/admin/suppliers").set("Cookie", admin).send({
+        email: "same-origin-vendor@example.com", displayName: "Same Origin Vendor", contactName: "Vendor Contact", locale: "zh",
+      });
+      const invitation = await request(app)
+        .post(`/v1/admin/suppliers/${created.body.supplier.supplierCode}/invites`)
+        .set("Cookie", admin);
+      const inviteUrl = new URL(invitation.body.inviteUrl);
+      expect(inviteUrl.origin).toBe("https://belovediamond.com");
+      expect(inviteUrl.pathname).toBe("/vendor/");
+      expect(inviteUrl.searchParams.get("token")).toBeTruthy();
+    } finally {
+      if (previousAppUrl === undefined) delete process.env.VENDOR_APP_URL;
+      else process.env.VENDOR_APP_URL = previousAppUrl;
+      if (previousVendorOrigin === undefined) delete process.env.VENDOR_ORIGIN;
+      else process.env.VENDOR_ORIGIN = previousVendorOrigin;
+    }
+  });
+
   it("emails a subpath-safe activation link and exposes the pending invitation state", async () => {
     const previousAppUrl = process.env.VENDOR_APP_URL;
     process.env.VENDOR_APP_URL = "https://vendor.example.com/BeloveD/vendor/";

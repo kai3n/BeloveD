@@ -29,7 +29,7 @@ COS_ENDPOINT=https://cos.ap-guangzhou.myqcloud.com
 COS_PUBLIC_URL=https://media.example.com
 ```
 
-SecretId/SecretKey 只放 API 服务环境变量，不能放进 `VITE_*`。上传 URL 有效期 10 分钟，视频最大 30MB；Vendor 文件 key 为 `vendor/<supplierId>/<scope>/<date>/<random>.<ext>`。
+SecretId/SecretKey 只放 API 服务环境变量，不能放进 `VITE_*`。上传 URL 有效期 10 分钟，Vendor 视频最大 200MB；Vendor 文件 key 为 `vendor/<supplierId>/<scope>/<date>/<random>.<ext>`。
 
 你还需要在 COS 控制台配置一条 CORS 规则：Origin 填 Vendor 网页的准确域名（不要用 `*`），Method 允许 `PUT`，Allowed-Headers 可填 `*`，Expose-Headers 建议 `ETag`。
 

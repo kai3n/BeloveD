@@ -5,7 +5,7 @@ import { join } from "node:path";
 import request from "supertest";
 import { createApp } from "../app.js";
 import { __resetRateLimit } from "../rateLimit.js";
-import { __resetLocalMediaStateForTests } from "../media.js";
+import { __resetLocalMediaStateForTests, createReadUrl, createUploadUrl } from "../media.js";
 
 const app = createApp();
 const R2_KEYS = ["R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "R2_BUCKET", "R2_PUBLIC_URL"];
@@ -169,6 +169,15 @@ describe("미디어 presigned 업로드", () => {
       expect(res.body.uploadUrl).toContain("delune-vendor-1250000000.cos.ap-guangzhou.myqcloud.com/qc/");
       expect(res.body.publicUrl).toMatch(/^https:\/\/media\.delune\.example\/qc\/\d{4}-\d{2}-\d{2}\/[a-f0-9]{24}\.jpg$/);
       expect((await request(app).get("/v1/media/status")).body).toEqual({ configured: true, provider: "cos" });
+      const readUrl = await createReadUrl({ key: "vendor/42/qc/2026-07-19/0123456789abcdef01234567.mp4", provider: "cos" });
+      expect(readUrl).toContain("delune-vendor-1250000000.cos.ap-guangzhou.myqcloud.com/vendor/42/qc/");
+      expect(readUrl).toContain("X-Amz-Expires=600");
+
+      const vendorVideo = await createUploadUrl({
+        scope: "qc", contentType: "video/mp4", size: 200 * 1024 * 1024,
+        keyPrefix: "vendor/42", provider: "cos", videoMaxBytes: 200 * 1024 * 1024,
+      });
+      expect(vendorVideo.provider).toBe("cos");
     } finally {
       for (const key of COS_KEYS) delete process.env[key];
       delete process.env.MEDIA_PROVIDER;
