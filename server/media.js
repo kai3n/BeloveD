@@ -4,7 +4,7 @@ import { randomBytes } from "node:crypto";
 import { dirname, extname, join, relative, sep } from "node:path";
 import { tmpdir } from "node:os";
 import { lstat, mkdir, readdir, unlink, writeFile } from "node:fs/promises";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { GetObjectCommand, S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { ApiError } from "./errors.js";
 
@@ -18,7 +18,7 @@ const ALLOWED_TYPES = new Map([
   ["video/webm", "webm"],
 ]);
 const MAX_BYTES = 100 * 1024 * 1024; // 100MB (이미지 상한)
-const VIDEO_MAX_BYTES = 30 * 1024 * 1024; // 영상 30MB (클라이언트 CHAT_VIDEO_MAX_BYTES와 정렬)
+const VIDEO_MAX_BYTES = 30 * 1024 * 1024; // 일반 업로드/채팅 기본 상한
 const SIGN_TTL_SECONDS = 60 * 10;
 const DEFAULT_LOCAL_MEDIA_ROOT = join(tmpdir(), "belovediamond-media");
 const DEFAULT_LOCAL_MEDIA_RETENTION_MS = 24 * 60 * 60 * 1000;
@@ -123,13 +123,13 @@ function client(config) {
 // scope: 업로드 용도별 키 프리픽스 (경로 추측 방지를 위해 랜덤 토큰 포함)
 const SCOPES = new Set(["reference", "review", "proposal", "cad", "qc", "style", "chat"]);
 
-function validateUploadInput({ scope, contentType, size }) {
+function validateUploadInput({ scope, contentType, size, videoMaxBytes = VIDEO_MAX_BYTES }) {
   if (!SCOPES.has(scope)) throw new ApiError("VALIDATION_ERROR", 400, "bad scope");
   const ct = String(contentType || "").toLowerCase();
   const ext = ALLOWED_TYPES.get(ct);
   if (!ext) throw new ApiError("UNSUPPORTED_MEDIA_TYPE", 400);
   const bytes = Number(size);
-  const cap = ct.startsWith("video/") ? VIDEO_MAX_BYTES : MAX_BYTES; // 영상은 서버에서도 30MB 강제
+  const cap = ct.startsWith("video/") ? videoMaxBytes : MAX_BYTES;
   if (!Number.isFinite(bytes) || bytes <= 0 || bytes > cap) {
     throw new ApiError("MEDIA_TOO_LARGE", 400);
   }
@@ -267,12 +267,13 @@ async function createLocalUploadUrl({ scope, contentType, ext, bytes, origin }) 
     uploadUrl: `${base}/v1/media/local-upload/${token}`,
     publicUrl: `${base}/v1/media/local/${key}`,
     key,
+    provider: "local",
     expiresIn: SIGN_TTL_SECONDS,
   };
 }
 
-export async function createUploadUrl({ scope, contentType, size, origin, keyPrefix, provider }) {
-  const validated = validateUploadInput({ scope, contentType, size });
+export async function createUploadUrl({ scope, contentType, size, origin, keyPrefix, provider, videoMaxBytes }) {
+  const validated = validateUploadInput({ scope, contentType, size, videoMaxBytes });
   const prefix = validatedKeyPrefix(keyPrefix);
   const config = cloudConfig(process.env, provider);
   if (!config) {
@@ -296,7 +297,19 @@ export async function createUploadUrl({ scope, contentType, size, origin, keyPre
     unhoistableHeaders: new Set(["content-length"]),
   });
   const publicUrl = `${config.publicUrl.replace(/\/$/, "")}/${key}`;
-  return { uploadUrl, publicUrl, key, expiresIn: SIGN_TTL_SECONDS };
+  return { uploadUrl, publicUrl, key, provider: config.provider, expiresIn: SIGN_TTL_SECONDS };
+}
+
+export async function createReadUrl({ key, provider, expiresIn = SIGN_TTL_SECONDS }) {
+  const normalizedKey = String(key || "");
+  if (!/^[a-z0-9-]+(?:\/[a-z0-9-]+)*\/[a-f0-9]{24}\.[a-z0-9]+$/.test(normalizedKey)
+    || normalizedKey.length > 512) {
+    throw new ApiError("VALIDATION_ERROR", 400, "bad media key");
+  }
+  const config = cloudConfig(process.env, provider);
+  if (!config) throw new ApiError("MEDIA_NOT_CONFIGURED", 503);
+  const command = new GetObjectCommand({ Bucket: config.bucket, Key: normalizedKey });
+  return getSignedUrl(client(config), command, { expiresIn });
 }
 
 // non-production 전용 1회 PUT. 토큰에 서명된 타입/바이트 수와 정확히 일치한
