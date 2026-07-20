@@ -4,7 +4,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { existsSync } from "node:fs";
 import { ApiError } from "./errors.js";
-import { attachPrincipal, requireSameOrigin } from "./middleware.js";
+import { allowVendorOrigin, attachPrincipal, requireSameOrigin } from "./middleware.js";
 import { query } from "./db.js";
 import { authRouter } from "./authRoutes.js";
 import { mediaRouter } from "./mediaRoutes.js";
@@ -16,6 +16,7 @@ import { reviewRouter } from "./reviewRoutes.js";
 import { chatRouter } from "./chatRoutes.js";
 import { adminChatRouter } from "./adminChatRoutes.js";
 import { runActivityMaintenance } from "./activityMaintenance.js";
+import { supplierAdminRouter, supplierRouter } from "./supplierRoutes.js";
 
 const distDir = join(dirname(fileURLToPath(import.meta.url)), "..", "dist");
 
@@ -52,8 +53,10 @@ export function createApp() {
   app.use("/v1/activity", activityRouter());
   app.use("/v1/admin", adminActivityRouter());
   app.use("/v1/admin", adminOrderRouter());
+  app.use("/v1/admin", supplierAdminRouter());
   app.use("/v1/admin", adminChatRouter());
   app.use("/v1/chat", chatRouter());
+  app.use("/v1/vendor", allowVendorOrigin, supplierRouter());
 
   // Vercel Cron 전용 — CRON_SECRET 불일치·미설정 시 404로 존재 자체를 숨긴다.
   app.get("/v1/internal/activity-maintenance", async (req, res, next) => {

@@ -1,9 +1,12 @@
 import { getSession } from "./session.js";
 import { ApiError } from "./errors.js";
+import { query } from "./db.js";
 
 export const COOKIE_CUSTOMER = "bd_sid";
 export const COOKIE_ADMIN = "bd_admin";
 export const COOKIE_CHAT = "bd_chat";
+// Vendor UI is white-labelled; keep its cookie name brand-neutral.
+export const COOKIE_SUPPLIER = "dl_vendor";
 
 // 라이브챗 익명 스레드 토큰 — httpOnly라 JS가 읽지 못하고, 서버가 token_hash로만 대조한다.
 // 매직링크 콜백처럼 사이트 내 이동에도 붙도록 sameSite=lax.
@@ -22,15 +25,39 @@ export function clearChatCookie(res) {
 }
 
 export function setSessionCookie(res, name, session) {
+  let supplierCrossSite = false;
+  try {
+    supplierCrossSite = name === COOKIE_SUPPLIER
+      && process.env.NODE_ENV === "production"
+      && Boolean(process.env.VENDOR_ORIGIN && process.env.PUBLIC_ORIGIN)
+      && new URL(process.env.VENDOR_ORIGIN).origin !== new URL(process.env.PUBLIC_ORIGIN).origin;
+  } catch { /* malformed deployment origins are rejected at the request boundary */ }
   res.cookie(name, session.id, {
     httpOnly: true,
     // Admin sessions have no cross-site navigation need → strict; customer
     // sessions stay lax so the magic-link callback navigation still attaches.
-    sameSite: name === COOKIE_ADMIN ? "strict" : "lax",
+    sameSite: supplierCrossSite ? "none" : name === COOKIE_ADMIN || name === COOKIE_SUPPLIER ? "strict" : "lax",
     secure: process.env.NODE_ENV === "production",
     expires: session.expiresAt,
     path: "/",
   });
+}
+
+// The vendor UI may live on a different white-label domain while using the
+// same API. Credentials are allowed only for the one configured origin.
+export function allowVendorOrigin(req, res, next) {
+  const configured = process.env.VENDOR_ORIGIN;
+  const origin = req.get("origin");
+  if (!configured || !origin || origin !== configured) return next();
+  res.vary("Origin");
+  res.set({
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Credentials": "true",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Methods": "GET,POST,PATCH,OPTIONS",
+  });
+  if (req.method === "OPTIONS") return res.status(204).end();
+  return next();
 }
 
 export function clearSessionCookie(res, name) {
@@ -43,16 +70,27 @@ export function clearSessionCookie(res, name) {
 export async function attachPrincipal(req, _res, next) {
   try {
     const adminSid = req.cookies?.[COOKIE_ADMIN];
+    const supplierSid = req.cookies?.[COOKIE_SUPPLIER];
     const custSid = req.cookies?.[COOKIE_CUSTOMER];
-    const [admin, customer] = await Promise.all([
+    const [admin, supplierSession, customer] = await Promise.all([
       adminSid ? getSession(adminSid) : null,
+      supplierSid ? getSession(supplierSid) : null,
       custSid ? getSession(custSid) : null,
     ]);
     req.principalAdmin = admin ? { type: admin.principal_type, id: Number(admin.principal_id) } : null;
     req.principalCustomer = customer?.principal_type === "customer"
       ? { type: "customer", id: Number(customer.principal_id) }
       : null;
-    req.principal = req.principalAdmin || req.principalCustomer;
+    let principalSupplier = null;
+    if (supplierSession?.principal_type === "supplier") {
+      // A suspended vendor loses access immediately, even if its cookie has not expired.
+      const supplier = await query("select id from suppliers where id=$1 and status='active'", [supplierSession.principal_id]);
+      if (supplier.rows[0]) {
+        principalSupplier = { type: "supplier", id: Number(supplierSession.principal_id), supplierId: Number(supplierSession.principal_id) };
+      }
+    }
+    req.principalSupplier = principalSupplier;
+    req.principal = req.principalAdmin || principalSupplier || req.principalCustomer;
     next();
   } catch (e) { next(e); }
 }
@@ -65,6 +103,11 @@ export function requireCustomer(req, _res, next) {
   }
   if (req.principal?.type === "customer") return next();
   next(new ApiError("CUSTOMER_AUTH_REQUIRED", 401));
+}
+
+export function requireSupplier(req, _res, next) {
+  if (req.principal?.type === "supplier") return next();
+  next(new ApiError("SUPPLIER_AUTH_REQUIRED", 401));
 }
 
 // 스태프 공통 — full admin(사람)과 bot_admin(자동화) 둘 다 통과.
@@ -89,10 +132,10 @@ const STATE_CHANGING = new Set(["POST", "PATCH", "PUT", "DELETE"]);
 // clients, the test suite) or when PUBLIC_ORIGIN is unset are allowed through.
 export function requireSameOrigin(req, _res, next) {
   if (!STATE_CHANGING.has(req.method)) return next();
-  const allowed = process.env.PUBLIC_ORIGIN;
-  if (!allowed) return next();
+  const allowed = [process.env.PUBLIC_ORIGIN, process.env.VENDOR_ORIGIN].filter(Boolean);
+  if (allowed.length === 0) return next();
   const origin = req.get("origin");
   if (!origin) return next();
-  if (origin !== allowed) return next(new ApiError("ORIGIN_NOT_ALLOWED", 403));
+  if (!allowed.includes(origin)) return next(new ApiError("ORIGIN_NOT_ALLOWED", 403));
   next();
 }

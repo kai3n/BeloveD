@@ -279,7 +279,7 @@ const norm = (s) => String(s || "").toLowerCase().trim();
 // 키워드 매칭 — 라틴 문자로 시작하는 키워드는 '단어 시작' 경계에서만 매칭한다.
 // 짧은 키워드의 중간-단어 부분일치 오탐을 막는다: origin→igi, display→pay, Georgia→gia,
 // flibbertigibbet→igi 등. 스템 접두(payment←pay, engraving←engrav)는 그대로 매칭.
-// CJK 등 비라틴 키워드(각인·耳环 등)는 단어 경계가 없으므로 부분일치를 유지한다.
+// CJK and other non-Latin keywords do not have reliable word boundaries, so keep substring matching.
 function keywordHit(t, k) {
   if (/^[a-z]/.test(k)) {
     const esc = k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");

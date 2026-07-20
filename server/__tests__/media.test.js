@@ -5,15 +5,18 @@ import { join } from "node:path";
 import request from "supertest";
 import { createApp } from "../app.js";
 import { __resetRateLimit } from "../rateLimit.js";
-import { __resetLocalMediaStateForTests } from "../media.js";
+import { __resetLocalMediaStateForTests, createReadUrl, createUploadUrl } from "../media.js";
 
 const app = createApp();
 const R2_KEYS = ["R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "R2_BUCKET", "R2_PUBLIC_URL"];
+const COS_KEYS = ["COS_REGION", "COS_ACCESS_KEY_ID", "COS_SECRET_ACCESS_KEY", "COS_BUCKET", "COS_ENDPOINT", "COS_PUBLIC_URL"];
 let localRoot;
 beforeEach(async () => {
   __resetRateLimit();
   __resetLocalMediaStateForTests();
   for (const key of R2_KEYS) delete process.env[key];
+  for (const key of COS_KEYS) delete process.env[key];
+  delete process.env.MEDIA_PROVIDER;
   delete process.env.PUBLIC_ORIGIN;
   delete process.env.LOCAL_MEDIA_MAX_BYTES;
   delete process.env.LOCAL_MEDIA_RETENTION_MS;
@@ -147,6 +150,37 @@ describe("미디어 presigned 업로드", () => {
       expect((await request(app).post("/v1/media/upload-url").send({ scope: "hack", contentType: "image/jpeg", size: 10 })).status).toBe(400);
     } finally {
       for (const k of R2_KEYS) delete process.env[k];
+    }
+  });
+
+  it("Tencent COS 설정 시 S3 호환 서명 URL을 발급한다", async () => {
+    Object.assign(process.env, {
+      MEDIA_PROVIDER: "cos",
+      COS_REGION: "ap-guangzhou",
+      COS_ACCESS_KEY_ID: "secret-id",
+      COS_SECRET_ACCESS_KEY: "secret-key",
+      COS_BUCKET: "delune-vendor-1250000000",
+      COS_PUBLIC_URL: "https://media.delune.example",
+    });
+    try {
+      const res = await request(app).post("/v1/media/upload-url")
+        .send({ scope: "qc", contentType: "image/jpeg", size: 2048 });
+      expect(res.status).toBe(201);
+      expect(res.body.uploadUrl).toContain("delune-vendor-1250000000.cos.ap-guangzhou.myqcloud.com/qc/");
+      expect(res.body.publicUrl).toMatch(/^https:\/\/media\.delune\.example\/qc\/\d{4}-\d{2}-\d{2}\/[a-f0-9]{24}\.jpg$/);
+      expect((await request(app).get("/v1/media/status")).body).toEqual({ configured: true, provider: "cos" });
+      const readUrl = await createReadUrl({ key: "vendor/42/qc/2026-07-19/0123456789abcdef01234567.mp4", provider: "cos" });
+      expect(readUrl).toContain("delune-vendor-1250000000.cos.ap-guangzhou.myqcloud.com/vendor/42/qc/");
+      expect(readUrl).toContain("X-Amz-Expires=600");
+
+      const vendorVideo = await createUploadUrl({
+        scope: "qc", contentType: "video/mp4", size: 200 * 1024 * 1024,
+        keyPrefix: "vendor/42", provider: "cos", videoMaxBytes: 200 * 1024 * 1024,
+      });
+      expect(vendorVideo.provider).toBe("cos");
+    } finally {
+      for (const key of COS_KEYS) delete process.env[key];
+      delete process.env.MEDIA_PROVIDER;
     }
   });
 });
